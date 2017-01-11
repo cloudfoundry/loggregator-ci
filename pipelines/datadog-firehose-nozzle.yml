@@ -1,0 +1,310 @@
+resources:
+- name: datadog-firehose-nozzle
+  type: git
+  source:
+    uri: https://github.com/cloudfoundry-incubator/datadog-firehose-nozzle.git
+    branch: master
+
+- name: datadog-firehose-nozzle-release
+  type: git
+  source: &datadog-firehose-nozzle-release
+    uri: git@github.com:cloudfoundry-incubator/datadog-firehose-nozzle-release.git
+    branch: master
+    private_key: {{datadog-firehose-nozzle-release-key}}
+
+- name: datadog-firehose-nozzle-final-release
+  type: git
+  source: *datadog-firehose-nozzle-release
+
+- name: noaa
+  type: git
+  source:
+    uri: https://github.com/cloudfoundry/noaa.git
+    branch: master
+
+- name: sonde-go
+  type: git
+  source:
+    uri: git@github.com:cloudfoundry/sonde-go.git
+    branch: master
+    private_key: {{sonde-go-key}}
+
+- name: gcp-stemcell
+  type: bosh-io-stemcell
+  source:
+    name: bosh-google-kvm-ubuntu-trusty-go_agent
+
+- name: deployments-loggregator
+  type: git
+  source:
+    uri: git@github.com:cloudfoundry/deployments-loggregator.git
+    branch: master
+    private_key: {{deployments-loggregator-key}}
+
+jobs:
+- name: datadog-nozzle-unit-tests
+  public: true
+  serial: true
+  plan:
+  - aggregate:
+    - get: noaa
+      trigger: true
+    - get: sonde-go
+      trigger: true
+    - get: datadog-firehose-nozzle
+      trigger: true
+    - get: datadog-firehose-nozzle-release
+      trigger: false
+  - task: run-unit-tests
+    config:
+      image_resource:
+        type: docker-image
+        source:
+        - repository: loggregator/go17
+      platform: linux
+      inputs:
+      - name: datadog-firehose-nozzle
+      run:
+        path: bash
+        args:
+          - -c
+          - |
+            #!/bin/bash -e
+
+            set -x
+
+            export GOPATH=$(pwd)
+            export PATH=$PATH:$GOPATH/bin
+
+            mkdir -p $GOPATH/src/github.com/cloudfoundry-incubator/
+            cp -r datadog-firehose-nozzle $GOPATH/src/github.com/cloudfoundry-incubator/
+            cd $GOPATH/src/github.com/cloudfoundry-incubator/datadog-firehose-nozzle
+
+            go version
+            go get -d -v -t ./...
+            go get -u github.com/golang/lint/golint
+
+            bin/test
+  - task: bump-nozzle-in-release
+    config:
+      image_resource:
+        type: docker-image
+        source:
+        - repository: loggregator/go17
+      platform: linux
+      inputs:
+      - name: datadog-firehose-nozzle
+      - name: datadog-firehose-nozzle-release
+      outputs:
+      - name: bumped-release
+      params:
+        PARENT: datadog-firehose-nozzle-release
+        OUTPUT: bumped-release
+        SUBMODULE: datadog-firehose-nozzle
+        SUBMODULE_PATH: src/datadog-firehose-nozzle/src/github.com/cloudfoundry-incubator/datadog-firehose-nozzle
+      run:
+        path: bash
+        args:
+          - -c
+          - |
+            #!/bin/bash -e
+            set -x
+            bump_submodule() {
+              PARENT_REPO_DIR=$1
+              SUBMODULE_PATH_WITHIN_PARENT=$2
+              LOCAL_REMOTE_URL=$3
+              LOCAL_REMOTE_BRANCH=$4
+
+              cd $PARENT_REPO_DIR
+
+              git submodule update --init --recursive
+              git status
+
+              if ! git diff-index --quiet HEAD; then
+                git status
+                echo "uncommitted changes, aborting" >&2
+                exit 1
+              fi
+
+              pushd $SUBMODULE_PATH_WITHIN_PARENT
+              if git remote -v | grep -w '^local' >/dev/null; then
+                git remote remove local
+              fi
+
+              git remote add local $LOCAL_REMOTE_URL
+              git fetch local
+
+              SHA_FROM=`git rev-parse HEAD`
+              git checkout local/$LOCAL_REMOTE_BRANCH
+              SHA_TO=`git rev-parse HEAD`
+              SUBMODULE_LOG=`git log --oneline $SHA_FROM...$SHA_TO`
+
+              popd
+
+              if ! git diff-index --quiet HEAD; then
+                git add $SUBMODULE_PATH_WITHIN_PARENT
+
+                git config user.email "cf-loggregator@pivotal.io"
+                git config user.name "Loggregator CI"
+                git commit -m "bump `basename $LOCAL_REMOTE_URL`
+
+            $SUBMODULE_LOG
+
+            automatic promotion by CI workflow"
+              fi
+            }
+
+
+            WORKSPACE=$(pwd)
+
+            if [ -z "$PARENT" ]; then
+              echo "must specify \$PARENT" >&2
+              exit 1
+            fi
+
+            if [ -z "$SUBMODULE_PATH" ]; then
+              echo "must specify \$SUBMODULE_PATH" >&2
+              exit 1
+            fi
+
+            if [ -z "$SUBMODULE" ]; then
+              echo "must specify \$SUBMODULE" >&2
+              exit 1
+            fi
+
+            # Add github.com to known_hosts to prevent any interactive prompts
+            mkdir -p ~/.ssh/
+            ssh-keyscan github.com >> ~/.ssh/known_hosts
+            cp -r $WORKSPACE/$PARENT/. $WORKSPACE/$OUTPUT
+            bump_submodule $WORKSPACE/$OUTPUT $SUBMODULE_PATH $WORKSPACE/$SUBMODULE master
+
+  - put: datadog-firehose-nozzle-release
+    params:
+      repository: bumped-release
+      rebase: true
+
+- name: datadog-nozzle-deploy
+  serial: true
+  plan:
+  - aggregate:
+    - get: gcp-stemcell
+      trigger: false
+    - get: datadog-firehose-nozzle-release
+      passed:
+      - datadog-nozzle-unit-tests
+      trigger: true
+    - get: deployments-loggregator
+      trigger: false
+  - task: create-release
+    config:
+      image_resource:
+        type: docker-image
+        source:
+        - repository: loggregator/bosh20
+      platform: linux
+      inputs:
+      - name: datadog-firehose-nozzle-release
+      outputs:
+      - name: datadog-release
+      run:
+        path: bash
+        args:
+          - -c
+          - |
+            #!/bin/bash
+
+            set -ex
+
+            cd datadog-firehose-nozzle-release
+            bosh -n create-release --tarball ../datadog-release/release.tgz
+
+  - task: deploy
+    config:
+      image_resource:
+        type: docker-image
+        source:
+        - repository: loggregator/bosh20
+      platform: linux
+      inputs:
+      - name: datadog-release
+      - name: deployments-loggregator
+      - name: datadog-firehose-nozzle-release
+      params:
+        MANIFEST_FILE: datadog-firehose-nozzle-release/templates/datadog-bosh2.yml
+        MANIFEST_VARS: deployments-loggregator/gcp/coconut/datadog-vars.yml
+        BOSH_ENV: 10.0.0.6
+        BOSH_CA: deployments-loggregator/gcp/certs/bosh/ca.pem
+        BOSH_USERNAME: {{bosh-username}}
+        BOSH_PASSWORD: {{bosh-password}}
+        DEPLOYMENT_NAME: datadog
+      run:
+        path: bash
+        args:
+          - -c
+          - |
+            #!/bin/bash
+
+            set -e -x
+
+            source ~/.bashrc
+
+            bosh -n alias-env -e ${BOSH_ENV} --ca-cert ${BOSH_CA} e
+            bosh -n -e e log-in --client=${BOSH_USERNAME} --client-secret=${BOSH_PASSWORD}
+
+            bosh -n -e e upload-release datadog-release/*.tgz --rebase
+            bosh -n -e e -d ${DEPLOYMENT_NAME} deploy ${MANIFEST_FILE} -l ${MANIFEST_VARS}
+
+- name: datadog-nozzle-create-final-release
+  serial: true
+  plan:
+  - aggregate:
+    - get: datadog-firehose-nozzle-release
+      passed: [datadog-nozzle-deploy]
+      trigger: false
+  - task: create-final-release
+    config:
+      platform: linux
+
+      image_resource:
+        type: docker-image
+        source:
+        - repository: loggregator/bosh20
+
+      inputs:
+      - name: datadog-firehose-nozzle-release
+      outputs:
+      - name: updated-nozzle-release
+      params:
+        S3_ACCESS_KEY: {{datadog-s3-access-key}}
+        S3_SECRET_KEY: {{datadog-s3-secret-key}}
+      run:
+        path: bash
+        args:
+          - -c
+          - |
+            #!/bin/bash
+
+            set -ex
+
+            cp -r datadog-firehose-nozzle-release/. updated-nozzle-release
+            cd updated-nozzle-release
+            cat << EOF > config/private.yml
+            ---
+            blobstore:
+              provider: s3
+              options:
+                bucket_name: datadog-firehose-nozzle-blobs
+                access_key_id: $S3_ACCESS_KEY
+                secret_access_key: $S3_SECRET_KEY
+                credentials_source: static
+            EOF
+
+            bosh -n create-release --final
+            git config user.email "cf-loggregator@pivotal.io"
+            git config user.name "Loggregator CI"
+            git add .
+            git commit -m "Creating final release [ci skip]"
+
+  - put: datadog-firehose-nozzle-final-release
+    params:
+      repository: updated-nozzle-release

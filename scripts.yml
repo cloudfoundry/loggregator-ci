@@ -1,0 +1,213 @@
+dropsonde_unit_tests: |
+  #!/bin/bash -e
+
+  set -x
+
+  export GOPATH=$(pwd)
+  export PATH=$PATH:$GOPATH/bin
+
+  mkdir -p $GOPATH/src/github.com/cloudfoundry/
+  cp -r dropsonde $GOPATH/src/github.com/cloudfoundry/
+
+  cd $GOPATH/src/github.com/cloudfoundry/dropsonde
+
+  go get -d -v -t ./...
+
+  bin/test
+
+noaa_unit_tests: |
+  #!/bin/bash -e
+
+  set -x
+
+  export GOPATH=$(pwd)
+  export PATH=$PATH:$GOPATH/bin
+
+  mkdir -p $GOPATH/src/github.com/cloudfoundry/
+  cp -r noaa $GOPATH/src/github.com/cloudfoundry/
+
+  cd $GOPATH/src/github.com/cloudfoundry/noaa
+
+  go get -d -v -t ./...
+
+  bin/test
+
+loggregatorlib_unit_tests: |
+  #!/bin/bash -ex
+
+  export GOPATH=$PWD/loggregator
+  export PATH=$PATH:$GOPATH/bin
+
+  TARGET=$GOPATH/src/github.com/cloudfoundry/loggregatorlib
+  rm -rf $TARGET
+  mkdir $TARGET
+  cp -r loggregatorlib/. $TARGET
+
+  go install github.com/coreos/etcd
+
+  cd $TARGET
+  bin/test
+
+bump_submodule: |
+  #!/bin/bash -e
+
+  set -x
+
+  bump_submodule() {
+    PARENT_REPO_DIR=$1
+    SUBMODULE_PATH_WITHIN_PARENT=$2
+    LOCAL_REMOTE_URL=$3
+    LOCAL_REMOTE_BRANCH=$4
+
+    cd $PARENT_REPO_DIR
+
+    git submodule update --init --recursive
+    git status
+
+    if ! git diff-index --quiet HEAD; then
+      git status
+      echo "uncommitted changes, aborting" >&2
+      exit 1
+    fi
+
+    pushd $SUBMODULE_PATH_WITHIN_PARENT
+    if git remote -v | grep -w '^local' >/dev/null; then
+      git remote remove local
+    fi
+
+    git remote add local $LOCAL_REMOTE_URL
+    git fetch local
+
+    SHA_FROM=`git rev-parse HEAD`
+    git checkout local/$LOCAL_REMOTE_BRANCH
+    SHA_TO=`git rev-parse HEAD`
+    SUBMODULE_LOG=`git log --oneline $SHA_FROM...$SHA_TO`
+
+    popd
+
+    if ! git diff-index --quiet HEAD; then
+      git add $SUBMODULE_PATH_WITHIN_PARENT
+
+      git config user.email "cf-loggregator@pivotal.io"
+      git config user.name "Loggregator CI"
+      git commit -m "bump `basename $LOCAL_REMOTE_URL`
+
+  $SUBMODULE_LOG
+
+  automatic promotion by CI workflow"
+    fi
+  }
+
+
+  WORKSPACE=$(pwd)
+
+  if [ -z "$PARENT" ]; then
+    echo "must specify \$PARENT" >&2
+    exit 1
+  fi
+
+  if [ -z "$SUBMODULE_PATH" ]; then
+    echo "must specify \$SUBMODULE_PATH" >&2
+    exit 1
+  fi
+
+  if [ -z "$SUBMODULE" ]; then
+    echo "must specify \$SUBMODULE" >&2
+    exit 1
+  fi
+
+  # Add github.com to known_hosts to prevent any interactive prompts
+  mkdir -p ~/.ssh/
+  ssh-keyscan github.com >> ~/.ssh/known_hosts
+  cp -r $WORKSPACE/$PARENT/. $WORKSPACE/$OUTPUT
+  bump_submodule $WORKSPACE/$OUTPUT $SUBMODULE_PATH $WORKSPACE/$SUBMODULE master
+statsd_units: |
+  #!/bin/bash
+
+  set -e -x
+
+  rm -rf statsd-injector-release/src/github.com/cloudfoundry/statsd-injector/{*,.git}
+  cp -r statsd-injector/. statsd-injector-release/src/github.com/cloudfoundry/statsd-injector/
+
+  pushd statsd-injector-release
+    export GOPATH="$PWD"
+    export PATH="$GOPATH/bin:$PATH"
+    go install github.com/onsi/ginkgo/ginkgo
+    ginkgo -r -race -randomizeAllSpecs ./src/github.com/cloudfoundry/statsd-injector
+  popd
+create_final_release: |
+  #!/bin/bash
+
+  set -e -x
+
+  new_version=$(cat version/version)
+  tag_name="v$new_version"
+
+  pushd $RELEASE
+    cat << EOF > config/private.yml
+  ---
+  blobstore:
+    provider: s3
+    options:
+      bucket_name: $S3_BUCKET
+      access_key_id: $S3_ACCESS_KEY
+      secret_access_key: $S3_SECRET_KEY
+  EOF
+
+    bosh -n create-release --final --version $new_version
+    git config user.email "cf-loggregator@pivotal.io"
+    git config user.name "Loggregator CI"
+    git add .
+    git commit -m "Creating final release"
+  popd
+
+  cp -r "${RELEASE}/." "${OUTPUT}/"
+upload_blobs: |
+  #!/bin/bash
+  set -ex
+
+  pushd "${RELEASE}"
+    cat << EOF > config/private.yml
+  ---
+  blobstore:
+    provider: s3
+    options:
+      bucket_name: $S3_BUCKET
+      access_key_id: $S3_ACCESS_KEY
+      secret_access_key: $S3_SECRET_KEY
+  EOF
+
+    bosh -n sync-blobs
+
+    ./scripts/blobify
+    bosh -n upload-blobs
+  popd
+
+  cp -r "${RELEASE}/." "${OUTPUT}/"
+update_submodule: |
+  #!/bin/bash
+
+  set -ex
+
+  pushd "${CHILD}"
+    target_sha="$(git rev-parse HEAD)"
+  popd
+
+  pushd "${PARENT}/${CHILD_PATH}"
+    git fetch
+    git checkout "$target_sha"
+  popd
+
+  cp -r "${PARENT}/." "${OUTPUT}/"
+commit: |
+  #!/bin/bash
+  set -ex
+
+  pushd "${SOURCE}"
+    git config user.email "cf-loggregator@pivotal.io"
+    git config user.name "Loggregator CI"
+    git add ${PATHS}
+    git commit -m "$COMMIT_MESSAGE"
+  popd
+
+  cp -r "${SOURCE}/." "${OUTPUT}/"

@@ -1,0 +1,1190 @@
+resources:
+- name: wats
+  type: git
+  source:
+    uri: https://github.com/cloudfoundry/wats
+    branch: master
+
+- name: cats
+  type: git
+  source:
+    uri: https://github.com/cloudfoundry/cf-acceptance-tests
+    branch: master
+
+- name: cf-deployment
+  type: git
+  source:
+    uri: https://github.com/cloudfoundry/cf-deployment
+    branch: develop
+
+- name: consul-release
+  type: bosh-io-release
+  source:
+    repository: cloudfoundry-incubator/consul-release
+
+- name: deployments-loggregator
+  type: git
+  source:
+    uri: git@github.com:cloudfoundry/deployments-loggregator.git
+    branch: master
+    private_key: {{deployments-loggregator-key}}
+
+- name: etcd-release
+  type: bosh-io-release
+  source:
+    repository: cloudfoundry-incubator/etcd-release
+
+- name: gcp-stemcell
+  type: bosh-io-stemcell
+  source:
+    name: bosh-google-kvm-ubuntu-trusty-go_agent
+
+- name: loggregator-develop
+  type: git
+  source: &loggregator_develop
+    uri: git@github.com:cloudfoundry/loggregator.git
+    branch: develop
+    private_key: {{loggregator-key}}
+    ignore_paths:
+    - .final_builds
+    - releases
+
+- name: loggregator-develop-with-blobs
+  type: git
+  source: *loggregator_develop
+
+- name: loggregator-master
+  type: git
+  source:
+    disable_ci_skip: true
+    uri: git@github.com:cloudfoundry/loggregator.git
+    branch: master
+    private_key: {{loggregator-key}}
+    ignore_paths:
+    - .final_builds
+    - releases
+
+- name: loggregator-final-release-develop
+  type: git
+  source:
+    uri: git@github.com:cloudfoundry/loggregator.git
+    branch: develop
+    private_key: {{loggregator-key}}
+    ignore_paths:
+    - .final_builds
+    - releases
+
+- name: loggregator-final-release-master
+  type: git
+  source:
+    uri: git@github.com:cloudfoundry/loggregator.git
+    branch: master
+    private_key: {{loggregator-key}}
+    ignore_paths:
+    - .final_builds
+    - releases
+
+- name: loggregator-github-release-drafts
+  type: github-release
+  source:
+    user: cloudfoundry
+    repository: loggregator
+    access_token: {{access-token}}
+    drafts: true
+
+- name: loggregator-release-elect
+  type: git
+  source:
+    uri: git@github.com:cloudfoundry/loggregator.git
+    branch: release-elect
+    private_key: {{loggregator-key}}
+    ignore_paths:
+    - .final_builds
+    - releases
+
+- name: dropsonde-protocol
+  type: git
+  source:
+    uri: https://github.com/cloudfoundry/dropsonde-protocol.git
+    branch: master
+
+- name: dropsonde
+  type: git
+  source:
+    uri: https://github.com/cloudfoundry/dropsonde.git
+    branch: master
+
+- name: noaa
+  type: git
+  source:
+    uri: https://github.com/cloudfoundry/noaa.git
+    branch: master
+
+- name: loggregatorlib
+  type: git
+  source:
+    uri: https://github.com/cloudfoundry/loggregatorlib.git
+    branch: master
+
+- name: sonde-go
+  type: git
+  source:
+    uri: git@github.com:cloudfoundry/sonde-go.git
+    branch: master
+    private_key: {{sonde-go-key}}
+
+jobs:
+- name: run-tests
+  public: true
+  plan:
+  - get: loggregator
+    resource: loggregator-develop
+    trigger: true
+  - task: run-tests
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source:
+        - repository: loggregator/go17
+      inputs:
+      - name: loggregator
+      run:
+        path: bash
+        args:
+        - -c
+        - |
+          #!/bin/bash
+          set -ex
+
+          cd loggregator
+
+          export GOPATH=`pwd`
+          export TERM=xterm
+
+          go version
+          go install github.com/onsi/ginkgo/ginkgo
+          go get github.com/mattn/goveralls
+
+          scripts/test
+
+- name: run-windows-tests
+  public: true
+  serial: true
+  plan:
+  - get: loggregator
+    resource: loggregator-develop
+    trigger: true
+  - task: build-windows-test-binary
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source:
+        - repository: loggregator/go17
+      inputs:
+      - name: loggregator
+      outputs:
+      - name: binaries
+      - name: test-binaries
+      run:
+        path: bash
+        args:
+        - -c
+        - |
+          #!/bin/bash
+          set -ex
+
+          cd loggregator
+          export GOPATH=$PWD
+          export GOOS=windows
+          function munge {
+            echo $1 | tr '/' '_'
+          }
+          for pkg in $(go list metron/...); do
+            go test -c -o ../test-binaries/$(munge $pkg)_test.exe $pkg
+          done
+          go build -o ../binaries/metron.exe metron
+  - task: run-windows-tests
+    config:
+      platform: windows
+      inputs:
+      - name: binaries
+      - name: test-binaries
+      run:
+        path: powershell
+        args:
+        - "-command"
+        - |
+          trap {
+            write-error $_
+            exit 1
+          }
+
+          $env:SKIP_BUILD = "true"
+          $env:METRON_BUILD_PATH = "binaries\metron.exe"
+
+          # Run all test binaries
+          Get-ChildItem -Filter test-binaries\*.exe | ForEach {
+            &$_.Fullname /s
+            if ($LastExitCode -ne 0) {
+              throw "test failed"
+            }
+          }
+
+- name: upload-blobs
+  plan:
+  - get: loggregator
+    resource: loggregator-develop
+    passed:
+    - run-tests
+    - run-windows-tests
+    trigger: true
+  - task: uploading blobs
+    params:
+      S3_ACCESS_KEY: {{s3-access-key}}
+      S3_SECRET_KEY: {{s3-secret-key}}
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source:
+        - repository: loggregator/bosh20
+      inputs:
+      - name: loggregator
+      outputs:
+      - name: loggregator-with-updated-blobs
+      run:
+        path: bash
+        args:
+          - -c
+          - |
+            #!/bin/bash
+            set -ex
+
+            WORKSPACE=${PWD}
+            export GOPATH=${WORKSPACE}/loggregator/
+
+            pushd "${GOPATH}"
+              cat << EOF > config/private.yml
+            ---
+            blobstore:
+              provider: s3
+              options:
+                bucket_name: loggregator-release-blobs
+                access_key_id: $S3_ACCESS_KEY
+                secret_access_key: $S3_SECRET_KEY
+                credentials_source: static
+            EOF
+
+              bosh -n sync-blobs
+
+              ./scripts/blobify
+              bosh -n upload-blobs
+              git config user.email "cf-loggregator@pivotal.io"
+              git config user.name "Loggregator CI"
+              (git add config/blobs.yml && git commit -m "update the blobs [ci skip]") || echo "No changes to commit"
+            popd
+
+            rsync -aci $GOPATH $WORKSPACE/loggregator-with-updated-blobs
+  - put: loggregator-develop-with-blobs
+    params:
+      repository: loggregator-with-updated-blobs
+
+- name: upload-stemcell
+  plan:
+  - aggregate:
+    - get: gcp-stemcell
+      trigger: true
+    - get: deployments-loggregator
+  - task: load-stemcell
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source:
+        - repository: loggregator/bosh20
+      inputs:
+      - name: gcp-stemcell
+      - name: deployments-loggregator
+      params:
+        BOSH_ENV: 10.0.0.6
+        BOSH_USERNAME: {{bosh-username}}
+        BOSH_PASSWORD: {{bosh-password}}
+      run:
+        path: bash
+        args:
+        - -c
+        - |
+          #!/bin/bash
+
+          set -ex
+
+          cd gcp-stemcell
+
+          bosh -n alias-env coconut -e $BOSH_ENV --ca-cert ../deployments-loggregator/gcp/certs/bosh/ca.pem
+          bosh -n -e coconut log-in --client=$BOSH_USERNAME --client-secret=$BOSH_PASSWORD
+
+          for stemcell in $(find . -name '*.tgz')
+          do
+            bosh -e coconut upload-stemcell $stemcell
+          done
+
+- name: cf-deploy
+  serial: true
+  serial_groups:
+  - bosh-cf-wats
+  - bosh-cf-cats
+  plan:
+  - aggregate:
+    - get: loggregator
+      resource: loggregator-develop-with-blobs
+      trigger: true
+      passed:
+      - upload-blobs
+    - get: cf-deployment
+      trigger: true
+    - get: deployments-loggregator
+      trigger: true
+  - task: build-dev-release
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source:
+        - repository: loggregator/bosh20
+      inputs:
+      - name: loggregator
+      - name: deployments-loggregator
+      params:
+        BOSH_ENV: 10.0.0.6
+        BOSH_USERNAME: {{bosh-username}}
+        BOSH_PASSWORD: {{bosh-password}}
+      run:
+        path: bash
+        args:
+        - -c
+        - |
+          #!/bin/bash
+          set -ex
+
+          cd loggregator
+
+          bosh -n create-release
+          bosh -n alias-env coconut -e $BOSH_ENV --ca-cert ../deployments-loggregator/gcp/certs/bosh/ca.pem
+          bosh -n -e coconut log-in --client=$BOSH_USERNAME --client-secret=$BOSH_PASSWORD
+          bosh -n -e coconut upload-release --rebase
+  - task: set-cloud-config
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source:
+        - repository: loggregator/bosh20
+      inputs:
+      - name: deployments-loggregator
+      params:
+        BOSH_ENV: 10.0.0.6
+        BOSH_USERNAME: {{bosh-username}}
+        BOSH_PASSWORD: {{bosh-password}}
+      run:
+        path: bash
+        args:
+        - -c
+        - |
+          #!/bin/bash
+          set -ex
+
+          cd deployments-loggregator/gcp/coconut
+
+          bosh -n alias-env coconut -e $BOSH_ENV --ca-cert ../certs/bosh/ca.pem
+          bosh -n -e coconut log-in --client=$BOSH_USERNAME --client-secret=$BOSH_PASSWORD
+          bosh -n -e coconut update-cloud-config cloud-config.yml
+  - task: deploy-cf
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source:
+        - repository: loggregator/bosh20
+      inputs:
+      - name: cf-deployment
+      - name: deployments-loggregator
+      params:
+        BOSH_ENV: 10.0.0.6
+        BOSH_USERNAME: {{bosh-username}}
+        BOSH_PASSWORD: {{bosh-password}}
+      run:
+        path: bash
+        args:
+        - -c
+        - |
+          #!/bin/bash
+          set -ex
+
+          cd cf-deployment
+
+          bosh -n alias-env coconut -e $BOSH_ENV --ca-cert ../deployments-loggregator/gcp/certs/bosh/ca.pem
+          bosh -n -e coconut log-in --client=$BOSH_USERNAME --client-secret=$BOSH_PASSWORD
+          export DEPLOYMENT=../deployments-loggregator/gcp/coconut
+          # TODO: remove skip-drain in a few weeks once issues are resolved
+          # with consul_agent_windows
+          bosh -n -e coconut -d cf deploy cf-deployment.yml -o opsfiles/tcp-routing-gcp.yml -o opsfiles/windows-cell.yml -o $DEPLOYMENT/cf-ops.yml -l $DEPLOYMENT/cf-vars.yml --skip-drain=windows-cell
+
+- name: loggregator-deploy
+  serial: true
+  serial_groups:
+  - bosh-loggregator
+  plan:
+  - aggregate:
+    - get: consul-release
+      trigger: false
+    - get: etcd-release
+      trigger: false
+    - get: loggregator
+      resource: loggregator-develop-with-blobs
+      passed:
+      - upload-blobs
+      trigger: true
+    - get: deployments-loggregator
+      trigger: true
+  - task: upload-loggregator
+    config:
+      image_resource:
+        type: docker-image
+        source:
+        - repository: loggregator/bosh20
+      platform: linux
+      inputs:
+        - name: deployments-loggregator
+        - name: consul-release
+        - name: etcd-release
+        - name: loggregator
+      params:
+        BOSH_ENV: 10.0.0.6
+        BOSH_USERNAME: {{bosh-username}}
+        BOSH_PASSWORD: {{bosh-password}}
+      run:
+        path: bash
+        args:
+          - -c
+          - |
+            #!/bin/bash
+            set -eux
+            loggregator_dir="$PWD/loggregator"
+            bosh -n alias-env coconut -e "$BOSH_ENV" --ca-cert "$PWD/deployments-loggregator/gcp/certs/bosh/ca.pem"
+            bosh -e coconut -n log-in --client="$BOSH_USERNAME" --client-secret="$BOSH_PASSWORD"
+
+            for release in $(find consul-release -name '*.tgz')
+            do
+              bosh -e coconut upload-release $release
+            done
+
+            for release in $(find etcd-release -name '*.tgz')
+            do
+              bosh -e coconut upload-release $release
+            done
+
+
+            pushd $loggregator_dir
+                bosh create-release --name=loggregator --force
+                bosh -e coconut upload-release --rebase
+            popd
+
+  - task: deploy-loggregator
+    config:
+      image_resource:
+        type: docker-image
+        source:
+        - repository: loggregator/bosh20
+      platform: linux
+      inputs:
+        - name: deployments-loggregator
+        - name: loggregator
+      params:
+        DEPLOYMENT_NAME: gcp/coconut
+        BOSH_ENV: 10.0.0.6
+        BOSH_USERNAME: {{bosh-username}}
+        BOSH_PASSWORD: {{bosh-password}}
+      run:
+        path: bash
+        args:
+          - -c
+          - |
+            #!/bin/bash
+            set -eux
+
+            loggregator_dir="$PWD/loggregator"
+            deployment_dir="$PWD/deployments-loggregator/$DEPLOYMENT_NAME"
+
+            bosh -n alias-env coconut -e "$BOSH_ENV" --ca-cert "$PWD/deployments-loggregator/gcp/certs/bosh/ca.pem"
+            bosh -e coconut -n log-in --client="$BOSH_USERNAME" --client-secret="$BOSH_PASSWORD"
+            bosh -n -e coconut -d loggregator deploy \
+              --vars-file "$deployment_dir/loggregator-vars.yml" \
+              --ops-file "$deployment_dir/loggregator-ops.yml" \
+              "$loggregator_dir/templates/loggregator.yml"
+
+- name: cats
+  serial: true
+  serial_groups:
+  - bosh-cf-cats
+  plan:
+  - aggregate:
+    - get: cats
+      trigger: true
+    - get: loggregator-develop-with-blobs
+      trigger: true
+      passed:
+      - cf-deploy
+  - task: run-cats
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source:
+        - repository: loggregator/bosh20
+      inputs:
+      - name: cats
+      params:
+        NODES: 1
+        CONFIG_DATA: |
+          {
+            "api": "api.coconut.cf-app.com",
+            "admin_user": {{cf-username}},
+            "admin_password": {{cf-password}},
+            "apps_domain": "coconut.cf-app.com",
+            "skip_ssl_validation": false,
+            "default_timeout": 120,
+            "use_http": true,
+            "backend": "diego",
+            "include_apps": true,
+            "include_backend_compatibility": false,
+            "include_detect": false,
+            "include_docker": false,
+            "include_ssh": false,
+            "include_internet_dependent": true,
+            "include_privileged_container_support": false,
+            "include_route_services": false,
+            "include_routing": true,
+            "include_security_groups": false,
+            "include_container_networking": true,
+            "include_services": false,
+            "include_sso": true,
+            "include_zipkin": false,
+            "include_tasks": false,
+            "include_v3": false
+          }
+      run:
+        path: bash
+        args:
+        - -c
+        - |
+          #!/bin/bash
+          set -ex
+
+          export CONFIG="$PWD/config.json"
+          echo "$CONFIG_DATA" > $CONFIG
+          export GOPATH="$PWD/tests"
+
+          CATS_PATH=$GOPATH/src/github.com/cloudfoundry/cf-acceptance-tests
+          mkdir -p $(dirname $CATS_PATH)
+          cp -r $PWD/cats $CATS_PATH
+          cd $CATS_PATH
+
+          ./bin/test \
+          -keepGoing \
+          -randomizeAllSpecs \
+          -skipPackage=helpers \
+          -slowSpecThreshold=120 \
+          -nodes="${NODES}"
+
+- name: lats
+  serial: true
+  serial_groups:
+  - bosh-loggregator
+  plan:
+  - aggregate:
+    - get: loggregator
+      resource: loggregator-develop-with-blobs
+      passed:
+      - loggregator-deploy
+      trigger: true
+    - get: deployments-loggregator
+      trigger: false
+  - task: run-lats
+    config:
+      image_resource:
+        type: docker-image
+        source:
+        - repository: loggregator/bosh20
+      platform: linux
+      inputs:
+        - name: deployments-loggregator
+      params:
+        BOSH_ENV: 10.0.0.6
+        BOSH_USERNAME: {{bosh-username}}
+        BOSH_PASSWORD: {{bosh-password}}
+      run:
+        path: bash
+        args:
+          - -c
+          - |
+            #!/bin/bash
+            set -eux
+            bosh -n alias-env coconut -e "$BOSH_ENV" --ca-cert "$PWD/deployments-loggregator/gcp/certs/bosh/ca.pem"
+            bosh -e coconut -n log-in --client="$BOSH_USERNAME" --client-secret="$BOSH_PASSWORD"
+            bosh -e coconut -d loggregator run-errand loggregator-acceptance-tests --keep-alive
+
+- name: wats
+  serial: true
+  serial_groups:
+  - bosh-cf-wats
+  plan:
+  - aggregate:
+    - get: wats
+      trigger: true
+    - get: loggregator-develop-with-blobs
+      trigger: true
+      passed:
+      - cf-deploy
+  - task: run-wats
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source:
+        - repository: loggregator/bosh20
+      inputs:
+      - name: wats
+      params:
+        ADMIN_PASSWORD: {{cf-password}}
+        ADMIN_USER: {{cf-username}}
+        API: "api.coconut.cf-app.com"
+        APPS_DOMAIN: "coconut.cf-app.com"
+        NUM_WIN_CELLS: 1
+        SOCKET_ADDRESS_FOR_SECURITY_GROUP_TEST: 10.200.0.6:8080
+        DOPPLER_URL: wss://doppler.coconut.cf-app.com:443
+      run:
+        path: wats/scripts/run_wats.sh
+
+
+- name: promotion
+  serial: true
+  plan:
+  - aggregate:
+    - get: loggregator-release-elect
+      trigger: false
+    - get: loggregator
+      resource: loggregator-develop-with-blobs
+      trigger: true
+      passed:
+      - lats
+      - cats
+      - wats
+  - task: promote
+    config:
+      image_resource:
+        type: docker-image
+        source:
+        - repository: loggregator/bosh20
+      platform: linux
+      inputs:
+          - name: loggregator
+          - name: loggregator-release-elect
+      outputs:
+          - name: promote-develop
+      run:
+        path: bash
+        args:
+          - -c
+          - |
+            #!/bin/bash -ex
+            mkdir -p ~/.ssh/
+            ssh-keyscan github.com >> ~/.ssh/known_hosts
+            pushd loggregator
+              git checkout -b merge-branch
+            popd
+            pushd loggregator-release-elect
+              git remote add -f develop-repo ../loggregator
+              git checkout release-elect
+              git merge -v "develop-repo/merge-branch" -m "Merging develop into release-elect"
+            popd
+            rsync -avci loggregator-release-elect/ promote-develop/
+  - put: loggregator-release-elect
+    params:
+      repository: promote-develop
+      rebase: false
+
+- name: create-final-release
+  serial: true
+  plan:
+  - aggregate:
+    - get: loggregator-develop
+      trigger: false
+    - get: loggregator-master
+      resource: loggregator-master
+  - task: create-final-release
+    config:
+      image_resource:
+        type: docker-image
+        source:
+        - repository: loggregator/bosh20
+      platform: linux
+      params:
+        S3_ACCESS_KEY: {{s3-access-key}}
+        S3_SECRET_KEY: {{s3-secret-key}}
+        SSH_KEY: {{loggregator-key}}
+      inputs:
+      - name: loggregator-develop
+      - name: loggregator-master
+      outputs:
+      - name: loggregator-release
+      - name: create-final-release
+      run:
+        path: bash
+        args:
+          - -c
+          - |
+            #!/bin/bash
+            set -ex
+
+            cd loggregator-master
+            git checkout master
+            cat << EOF > config/private.yml
+            ---
+            blobstore:
+              provider: s3
+              options:
+                bucket_name: loggregator-release-blobs
+                access_key_id: $S3_ACCESS_KEY
+                secret_access_key: $S3_SECRET_KEY
+                credentials_source: static
+            EOF
+
+            new_version="73.0.1"
+            tag_name="v$new_version"
+
+            bosh -n create-release --final --tarball ../loggregator-release/release.tgz --version $new_version
+            echo "$(git rev-parse HEAD)" > ../loggregator-release/commitish
+            git config user.email "cf-loggregator@pivotal.io"
+            git config user.name "Loggregator CI"
+            git add .
+            git commit -m "Creating final release\
+
+
+            [ci skip]"
+
+            BRANCH=$(git rev-parse --abbrev-ref HEAD)
+            tag_commit=$(git rev-parse HEAD)
+
+            cd ../loggregator-develop
+
+            eval `ssh-agent -s`
+            mkdir -p ~/.ssh
+            echo -e "Host github.com\n\tStrictHostKeyChecking no\n" >> ~/.ssh/config
+            ssh-add <(echo "$SSH_KEY")
+            git remote add -f master-repo ../loggregator-master
+            git checkout develop
+            git pull
+            git config user.email "cf-loggregator@pivotal.io"
+            git config user.name "Loggregator CI"
+            git merge -m "Merge final release artifacts\
+
+
+            [ci skip]" -v "master-repo/$BRANCH"
+
+            git tag "$tag_name" $tag_commit
+
+            cd ..
+            cp -r loggregator-develop loggregator-master create-final-release
+  - put: loggregator-final-release-master
+    params:
+      repository: create-final-release/loggregator-master
+      rebase: false
+  - put: loggregator-final-release-develop
+    params:
+      repository: create-final-release/loggregator-develop
+      rebase: false
+  - task: create-github-release
+    config:
+      image_resource:
+        type: docker-image
+        source:
+        - repository: loggregator/go17
+      platform: linux
+      inputs:
+      - name: loggregator-release
+      outputs:
+      - name: github-release
+      run:
+        path: bash
+        args:
+          - -c
+          - |
+            #!/bin/bash
+            set -ex
+
+            cd loggregator-release
+            tarball=$(ls *.tgz)
+            version=$(echo $tarball | sed 's|loggregator-\([0-9]*\).tgz|\1|')
+
+            cp * ../github-release
+            cd ../github-release
+
+            echo "Loggregator $version" > name
+            echo "v$version" > tag
+            echo "TBD" > body
+  - put: loggregator-github-release-drafts
+    params:
+      name: github-release/name
+      tag: github-release/tag
+      commitish: github-release/commitish
+      body: github-release/body
+      globs:
+      - github-release/*.tgz
+
+- name: dropsonde-unit-tests
+  serial: true
+  plan:
+  - aggregate:
+    - get: dropsonde
+      trigger: true
+    - get: sonde-go
+      trigger: true
+  - task: unit-tests
+    config:
+      image_resource:
+        type: docker-image
+        source:
+        - repository: loggregator/go17
+      platform: linux
+      inputs:
+      - name: dropsonde
+      run:
+        path: bash
+        args:
+        - -c
+        - {{dropsonde_unit_tests}}
+  - get: loggregator
+    resource: loggregator-develop
+  - task: bump-dropsonde-in-loggregator
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source:
+        - repository: loggregator/go17
+      inputs:
+      - name: dropsonde
+      - name: loggregator
+      outputs:
+      - name: bumped-loggregator
+      params:
+        PARENT: loggregator
+        OUTPUT: bumped-loggregator
+        SUBMODULE: dropsonde
+        SUBMODULE_PATH: src/github.com/cloudfoundry/dropsonde
+      run:
+        path: bash
+        args:
+        - -c
+        - {{bump_submodule}}
+
+  - put: loggregator-develop
+    params:
+      repository: bumped-loggregator
+      rebase: true
+
+- name: noaa-unit-tests
+  serial: true
+  plan:
+  - aggregate:
+    - get: noaa
+      trigger: true
+    - get: sonde-go
+      trigger: true
+  - task: unit-tests
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source:
+          - repository: loggregator/go17
+      inputs:
+        - name: noaa
+      run:
+        path: bash
+        args:
+        - -c
+        - {{noaa_unit_tests}}
+
+  - get: loggregator
+    resource: loggregator-develop
+  - task: bump-noaa-in-loggregator
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source:
+          repository: loggregator/go17
+      inputs:
+      - name: noaa
+      - name: loggregator
+      outputs:
+      - name: bumped-loggregator
+      params:
+        PARENT: loggregator
+        OUTPUT: bumped-loggregator
+        SUBMODULE: noaa
+        SUBMODULE_PATH: src/github.com/cloudfoundry/noaa
+      run:
+        path: bash
+        args:
+        - -c
+        - {{bump_submodule}}
+
+  - put: loggregator-develop
+    params:
+      repository: bumped-loggregator
+      rebase: true
+
+- name: loggregatorlib-unit-tests
+  serial: true
+  plan:
+  - aggregate:
+    - get: loggregatorlib
+      trigger: true
+    - get: loggregator-raw
+      resource: loggregator-develop
+      trigger: false
+    - get: sonde-go
+      trigger: true
+  - task: get-testify
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source:
+          repository: loggregator/go17
+      inputs:
+      - name: loggregator-raw
+      outputs:
+      - name: loggregator
+      run:
+        path: bash
+        args:
+        - -c
+        - |
+          #!/bin/bash -e
+          cp -r loggregator-raw/. loggregator/
+          export GOPATH=$PWD/loggregator
+          go get github.com/stretchr/testify
+
+  - task: unit-tests
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source:
+          repository: loggregator/go17
+      inputs:
+      - name: loggregator
+      - name: loggregatorlib
+      run:
+        path: bash
+        args:
+        - -c
+        - {{loggregatorlib_unit_tests}}
+  - task: bump-loggregatorlib-in-loggregator
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source:
+          repository: loggregator/go17
+      inputs:
+      - name: loggregatorlib
+      - name: loggregator
+      outputs:
+      - name: bumped-loggregator
+      params:
+        PARENT: loggregator
+        OUTPUT: bumped-loggregator
+        SUBMODULE: loggregatorlib
+        SUBMODULE_PATH: src/github.com/cloudfoundry/loggregatorlib
+      run:
+        path: bash
+        args:
+        - -c
+        - {{bump_submodule}}
+  - put: loggregator-develop
+    params:
+      repository: bumped-loggregator
+      rebase: true
+
+- name: sonde-go-generate
+  serial: true
+  plan:
+  - aggregate:
+    - get: dropsonde-protocol
+      trigger: true
+    - get: sonde-go
+      trigger: false
+    - get: loggregator
+      resource: loggregator-develop
+      trigger: false
+  - task: generate
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source:
+          repository: loggregator/protoc
+      inputs:
+      - name: loggregator
+      - name: sonde-go
+      - name: dropsonde-protocol
+      outputs:
+      - name: bumped-sonde-go
+      run:
+        path: bash
+        args:
+        - -c
+        - |
+          #!/bin/bash -e
+
+          set -x
+
+          export GOPATH=$(pwd)
+          export PATH=$PATH:$GOPATH/bin
+
+          mkdir -p $GOPATH/src/github.com/cloudfoundry/
+          ln -s $GOPATH/sonde-go $GOPATH/src/github.com/cloudfoundry/
+          mkdir -p $GOPATH/src/github.com/gogo
+          ln -s $GOPATH/loggregator/src/github.com/gogo/protobuf $GOPATH/src/github.com/gogo/protobuf
+
+          cd $GOPATH/src/github.com/cloudfoundry/sonde-go
+
+          pushd definitions
+            SHA_FROM=`git rev-parse HEAD`
+          popd
+
+          rm -rf definitions && cp -r $GOPATH/dropsonde-protocol definitions
+
+          pushd definitions
+            SHA_TO=`git rev-parse HEAD`
+            SUBMODULE_LOG=`git log --oneline $SHA_FROM...$SHA_TO`
+          popd
+
+          export LD_LIBRARY_PATH=/usr/local/lib
+
+          ./generate-go.sh
+
+          git config user.name "Loggregator CI"
+          git config user.email "cf-loggregator@pivotal.io"
+
+          git add events definitions
+
+          set +e
+          git diff --quiet
+          git diff-index HEAD --exit-code
+          if [ $? != 0 ] ; then
+            set -e
+            git commit -m "Regenerate Go code from new version of dropsonde-protocol
+
+          $SUBMODULE_LOG
+
+          automatic promotion by CI workflow"
+          fi
+
+          rsync -ac ./ $GOPATH/bumped-sonde-go/
+
+  - put: sonde-go
+    params:
+      repository: bumped-sonde-go
+  - aggregate:
+    - get: dropsonde
+      trigger: false
+    - get: noaa
+      trigger: false
+  - aggregate:
+    - task: dropsonde-unit-tests
+      config:
+        image_resource:
+          type: docker-image
+          source:
+          - repository: loggregator/go17
+        platform: linux
+        inputs:
+        - name: dropsonde
+        run:
+          path: bash
+          args:
+          - -c
+          - {{dropsonde_unit_tests}}
+    - task: noaa-unit-tests
+      config:
+        platform: linux
+        image_resource:
+          type: docker-image
+          source:
+            - repository: loggregator/go17
+        inputs:
+          - name: noaa
+        run:
+          path: bash
+          args:
+          - -c
+          - {{noaa_unit_tests}}
+  - task: bump-sonde-go-in-loggregator
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source:
+          repository: loggregator/go17
+      inputs:
+      - name: bumped-sonde-go
+      - name: loggregator
+      outputs:
+      - name: bumped-loggregator
+      params:
+        PARENT: loggregator
+        OUTPUT: bumped-loggregator
+        SUBMODULE: bumped-sonde-go
+        SUBMODULE_PATH: src/github.com/cloudfoundry/sonde-go
+      run:
+        path: bash
+        args:
+        - -c
+        - {{bump_submodule}}
+  - put: loggregator-develop
+    params:
+      repository: bumped-loggregator
+      rebase: true
+
+
+groups:
+- name: loggregator
+  jobs:
+  - run-tests
+  - run-windows-tests
+  - upload-stemcell
+  - cf-deploy
+  - cats
+  - wats
+  - loggregator-deploy
+  - lats
+  - promotion
+  - upload-blobs
+
+- name: submodules
+  jobs:
+  - dropsonde-unit-tests
+  - loggregatorlib-unit-tests
+  - noaa-unit-tests
+  - sonde-go-generate
+
+- name: final-release
+  jobs:
+  - create-final-release

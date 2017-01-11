@@ -1,0 +1,173 @@
+resources:
+- name: statsd-injector-release
+  type: git
+  source:
+    uri: git@github.com:cloudfoundry/statsd-injector-release
+    branch: master
+    private_key: {{statsd-key}}
+    ignore_paths:
+    - .final_builds
+    - releases
+
+- name: statsd-injector
+  type: git
+  source:
+    uri: git@github.com:cloudfoundry/statsd-injector
+    private_key: {{statsd-key}}
+
+- name: version
+  type: semver
+  source:
+    initial_version: 1.0.0
+    bucket: statsd-injector-release-blobs
+    key: version
+    access_key_id: {{s3-access-key-id}}
+    secret_access_key: {{s3-secret-access-key}}
+    region_name: us-west-2
+
+jobs:
+- name: unit-tests
+  serial: true
+  plan:
+  - aggregate:
+    - get: statsd-injector-release
+      trigger: false
+    - get: statsd-injector
+      trigger: true
+  - task: run-units
+    config:
+      image_resource:
+        type: docker-image
+        source:
+        - repository: loggregator/go17
+      platform: linux
+      inputs:
+      - name: statsd-injector-release
+      - name: statsd-injector
+      run:
+        path: bash
+        args:
+        - -c
+        - {{statsd_units}}
+
+- name: bump-release-submodule
+  serial: true
+  plan:
+  - aggregate:
+    - get: statsd-injector-release
+      trigger: false
+    - get: statsd-injector
+      passed:
+      - unit-tests
+      trigger: true
+  - task: update-submodule
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source:
+          repository: loggregator/go17
+      inputs:
+      - name: statsd-injector-release
+      - name: statsd-injector
+      outputs:
+      - name: updated-statsd-injector-release
+      params:
+        PARENT: statsd-injector-release
+        OUTPUT: updated-statsd-injector-release
+        CHILD: statsd-injector
+        CHILD_PATH: src/github.com/cloudfoundry/statsd-injector
+      run:
+        path: bash
+        args:
+        - -c
+        - {{update_submodule}}
+  - task: upload-blobs
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source:
+          repository: loggregator/bosh20
+      inputs:
+      - name: updated-statsd-injector-release
+      outputs:
+      - name: blobified-statsd-injector-release
+      params:
+        RELEASE: updated-statsd-injector-release
+        S3_BUCKET: statsd-injector-release-blobs
+        S3_ACCESS_KEY: {{s3-access-key-id}}
+        S3_SECRET_KEY: {{s3-secret-access-key}}
+        OUTPUT: blobified-statsd-injector-release
+      run:
+        path: bash
+        args:
+        - -c
+        - {{upload_blobs}}
+  - task: commit
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source:
+          repository: loggregator/go17
+      inputs:
+      - name: blobified-statsd-injector-release
+      outputs:
+      - name: bumped-statsd-injector-release
+      params:
+        SOURCE: blobified-statsd-injector-release
+        PATHS: config/blobs.yml src/github.com/cloudfoundry/statsd-injector
+        COMMIT_MESSAGE: "Bump statsd-injector and update blobs"
+        OUTPUT: bumped-statsd-injector-release
+      run:
+        path: bash
+        args:
+        - -c
+        - {{commit}}
+  - put: statsd-injector-release
+    params:
+      repository: bumped-statsd-injector-release
+      rebase: false
+
+- name: create-final-release
+  serial: true
+  plan:
+  - aggregate:
+    - get: version
+      params:
+        bump: patch
+    - get: statsd-injector-release
+      trigger: true
+      passed:
+      - bump-release-submodule
+  - task: create-final-release
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source:
+          repository: loggregator/bosh20
+      inputs:
+      - name: version
+      - name: statsd-injector-release
+      outputs:
+      - name: final-statsd-injector-release
+      params:
+        RELEASE: statsd-injector-release
+        S3_BUCKET: statsd-injector-release-blobs
+        S3_ACCESS_KEY: {{s3-access-key-id}}
+        S3_SECRET_KEY: {{s3-secret-access-key}}
+        OUTPUT: final-statsd-injector-release
+      run:
+        path: bash
+        args:
+        - -c
+        - {{create_final_release}}
+  - put: version
+    params:
+      file: version/version
+  - put: statsd-injector-release
+    params:
+      repository: final-statsd-injector-release
+      rebase: false
