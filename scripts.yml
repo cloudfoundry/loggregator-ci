@@ -211,3 +211,33 @@ commit: |
   popd
 
   cp -r "${SOURCE}/." "${OUTPUT}/"
+
+create-bosh-lite: |
+  #!/bin/bash
+  set -eux
+  export BOSH_LITE_NAME=$VM_NAME
+
+  creds_location='/tmp/google_creds'
+  cat <<EOF > "${creds_location}"
+  ${GOOGLE_CREDENTIALS}
+  EOF
+
+  if gcloud compute instances delete -q --zone "${GCE_ZONE}" "${VM_NAME}"
+  then
+    echo "Deleted instance ${VM_NAME}"
+  fi
+
+
+  cat <<EOF > Vagrantfile
+  Vagrant.configure('2') do |config|
+    config.vm.box = "cloudfoundry/bosh-lite"
+    config.vm.provider :google do |google, override|
+      google.google_project_id = "${PROJECT_ID}"
+      google.google_client_email = "${PROJECT_EMAIL_ADDR}"
+      google.google_json_key_location = "${creds_location}"
+      google.tags = ["bosh", "vms"]
+    end
+  end
+  EOF
+
+  vagrant up --provider=google

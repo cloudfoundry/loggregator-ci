@@ -133,6 +133,12 @@ resources:
     branch: master
     private_key: {{sonde-go-key}}
 
+- name: bosh-lite
+  type: git
+  source:
+    uri: https://github.com/cloudfoundry/bosh-lite
+    branch: master
+
 jobs:
 - name: run-tests
   public: true
@@ -1163,6 +1169,32 @@ jobs:
       repository: bumped-loggregator
       rebase: true
 
+- name: create-bosh-lite
+  serial: true
+  serial_groups:
+  - cf-release
+  plan:
+  - get: bosh-lite
+  - task: create-bosh-lite
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source:
+          repository: loggregator/cf-release
+      inputs:
+        - name: bosh-lite
+      params:
+        VM_NAME: cf-release-lite
+        GCE_ZONE: {{google-zone}}
+        PROJECT_ID: {{google-project-id}}
+        PROJECT_EMAIL_ADDR: {{google-project-email}}
+        GOOGLE_CREDENTIALS: {{google-creds}}
+      run:
+        path: bash
+        args:
+          - -c
+          - {{create-bosh-lite}}
 
 groups:
 - name: loggregator
@@ -1188,3 +1220,7 @@ groups:
 - name: final-release
   jobs:
   - create-final-release
+
+- name: cf-release
+  jobs:
+  - create-bosh-lite
