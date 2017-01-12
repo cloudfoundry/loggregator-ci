@@ -1,0 +1,172 @@
+resources:
+- name: bosh-hm-forwarder-release
+  type: git
+  source:
+    uri: git@github.com:cloudfoundry/bosh-hm-forwarder-release
+    branch: master
+    private_key: {{bosh-hm-forwarder-key}}
+    ignore_paths:
+    - .final_builds
+    - releases
+
+- name: bosh-hm-forwarder
+  type: git
+  source:
+    uri: git@github.com:cloudfoundry/bosh-hm-forwarder
+    private_key: {{bosh-hm-forwarder-key}}
+
+- name: version
+  type: semver
+  source:
+    initial_version: 1.0.0
+    bucket: bosh-hm-forwarder-release-blobs
+    key: version
+    access_key_id: {{s3-access-key-id}}
+    secret_access_key: {{s3-secret-access-key}}
+
+jobs:
+- name: unit-tests
+  serial: true
+  plan:
+  - aggregate:
+    - get: bosh-hm-forwarder-release
+      trigger: false
+    - get: bosh-hm-forwarder
+      trigger: true
+  - task: run-units
+    config:
+      image_resource:
+        type: docker-image
+        source:
+        - repository: loggregator/go17
+      platform: linux
+      inputs:
+      - name: bosh-hm-forwarder-release
+      - name: bosh-hm-forwarder
+      run:
+        path: bash
+        args:
+        - -c
+        - {{bosh_hm_forwarder_units}}
+
+- name: bump-release-submodule
+  serial: true
+  plan:
+  - aggregate:
+    - get: bosh-hm-forwarder-release
+      trigger: false
+    - get: bosh-hm-forwarder
+      passed:
+      - unit-tests
+      trigger: true
+  - task: update-submodule
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source:
+          repository: loggregator/go17
+      inputs:
+      - name: bosh-hm-forwarder-release
+      - name: bosh-hm-forwarder
+      outputs:
+      - name: updated-bosh-hm-forwarder-release
+      params:
+        PARENT: bosh-hm-forwarder-release
+        OUTPUT: updated-bosh-hm-forwarder-release
+        CHILD: bosh-hm-forwarder
+        CHILD_PATH: src/github.com/cloudfoundry/bosh-hm-forwarder
+      run:
+        path: bash
+        args:
+        - -c
+        - {{update_submodule}}
+  - task: upload-blobs
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source:
+          repository: loggregator/bosh20
+      inputs:
+      - name: updated-bosh-hm-forwarder-release
+      outputs:
+      - name: blobified-bosh-hm-forwarder-release
+      params:
+        RELEASE: updated-bosh-hm-forwarder-release
+        S3_BUCKET: bosh-hm-forwarder-release-blobs
+        S3_ACCESS_KEY: {{s3-access-key-id}}
+        S3_SECRET_KEY: {{s3-secret-access-key}}
+        OUTPUT: blobified-bosh-hm-forwarder-release
+      run:
+        path: bash
+        args:
+        - -c
+        - {{upload_blobs}}
+  - task: commit
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source:
+          repository: loggregator/go17
+      inputs:
+      - name: blobified-bosh-hm-forwarder-release
+      outputs:
+      - name: bumped-bosh-hm-forwarder-release
+      params:
+        SOURCE: blobified-bosh-hm-forwarder-release
+        PATHS: config/blobs.yml src/github.com/cloudfoundry/bosh-hm-forwarder
+        COMMIT_MESSAGE: "Bump bosh-hm-forwarder and update blobs"
+        OUTPUT: bumped-bosh-hm-forwarder-release
+      run:
+        path: bash
+        args:
+        - -c
+        - {{commit}}
+  - put: bosh-hm-forwarder-release
+    params:
+      repository: bumped-bosh-hm-forwarder-release
+      rebase: false
+
+- name: create-final-release
+  serial: true
+  plan:
+  - aggregate:
+    - get: version
+      params:
+        bump: patch
+    - get: bosh-hm-forwarder-release
+      trigger: true
+      passed:
+      - bump-release-submodule
+  - task: create-final-release
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source:
+          repository: loggregator/bosh20
+      inputs:
+      - name: version
+      - name: bosh-hm-forwarder-release
+      outputs:
+      - name: final-bosh-hm-forwarder-release
+      params:
+        RELEASE: bosh-hm-forwarder-release
+        S3_BUCKET: bosh-hm-forwarder-release-blobs
+        S3_ACCESS_KEY: {{s3-access-key-id}}
+        S3_SECRET_KEY: {{s3-secret-access-key}}
+        OUTPUT: final-bosh-hm-forwarder-release
+      run:
+        path: bash
+        args:
+        - -c
+        - {{create_final_release}}
+  - put: version
+    params:
+      file: version/version
+  - put: bosh-hm-forwarder-release
+    params:
+      repository: final-bosh-hm-forwarder-release
+      rebase: false

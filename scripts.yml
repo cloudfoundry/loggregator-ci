@@ -135,6 +135,20 @@ statsd_units: |
     go install github.com/onsi/ginkgo/ginkgo
     ginkgo -r -race -randomizeAllSpecs ./src/github.com/cloudfoundry/statsd-injector
   popd
+bosh_hm_forwarder_units: |
+  #!/bin/bash
+
+  set -e -x
+
+  rm -rf bosh-hm-forwarder-release/src/github.com/cloudfoundry/bosh-hm-forwarder/{*,.git}
+  cp -r bosh-hm-forwarder/. bosh-hm-forwarder-release/src/github.com/cloudfoundry/bosh-hm-forwarder/
+
+  pushd bosh-hm-forwarder-release
+    export GOPATH="$PWD"
+    export PATH="$GOPATH/bin:$PATH"
+    go install github.com/onsi/ginkgo/ginkgo
+    ginkgo -r -race -randomizeAllSpecs ./src/github.com/cloudfoundry/bosh-hm-forwarder
+  popd
 create_final_release: |
   #!/bin/bash
 
