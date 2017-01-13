@@ -782,7 +782,7 @@ jobs:
                 credentials_source: static
             EOF
 
-            new_version="74"
+            new_version="74.0.1"
             tag_name="v$new_version"
 
             bosh -n create-release --final --tarball ../loggregator-release/release.tgz --version $new_version
