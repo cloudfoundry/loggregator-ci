@@ -198,6 +198,18 @@ upload_blobs: |
   popd
 
   cp -r "${RELEASE}/." "${OUTPUT}/"
+update_package_specs: |
+  #!/bin/bash
+
+  set -ex
+
+  pushd "${RELEASE}"
+    export GOPATH="${PWD}"
+    export PATH="${GOPATH}/bin:${PATH}"
+    ./scripts/sync-package-specs
+  popd
+
+  cp -r "${RELEASE}/." "${OUTPUT}/"
 update_submodule: |
   #!/bin/bash
 
