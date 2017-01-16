@@ -27,6 +27,7 @@ resources:
 jobs:
 - name: unit-tests
   serial: true
+  public: true
   plan:
   - aggregate:
     - get: bosh-hm-forwarder-release
@@ -51,6 +52,7 @@ jobs:
 
 - name: bump-release-submodule
   serial: true
+  public: true
   plan:
   - aggregate:
     - get: bosh-hm-forwarder-release
@@ -131,6 +133,7 @@ jobs:
 
 - name: create-final-release
   serial: true
+  public: true
   plan:
   - aggregate:
     - get: version
