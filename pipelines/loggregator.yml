@@ -755,11 +755,12 @@ jobs:
         S3_ACCESS_KEY: {{s3-access-key}}
         S3_SECRET_KEY: {{s3-secret-key}}
         SSH_KEY: {{loggregator-key}}
+        NEW_VERSION: 75
       inputs:
       - name: loggregator-develop
       - name: loggregator-master
       outputs:
-      - name: loggregator-release
+      - name: github-release
       - name: create-final-release
       run:
         path: bash
@@ -769,9 +770,34 @@ jobs:
             #!/bin/bash
             set -ex
 
-            cd loggregator-master
-            git checkout master
-            cat << EOF > config/private.yml
+            # establish version/tag strings
+            new_version="$NEW_VERSION"
+            tag_name="v$new_version"
+
+            # write out github release files
+            echo "Loggregator $new_version" > github-release/name
+            echo $tag_name > github-release/tag
+            echo "TBD" > github-release/body
+
+            # setup git for committing
+            git config --global user.email "cf-loggregator@pivotal.io"
+            git config --global user.name "Loggregator CI"
+
+            # setup ssh for reading from github
+            eval "$(ssh-agent -s)"
+            mkdir -p ~/.ssh
+            echo -e "Host github.com\n\tStrictHostKeyChecking no\n" >> ~/.ssh/config
+            ssh-add <(echo "$SSH_KEY")
+
+            # build final release on master
+            pushd loggregator-master
+              # this is needed to land commits on master since the commit for
+              # master is checked out as a detatched head when the git
+              # resource clones it down
+              git checkout master
+
+              # setup private.yml used by `create-release --final`
+              cat << EOF > config/private.yml
             ---
             blobstore:
               provider: s3
@@ -782,87 +808,54 @@ jobs:
                 credentials_source: static
             EOF
 
-            new_version="74.0.2"
-            tag_name="v$new_version"
-
-            bosh -n create-release --final --tarball ../loggregator-release/release.tgz --version $new_version
-            echo "$(git rev-parse HEAD)" > ../loggregator-release/commitish
-            git config user.email "cf-loggregator@pivotal.io"
-            git config user.name "Loggregator CI"
-            git add .
-            git commit -m "Creating final release\
+              # create final release and commit artifcats
+              bosh -n create-release --final \
+                --tarball ../github-release/release.tgz \
+                --version $new_version
+              git add .
+              git commit -m "Create final release\
 
 
             [ci skip]"
 
-            BRANCH=$(git rev-parse --abbrev-ref HEAD)
-            tag_commit=$(git rev-parse HEAD)
+              final_release_abbrev=$(git rev-parse --abbrev-ref HEAD)
+              final_release_sha=$(git rev-parse HEAD)
+              git tag "$tag_name" $final_release_sha
+            popd
 
-            cd ../loggregator-develop
+            # merge final release artifacts with develop
+            pushd loggregator-develop
+              # this is needed to land commits on develop since the commit for
+              # develop is checked out as a detatched head when the git
+              # resource clones it down
+              git checkout develop
 
-            eval `ssh-agent -s`
-            mkdir -p ~/.ssh
-            echo -e "Host github.com\n\tStrictHostKeyChecking no\n" >> ~/.ssh/config
-            ssh-add <(echo "$SSH_KEY")
-            git remote add -f master-repo ../loggregator-master
-            git checkout develop
-            git pull
-            git config user.email "cf-loggregator@pivotal.io"
-            git config user.name "Loggregator CI"
-            git merge -m "Merge final release artifacts\
+              git remote add -f master-repo ../loggregator-master
+              git pull
+              git merge -v -m "Merge final release artifacts\
 
 
-            [ci skip]" -v "master-repo/$BRANCH"
+            [ci skip]" "master-repo/$final_release_abbrev"
+            popd
 
-            git tag "$tag_name" $tag_commit
-
-            cd ..
+            # copy repos into output
             cp -r loggregator-develop loggregator-master create-final-release
-  - put: loggregator-final-release-master
-    params:
-      repository: create-final-release/loggregator-master
-      rebase: false
-  - put: loggregator-final-release-develop
-    params:
-      repository: create-final-release/loggregator-develop
-      rebase: false
-  - task: create-github-release
-    config:
-      image_resource:
-        type: docker-image
-        source:
-        - repository: loggregator/go17
-      platform: linux
-      inputs:
-      - name: loggregator-release
-      outputs:
-      - name: github-release
-      run:
-        path: bash
-        args:
-          - -c
-          - |
-            #!/bin/bash
-            set -ex
-
-            cd loggregator-release
-            tarball=$(ls *.tgz)
-            version=$(echo $tarball | sed 's|loggregator-\([0-9]*\).tgz|\1|')
-
-            cp * ../github-release
-            cd ../github-release
-
-            echo "Loggregator $version" > name
-            echo "v$version" > tag
-            echo "TBD" > body
-  - put: loggregator-github-release-drafts
-    params:
-      name: github-release/name
-      tag: github-release/tag
-      commitish: github-release/commitish
-      body: github-release/body
-      globs:
-      - github-release/*.tgz
+  - aggregate:
+    - put: loggregator-final-release-master
+      params:
+        repository: create-final-release/loggregator-master
+        rebase: false
+    - put: loggregator-final-release-develop
+      params:
+        repository: create-final-release/loggregator-develop
+        rebase: false
+    - put: loggregator-github-release-drafts
+      params:
+        name: github-release/name
+        tag: github-release/tag
+        body: github-release/body
+        globs:
+        - github-release/*.tgz
 
 - name: dropsonde-unit-tests
   serial: true
