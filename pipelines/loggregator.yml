@@ -24,10 +24,17 @@ resources:
 
 - name: deployments-loggregator
   type: git
-  source:
+  source: &deployments_loggregator
     uri: git@github.com:cloudfoundry/deployments-loggregator.git
     branch: master
     private_key: {{deployments-loggregator-key}}
+
+# This is here because concourse has a bug in which putting to a git resource
+# creates a new version that can trigger jobs even if the commit has [ci skip]
+# present.
+- name: deployments-loggregator-with-changes
+  type: git
+  source: *deployments_loggregator
 
 - name: etcd-release
   type: bosh-io-release
@@ -49,6 +56,9 @@ resources:
     - .final_builds
     - releases
 
+# This is here because concourse has a bug in which putting to a git resource
+# creates a new version that can trigger jobs even if the commit has [ci skip]
+# present.
 - name: loggregator-develop-with-blobs
   type: git
   source: *loggregator_develop
@@ -511,7 +521,6 @@ jobs:
                 bosh create-release --name=loggregator --force
                 bosh -e coconut upload-release --rebase
             popd
-
   - task: deploy-loggregator
     config:
       image_resource:
@@ -520,8 +529,10 @@ jobs:
         - repository: loggregator/bosh20
       platform: linux
       inputs:
-        - name: deployments-loggregator
-        - name: loggregator
+      - name: deployments-loggregator
+      - name: loggregator
+      outputs:
+      - name: updated-deployments-loggregator
       params:
         DEPLOYMENT_NAME: gcp/coconut
         BOSH_ENV: 10.0.0.6
@@ -541,9 +552,35 @@ jobs:
             bosh -n alias-env coconut -e "$BOSH_ENV" --ca-cert "$PWD/deployments-loggregator/gcp/certs/bosh/ca.pem"
             bosh -e coconut -n log-in --client="$BOSH_USERNAME" --client-secret="$BOSH_PASSWORD"
             bosh -n -e coconut -d loggregator deploy \
-              --vars-file "$deployment_dir/loggregator-vars.yml" \
+              --vars-store "$deployment_dir/loggregator-vars.yml" \
               --ops-file "$deployment_dir/loggregator-ops.yml" \
               "$loggregator_dir/templates/loggregator.yml"
+
+            rsync -ac deployments-loggregator/ updated-deployments-loggregator
+  - task: commit
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source:
+          repository: loggregator/go17
+      inputs:
+      - name: updated-deployments-loggregator
+      outputs:
+      - name: committed-deployments-loggregator
+      params:
+        SOURCE: updated-deployments-loggregator
+        PATHS: gcp/coconut/loggregator-vars.yml
+        COMMIT_MESSAGE: "Update loggregator vars store [ci skip]"
+        OUTPUT: committed-deployments-loggregator
+      run:
+        path: bash
+        args:
+        - -c
+        - {{commit}}
+  - put: deployments-loggregator-with-changes
+    params:
+      repository: committed-deployments-loggregator
 
 - name: cats
   serial: true
