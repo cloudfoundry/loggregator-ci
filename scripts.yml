@@ -229,16 +229,16 @@ commit: |
   #!/bin/bash
   set -ex
 
-  if [ ! "$(git status --porcelain)" = "" ]; then
-    pushd "${SOURCE}"
+  pushd "${SOURCE}"
+    if [ ! "$(git status --porcelain)" = "" ]; then
       git config user.email "cf-loggregator@pivotal.io"
       git config user.name "Loggregator CI"
       git add ${PATHS}
       git commit -m "$COMMIT_MESSAGE"
-    popd
-  else
-    echo "No changes to commit"
-  fi
+    else
+      echo "No changes to commit"
+    fi
+  popd
 
   cp -r "${SOURCE}/." "${OUTPUT}/"
 
