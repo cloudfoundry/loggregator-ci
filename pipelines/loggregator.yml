@@ -22,6 +22,17 @@ resources:
   source:
     repository: cloudfoundry-incubator/consul-release
 
+- name: cf-release
+  type: git
+  source:
+    uri: https://github.com/cloudfoundry/cf-release
+    branch: release-elect
+
+- name: diego-release
+  type: bosh-io-release
+  source:
+    repository: cloudfoundry/diego-release
+
 - name: deployments-loggregator
   type: git
   source: &deployments_loggregator
@@ -143,10 +154,10 @@ resources:
     branch: master
     private_key: {{sonde-go-key}}
 
-- name: bosh-lite
+- name: bosh-deployment
   type: git
   source:
-    uri: https://github.com/cloudfoundry/bosh-lite
+    uri: https://github.com/cloudfoundry/bosh-deployment
     branch: master
 
 jobs:
@@ -303,7 +314,7 @@ jobs:
       image_resource:
         type: docker-image
         source:
-          repository: loggregator/go17
+          repository: loggregator/ubuntu-base
       inputs:
       - name: updated-loggregator
       outputs:
@@ -376,7 +387,7 @@ jobs:
     - get: cf-deployment
       trigger: true
     - get: deployments-loggregator
-      trigger: true
+      trigger: false
   - task: build-dev-release
     config:
       platform: linux
@@ -478,7 +489,7 @@ jobs:
       - update-release
       trigger: true
     - get: deployments-loggregator
-      trigger: true
+      trigger: false
   - task: upload-loggregator
     config:
       image_resource:
@@ -563,7 +574,7 @@ jobs:
       image_resource:
         type: docker-image
         source:
-          repository: loggregator/go17
+          repository: loggregator/ubuntu-base
       inputs:
       - name: updated-deployments-loggregator
       outputs:
@@ -767,7 +778,7 @@ jobs:
               git checkout release-elect
               git merge -v "develop-repo/merge-branch" -m "Merging develop into release-elect"
             popd
-            rsync -avci loggregator-release-elect/ promote-develop/
+            rsync -ac loggregator-release-elect/ promote-develop/
   - put: loggregator-release-elect
     params:
       repository: promote-develop
@@ -1215,32 +1226,171 @@ jobs:
       rebase: true
 
 - name: create-bosh-lite
-  serial: true
   serial_groups:
-  - cf-release
+  - bosh-lite
   plan:
-  - get: bosh-lite
+  - aggregate:
+    - get: bosh-deployment
+    - get: deployments-loggregator
   - task: create-bosh-lite
     config:
       platform: linux
       image_resource:
         type: docker-image
         source:
-          repository: loggregator/cf-release
+          repository: loggregator/bosh20
       inputs:
-        - name: bosh-lite
+      - name: bosh-deployment
+      - name: deployments-loggregator
+      outputs:
+      - name: updated-deployments-loggregator
       params:
-        VM_NAME: cf-release-lite
-        GCE_ZONE: {{google-zone}}
-        PROJECT_ID: {{google-project-id}}
-        PROJECT_EMAIL_ADDR: {{google-project-email}}
-        GOOGLE_CREDENTIALS: {{google-creds}}
       run:
         path: bash
         args:
           - -c
-          - {{create-bosh-lite}}
+          - |
+            #!/bin/bash
+            set -ex
+            deploy_dir=deployments-loggregator/gcp/lite
+            if [ -f $deploy_dir/state.json ]; then
+              echo Deploy already exists, delete it first
+              exit 1
+            fi
 
+            # create director
+            bosh create-env bosh-deployment/bosh.yml \
+              --state $deploy_dir/state.json \
+              -o bosh-deployment/gcp/cpi.yml \
+              -o bosh-deployment/bosh-lite.yml \
+              -o bosh-deployment/bosh-lite-runc.yml \
+              -o bosh-deployment/jumpbox-user.yml \
+              -o $deploy_dir/lite-ops.yml \
+              --vars-store $deploy_dir/creds.yml \
+              -v director_name="Bosh Lite Director" \
+              -v internal_ip=10.100.0.6 \
+              -v internal_gw=10.100.0.1 \
+              -v internal_cidr=10.100.0.0/24 \
+              -v network_name=litenet0 \
+              -v outbound_network_name=NatNetwork \
+              --var-file gcp_credentials_json=deployments-loggregator/gcp/coconut/tf/terraform-bosh.key.json \
+              -v network=cf-network \
+              -v subnetwork=bosh-lite \
+              -v project_id=cff-loggregator \
+              -v tags="[bosh]" \
+              -v zone="us-central1-a"
+
+            # upload stemcell needed for bosh-lite "vms"
+            bosh alias-env lite -e 10.100.0.6 --ca-cert <(bosh interpolate $deploy_dir/creds.yml --path /director_ssl/ca)
+            export BOSH_CLIENT=admin
+            export BOSH_CLIENT_SECRET=$(bosh interpolate $deploy_dir/creds.yml --path /admin_password)
+            bosh -e lite upload-stemcell https://bosh.io/d/stemcells/bosh-warden-boshlite-ubuntu-trusty-go_agent
+
+            rsync -ac deployments-loggregator/ updated-deployments-loggregator
+  - task: commit
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source:
+          repository: loggregator/ubuntu-base
+      inputs:
+      - name: updated-deployments-loggregator
+      outputs:
+      - name: committed-deployments-loggregator
+      params:
+        SOURCE: updated-deployments-loggregator
+        PATHS: gcp/lite
+        COMMIT_MESSAGE: "Create bosh-lite GCP director"
+        OUTPUT: committed-deployments-loggregator
+      run:
+        path: bash
+        args:
+        - -c
+        - {{commit}}
+  - put: deployments-loggregator-with-changes
+    params:
+      repository: committed-deployments-loggregator
+
+- name: delete-bosh-lite
+  serial_groups:
+  - bosh-lite
+  plan:
+  - aggregate:
+    - get: bosh-deployment
+    - get: deployments-loggregator
+  - task: delete-bosh-lite
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source:
+          repository: loggregator/bosh20
+      inputs:
+      - name: bosh-deployment
+      - name: deployments-loggregator
+      outputs:
+      - name: updated-deployments-loggregator
+      params:
+      run:
+        path: bash
+        args:
+          - -c
+          - |
+            #!/bin/bash
+            set -ex
+            deploy_dir=deployments-loggregator/gcp/lite
+            if [ ! -f $deploy_dir/state.json ]; then
+              echo Deploy does not exist, create it first
+              exit 1
+            fi
+
+            bosh delete-env bosh-deployment/bosh.yml \
+              --state $deploy_dir/state.json \
+              -o bosh-deployment/gcp/cpi.yml \
+              -o bosh-deployment/bosh-lite.yml \
+              -o bosh-deployment/bosh-lite-runc.yml \
+              -o bosh-deployment/jumpbox-user.yml \
+              --vars-store $deploy_dir/creds.yml \
+              -v director_name="Bosh Lite Director" \
+              -v internal_ip=10.100.0.6 \
+              -v internal_gw=10.100.0.1 \
+              -v internal_cidr=10.100.0.0/24 \
+              -v network_name=litenet0 \
+              -v outbound_network_name=NatNetwork \
+              --var-file gcp_credentials_json=deployments-loggregator/gcp/coconut/tf/terraform-bosh.key.json \
+              -v network=cf-network \
+              -v subnetwork=bosh-lite \
+              -v project_id=cff-loggregator \
+              -v tags="[bosh]" \
+              -v zone="us-central1-a"
+
+            rm -f $deploy_dir/state.json $deploy_dir/creds.yml
+            rsync -ac deployments-loggregator/ updated-deployments-loggregator
+  - task: commit
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source:
+          repository: loggregator/ubuntu-base
+      inputs:
+      - name: updated-deployments-loggregator
+      outputs:
+      - name: committed-deployments-loggregator
+      params:
+        SOURCE: updated-deployments-loggregator
+        PATHS: gcp/lite
+        COMMIT_MESSAGE: "Delete bosh-lite GCP director"
+        OUTPUT: committed-deployments-loggregator
+      run:
+        path: bash
+        args:
+        - -c
+        - {{commit}}
+  - put: deployments-loggregator-with-changes
+    params:
+      repository: committed-deployments-loggregator
 groups:
 - name: loggregator
   jobs:
@@ -1254,6 +1404,7 @@ groups:
   - lats
   - promotion
   - update-release
+  - bosh-lite-deploy
 
 - name: submodules
   jobs:
@@ -1266,6 +1417,7 @@ groups:
   jobs:
   - create-final-release
 
-- name: cf-release
+- name: bosh-lite
   jobs:
   - create-bosh-lite
+  - delete-bosh-lite
