@@ -888,22 +888,21 @@ jobs:
 
             # copy repos into output
             cp -r loggregator-develop loggregator-master create-final-release
-  - aggregate:
-    - put: loggregator-final-release-master
-      params:
-        repository: create-final-release/loggregator-master
-        rebase: false
-    - put: loggregator-final-release-develop
-      params:
-        repository: create-final-release/loggregator-develop
-        rebase: false
-    - put: loggregator-github-release-drafts
-      params:
-        name: github-release/name
-        tag: github-release/tag
-        body: github-release/body
-        globs:
-        - github-release/*.tgz
+  - put: loggregator-final-release-master
+    params:
+      repository: create-final-release/loggregator-master
+      rebase: false
+  - put: loggregator-final-release-develop
+    params:
+      repository: create-final-release/loggregator-develop
+      rebase: false
+  - put: loggregator-github-release-drafts
+    params:
+      name: github-release/name
+      tag: github-release/tag
+      body: github-release/body
+      globs:
+      - github-release/*.tgz
 
 - name: dropsonde-unit-tests
   serial: true
