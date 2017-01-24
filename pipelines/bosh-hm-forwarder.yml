@@ -83,28 +83,6 @@ jobs:
         args:
         - -c
         - {{update_submodule}}
-  - task: upload-blobs
-    config:
-      platform: linux
-      image_resource:
-        type: docker-image
-        source:
-          repository: loggregator/bosh20
-      inputs:
-      - name: updated-bosh-hm-forwarder-release
-      outputs:
-      - name: blobified-bosh-hm-forwarder-release
-      params:
-        RELEASE: updated-bosh-hm-forwarder-release
-        S3_BUCKET: bosh-hm-forwarder-release-blobs
-        S3_ACCESS_KEY: {{s3-access-key-id}}
-        S3_SECRET_KEY: {{s3-secret-access-key}}
-        OUTPUT: blobified-bosh-hm-forwarder-release
-      run:
-        path: bash
-        args:
-        - -c
-        - {{upload_blobs}}
   - task: commit
     config:
       platform: linux
@@ -113,13 +91,13 @@ jobs:
         source:
           repository: loggregator/go17
       inputs:
-      - name: blobified-bosh-hm-forwarder-release
+      - name: updated-bosh-hm-forwarder-release
       outputs:
       - name: bumped-bosh-hm-forwarder-release
       params:
-        SOURCE: blobified-bosh-hm-forwarder-release
-        PATHS: config/blobs.yml src/github.com/cloudfoundry/bosh-hm-forwarder
-        COMMIT_MESSAGE: "Bump bosh-hm-forwarder and update blobs"
+        SOURCE: updated-bosh-hm-forwarder-release
+        PATHS: src/github.com/cloudfoundry/bosh-hm-forwarder
+        COMMIT_MESSAGE: "Bump bosh-hm-forwarder"
         OUTPUT: bumped-bosh-hm-forwarder-release
       run:
         path: bash
