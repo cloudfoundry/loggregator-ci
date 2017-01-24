@@ -1402,6 +1402,7 @@ jobs:
   - put: deployments-loggregator-with-changes
     params:
       repository: committed-deployments-loggregator
+      rebase: true
 
 - name: delete-bosh-lite
   serial_groups:
@@ -1481,6 +1482,7 @@ jobs:
   - put: deployments-loggregator-with-changes
     params:
       repository: committed-deployments-loggregator
+      rebase: true
 groups:
 - name: loggregator
   jobs:
