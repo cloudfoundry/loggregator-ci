@@ -75,13 +75,6 @@ resources:
     - .final_builds
     - releases
 
-# This is here because concourse has a bug in which putting to a git resource
-# creates a new version that can trigger jobs even if the commit has [ci skip]
-# present.
-- name: loggregator-develop-with-blobs
-  type: git
-  source: *loggregator_develop
-
 - name: loggregator-master
   type: git
   source:
@@ -267,80 +260,6 @@ jobs:
             }
           }
 
-- name: update-release
-  plan:
-  - get: loggregator
-    resource: loggregator-develop
-    passed:
-    - run-tests
-    - run-windows-tests
-    trigger: true
-  - task: upload-blobs
-    config:
-      platform: linux
-      image_resource:
-        type: docker-image
-        source:
-        - repository: loggregator/bosh20
-      params:
-        S3_BUCKET: loggregator-release-blobs
-        S3_ACCESS_KEY: {{s3-access-key}}
-        S3_SECRET_KEY: {{s3-secret-key}}
-        RELEASE: loggregator
-        OUTPUT: blobified-loggregator
-      inputs:
-      - name: loggregator
-      outputs:
-      - name: blobified-loggregator
-      run:
-        path: bash
-        args:
-          - -c
-          - {{upload_blobs}}
-  - task: sync-package-specs
-    config:
-      platform: linux
-      image_resource:
-        type: docker-image
-        source:
-        - repository: loggregator/bosh20
-      params:
-        RELEASE: blobified-loggregator
-        OUTPUT: updated-loggregator
-      inputs:
-      - name: blobified-loggregator
-      outputs:
-      - name: updated-loggregator
-      run:
-        path: bash
-        args:
-          - -c
-          - {{update_package_specs}}
-  - task: commit
-    config:
-      platform: linux
-      image_resource:
-        type: docker-image
-        source:
-          repository: loggregator/ubuntu-base
-      inputs:
-      - name: updated-loggregator
-      outputs:
-      - name: committed-loggregator
-      params:
-        SOURCE: updated-loggregator
-        PATHS: config/blobs.yml packages/
-        COMMIT_MESSAGE: "Update blobs and package specs [ci skip]"
-        OUTPUT: committed-loggregator
-      run:
-        path: bash
-        args:
-        - -c
-        - {{commit}}
-  - put: loggregator-develop-with-blobs
-    params:
-      repository: committed-loggregator
-
 - name: upload-stemcell
   plan:
   - aggregate:
@@ -388,10 +307,11 @@ jobs:
   plan:
   - aggregate:
     - get: loggregator
-      resource: loggregator-develop-with-blobs
+      resource: loggregator-develop
       trigger: true
       passed:
-      - update-release
+      - run-tests
+      - run-windows-tests
     - get: cf-deployment
       trigger: true
     - get: deployments-loggregator
@@ -488,10 +408,11 @@ jobs:
   plan:
   - aggregate:
     - get: loggregator
-      resource: loggregator-develop-with-blobs
+      resource: loggregator-develop
       trigger: true
       passed:
-      - update-release
+      - run-tests
+      - run-windows-tests
     - get: cf-release
       trigger: false
     - get: diego-github-releases
@@ -536,13 +457,6 @@ jobs:
             rm -r src/loggregator
             ln -s $workspace/loggregator src/
             bosh --parallel 10 sync blobs
-            pushd src/loggregator
-              bosh --parallel 5 sync blobs
-            popd
-
-            ls src/loggregator/blobs/loggregator-blobs |
-              grep -v 'lats' | grep -v 'boshhmforwarder' |
-              xargs -I {} bosh add blob src/loggregator/blobs/loggregator-blobs/{} loggregator-blobs || true
 
             bosh -n create release --name cf --force
             bosh -n upload release --rebase
@@ -577,9 +491,10 @@ jobs:
     - get: etcd-release
       trigger: false
     - get: loggregator
-      resource: loggregator-develop-with-blobs
+      resource: loggregator-develop
       passed:
-      - update-release
+      - run-tests
+      - run-windows-tests
       trigger: true
     - get: deployments-loggregator
       trigger: false
@@ -694,7 +609,7 @@ jobs:
   - aggregate:
     - get: cats
       trigger: true
-    - get: loggregator-develop-with-blobs
+    - get: loggregator-develop
       trigger: true
       passed:
       - cf-deploy
@@ -767,7 +682,7 @@ jobs:
   plan:
   - aggregate:
     - get: loggregator
-      resource: loggregator-develop-with-blobs
+      resource: loggregator-develop
       passed:
       - loggregator-deploy
       trigger: true
@@ -805,7 +720,7 @@ jobs:
   - aggregate:
     - get: wats
       trigger: true
-    - get: loggregator-develop-with-blobs
+    - get: loggregator-develop
       trigger: true
       passed:
       - cf-deploy
@@ -837,7 +752,7 @@ jobs:
     - get: loggregator-release-elect
       trigger: false
     - get: loggregator
-      resource: loggregator-develop-with-blobs
+      resource: loggregator-develop
       trigger: true
       passed:
       - lats
@@ -1495,7 +1410,6 @@ groups:
   - loggregator-deploy
   - lats
   - promotion
-  - update-release
   - bosh-lite-deploy
 
 - name: submodules
