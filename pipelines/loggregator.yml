@@ -29,9 +29,17 @@ resources:
     branch: release-elect
 
 - name: diego-release
-  type: bosh-io-release
+  type: git
   source:
-    repository: cloudfoundry/diego-release
+    uri: https://github.com/cloudfoundry/diego-release
+    branch: release-candidate
+
+- name: diego-github-releases
+  type: github-release
+  source:
+    user: cloudfoundry
+    repository: diego-release
+    access_token: {{access-token}}
 
 - name: deployments-loggregator
   type: git
@@ -472,6 +480,91 @@ jobs:
           # TODO: remove skip-drain in a few weeks once issues are resolved
           # with consul_agent_windows
           bosh -n -e coconut -d cf deploy cf-deployment.yml -o opsfiles/tcp-routing-gcp.yml -o opsfiles/windows-cell.yml -o $DEPLOYMENT/cf-ops.yml -l $DEPLOYMENT/cf-vars.yml --skip-drain=windows-cell
+
+- name: bosh-lite-deploy
+  serial: true
+  serial_groups:
+  - bosh-lite-cats
+  plan:
+  - aggregate:
+    - get: loggregator
+      resource: loggregator-develop-with-blobs
+      trigger: true
+      passed:
+      - update-release
+    - get: cf-release
+      trigger: false
+    - get: diego-github-releases
+      trigger: false
+    - get: diego-release
+      trigger: false
+    - get: deployments-loggregator
+      trigger: false
+
+  - task: cf-release-deploy
+    privileged: true
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source:
+        - repository: loggregator/bosh10
+      inputs:
+      - name: loggregator
+      - name: cf-release
+      - name: diego-release
+      - name: diego-github-releases
+      - name: deployments-loggregator
+      params:
+      run:
+        path: bash
+        args:
+        - -c
+        - |
+          #!/bin/bash
+          set -ex
+
+          workspace=$(pwd)
+
+          password=$(cat deployments-loggregator/gcp/lite/creds.yml |
+            grep admin_password |
+            awk '{print $2}')
+          bosh -u admin -p "$password" target 10.100.0.6 lite
+          bosh login admin "$password"
+
+          pushd cf-release
+            rm -r src/loggregator
+            ln -s $workspace/loggregator src/
+            bosh --parallel 10 sync blobs
+            pushd src/loggregator
+              bosh --parallel 5 sync blobs
+            popd
+
+            ls src/loggregator/blobs/loggregator-blobs |
+              grep -v 'lats' | grep -v 'boshhmforwarder' |
+              xargs -I {} bosh add blob src/loggregator/blobs/loggregator-blobs/{} loggregator-blobs || true
+
+            bosh -n create release --name cf --force
+            bosh -n upload release --rebase
+            ./scripts/generate-bosh-lite-dev-manifest
+            bosh -n deploy
+          popd
+
+          for release in $(find diego-github-releases -name '*.tgz')
+          do
+            bosh -n upload release $release
+          done
+
+          pushd diego-release
+            ./scripts/generate-bosh-lite-manifests
+            bosh -n deployment bosh-lite/deployments/diego.yml
+            bosh -n deploy
+          popd
+
+          pushd cf-release
+            bosh -n deployment bosh-lite/deployments/cf.yml
+            bosh run errand acceptance_tests
+          popd
 
 - name: loggregator-deploy
   serial: true
@@ -1262,7 +1355,6 @@ jobs:
               --state $deploy_dir/state.json \
               -o bosh-deployment/gcp/cpi.yml \
               -o bosh-deployment/bosh-lite.yml \
-              -o bosh-deployment/bosh-lite-runc.yml \
               -o bosh-deployment/jumpbox-user.yml \
               -o $deploy_dir/lite-ops.yml \
               --vars-store $deploy_dir/creds.yml \
@@ -1348,7 +1440,6 @@ jobs:
               --state $deploy_dir/state.json \
               -o bosh-deployment/gcp/cpi.yml \
               -o bosh-deployment/bosh-lite.yml \
-              -o bosh-deployment/bosh-lite-runc.yml \
               -o bosh-deployment/jumpbox-user.yml \
               --vars-store $deploy_dir/creds.yml \
               -v director_name="Bosh Lite Director" \
