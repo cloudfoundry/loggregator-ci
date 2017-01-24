@@ -82,28 +82,6 @@ jobs:
         args:
         - -c
         - {{update_submodule}}
-  - task: upload-blobs
-    config:
-      platform: linux
-      image_resource:
-        type: docker-image
-        source:
-          repository: loggregator/bosh20
-      inputs:
-      - name: updated-statsd-injector-release
-      outputs:
-      - name: blobified-statsd-injector-release
-      params:
-        RELEASE: updated-statsd-injector-release
-        S3_BUCKET: statsd-injector-release-blobs
-        S3_ACCESS_KEY: {{s3-access-key-id}}
-        S3_SECRET_KEY: {{s3-secret-access-key}}
-        OUTPUT: blobified-statsd-injector-release
-      run:
-        path: bash
-        args:
-        - -c
-        - {{upload_blobs}}
   - task: commit
     config:
       platform: linux
@@ -112,13 +90,13 @@ jobs:
         source:
           repository: loggregator/go17
       inputs:
-      - name: blobified-statsd-injector-release
+      - name: updated-statsd-injector-release
       outputs:
       - name: bumped-statsd-injector-release
       params:
-        SOURCE: blobified-statsd-injector-release
-        PATHS: config/blobs.yml src/github.com/cloudfoundry/statsd-injector
-        COMMIT_MESSAGE: "Bump statsd-injector and update blobs"
+        SOURCE: updated-statsd-injector-release
+        PATHS: src/github.com/cloudfoundry/statsd-injector
+        COMMIT_MESSAGE: "Bump statsd-injector"
         OUTPUT: bumped-statsd-injector-release
       run:
         path: bash
