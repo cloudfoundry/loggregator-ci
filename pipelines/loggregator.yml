@@ -399,7 +399,12 @@ jobs:
           export DEPLOYMENT=../deployments-loggregator/gcp/coconut
           # TODO: remove skip-drain in a few weeks once issues are resolved
           # with consul_agent_windows
-          bosh -n -e coconut -d cf deploy cf-deployment.yml -o opsfiles/tcp-routing-gcp.yml -o opsfiles/windows-cell.yml -o $DEPLOYMENT/cf-ops.yml -l $DEPLOYMENT/cf-vars.yml --skip-drain=windows-cell
+          bosh -n -e coconut -d cf deploy cf-deployment.yml \
+            -o opsfiles/tcp-routing-gcp.yml \
+            -o opsfiles/windows-cell.yml \
+            -o $DEPLOYMENT/cf-ops.yml \
+            --vars-store $DEPLOYMENT/cf-vars.yml \
+            --skip-drain=windows-cell
 
 - name: bosh-lite-deploy
   serial: true
