@@ -1,0 +1,40 @@
+resources:
+- name: 60m
+  type: time
+  source: {interval: 60m}
+jobs:
+- name: log-spinner-smoke-test
+  public: false
+  plan:
+  - get: 60m
+    trigger: true
+  - task: run-smoke-tests
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source:
+        - repository: loggregator/bosh20
+      run:
+        path: bash
+        args:
+        - -c
+        - |
+          #!/bin/bash
+
+          # target api
+          cf login -a api.run.pivotal.io \
+              -u {{pws-username}} \
+              -p {{pws-password}} \
+              -s development \
+              -o cf-lamb
+
+          # cf logs to a file
+          rm -f output.txt
+          cf logs mylogspinner > output.txt 2>&1 &
+          # curl my logspinner
+          curl 'mylogspinner.cfapps.io?cycles=10000&delay=2us'
+
+          sleep 10 # wait for a bit
+
+          cat output.txt | grep -c 'msg'
