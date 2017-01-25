@@ -1,12 +1,12 @@
 resources:
-- name: 60m
+- name: 15m
   type: time
-  source: {interval: 60m}
+  source: {interval: 15m}
 jobs:
 - name: log-spinner-smoke-test
   public: false
   plan:
-  - get: 60m
+  - get: 15m
     trigger: true
   - task: run-smoke-tests
     config:
