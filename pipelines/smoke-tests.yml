@@ -35,6 +35,6 @@ jobs:
           # curl my logspinner
           curl 'mylogspinner.cfapps.io?cycles=10000&delay=2us'
 
-          sleep 10 # wait for a bit
+          sleep 300 # wait for a bit
 
           cat output.txt | grep -c 'msg'
