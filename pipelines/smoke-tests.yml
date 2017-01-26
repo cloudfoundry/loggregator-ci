@@ -32,6 +32,7 @@ jobs:
           # cf logs to a file
           rm -f output.txt
           cf logs mylogspinner > output.txt 2>&1 &
+          sleep 10 #wait 10 seconds for socket connection
           # curl my logspinner
           curl 'mylogspinner.cfapps.io?cycles=10000&delay=2us'
 
