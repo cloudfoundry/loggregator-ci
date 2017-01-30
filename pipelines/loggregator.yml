@@ -384,6 +384,7 @@ jobs:
         BOSH_ENV: 10.0.0.6
         BOSH_USERNAME: {{bosh-username}}
         BOSH_PASSWORD: {{bosh-password}}
+        SYSTEM_DOMAIN: "coconut.cf-app.com"
       run:
         path: bash
         args:
@@ -403,6 +404,7 @@ jobs:
             -o operations/tcp-routing-gcp.yml \
             -o operations/windows-cell.yml \
             -o $DEPLOYMENT/cf-ops.yml \
+            -v system_domain=$SYSTEM_DOMAIN
             --vars-store $DEPLOYMENT/cf-vars.yml \
             --skip-drain=windows-cell
 
