@@ -380,6 +380,8 @@ jobs:
       inputs:
       - name: cf-deployment
       - name: deployments-loggregator
+      outputs:
+      - name: updated-deployments-loggregator
       params:
         BOSH_ENV: 10.0.0.6
         BOSH_USERNAME: {{bosh-username}}
@@ -393,7 +395,7 @@ jobs:
           #!/bin/bash
           set -ex
 
-          cd cf-deployment
+          pushd cf-deployment
 
           bosh -n alias-env coconut -e $BOSH_ENV --ca-cert ../deployments-loggregator/gcp/certs/bosh/ca.pem
           bosh -n -e coconut log-in --client=$BOSH_USERNAME --client-secret=$BOSH_PASSWORD
@@ -404,9 +406,36 @@ jobs:
             -o operations/tcp-routing-gcp.yml \
             -o operations/windows-cell.yml \
             -o $DEPLOYMENT/cf-ops.yml \
-            -v system_domain=$SYSTEM_DOMAIN
+            -v system_domain=$SYSTEM_DOMAIN \
             --vars-store $DEPLOYMENT/cf-vars.yml \
             --skip-drain=windows-cell
+          popd
+
+          rsync -ac deployments-loggregator/ updated-deployments-loggregator
+  - task: commit
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source:
+          repository: loggregator/ubuntu-base
+      inputs:
+      - name: updated-deployments-loggregator
+      outputs:
+      - name: committed-deployments-loggregator
+      params:
+        SOURCE: updated-deployments-loggregator
+        PATHS: gcp/coconut/cf-vars.yml
+        COMMIT_MESSAGE: "Update cf vars store"
+        OUTPUT: committed-deployments-loggregator
+      run:
+        path: bash
+        args:
+        - -c
+        - {{commit}}
+  - put: deployments-loggregator-with-changes
+    params:
+      repository: committed-deployments-loggregator
 
 - name: bosh-lite-deploy
   serial: true
