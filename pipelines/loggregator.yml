@@ -712,7 +712,7 @@ jobs:
             "admin_user": "admin",
             "admin_password": "CF_PASSWORD_FROM_VARS",
             "apps_domain": "coconut.cf-app.com",
-            "skip_ssl_validation": false,
+            "skip_ssl_validation": true,
             "default_timeout": 120,
             "use_http": true,
             "backend": "diego",
