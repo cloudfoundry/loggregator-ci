@@ -437,10 +437,10 @@ jobs:
     params:
       repository: committed-deployments-loggregator
 
-- name: bosh-lite-deploy
+- name: cf-release-deploy
   serial: true
   serial_groups:
-  - bosh-lite-cats
+  - cf-release
   plan:
   - aggregate:
     - get: loggregator
@@ -458,7 +458,7 @@ jobs:
     - get: deployments-loggregator
       trigger: false
 
-  - task: cf-release-deploy
+  - task: cf-and-diego-deploy
     privileged: true
     config:
       platform: linux
@@ -472,6 +472,8 @@ jobs:
       - name: diego-release
       - name: diego-github-releases
       - name: deployments-loggregator
+      outputs:
+      - name: cf-manifest
       params:
       run:
         path: bash
@@ -511,10 +513,50 @@ jobs:
             bosh -n deploy
           popd
 
-          pushd cf-release
-            bosh -n deployment bosh-lite/deployments/cf.yml
-            bosh run errand acceptance_tests
-          popd
+- name: cf-release-cats
+  serial: true
+  serial_groups:
+  - cf-release
+  plan:
+  - aggregate:
+    - get: loggregator-develop
+      trigger: true
+      passed:
+      - cf-release-deploy
+    - get: deployments-loggregator
+      trigger: false
+
+  - task: run-cats
+    privileged: true
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source:
+        - repository: loggregator/bosh10
+      inputs:
+      - name: deployments-loggregator
+      params:
+      run:
+        path: bash
+        args:
+        - -c
+        - |
+          #!/bin/bash
+          set -ex
+
+          workspace=$(pwd)
+
+          password=$(cat deployments-loggregator/gcp/lite/creds.yml |
+            grep admin_password |
+            awk '{print $2}')
+          bosh -u admin -p "$password" target 10.100.0.6 lite
+          bosh login admin "$password"
+
+          bosh download manifest cf-warden ./cf.yml
+
+          bosh -d ./cf.yml run errand acceptance_tests
+
 
 - name: loggregator-deploy
   serial: true
@@ -649,6 +691,9 @@ jobs:
       trigger: true
       passed:
       - cf-deploy
+    - get: deployments-loggregator-with-changes
+      trigger: false
+
   - task: run-cats
     config:
       platform: linux
@@ -658,13 +703,14 @@ jobs:
         - repository: loggregator/bosh20
       inputs:
       - name: cats
+      - name: deployments-loggregator-with-changes
       params:
         NODES: 1
         CONFIG_DATA: |
           {
             "api": "api.coconut.cf-app.com",
-            "admin_user": {{cf-username}},
-            "admin_password": {{cf-password}},
+            "admin_user": "admin",
+            "admin_password": "CF_PASSWORD_FROM_VARS",
             "apps_domain": "coconut.cf-app.com",
             "skip_ssl_validation": false,
             "default_timeout": 120,
@@ -697,6 +743,14 @@ jobs:
 
           export CONFIG="$PWD/config.json"
           echo "$CONFIG_DATA" > $CONFIG
+
+          # Insert admin password from cf-vars.yml
+          pushd deployments-loggregator-with-changes
+            export CF_PASSWORD_VARS=$(bosh interpolate gcp/coconut/cf-vars.yml --path /uaa_scim_users_admin_password)
+            sed -i "s/CF_PASSWORD_FROM_VARS/$CF_PASSWORD_VARS/" $CONFIG
+          popd
+
+
           export GOPATH="$PWD/tests"
 
           CATS_PATH=$GOPATH/src/github.com/cloudfoundry/cf-acceptance-tests
@@ -760,6 +814,8 @@ jobs:
       trigger: true
       passed:
       - cf-deploy
+    - get: deployments-loggregator-with-changes
+      trigger: false
   - task: run-wats
     config:
       platform: linux
@@ -769,17 +825,27 @@ jobs:
         - repository: loggregator/bosh20
       inputs:
       - name: wats
+      - name: deployments-loggregator-with-changes
       params:
-        ADMIN_PASSWORD: {{cf-password}}
-        ADMIN_USER: {{cf-username}}
+        ADMIN_USER: "admin"
         API: "api.coconut.cf-app.com"
         APPS_DOMAIN: "coconut.cf-app.com"
         NUM_WIN_CELLS: 1
         SOCKET_ADDRESS_FOR_SECURITY_GROUP_TEST: 10.200.0.6:8080
         DOPPLER_URL: wss://doppler.coconut.cf-app.com:443
       run:
-        path: wats/scripts/run_wats.sh
+        path: bash
+        args:
+          - -c
+          - |
+            #!/bin/bash
+            set -eux
 
+            pushd deployments-loggregator-with-changes
+              export ADMIN_PASSWORD=$(bosh interpolate gcp/coconut/cf-vars.yml --path /uaa_scim_users_admin_password)
+            popd
+
+            ./wats/scripts/run_wats.sh
 
 - name: promotion
   serial: true
@@ -1446,7 +1512,8 @@ groups:
   - loggregator-deploy
   - lats
   - promotion
-  - bosh-lite-deploy
+  - cf-release-deploy
+  - cf-release-cats
 
 - name: submodules
   jobs:
