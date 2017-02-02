@@ -6,6 +6,7 @@ resources:
 
 jobs:
 - name: tests
+  serial: true
   plan:
   - get: health-nozzle-git
     trigger: true
@@ -33,4 +34,4 @@ jobs:
             cd src/github.com/cloudfoundry-incubator/health-nozzle
             go get github.com/Masterminds/glide
             glide install
-            ginkgo -r
+            ginkgo -r -race
