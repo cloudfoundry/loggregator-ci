@@ -858,8 +858,7 @@ jobs:
       trigger: true
       passed:
       - lats
-      - cats
-      - wats
+      - cf-release-cats
   - task: promote
     config:
       image_resource:
