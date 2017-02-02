@@ -1,0 +1,36 @@
+resources:
+- name: health-nozzle-git
+  type: git
+  source:
+    uri: https://github.com/cloudfoundry-incubator/health-nozzle
+
+jobs:
+- name: tests
+  plan:
+  - get: health-nozzle-git
+    trigger: true
+  - task: run-tests
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source:
+          repository: loggregator/go17
+          tag: latest
+      inputs:
+        - name: health-nozzle-git
+          path: src/github.com/cloudfoundry-incubator/health-nozzle
+      run:
+        path: bash
+        args:
+          - -c
+          - |
+            #!/bin/bash -e -x
+
+            export GOPATH=$(pwd)
+            export PATH=$GOPATH/bin:$PATH
+
+            cd src/github.com/cloudfoundry-incubator/health-nozzle
+            go get github.com/Masterminds/glide
+            glide install
+            ginkgo -r
