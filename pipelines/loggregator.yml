@@ -142,12 +142,6 @@ resources:
     uri: https://github.com/cloudfoundry/noaa.git
     branch: master
 
-- name: loggregatorlib
-  type: git
-  source:
-    uri: https://github.com/cloudfoundry/loggregatorlib.git
-    branch: master
-
 - name: sonde-go
   type: git
   source:
@@ -1118,80 +1112,6 @@ jobs:
       repository: bumped-loggregator
       rebase: true
 
-- name: loggregatorlib-unit-tests
-  serial: true
-  plan:
-  - aggregate:
-    - get: loggregatorlib
-      trigger: true
-    - get: loggregator-raw
-      resource: loggregator-develop
-      trigger: false
-    - get: sonde-go
-      trigger: true
-  - task: get-testify
-    config:
-      platform: linux
-      image_resource:
-        type: docker-image
-        source:
-          repository: loggregator/go17
-      inputs:
-      - name: loggregator-raw
-      outputs:
-      - name: loggregator
-      run:
-        path: bash
-        args:
-        - -c
-        - |
-          #!/bin/bash -e
-          cp -r loggregator-raw/. loggregator/
-          export GOPATH=$PWD/loggregator
-          go get github.com/stretchr/testify
-
-  - task: unit-tests
-    config:
-      platform: linux
-      image_resource:
-        type: docker-image
-        source:
-          repository: loggregator/go17
-      inputs:
-      - name: loggregator
-      - name: loggregatorlib
-      run:
-        path: bash
-        args:
-        - -c
-        - {{loggregatorlib_unit_tests}}
-  - task: bump-loggregatorlib-in-loggregator
-    config:
-      platform: linux
-      image_resource:
-        type: docker-image
-        source:
-          repository: loggregator/go17
-      inputs:
-      - name: loggregatorlib
-      - name: loggregator
-      outputs:
-      - name: bumped-loggregator
-      params:
-        PARENT: loggregator
-        OUTPUT: bumped-loggregator
-        SUBMODULE: loggregatorlib
-        SUBMODULE_PATH: src/github.com/cloudfoundry/loggregatorlib
-      run:
-        path: bash
-        args:
-        - -c
-        - {{bump_submodule}}
-  - put: loggregator-develop
-    params:
-      repository: bumped-loggregator
-      rebase: true
-
 - name: sonde-go-generate
   serial: true
   plan:
@@ -1517,7 +1437,6 @@ groups:
 - name: submodules
   jobs:
   - dropsonde-unit-tests
-  - loggregatorlib-unit-tests
   - noaa-unit-tests
   - sonde-go-generate
 
