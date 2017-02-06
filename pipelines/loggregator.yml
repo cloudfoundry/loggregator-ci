@@ -296,7 +296,6 @@ jobs:
 - name: cf-deploy
   serial: true
   serial_groups:
-  - bosh-cf-wats
   - bosh-cf-cats
   plan:
   - aggregate:
@@ -799,7 +798,7 @@ jobs:
 - name: wats
   serial: true
   serial_groups:
-  - bosh-cf-wats
+  - bosh-cf-cats
   plan:
   - aggregate:
     - get: wats
@@ -807,7 +806,7 @@ jobs:
     - get: loggregator-develop
       trigger: true
       passed:
-      - cf-deploy
+      - cats
     - get: deployments-loggregator-with-changes
       trigger: false
   - task: run-wats
