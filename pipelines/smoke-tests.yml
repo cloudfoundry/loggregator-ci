@@ -23,7 +23,8 @@ jobs:
           #!/bin/bash
 
           # target api
-          cf login -a api.run.pivotal.io \
+          cf_api="api.run.pivotal.io"
+          cf login -a $cf_api \
               -u {{pws-username}} \
               -p {{pws-password}} \
               -s development \
@@ -32,10 +33,24 @@ jobs:
           # cf logs to a file
           rm -f output.txt
           cf logs mylogspinner > output.txt 2>&1 &
-          sleep 10 #wait 10 seconds for socket connection
+          sleep 30 #wait 30 seconds for socket connection
           # curl my logspinner
           curl 'mylogspinner.cfapps.io?cycles=10000&delay=2us'
 
           sleep 300 # wait for a bit
 
-          cat output.txt | grep -c 'msg'
+          msg_count=$(cat output.txt | grep -c 'msg')
+
+          echo $msg_count
+
+          currenttime=$(date +%s)
+          curl  -X POST -H "Content-type: application/json" \
+          -d "{ \"series\" :
+                   [{\"metric\":\"smoke_test.loggregator.msg_count\",
+                    \"points\":[[$currenttime, $msg_count]],
+                    \"type\":\"gauge\",
+                    \"host\":\"$cf_api\",
+                    \"tags\":[]}
+                  ]
+              }" \
+          'https://app.datadoghq.com/api/v1/series?api_key='{{datadog-api-key}}
