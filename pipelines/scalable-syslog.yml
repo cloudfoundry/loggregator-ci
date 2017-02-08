@@ -18,6 +18,7 @@ resources:
 jobs:
 - name: tests
   serial: true
+  public: true
   plan:
   - aggregate:
     - get: scalable-syslog-release
