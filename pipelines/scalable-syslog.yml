@@ -1,0 +1,99 @@
+resources:
+- name: scalable-syslog-release
+  type: git
+  source:
+    uri: git@github.com:cloudfoundry-incubator/scalable-syslog-release
+    branch: master
+    private_key: {{cf-loggregator-oauth-bot-key}}
+    ignore_paths:
+    - .final_builds
+    - releases
+
+- name: scalable-syslog
+  type: git
+  source:
+    uri: git@github.com:cloudfoundry-incubator/scalable-syslog
+    private_key: {{cf-loggregator-oauth-bot-key}}
+
+jobs:
+- name: tests
+  serial: true
+  plan:
+  - aggregate:
+    - get: scalable-syslog-release
+      trigger: false
+    - get: scalable-syslog
+      trigger: true
+  - task: run-tests
+    config:
+      image_resource:
+        type: docker-image
+        source:
+        - repository: loggregator/go17
+      platform: linux
+      inputs:
+      - name: scalable-syslog-release
+      - name: scalable-syslog
+      run:
+        path: bash
+        args:
+        - -c
+        - {{scalable_syslog_tests}}
+
+- name: bump-release-submodule
+  serial: true
+  plan:
+  - aggregate:
+    - get: scalable-syslog-release
+      trigger: false
+    - get: scalable-syslog
+      passed:
+      - tests
+      trigger: true
+  - task: update-submodule
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source:
+          repository: loggregator/go17
+      inputs:
+      - name: scalable-syslog-release
+      - name: scalable-syslog
+      outputs:
+      - name: updated-scalable-syslog-release
+      params:
+        PARENT: scalable-syslog-release
+        OUTPUT: updated-scalable-syslog-release
+        CHILD: scalable-syslog
+        CHILD_PATH: src/github.com/cloudfoundry-incubator/scalable-syslog
+      run:
+        path: bash
+        args:
+        - -c
+        - {{update_submodule}}
+  - task: commit
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source:
+          repository: loggregator/go17
+      inputs:
+      - name: updated-scalable-syslog-release
+      outputs:
+      - name: bumped-scalable-syslog-release
+      params:
+        SOURCE: updated-scalable-syslog-release
+        PATHS: src/github.com/cloudfoundry-incubator/scalable-syslog
+        COMMIT_MESSAGE: "Bump scalable-syslog"
+        OUTPUT: bumped-scalable-syslog-release
+      run:
+        path: bash
+        args:
+        - -c
+        - {{commit}}
+  - put: scalable-syslog-release
+    params:
+      repository: bumped-scalable-syslog-release
+      rebase: false

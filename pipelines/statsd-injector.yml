@@ -4,7 +4,7 @@ resources:
   source:
     uri: git@github.com:cloudfoundry/statsd-injector-release
     branch: master
-    private_key: {{statsd-key}}
+    private_key: {{cf-loggregator-oauth-bot-key}}
     ignore_paths:
     - .final_builds
     - releases
@@ -13,7 +13,7 @@ resources:
   type: git
   source:
     uri: git@github.com:cloudfoundry/statsd-injector
-    private_key: {{statsd-key}}
+    private_key: {{cf-loggregator-oauth-bot-key}}
 
 - name: version
   type: semver
