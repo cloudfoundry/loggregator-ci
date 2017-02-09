@@ -31,7 +31,6 @@ jobs:
   plan:
   - aggregate:
     - get: statsd-injector-release
-      trigger: false
     - get: statsd-injector
       trigger: true
   - task: run-units
@@ -116,7 +115,6 @@ jobs:
       params:
         bump: patch
     - get: statsd-injector-release
-      trigger: true
       passed:
       - bump-release-submodule
   - task: create-final-release
