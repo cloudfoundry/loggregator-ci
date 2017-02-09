@@ -149,6 +149,20 @@ scalable_syslog_tests: |
     go install github.com/onsi/ginkgo/ginkgo
     go test ./src/github.com/cloudfoundry-incubator/scalable-syslog/... -race
   popd
+scalable_syslog_sync_package_specs: |
+  #!/bin/bash
+
+  set -e -x
+
+  pushd updated-scalable-syslog-release
+    export GOPATH="$PWD"
+    export PATH="$GOPATH/bin:$PATH"
+
+    ./scripts/sync-package-specs
+  popd
+
+  cp -r updated-scalable-syslog-release/. $OUTPUT/
+
 bosh_hm_forwarder_units: |
   #!/bin/bash
 
