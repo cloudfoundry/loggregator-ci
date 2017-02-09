@@ -147,7 +147,7 @@ scalable_syslog_tests: |
     export GOPATH="$PWD"
     export PATH="$GOPATH/bin:$PATH"
     go install github.com/onsi/ginkgo/ginkgo
-    ginkgo -r -race -randomizeAllSpecs ./src/github.com/cloudfoundry-incubator/scalable-syslog
+    go test ./src/github.com/cloudfoundry-incubator/scalable-syslog/... -race
   popd
 bosh_hm_forwarder_units: |
   #!/bin/bash
