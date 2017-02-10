@@ -21,6 +21,7 @@ jobs:
         - -c
         - |
           #!/bin/bash
+          set -e
 
           # target api
           cf_api="api.run.pivotal.io"
