@@ -57,7 +57,7 @@ jobs:
                     \"tags\":[]}
                   ]
               }" \
-          'https://app.datadoghq.com/api/v1/series?api_key='{{datadog-api-key}}
+          'https://app.datadoghq.com/api/v1/series?api_key='{{datadog-prod-api-key}}
 
           curl  -X POST -H "Content-type: application/json" \
           -d "{ \"series\" :
@@ -68,7 +68,7 @@ jobs:
                     \"tags\":[]}
                   ]
               }" \
-          'https://app.datadoghq.com/api/v1/series?api_key='{{datadog-api-key}}
+          'https://app.datadoghq.com/api/v1/series?api_key='{{datadog-prod-api-key}}
 
           curl  -X POST -H "Content-type: application/json" \
           -d "{ \"series\" :
@@ -79,4 +79,4 @@ jobs:
                     \"tags\":[]}
                   ]
               }" \
-          'https://app.datadoghq.com/api/v1/series?api_key='{{datadog-api-key}}
+          'https://app.datadoghq.com/api/v1/series?api_key='{{datadog-prod-api-key}}
