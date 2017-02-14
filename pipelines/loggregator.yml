@@ -26,7 +26,7 @@ resources:
   type: git
   source:
     uri: https://github.com/cloudfoundry/cf-release
-    branch: release-elect
+    branch: release-candidate
 
 - name: diego-release
   type: git
