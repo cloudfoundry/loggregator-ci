@@ -401,6 +401,7 @@ jobs:
             -o $DEPLOYMENT/cf-ops.yml \
             -v system_domain=$SYSTEM_DOMAIN \
             --vars-store $DEPLOYMENT/cf-vars.yml \
+            --vars-file $DEPLOYMENT/router-vars.yml \
             --skip-drain=windows-cell
           popd
 
