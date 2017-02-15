@@ -32,7 +32,7 @@ resources:
   type: git
   source:
     uri: https://github.com/cloudfoundry/diego-release
-    branch: release-candidate
+    branch: master
 
 - name: diego-github-releases
   type: github-release
