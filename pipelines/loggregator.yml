@@ -399,16 +399,13 @@ jobs:
           bosh -n alias-env coconut -e $BOSH_ENV --ca-cert ../deployments-loggregator/gcp/certs/bosh/ca.pem
           bosh -n -e coconut log-in --client=$BOSH_USERNAME --client-secret=$BOSH_PASSWORD
           export DEPLOYMENT=../deployments-loggregator/gcp/coconut
-          # TODO: remove skip-drain in a few weeks once issues are resolved
-          # with consul_agent_windows
           bosh -n -e coconut -d cf deploy cf-deployment.yml \
             -o operations/tcp-routing-gcp.yml \
             -o operations/windows-cell.yml \
             -o $DEPLOYMENT/cf-ops.yml \
             -v system_domain=$SYSTEM_DOMAIN \
             --vars-store $DEPLOYMENT/cf-vars.yml \
-            --vars-file $DEPLOYMENT/router-vars.yml \
-            --skip-drain=windows-cell
+            --vars-file $DEPLOYMENT/router-vars.yml
           popd
 
           rsync -ac deployments-loggregator/ updated-deployments-loggregator
