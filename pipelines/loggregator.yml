@@ -28,6 +28,12 @@ resources:
     uri: https://github.com/cloudfoundry/cf-release
     branch: release-candidate
 
+- name: cf-release-develop
+  type: git
+  source:
+    uri: https://github.com/cloudfoundry/cf-release
+    branch: develop
+
 - name: diego-release
   type: git
   source:
@@ -1419,6 +1425,36 @@ jobs:
     params:
       repository: committed-deployments-loggregator
       rebase: true
+
+- name: diff-cert-generation-scripts
+  plan:
+  - get: loggregator
+    resource: loggregator-develop
+    trigger: true
+  - get: cf-release
+    resource: cf-release-develop
+    trigger: true
+  - task: diff
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source:
+          repository: loggregator/ubuntu-base
+      inputs:
+      - name: loggregator
+      - name: cf-release
+      run:
+        path: bash
+        args:
+          - -c
+          - |
+            #!/bin/bash
+            set -e
+            echo diffing loggregator cert generation
+            diff --unified loggregator/scripts/generate-loggregator-certs \
+                           cf-release/scripts/generate-loggregator-certs
+
 groups:
 - name: loggregator
   jobs:
@@ -1433,6 +1469,7 @@ groups:
   - promotion
   - cf-release-deploy
   - cf-release-cats
+  - diff-cert-generation-scripts
 
 - name: submodules
   jobs:

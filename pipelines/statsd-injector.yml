@@ -25,6 +25,12 @@ resources:
     secret_access_key: {{s3-secret-access-key}}
     region_name: us-west-2
 
+- name: cf-release-develop
+  type: git
+  source:
+    uri: https://github.com/cloudfoundry/cf-release
+    branch: develop
+
 jobs:
 - name: unit-tests
   serial: true
@@ -147,3 +153,31 @@ jobs:
     params:
       repository: final-statsd-injector-release
       rebase: false
+
+- name: diff-cert-generation-scripts
+  plan:
+  - get: statsd-injector-release
+    trigger: true
+  - get: cf-release
+    resource: cf-release-develop
+    trigger: true
+  - task: diff
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source:
+          repository: loggregator/ubuntu-base
+      inputs:
+      - name: statsd-injector-release
+      - name: cf-release
+      run:
+        path: bash
+        args:
+          - -c
+          - |
+            #!/bin/bash
+            set -e
+            echo diffing statsd-injector cert generation
+            diff --unified statsd-injector-release/scripts/generate-certs \
+                           cf-release/scripts/generate-statsd-injector-certs
