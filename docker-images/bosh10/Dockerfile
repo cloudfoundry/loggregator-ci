@@ -6,6 +6,7 @@ RUN apt-get --yes update && \
     apt-get --yes update && \
     apt-get --yes install \
         build-essential \
+        curl \
         git \
         ruby2.3 \
         ruby2.3-dev \
