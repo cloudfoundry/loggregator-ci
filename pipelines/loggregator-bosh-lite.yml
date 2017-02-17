@@ -19,6 +19,13 @@ resources:
   type: git
   source: *deployments_loggregator
 
+- name: loggregator-ci
+  type: git
+  source:
+    uri: git@github.com:cloudfoundry/loggregator-ci
+    branch: master
+    private_key: {{deployments-loggregator-key}}
+
 jobs:
 - name: create-bosh-lite
   serial_groups:
@@ -27,60 +34,13 @@ jobs:
   - aggregate:
     - get: bosh-deployment
     - get: deployments-loggregator
+    - get: loggregator-ci
   - task: create-bosh-lite
     config:
-      platform: linux
-      image_resource:
-        type: docker-image
-        source:
-          repository: loggregator/bosh20
-      inputs:
-      - name: bosh-deployment
-      - name: deployments-loggregator
-      outputs:
-      - name: updated-deployments-loggregator
-      params:
-      run:
-        path: bash
-        args:
-          - -c
-          - |
-            #!/bin/bash
-            set -ex
-            deploy_dir=deployments-loggregator/gcp/lite
-            if [ -f $deploy_dir/state.json ]; then
-              echo Deploy already exists, delete it first
-              exit 1
-            fi
-
-            # create director
-            bosh create-env bosh-deployment/bosh.yml \
-              --state $deploy_dir/state.json \
-              -o bosh-deployment/gcp/cpi.yml \
-              -o bosh-deployment/bosh-lite.yml \
-              -o bosh-deployment/jumpbox-user.yml \
-              -o $deploy_dir/lite-ops.yml \
-              --vars-store $deploy_dir/creds.yml \
-              -v director_name="Bosh Lite Director" \
-              -v internal_ip=10.100.0.6 \
-              -v internal_gw=10.100.0.1 \
-              -v internal_cidr=10.100.0.0/24 \
-              -v network_name=litenet0 \
-              -v outbound_network_name=NatNetwork \
-              --var-file gcp_credentials_json=deployments-loggregator/gcp/coconut/tf/terraform-bosh.key.json \
-              -v network=cf-network \
-              -v subnetwork=bosh-lite \
-              -v project_id=cff-loggregator \
-              -v tags="[bosh]" \
-              -v zone="us-central1-a"
-
-            # upload stemcell needed for bosh-lite "vms"
-            bosh alias-env lite -e 10.100.0.6 --ca-cert <(bosh interpolate $deploy_dir/creds.yml --path /director_ssl/ca)
-            export BOSH_CLIENT=admin
-            export BOSH_CLIENT_SECRET=$(bosh interpolate $deploy_dir/creds.yml --path /admin_password)
-            bosh -e lite upload-stemcell https://bosh.io/d/stemcells/bosh-warden-boshlite-ubuntu-trusty-go_agent
-
-            rsync -ac deployments-loggregator/ updated-deployments-loggregator
+    file: loggregator-ci/tasks/create-bosh-lite.yml
+    params:
+      deploy_dir: deployments-loggregator/gcp/lite
+      subnet_prefix: 10.100.0
   - task: commit
     config:
       platform: linux
@@ -114,53 +74,12 @@ jobs:
   - aggregate:
     - get: bosh-deployment
     - get: deployments-loggregator
+    - get: loggregator-ci
   - task: delete-bosh-lite
-    config:
-      platform: linux
-      image_resource:
-        type: docker-image
-        source:
-          repository: loggregator/bosh20
-      inputs:
-      - name: bosh-deployment
-      - name: deployments-loggregator
-      outputs:
-      - name: updated-deployments-loggregator
-      params:
-      run:
-        path: bash
-        args:
-          - -c
-          - |
-            #!/bin/bash
-            set -ex
-            deploy_dir=deployments-loggregator/gcp/lite
-            if [ ! -f $deploy_dir/state.json ]; then
-              echo Deploy does not exist, create it first
-              exit 1
-            fi
-
-            bosh delete-env bosh-deployment/bosh.yml \
-              --state $deploy_dir/state.json \
-              -o bosh-deployment/gcp/cpi.yml \
-              -o bosh-deployment/bosh-lite.yml \
-              -o bosh-deployment/jumpbox-user.yml \
-              --vars-store $deploy_dir/creds.yml \
-              -v director_name="Bosh Lite Director" \
-              -v internal_ip=10.100.0.6 \
-              -v internal_gw=10.100.0.1 \
-              -v internal_cidr=10.100.0.0/24 \
-              -v network_name=litenet0 \
-              -v outbound_network_name=NatNetwork \
-              --var-file gcp_credentials_json=deployments-loggregator/gcp/coconut/tf/terraform-bosh.key.json \
-              -v network=cf-network \
-              -v subnetwork=bosh-lite \
-              -v project_id=cff-loggregator \
-              -v tags="[bosh]" \
-              -v zone="us-central1-a"
-
-            rm -f $deploy_dir/state.json $deploy_dir/creds.yml
-            rsync -ac deployments-loggregator/ updated-deployments-loggregator
+    file: loggregator-ci/tasks/destroy-bosh-lite.yml
+    params:
+      deploy_dir: deployments-loggregator/gcp/lite
+      subnet_prefix: 10.100.0
   - task: commit
     config:
       platform: linux

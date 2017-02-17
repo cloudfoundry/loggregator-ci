@@ -1,0 +1,47 @@
+platform: linux
+image_resource:
+  type: docker-image
+  source:
+    repository: loggregator/bosh20
+inputs:
+- name: bosh-deployment
+- name: deployments-loggregator
+outputs:
+- name: updated-deployments-loggregator
+params:
+  deploy_dir:
+  subnet_prefix:
+run:
+  path: bash
+  args:
+    - -c
+    - |
+      #!/bin/bash
+      set -ex
+
+      if [ ! -f $deploy_dir/state.json ]; then
+        echo Deploy does not exist, create it first
+        exit 1
+      fi
+
+      bosh delete-env bosh-deployment/bosh.yml \
+        --state $deploy_dir/state.json \
+        -o bosh-deployment/gcp/cpi.yml \
+        -o bosh-deployment/bosh-lite.yml \
+        -o bosh-deployment/jumpbox-user.yml \
+        --vars-store $deploy_dir/creds.yml \
+        -v director_name="Bosh Lite Director" \
+        -v internal_ip="$subnet_prefix".6 \
+        -v internal_gw="$subnet_prefix".1 \
+        -v internal_cidr="$subnet_prefix".0/24 \
+        -v network_name=litenet0 \
+        -v outbound_network_name=NatNetwork \
+        --var-file gcp_credentials_json=deployments-loggregator/gcp/coconut/tf/terraform-bosh.key.json \
+        -v network=cf-network \
+        -v subnetwork=bosh-lite \
+        -v project_id=cff-loggregator \
+        -v tags="[bosh]" \
+        -v zone="us-central1-a"
+
+      rm -f $deploy_dir/state.json $deploy_dir/creds.yml
+      rsync -ac deployments-loggregator/ updated-deployments-loggregator
