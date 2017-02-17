@@ -11,6 +11,7 @@ outputs:
 params:
   deploy_dir:
   subnet_prefix:
+  subnetwork:
 run:
   path: bash
   args:
@@ -41,7 +42,7 @@ run:
         -v outbound_network_name=NatNetwork \
         --var-file gcp_credentials_json=deployments-loggregator/gcp/coconut/tf/terraform-bosh.key.json \
         -v network=cf-network \
-        -v subnetwork=bosh-lite \
+        -v subnetwork=$subnetwork \
         -v project_id=cff-loggregator \
         -v tags="[bosh]" \
         -v zone="us-central1-a"
