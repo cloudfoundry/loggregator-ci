@@ -19,6 +19,8 @@ run:
       #!/bin/bash
       set -ex
 
+      mkdir -p $deploy_dir
+
       if [ ! -f $deploy_dir/state.json ]; then
         echo Deploy does not exist, create it first
         exit 1

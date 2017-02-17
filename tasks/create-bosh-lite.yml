@@ -18,6 +18,8 @@ run:
     - |
       #!/bin/bash
       set -ex
+      mkdir -p $deploy_dir
+
       if [ -f $deploy_dir/state.json ]; then
         echo Deploy already exists, delete it first
         exit 1
