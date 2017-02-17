@@ -299,3 +299,16 @@ create-bosh-lite: |
   EOF
 
   vagrant up --provider=google
+
+prepare-docker-image: |
+  #!/bin/bash
+  set -e
+  mkdir build-image/build
+  cp -R "image-dockerfile/docker-images/$IMAGE_NAME/"* build-image/build/
+  if [ -d additional-files ]; then
+    cp -R additional-files/* build-image/build/
+  fi
+  pushd image-dockerfile > /dev/null
+    sha=$(git rev-parse @)
+  popd > /dev/null
+  echo "$sha" > build-image/tag
