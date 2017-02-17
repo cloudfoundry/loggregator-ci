@@ -1,4 +1,11 @@
 resources:
+- name: deployments-loggregator
+  type: git
+  source: &deployments_loggregator
+    uri: git@github.com:cloudfoundry/deployments-loggregator.git
+    branch: master
+    private_key: {{deployments-loggregator-key}}
+
 - name: loggregator-develop
   type: git
   source: &loggregator_develop
@@ -178,8 +185,9 @@ jobs:
 - name: bump
   plan:
     - get: loggregator-master
-      passed: [create-final-release]
+      # passed: [create-final-release]
     - get: cf-release
+    - get: deployments-loggregator
     - task: bump-submodule
       config:
         image_resource:
@@ -187,11 +195,9 @@ jobs:
           source:
           - repository: loggregator/bosh10
         platform: linux
-        params:
-          SSH_KEY: {{loggregator-key}}
-        NEW_VERSION: 78
         inputs:
         - name: loggregator-master
+        - name: deployments-loggregator
         - name: cf-release
         outputs:
         - name: bump
@@ -221,22 +227,26 @@ jobs:
                 git checkout ${LOGGREGATOR_SHA}
               popd
 
+              password=$(cat deployments-loggregator/gcp/cf-release-bosh-lite/creds.yml |
+                grep admin_password |
+                awk '{print $2}')
+              bosh -u admin -p "$password" target 10.102.0.6 lite
+              bosh login admin "$password"
+
               pushd cf-release
                 echo "Deploying Release to Bosh Lite"
-                ./scripts/deploy-dev-release-to-bosh-lite
+                ./scripts/generate-bosh-lite-dev-manifest
+                bosh --parallel 10 sync blobs
+                bosh create release --name cf --force
+                bosh -t 10.102.0.6 -n upload release
+                bosh -t 10.102.0.6 -d bosh-lite/deployments/cf.yml -n deploy
 
                 echo "Running CATs with most recent Loggregator"
-                bosh run errand acceptance_tests
+                bosh -t 10.102.0.6 run errand acceptance_tests
 
                 echo "Configuring Git"
                 git config --global user.email "cf-loggregator@pivotal.io"
                 git config --global user.name "Loggregator CI"
-
-                echo "setup ssh for reading from github"
-                eval "$(ssh-agent -s)"
-                mkdir -p ~/.ssh
-                echo -e "Host github.com\n\tStrictHostKeyChecking no\n" >> ~/.ssh/config
-                ssh-add <(echo "$SSH_KEY")
 
                 echo "Bumping loggregator SHA in cf-release"
                 echo "New loggregator SHA is ${LOGGREGATOR_SHA}
@@ -247,8 +257,3 @@ jobs:
               popd
 
               cp -r cf-release bump
-  - put: cf-release
-    params:
-      repository: bump/cf-release
-      rebase: true
-
