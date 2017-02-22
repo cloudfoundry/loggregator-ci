@@ -104,7 +104,7 @@ jobs:
       - name: bumped-scalable-syslog-release
       params:
         SOURCE: synced-scalable-syslog-release
-        PATHS: src/github.com/cloudfoundry-incubator/scalable-syslog
+        PATHS: src/github.com/cloudfoundry-incubator/scalable-syslog packages/
         COMMIT_MESSAGE: "Bump scalable-syslog"
         OUTPUT: bumped-scalable-syslog-release
       run:
