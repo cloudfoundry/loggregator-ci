@@ -595,7 +595,7 @@ jobs:
       params:
         SOURCE: updated-deployments-loggregator
         PATHS: gcp/coconut/loggregator-vars.yml
-        COMMIT_MESSAGE: "Update loggregator vars store [ci skip]"
+        COMMIT_MESSAGE: "Update loggregator vars store"
         OUTPUT: committed-deployments-loggregator
       run:
         path: bash
