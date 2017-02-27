@@ -81,6 +81,7 @@ jobs:
     params:
       deploy_dir: deployments-loggregator/gcp/lite
       subnet_prefix: 10.100.0
+      subnetwork: bosh-lite
   - task: commit
     config:
       platform: linux
