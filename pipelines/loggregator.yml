@@ -577,7 +577,6 @@ jobs:
             bosh -e coconut -n log-in --client="$BOSH_USERNAME" --client-secret="$BOSH_PASSWORD"
             bosh -n -e coconut -d loggregator deploy \
               --vars-store "$deployment_dir/loggregator-vars.yml" \
-              --ops-file "$deployment_dir/loggregator-ops.yml" \
               "$loggregator_dir/templates/loggregator.yml"
 
             rsync -ac deployments-loggregator/ updated-deployments-loggregator
