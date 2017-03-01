@@ -40,7 +40,7 @@ jobs:
       BBL_LB_CERT: {{coconut_director_cert}}
       BBL_LB_KEY: {{coconut_director_key}}
       BBL_ENV_NAME: bbl
-      LB_DOMAIN: bosh.coconut.cf-app.com
+      LB_DOMAIN: coconut.cf-app.com
   - put: deployments-loggregator-with-changes
     params:
       repository: updated-bbl-state

@@ -54,6 +54,12 @@ resources:
     branch: master
     private_key: {{deployments-loggregator-key}}
 
+- name: cf-deployment-concourse-tasks
+  type: git
+  source:
+    uri: https://github.com/cloudfoundry/cf-deployment-concourse-tasks
+    branch: master
+
 # This is here because concourse has a bug in which putting to a git resource
 # creates a new version that can trigger jobs even if the commit has [ci skip]
 # present.
@@ -235,134 +241,39 @@ jobs:
   - bosh-cf-cats
   plan:
   - aggregate:
-    - get: loggregator
+    - get: bbl-state
+      resource: deployments-loggregator
+      trigger: false
+    - get: cf-deployment
+      trigger: true
+    - get: cf-deployment-concourse-tasks
+      trigger: false
+    - get: ops-files
+      resource: cf-deployment
+      trigger: false
+    - get: release
       resource: loggregator-develop
       trigger: true
       passed:
       - run-tests
       - run-windows-tests
-    - get: cf-deployment
-      trigger: true
-    - get: deployments-loggregator
+    - get: vars-store
+      resource: deployments-loggregator
       trigger: false
-  - task: build-dev-release
-    config:
-      platform: linux
-      image_resource:
-        type: docker-image
-        source:
-        - repository: loggregator/bosh20
-      inputs:
-      - name: loggregator
-      - name: deployments-loggregator
-      params:
-        BOSH_ENV: 10.0.0.6
-        BOSH_USERNAME: {{bosh-username}}
-        BOSH_PASSWORD: {{bosh-password}}
-      run:
-        path: bash
-        args:
-        - -c
-        - |
-          #!/bin/bash
-          set -ex
-
-          cd loggregator
-
-          bosh -n create-release
-          bosh -n alias-env coconut -e $BOSH_ENV --ca-cert ../deployments-loggregator/gcp/certs/bosh/ca.pem
-          bosh -n -e coconut log-in --client=$BOSH_USERNAME --client-secret=$BOSH_PASSWORD
-          bosh -n -e coconut upload-release --rebase
-  - task: set-cloud-config
-    config:
-      platform: linux
-      image_resource:
-        type: docker-image
-        source:
-        - repository: loggregator/bosh20
-      inputs:
-      - name: deployments-loggregator
-      params:
-        BOSH_ENV: 10.0.0.6
-        BOSH_USERNAME: {{bosh-username}}
-        BOSH_PASSWORD: {{bosh-password}}
-      run:
-        path: bash
-        args:
-        - -c
-        - |
-          #!/bin/bash
-          set -ex
-
-          cd deployments-loggregator/gcp/coconut
-
-          bosh -n alias-env coconut -e $BOSH_ENV --ca-cert ../certs/bosh/ca.pem
-          bosh -n -e coconut log-in --client=$BOSH_USERNAME --client-secret=$BOSH_PASSWORD
-          bosh -n -e coconut update-cloud-config cloud-config.yml
-  - task: deploy-cf
-    config:
-      platform: linux
-      image_resource:
-        type: docker-image
-        source:
-        - repository: loggregator/bosh20
-      inputs:
-      - name: cf-deployment
-      - name: deployments-loggregator
-      outputs:
-      - name: updated-deployments-loggregator
-      params:
-        BOSH_ENV: 10.0.0.6
-        BOSH_USERNAME: {{bosh-username}}
-        BOSH_PASSWORD: {{bosh-password}}
-        SYSTEM_DOMAIN: "coconut.cf-app.com"
-      run:
-        path: bash
-        args:
-        - -c
-        - |
-          #!/bin/bash
-          set -ex
-
-          pushd cf-deployment
-
-          bosh -n alias-env coconut -e $BOSH_ENV --ca-cert ../deployments-loggregator/gcp/certs/bosh/ca.pem
-          bosh -n -e coconut log-in --client=$BOSH_USERNAME --client-secret=$BOSH_PASSWORD
-          export DEPLOYMENT=../deployments-loggregator/gcp/coconut
-          bosh -n -e coconut -d cf deploy cf-deployment.yml \
-            -o operations/tcp-routing-gcp.yml \
-            -o operations/windows-cell.yml \
-            -o $DEPLOYMENT/cf-ops.yml \
-            -v system_domain=$SYSTEM_DOMAIN \
-            --vars-store $DEPLOYMENT/cf-vars.yml \
-            --vars-file $DEPLOYMENT/router-vars.yml
-          popd
-
-          rsync -ac deployments-loggregator/ updated-deployments-loggregator
-  - task: commit
-    config:
-      platform: linux
-      image_resource:
-        type: docker-image
-        source:
-          repository: loggregator/ubuntu-base
-      inputs:
-      - name: updated-deployments-loggregator
-      outputs:
-      - name: committed-deployments-loggregator
-      params:
-        SOURCE: updated-deployments-loggregator
-        PATHS: gcp/coconut/cf-vars.yml
-        COMMIT_MESSAGE: "Update cf vars store"
-        OUTPUT: committed-deployments-loggregator
-      run:
-        path: bash
-        args:
-        - -c
-        - {{commit}}
+  - task: upload-stemcell
+    file: cf-deployment-concourse-tasks/bosh-upload-stemcell-from-cf-deployment/task.yml
+    params:
+      BBL_STATE_DIR: gcp/bbl
+  - task: cf-deploy
+    file: cf-deployment-concourse-tasks/bosh-deploy-with-created-release/task.yml
+    params:
+      BBL_STATE_DIR: gcp/bbl
+      SYSTEM_DOMAIN: coconut.cf-app.com
+      VARS_STORE_FILE: gcp/bbl/deployment-vars.yml
+      OPS_FILES: "operations/gcp.yml operations/workarounds/use-4-azs-for-router.yml"
   - put: deployments-loggregator-with-changes
     params:
-      repository: committed-deployments-loggregator
+      repository: updated-vars-store
 
 - name: cf-release-deploy
   serial: true
