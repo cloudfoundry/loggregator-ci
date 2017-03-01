@@ -223,7 +223,7 @@ jobs:
       image_resource:
         type: docker-image
         source:
-        - repository: loggregator/bosh20
+          repository: relintdockerhubpushbot/cf-deployment-concourse-tasks
       platform: linux
       inputs:
       - name: datadog-release
@@ -232,10 +232,6 @@ jobs:
       params:
         MANIFEST_FILE: datadog-firehose-nozzle-release/templates/datadog-bosh2.yml
         MANIFEST_VARS: deployments-loggregator/gcp/coconut/datadog-vars.yml
-        BOSH_ENV: 10.0.0.6
-        BOSH_CA: deployments-loggregator/gcp/certs/bosh/ca.pem
-        BOSH_USERNAME: {{bosh-username}}
-        BOSH_PASSWORD: {{bosh-password}}
         DEPLOYMENT_NAME: datadog
       run:
         path: bash
@@ -248,11 +244,15 @@ jobs:
 
             source ~/.bashrc
 
-            bosh -n alias-env -e ${BOSH_ENV} --ca-cert ${BOSH_CA} e
-            bosh -n -e e log-in --client=${BOSH_USERNAME} --client-secret=${BOSH_PASSWORD}
+            pushd deployments-loggregator/gcp/bbl
+              export BOSH_CLIENT=`bbl director-username`
+              export BOSH_CLIENT_SECRET=`bbl director-password`
+              export BOSH_CA_CERT=`bbl director-ca-cert`
+              export BOSH_ENVIRONMENT=`bbl director-address`
+            popd
 
-            bosh -n -e e upload-release datadog-release/*.tgz --rebase
-            bosh -n -e e -d ${DEPLOYMENT_NAME} deploy ${MANIFEST_FILE} -l ${MANIFEST_VARS}
+            bosh -n upload-release datadog-release/*.tgz --rebase
+            bosh -n -d ${DEPLOYMENT_NAME} deploy ${MANIFEST_FILE} -l ${MANIFEST_VARS}
 
 - name: datadog-nozzle-create-final-release
   serial: true

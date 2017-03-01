@@ -248,9 +248,6 @@ jobs:
       trigger: true
     - get: cf-deployment-concourse-tasks
       trigger: false
-    - get: ops-files
-      resource: cf-deployment
-      trigger: false
     - get: release
       resource: loggregator-develop
       trigger: true
@@ -264,13 +261,33 @@ jobs:
     file: cf-deployment-concourse-tasks/bosh-upload-stemcell-from-cf-deployment/task.yml
     params:
       BBL_STATE_DIR: gcp/bbl
+  - task: copy-ops-files
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source: { repository: ubuntu }
+      inputs:
+      - name: bbl-state
+      - name: cf-deployment
+      outputs:
+      - name: ops-files
+      run:
+        path: /bin/bash
+        args:
+        - "-c"
+        - |
+          cp cf-deployment/operations/gcp.yml ops-files/
+          cp cf-deployment/operations/workarounds/use-4-azs-for-router.yml ops-files/
+          cp bbl-state/ops-files/*.yml ops-files/
+
   - task: cf-deploy
     file: cf-deployment-concourse-tasks/bosh-deploy-with-created-release/task.yml
     params:
       BBL_STATE_DIR: gcp/bbl
       SYSTEM_DOMAIN: coconut.cf-app.com
       VARS_STORE_FILE: gcp/bbl/deployment-vars.yml
-      OPS_FILES: "operations/gcp.yml operations/workarounds/use-4-azs-for-router.yml"
+      OPS_FILES: "gcp.yml clients.yml use-4-azs-for-router.yml"
   - put: deployments-loggregator-with-changes
     params:
       repository: updated-vars-store
@@ -584,7 +601,7 @@ jobs:
 
           # Insert admin password from cf-vars.yml
           pushd deployments-loggregator-with-changes
-            export CF_PASSWORD_VARS=$(bosh interpolate gcp/coconut/cf-vars.yml --path /uaa_scim_users_admin_password)
+            export CF_PASSWORD_VARS=$(bosh interpolate gcp/bbl/deployment-vars.yml --path /uaa_scim_users_admin_password)
             sed -i "s/CF_PASSWORD_FROM_VARS/$CF_PASSWORD_VARS/" $CONFIG
           popd
 
@@ -669,7 +686,7 @@ jobs:
         API: "api.coconut.cf-app.com"
         APPS_DOMAIN: "coconut.cf-app.com"
         NUM_WIN_CELLS: 1
-        SOCKET_ADDRESS_FOR_SECURITY_GROUP_TEST: 10.0.0.6:25555
+        SOCKET_ADDRESS_FOR_SECURITY_GROUP_TEST: google.com
         DOPPLER_URL: wss://doppler.coconut.cf-app.com:443
       run:
         path: bash
@@ -680,7 +697,7 @@ jobs:
             set -eux
 
             pushd deployments-loggregator-with-changes
-              export ADMIN_PASSWORD=$(bosh interpolate gcp/coconut/cf-vars.yml --path /uaa_scim_users_admin_password)
+              export ADMIN_PASSWORD=$(bosh interpolate gcp/bbl/deployment-vars.yml --path /uaa_scim_users_admin_password)
             popd
 
             ./wats/scripts/run_wats.sh
