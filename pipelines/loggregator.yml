@@ -279,7 +279,7 @@ jobs:
         - |
           cp cf-deployment/operations/gcp.yml ops-files/
           cp cf-deployment/operations/workarounds/use-4-azs-for-router.yml ops-files/
-          cp bbl-state/ops-files/*.yml ops-files/
+          cp bbl-state/gcp/bbl/ops-files/*.yml ops-files/
 
   - task: cf-deploy
     file: cf-deployment-concourse-tasks/bosh-deploy-with-created-release/task.yml
