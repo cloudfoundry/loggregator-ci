@@ -72,11 +72,6 @@ resources:
   source:
     repository: cloudfoundry-incubator/etcd-release
 
-- name: gcp-stemcell
-  type: bosh-io-stemcell
-  source:
-    name: bosh-google-kvm-ubuntu-trusty-go_agent
-
 - name: loggregator-develop
   type: git
   source: &loggregator_develop
@@ -195,45 +190,6 @@ jobs:
               throw "test failed"
             }
           }
-
-- name: upload-stemcell
-  plan:
-  - aggregate:
-    - get: gcp-stemcell
-      trigger: true
-    - get: deployments-loggregator
-  - task: load-stemcell
-    config:
-      platform: linux
-      image_resource:
-        type: docker-image
-        source:
-        - repository: loggregator/bosh20
-      inputs:
-      - name: gcp-stemcell
-      - name: deployments-loggregator
-      params:
-        BOSH_ENV: 10.0.0.6
-        BOSH_USERNAME: {{bosh-username}}
-        BOSH_PASSWORD: {{bosh-password}}
-      run:
-        path: bash
-        args:
-        - -c
-        - |
-          #!/bin/bash
-
-          set -ex
-
-          cd gcp-stemcell
-
-          bosh -n alias-env coconut -e $BOSH_ENV --ca-cert ../deployments-loggregator/gcp/certs/bosh/ca.pem
-          bosh -n -e coconut log-in --client=$BOSH_USERNAME --client-secret=$BOSH_PASSWORD
-
-          for stemcell in $(find . -name '*.tgz')
-          do
-            bosh -e coconut upload-stemcell $stemcell
-          done
 
 - name: cf-deploy
   serial: true
