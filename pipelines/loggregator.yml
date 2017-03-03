@@ -291,6 +291,7 @@ jobs:
   - put: deployments-loggregator-with-changes
     params:
       repository: updated-vars-store
+      rebase: true
 
 - name: cf-release-deploy
   serial: true
