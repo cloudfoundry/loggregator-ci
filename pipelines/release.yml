@@ -23,9 +23,6 @@ resources:
     uri: git@github.com:cloudfoundry/loggregator.git
     branch: master
     private_key: {{loggregator-key}}
-    ignore_paths:
-    - .final_builds
-    - releases
 
 - name: loggregator-final-release-develop
   type: git
