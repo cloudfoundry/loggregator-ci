@@ -1,10 +1,4 @@
 resources:
-- name: wats
-  type: git
-  source:
-    uri: https://github.com/cloudfoundry/wats
-    branch: master
-
 - name: cats
   type: git
   source:
@@ -613,51 +607,6 @@ jobs:
             bosh -n alias-env coconut -e "$BOSH_ENV" --ca-cert "$PWD/deployments-loggregator/gcp/certs/bosh/ca.pem"
             bosh -e coconut -n log-in --client="$BOSH_USERNAME" --client-secret="$BOSH_PASSWORD"
             bosh -e coconut -d loggregator run-errand loggregator-acceptance-tests --keep-alive
-
-- name: wats
-  serial: true
-  serial_groups:
-  - bosh-cf-cats
-  plan:
-  - aggregate:
-    - get: wats
-      trigger: true
-    - get: loggregator-develop
-      trigger: true
-      passed:
-      - cats
-    - get: deployments-loggregator-with-changes
-      trigger: false
-  - task: run-wats
-    config:
-      platform: linux
-      image_resource:
-        type: docker-image
-        source:
-        - repository: loggregator/bosh20
-      inputs:
-      - name: wats
-      - name: deployments-loggregator-with-changes
-      params:
-        ADMIN_USER: "admin"
-        API: "api.coconut.cf-app.com"
-        APPS_DOMAIN: "coconut.cf-app.com"
-        NUM_WIN_CELLS: 1
-        SOCKET_ADDRESS_FOR_SECURITY_GROUP_TEST: google.com
-        DOPPLER_URL: wss://doppler.coconut.cf-app.com:443
-      run:
-        path: bash
-        args:
-          - -c
-          - |
-            #!/bin/bash
-            set -eux
-
-            pushd deployments-loggregator-with-changes
-              export ADMIN_PASSWORD=$(bosh interpolate gcp/bbl/deployment-vars.yml --path /uaa_scim_users_admin_password)
-            popd
-
-            ./wats/scripts/run_wats.sh
 
 - name: promotion
   serial: true
