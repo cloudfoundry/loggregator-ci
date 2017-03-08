@@ -196,11 +196,12 @@ create_final_release: |
       secret_access_key: $S3_SECRET_KEY
   EOF
 
-    bosh -n create-release --final --version $new_version
+    bosh -n create-release --final --version "$new_version"
     git config user.email "cf-loggregator@pivotal.io"
     git config user.name "Loggregator CI"
     git add .
     git commit -m "Creating final release"
+    git tag "$new_version"
   popd
 
   cp -r "${RELEASE}/." "${OUTPUT}/"
