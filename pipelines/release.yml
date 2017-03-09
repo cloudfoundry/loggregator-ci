@@ -246,6 +246,7 @@ jobs:
                 echo "Configuring Git"
                 git config --global user.email "cf-loggregator@pivotal.io"
                 git config --global user.name "Loggregator CI"
+                git config --global alias.ci commit
 
                 echo "Bumping loggregator SHA in cf-release"
                 echo "New loggregator SHA is ${LOGGREGATOR_SHA}"
