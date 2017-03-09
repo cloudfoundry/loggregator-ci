@@ -256,7 +256,7 @@ jobs:
                 ./scripts/commit_with_shortlog
               popd
 
-              cp -r cf-release cf-release-bump
+              cp -r cf-release/* cf-release-bump/
     - put: cf-release
       params:
         rebase: true
