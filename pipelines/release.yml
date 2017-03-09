@@ -248,7 +248,7 @@ jobs:
                 git config --global user.name "Loggregator CI"
 
                 echo "Bumping loggregator SHA in cf-release"
-                echo "New loggregator SHA is ${LOGGREGATOR_SHA}
+                echo "New loggregator SHA is ${LOGGREGATOR_SHA}"
                 git add src/loggregator
 
                 echo "Commiting with shortlog"
