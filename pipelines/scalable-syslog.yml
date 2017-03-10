@@ -216,7 +216,6 @@ jobs:
             bosh -n -d scalablesyslog deploy \
               --vars-store "$deployment_dir/scalable-syslog-vars.yml" \
               --ops-file "$ss_dir/manifests/fake-ops.yml" \
-              --ops-file "$ss_dir/manifests/consul-ops.yml" \
               "$ss_dir/manifests/scalable-syslog.yml"
 
             rsync -ac deployments-loggregator/ updated-deployments-loggregator
@@ -236,6 +235,128 @@ jobs:
         SOURCE: updated-deployments-loggregator
         PATHS: gcp/coconut/scalable-syslog-vars.yml
         COMMIT_MESSAGE: "Update scalable-syslog vars store"
+        OUTPUT: committed-deployments-loggregator
+      run:
+        path: bash
+        args:
+        - -c
+        - {{commit}}
+  - put: deployments-loggregator-with-changes
+    params:
+      repository: committed-deployments-loggregator
+      rebase: true
+
+- name: cf-scalable-syslog-deploy
+  serial: true
+  plan:
+  - aggregate:
+    - get: scalable-syslog-release
+      passed:
+      - bump-release-submodule
+      trigger: true
+    - get: deployments-loggregator
+      trigger: false
+    - get: consul-release
+      trigger: false
+  - task: upload-scalable-syslog
+    config:
+      image_resource:
+        type: docker-image
+        source:
+          repository: relintdockerhubpushbot/cf-deployment-concourse-tasks
+      platform: linux
+      inputs:
+        - name: deployments-loggregator
+        - name: scalable-syslog-release
+        - name: consul-release
+      run:
+        path: bash
+        args:
+          - -c
+          - |
+            #!/bin/bash
+            set -eux
+            pushd deployments-loggregator/gcp/bbl
+              export BOSH_CLIENT=`bbl director-username`
+              export BOSH_CLIENT_SECRET=`bbl director-password`
+              export BOSH_CA_CERT=`bbl director-ca-cert`
+              export BOSH_ENVIRONMENT=`bbl director-address`
+            popd
+
+            for release in $(find consul-release -name '*.tgz'); do
+              bosh upload-release $release
+            done
+
+            pushd scalable-syslog-release
+                bosh create-release
+                bosh upload-release --rebase
+            popd
+
+  - task: deploy-scalable-syslog
+    config:
+      image_resource:
+        type: docker-image
+        source:
+          repository: relintdockerhubpushbot/cf-deployment-concourse-tasks
+      platform: linux
+      inputs:
+      - name: deployments-loggregator
+      - name: scalable-syslog-release
+      outputs:
+      - name: updated-deployments-loggregator
+      params:
+      run:
+        path: bash
+        args:
+          - -c
+          - |
+            #!/bin/bash
+            set -eux
+
+            pushd deployments-loggregator/gcp/bbl
+              export BOSH_CLIENT=`bbl director-username`
+              export BOSH_CLIENT_SECRET=`bbl director-password`
+              export BOSH_CA_CERT=`bbl director-ca-cert`
+              export BOSH_ENVIRONMENT=`bbl director-address`
+            popd
+
+            ss_dir="$PWD/scalable-syslog-release"
+            deployment_dir="$PWD/deployments-loggregator/gcp/coconut"
+            bbl_dir="$PWD/deployments-loggregator/gcp/bbl"
+
+            bosh int "$bbl_dir/deployment-vars.yml" --path /loggregator_ca > /tmp/vars.yml
+            sed -i -e 's/^/  /' /tmp/vars.yml
+            echo "loggregator_ca:" > /tmp/loggregator_ca.yml
+            cat /tmp/vars.yml >> /tmp/loggregator_ca.yml
+
+            bosh int "$bbl_dir/deployment-vars.yml" --path /service_cf_internal_ca > /tmp/vars.yml
+            sed -i -e 's/^/  /' /tmp/vars.yml
+            echo "service_cf_internal_ca:" >> /tmp/loggregator_ca.yml
+            cat /tmp/vars.yml >> /tmp/loggregator_ca.yml
+
+            bosh -n -d cf-scalablesyslog deploy \
+              --vars-store "$deployment_dir/cf-scalable-syslog-vars.yml" \
+              --ops-file "$bbl_dir/ops-files/scalable-syslog/coconut.yml" \
+              --vars-file /tmp/loggregator_ca.yml \
+              "$ss_dir/manifests/scalable-syslog.yml"
+
+            rsync -ac deployments-loggregator/ updated-deployments-loggregator
+
+  - task: commit
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source:
+          repository: loggregator/ubuntu-base
+      inputs:
+      - name: updated-deployments-loggregator
+      outputs:
+      - name: committed-deployments-loggregator
+      params:
+        SOURCE: updated-deployments-loggregator
+        PATHS: gcp/coconut/cf-scalable-syslog-vars.yml
+        COMMIT_MESSAGE: "Update cf-scalable-syslog vars store"
         OUTPUT: committed-deployments-loggregator
       run:
         path: bash
