@@ -57,7 +57,7 @@ resources:
   source:
     uri: git@github.com:cloudfoundry/cf-release
     branch: develop
-    private_key: {{loggregator-key}}
+    private_key: {{cf-loggregator-oauth-bot-key}}
 
 jobs:
 - name: create-final-release
@@ -207,14 +207,17 @@ jobs:
               #!/bin/bash
               set -ex
 
-              res=$(curl canibump.cfapps.io -H "Accept: application/json")
-              can_bump="{\"can_i_bump\":true}"
+              function canibump {
+                res=$(curl canibump.cfapps.io -H "Accept: application/json")
+                can_bump="{\"can_i_bump\":true}"
 
-              if [ "${res}" != "${can_bump}" ]; then
-                echo "canibump.cfapps.io reported cf-release cannot be bumped"
-                echo "response ${can_bump}"
-                exit 1
-              fi
+                if [ "${res}" != "${can_bump}" ]; then
+                  echo "canibump.cfapps.io reported cf-release cannot be bumped"
+                  echo "response ${can_bump}"
+                  exit 1
+                fi
+              }
+              canibump
 
               pushd loggregator-master
                 LOGGREGATOR_SHA=$(git rev-parse HEAD)
@@ -256,7 +259,9 @@ jobs:
                 ./scripts/commit_with_shortlog
               popd
 
-              cp -r cf-release/* cf-release-bump/
+              rsync -ca cf-release/ cf-release-bump/
+
+              canibump
     - put: cf-release
       params:
         rebase: true
