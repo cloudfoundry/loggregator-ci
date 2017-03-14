@@ -60,6 +60,12 @@ resources:
     uri: https://github.com/cloudfoundry/cf-deployment-concourse-tasks
     branch: master
 
+- name: windows-stemcell
+  type: s3
+  source:
+    bucket: bosh-windows-stemcells
+    regexp: light-bosh-stemcell-(.+)-google-kvm-windows2012R2-go_agent.tgz
+
 # This is here because concourse has a bug in which putting to a git resource
 # creates a new version that can trigger jobs even if the commit has [ci skip]
 # present.
@@ -628,16 +634,18 @@ jobs:
       - cats
     - get: deployments-loggregator-with-changes
       trigger: false
+    - get: windows-stemcell
   - task: run-wats
     config:
       platform: linux
       image_resource:
         type: docker-image
         source:
-        - repository: loggregator/bosh20
+          repository: relintdockerhubpushbot/cf-deployment-concourse-tasks
       inputs:
       - name: wats
       - name: deployments-loggregator-with-changes
+      - name: windows-stemcell
       params:
         ADMIN_USER: "admin"
         API: "api.coconut.cf-app.com"
@@ -651,11 +659,22 @@ jobs:
           - -c
           - |
             #!/bin/bash
-            set -eux
+
+            mkdir bin
+
+            pushd deployments-loggregator-with-changes/gcp/bbl
+              export BOSH_CLIENT=`bbl director-username`
+              export BOSH_CLIENT_SECRET=`bbl director-password`
+              export BOSH_CA_CERT=`bbl director-ca-cert`
+              export BOSH_ENVIRONMENT=`bbl director-address`
+            popd
 
             pushd deployments-loggregator-with-changes
               export ADMIN_PASSWORD=$(bosh interpolate gcp/bbl/deployment-vars.yml --path /uaa_scim_users_admin_password)
             popd
+
+            set -eux
+            bosh upload-stemcell windows-stemcell/*.tgz
 
             ./wats/scripts/run_wats.sh
 
