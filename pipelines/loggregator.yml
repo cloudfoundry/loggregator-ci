@@ -239,7 +239,6 @@ jobs:
         args:
         - "-c"
         - |
-          cp cf-deployment/operations/windows-cell.yml ops-files/
           cp cf-deployment/operations/workarounds/use-4-azs-for-router.yml ops-files/
           cp bbl-state/gcp/bbl/ops-files/*.yml ops-files/
 
@@ -249,7 +248,7 @@ jobs:
       BBL_STATE_DIR: gcp/bbl
       SYSTEM_DOMAIN: coconut.cf-app.com
       VARS_STORE_FILE: gcp/bbl/deployment-vars.yml
-      OPS_FILES: "windows-cell.yml clients.yml use-4-azs-for-router.yml rlp.yml"
+      OPS_FILES: "clients.yml use-4-azs-for-router.yml rlp.yml"
   - put: deployments-loggregator-with-changes
     params:
       repository: updated-vars-store
