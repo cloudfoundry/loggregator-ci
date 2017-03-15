@@ -201,7 +201,7 @@ create_final_release: |
     git config user.name "Loggregator CI"
     git add .
     git commit -m "Creating final release"
-    git tag "$new_version"
+    git tag "$tag_name"
   popd
 
   cp -r "${RELEASE}/." "${OUTPUT}/"
