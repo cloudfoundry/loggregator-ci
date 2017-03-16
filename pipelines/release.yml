@@ -236,8 +236,15 @@ jobs:
               bosh login admin "$password"
 
               pushd cf-release
+                cat <<EOF > acceptance-stub.yml
+              properties:
+                acceptance_test:
+                  default_timeout: 300
+                  cf_push_timeout: 4
+              EOF
+
                 echo "Deploying Release to Bosh Lite"
-                ./scripts/generate-bosh-lite-dev-manifest
+                ./scripts/generate-bosh-lite-dev-manifest acceptance-stub.yml
                 bosh --parallel 10 sync blobs
                 bosh create release --name cf --force
                 bosh -t 10.102.0.6 -n upload release --rebase
