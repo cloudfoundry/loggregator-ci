@@ -1,0 +1,68 @@
+platform: linux
+image_resource:
+  type: docker-image
+  source:
+  - repository: loggregator/bosh20
+run:
+  path: bash
+  args:
+  - -c
+  - |
+    #!/bin/bash
+    set -e
+
+    # target api
+    cf_api="api.run.pivotal.io"
+    cf login -a $cf_api \
+        -u $USERNAME \
+        -p $PASSWORD \
+        -s development \
+        -o cf-lamb
+
+    # cf logs to a file
+    rm -f output.txt
+    cf logs mylogspinner > output.txt 2>&1 &
+    sleep 30 #wait 30 seconds for socket connection
+
+    # curl my logspinner
+    curl "mylogspinner.cfapps.io?cycles=$CYCLES&delay=$DELAY$DELAY_UNIT&text=$MESSAGE"
+
+    sleep 300 # wait for a bit
+
+    msg_count=$(cat output.txt | grep -c $MESSAGE)
+
+    echo $msg_count
+
+    currenttime=$(date +%s)
+    curl  -X POST -H "Content-type: application/json" \
+    -d "{ \"series\" :
+             [{\"metric\":\"smoke_test.loggregator.msg_count\",
+              \"points\":[[${currenttime}, ${msg_count}]],
+              \"type\":\"gauge\",
+              \"host\":\"${cf_api}\",
+              \"tags\":[\"$NAME\"]}
+            ]
+        }" \
+    'https://app.datadoghq.com/api/v1/series?api_key='{{datadog-prod-api-key}}
+
+    curl  -X POST -H "Content-type: application/json" \
+    -d "{ \"series\" :
+             [{\"metric\":\"smoke_test.loggregator.delay\",
+              \"points\":[[${currenttime}, $DELAY]],
+              \"type\":\"gauge\",
+              \"host\":\"${cf_api}\",
+              \"tags\":[\"$NAME\"]}
+            ]
+        }" \
+    'https://app.datadoghq.com/api/v1/series?api_key='{{datadog-prod-api-key}}
+
+    curl  -X POST -H "Content-type: application/json" \
+    -d "{ \"series\" :
+             [{\"metric\":\"smoke_test.loggregator.cycles\",
+              \"points\":[[${currenttime}, $CYCLES]],
+              \"type\":\"gauge\",
+              \"host\":\"${cf_api}\",
+              \"tags\":[\"$NAME\"]}
+            ]
+        }" \
+    'https://app.datadoghq.com/api/v1/series?api_key='{{datadog-prod-api-key}}
