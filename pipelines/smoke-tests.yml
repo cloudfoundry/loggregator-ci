@@ -2,81 +2,50 @@ resources:
 - name: 15m
   type: time
   source: {interval: 15m}
+- name: 1h
+  type: time
+  source: {interval: 1h}
+- name: loggregator-ci
+  type: git
+  source:
+    uri: https://github.com/cloudfoundry/loggregator-ci
+
 jobs:
 - name: log-spinner-smoke-test
   public: false
+  serial: true
   plan:
+  - get: loggregator-ci
   - get: 15m
     trigger: true
   - task: run-smoke-tests
-    config:
-      platform: linux
-      image_resource:
-        type: docker-image
-        source:
-        - repository: loggregator/bosh20
-      run:
-        path: bash
-        args:
-        - -c
-        - |
-          #!/bin/bash
-          set -e
-
-          # target api
-          cf_api="api.run.pivotal.io"
-          cf login -a $cf_api \
-              -u {{pws-username}} \
-              -p {{pws-password}} \
-              -s development \
-              -o cf-lamb
-
-          # cf logs to a file
-          rm -f output.txt
-          cf logs mylogspinner > output.txt 2>&1 &
-          sleep 30 #wait 30 seconds for socket connection
-
-          cycles=10000
-          delay_us=2
-          # curl my logspinner
-          curl "mylogspinner.cfapps.io?cycles=${cycles}&delay=${delay_us}us"
-
-          sleep 300 # wait for a bit
-
-          msg_count=$(cat output.txt | grep -c 'msg')
-
-          echo $msg_count
-
-          currenttime=$(date +%s)
-          curl  -X POST -H "Content-type: application/json" \
-          -d "{ \"series\" :
-                   [{\"metric\":\"smoke_test.loggregator.msg_count\",
-                    \"points\":[[${currenttime}, ${msg_count}]],
-                    \"type\":\"gauge\",
-                    \"host\":\"${cf_api}\",
-                    \"tags\":[]}
-                  ]
-              }" \
-          'https://app.datadoghq.com/api/v1/series?api_key='{{datadog-prod-api-key}}
-
-          curl  -X POST -H "Content-type: application/json" \
-          -d "{ \"series\" :
-                   [{\"metric\":\"smoke_test.loggregator.delay\",
-                    \"points\":[[${currenttime}, ${delay_us}]],
-                    \"type\":\"gauge\",
-                    \"host\":\"${cf_api}\",
-                    \"tags\":[]}
-                  ]
-              }" \
-          'https://app.datadoghq.com/api/v1/series?api_key='{{datadog-prod-api-key}}
-
-          curl  -X POST -H "Content-type: application/json" \
-          -d "{ \"series\" :
-                   [{\"metric\":\"smoke_test.loggregator.cycles\",
-                    \"points\":[[${currenttime}, ${cycles}]],
-                    \"type\":\"gauge\",
-                    \"host\":\"${cf_api}\",
-                    \"tags\":[]}
-                  ]
-              }" \
-          'https://app.datadoghq.com/api/v1/series?api_key='{{datadog-prod-api-key}}
+    file: loggregator-ci/tasks/smoke-test.yml
+    params:
+      CYCLES: 10000
+      DELAY: "2"
+      DELAY_UNIT: "us"
+      MESSAGE: "FIFTEEN-MINUTE"
+      NAME: "fifteen minute smoke test"
+      WAIT: 300
+      USERNAME: {{pws-username}}
+      PASSWORD: {{pws-password}}
+      DATADOG_API_KEY: {{datadog-prod-api-key}}
+- name: log-spinner-hourly-smoke-test
+  public: false
+  serial: true
+  plan:
+  - get: loggregator-ci
+  - get: 1h
+    trigger: true
+  - task: run-smoke-tests
+    file: loggregator-ci/tasks/smoke-test.yml
+    params:
+      CYCLES: 1000
+      DELAY: "500"
+      DELAY_UNIT: "ms"
+      MESSAGE: "HOURLY"
+      NAME: "one hour smoke test"
+      WAIT: 600
+      USERNAME: {{pws-username}}
+      PASSWORD: {{pws-password}}
+      DATADOG_API_KEY: {{datadog-prod-api-key}}
