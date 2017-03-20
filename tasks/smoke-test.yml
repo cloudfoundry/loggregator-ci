@@ -27,7 +27,7 @@ run:
     # curl my logspinner
     curl "mylogspinner.cfapps.io?cycles=$CYCLES&delay=$DELAY$DELAY_UNIT&text=$MESSAGE"
 
-    sleep 300 # wait for a bit
+    sleep $WAIT # wait for a bit
 
     msg_count=$(cat output.txt | grep -c $MESSAGE)
 
@@ -40,10 +40,10 @@ run:
               \"points\":[[${currenttime}, ${msg_count}]],
               \"type\":\"gauge\",
               \"host\":\"${cf_api}\",
-              \"tags\":[\"$NAME\"]}
+              \"tags\":[\"${NAME}\"]}
             ]
         }" \
-    'https://app.datadoghq.com/api/v1/series?api_key='{{datadog-prod-api-key}}
+    'https://app.datadoghq.com/api/v1/series?api_key='$DATADOG_API_KEY
 
     curl  -X POST -H "Content-type: application/json" \
     -d "{ \"series\" :
@@ -51,18 +51,18 @@ run:
               \"points\":[[${currenttime}, $DELAY]],
               \"type\":\"gauge\",
               \"host\":\"${cf_api}\",
-              \"tags\":[\"$NAME\"]}
+              \"tags\":[\"${NAME}\"]}
             ]
         }" \
-    'https://app.datadoghq.com/api/v1/series?api_key='{{datadog-prod-api-key}}
+    'https://app.datadoghq.com/api/v1/series?api_key='$DATADOG_API_KEY
 
     curl  -X POST -H "Content-type: application/json" \
     -d "{ \"series\" :
              [{\"metric\":\"smoke_test.loggregator.cycles\",
-              \"points\":[[${currenttime}, $CYCLES]],
+              \"points\":[[${currenttime}, ${CYCLES}]],
               \"type\":\"gauge\",
               \"host\":\"${cf_api}\",
-              \"tags\":[\"$NAME\"]}
+              \"tags\":[\"${NAME}\"]}
             ]
         }" \
-    'https://app.datadoghq.com/api/v1/series?api_key='{{datadog-prod-api-key}}
+    'https://app.datadoghq.com/api/v1/series?api_key='$DATADOG_API_KEY
