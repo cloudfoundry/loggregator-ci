@@ -118,7 +118,6 @@ jobs:
       params:
         bump: patch
     - get: bosh-hm-forwarder-release
-      trigger: true
       passed:
       - bump-release-submodule
   - task: create-final-release
