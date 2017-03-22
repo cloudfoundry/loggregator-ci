@@ -183,7 +183,6 @@ create_final_release: |
   set -e -x
 
   new_version=$(cat version/version)
-  tag_name="v$new_version"
 
   pushd $RELEASE
     cat << EOF > config/private.yml
@@ -201,7 +200,6 @@ create_final_release: |
     git config user.name "Loggregator CI"
     git add .
     git commit -m "Creating final release"
-    git tag "$tag_name"
   popd
 
   cp -r "${RELEASE}/." "${OUTPUT}/"

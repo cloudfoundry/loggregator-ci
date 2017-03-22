@@ -23,7 +23,6 @@ resources:
     key: version
     access_key_id: {{s3-access-key-id}}
     secret_access_key: {{s3-secret-access-key}}
-    region_name: us-west-2
 
 - name: cf-release-develop
   type: git
@@ -151,6 +150,8 @@ jobs:
     params:
       repository: final-statsd-injector-release
       rebase: false
+      tag: version/version
+      tag_prefix: v
 
 - name: diff-cert-generation-scripts
   plan:
