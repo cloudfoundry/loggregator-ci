@@ -9,7 +9,7 @@ run:
   - -c
   - |
     #!/bin/bash
-    set -e
+    set -e -x
 
     # target api
     cf_api="api.run.pivotal.io"
