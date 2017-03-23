@@ -22,7 +22,7 @@ run:
     # cf logs to a file
     rm -f output.txt
     echo "Collecting logs for $APP_NAME"
-    cf logs mylogspinner > output.txt 2>&1 &
+    cf logs "$APP_NAME" > output.txt 2>&1 &
     sleep 30 #wait 30 seconds for socket connection
 
     echo "Triggering $APP_NAME"
