@@ -11,7 +11,7 @@ resources:
     uri: https://github.com/cloudfoundry/loggregator-ci
 
 jobs:
-- name: log-spinner-smoke-test
+- name: floodspinner-smoke-test
   public: false
   serial: true
   plan:
@@ -25,13 +25,12 @@ jobs:
       DELAY: "2"
       DELAY_UNIT: "us"
       MESSAGE: "FIFTEEN-MINUTE"
-      NAME: "fifteen minute smoke test (flood)"
       APP_NAME: "floodspinner"
       WAIT: 300
       USERNAME: {{pws-username}}
       PASSWORD: {{pws-password}}
       DATADOG_API_KEY: {{datadog-prod-api-key}}
-- name: log-spinner-hourly-smoke-test
+- name: dripspinner-smoke-test
   public: false
   serial: true
   plan:
@@ -45,7 +44,6 @@ jobs:
       DELAY: "500"
       DELAY_UNIT: "ms"
       MESSAGE: "HOURLY"
-      NAME: "one hour smoke test (slow drip)"
       APP_NAME: "dripspinner"
       WAIT: 600
       USERNAME: {{pws-username}}
