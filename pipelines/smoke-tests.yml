@@ -25,7 +25,8 @@ jobs:
       DELAY: "2"
       DELAY_UNIT: "us"
       MESSAGE: "FIFTEEN-MINUTE"
-      NAME: "fifteen minute smoke test"
+      NAME: "fifteen minute smoke test (flood)"
+      APP_NAME: "floodspinner"
       WAIT: 300
       USERNAME: {{pws-username}}
       PASSWORD: {{pws-password}}
@@ -44,7 +45,8 @@ jobs:
       DELAY: "500"
       DELAY_UNIT: "ms"
       MESSAGE: "HOURLY"
-      NAME: "one hour smoke test"
+      NAME: "one hour smoke test (slow drip)"
+      APP_NAME: "dripspinner"
       WAIT: 600
       USERNAME: {{pws-username}}
       PASSWORD: {{pws-password}}

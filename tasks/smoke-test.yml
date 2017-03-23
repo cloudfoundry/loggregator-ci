@@ -25,7 +25,7 @@ run:
     sleep 30 #wait 30 seconds for socket connection
 
     # curl my logspinner
-    curl "mylogspinner.cfapps.io?cycles=$CYCLES&delay=$DELAY$DELAY_UNIT&text=$MESSAGE"
+    curl "$APP_NAME.cfapps.io?cycles=$CYCLES&delay=$DELAY$DELAY_UNIT&text=$MESSAGE"
 
     sleep $WAIT # wait for a bit
 
