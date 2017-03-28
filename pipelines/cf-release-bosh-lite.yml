@@ -34,6 +34,9 @@ jobs:
   - aggregate:
     - get: bosh-deployment
     - get: deployments-loggregator
+      resource: deployments-loggregator-with-changes
+      passed: ['delete-bosh-lite']
+      trigger: true
     - get: loggregator-ci
   - task: create-bosh-lite
     config:
