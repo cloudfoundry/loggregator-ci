@@ -42,7 +42,7 @@ jobs:
     config:
     file: loggregator-ci/tasks/create-bosh-lite.yml
     params:
-      deploy_dir: deployments-loggregator/gcp/cf-release-bosh-lite
+      deploy_dir: deployments-loggregator/gcp/release-lite
       subnet_prefix: 10.102.0
       subnetwork: cf-release-bosh-lite
   - task: commit
@@ -58,7 +58,7 @@ jobs:
       - name: committed-deployments-loggregator
       params:
         SOURCE: updated-deployments-loggregator
-        PATHS: gcp/cf-release-bosh-lite
+        PATHS: gcp/release-lite
         COMMIT_MESSAGE: "Create bosh-lite GCP director"
         OUTPUT: committed-deployments-loggregator
       run:
@@ -82,7 +82,7 @@ jobs:
   - task: delete-bosh-lite
     file: loggregator-ci/tasks/destroy-bosh-lite.yml
     params:
-      deploy_dir: deployments-loggregator/gcp/cf-release-bosh-lite
+      deploy_dir: deployments-loggregator/gcp/release-lite
       subnet_prefix: 10.102.0
       subnetwork: cf-release-bosh-lite
   - task: commit
@@ -98,7 +98,7 @@ jobs:
       - name: committed-deployments-loggregator
       params:
         SOURCE: updated-deployments-loggregator
-        PATHS: gcp/cf-release-bosh-lite
+        PATHS: gcp/release-lite
         COMMIT_MESSAGE: "Delete bosh-lite GCP director"
         OUTPUT: committed-deployments-loggregator
       run:
