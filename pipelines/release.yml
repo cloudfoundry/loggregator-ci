@@ -239,9 +239,10 @@ jobs:
               pushd cf-release
                 cat <<EOF > acceptance-stub.yml
               properties:
-                acceptance_test:
-                  default_timeout: 300
+                acceptance_tests:
+                  backend: diego
                   cf_push_timeout: 4
+                  default_timeout: 300
               EOF
 
                 echo "Deploying Release to Bosh Lite"
