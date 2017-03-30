@@ -290,7 +290,7 @@ jobs:
 
           workspace=$(pwd)
 
-          password=$(cat deployments-loggregator/gcp/lite/creds.yml |
+          password=$(cat deployments-loggregator/gcp/loggregator-lite/creds.yml |
             grep admin_password |
             awk '{print $2}')
           bosh -u admin -p "$password" target 10.100.0.6 lite
@@ -353,7 +353,7 @@ jobs:
 
           workspace=$(pwd)
 
-          password=$(cat deployments-loggregator/gcp/lite/creds.yml |
+          password=$(cat deployments-loggregator/gcp/loggregator-lite/creds.yml |
             grep admin_password |
             awk '{print $2}')
           bosh -u admin -p "$password" target 10.100.0.6 lite
