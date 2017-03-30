@@ -183,6 +183,7 @@ jobs:
 - name: test-and-bump-cf-release
   plan:
     - get: loggregator-master
+      resource: loggregator-final-release-master
       passed: [create-final-release]
     - get: cf-release
     - get: deployments-loggregator
