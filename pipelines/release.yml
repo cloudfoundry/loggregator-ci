@@ -230,7 +230,7 @@ jobs:
                 git submodule update --init --recursive
               popd
 
-              password=$(cat deployments-loggregator/gcp/cf-release-bosh-lite/creds.yml |
+              password=$(cat deployments-loggregator/gcp/release-lite/creds.yml |
                 grep admin_password |
                 awk '{print $2}')
               bosh -u admin -p "$password" target 10.102.0.6 lite
