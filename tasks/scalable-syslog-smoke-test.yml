@@ -3,6 +3,8 @@ image_resource:
   type: docker-image
   source:
   - repository: loggregator/bosh20
+inputs:
+- name: loggregator
 params:
   CF_SYSTEM_DOMAIN:
   CF_USERNAME:
