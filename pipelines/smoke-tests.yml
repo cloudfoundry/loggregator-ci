@@ -9,9 +9,13 @@ resources:
   type: git
   source:
     uri: https://github.com/cloudfoundry/loggregator-ci
+- name: loggregator
+  type: git
+  source:
+    uri: https://github.com/cloudfoundry/loggregator
 
 jobs:
-- name: floodspinner-smoke-test
+- name: pws-cf-logs-floodspinner-smoke-test
   public: false
   serial: true
   plan:
@@ -19,7 +23,7 @@ jobs:
   - get: 15m
     trigger: true
   - task: run-smoke-tests
-    file: loggregator-ci/tasks/smoke-test.yml
+    file: loggregator-ci/tasks/cf-logs-smoke-test.yml
     params:
       CYCLES: 10000
       DELAY: "2"
@@ -30,7 +34,7 @@ jobs:
       USERNAME: {{pws-username}}
       PASSWORD: {{pws-password}}
       DATADOG_API_KEY: {{datadog-prod-api-key}}
-- name: dripspinner-smoke-test
+- name: pws-cf-logs-dripspinner-smoke-test
   public: false
   serial: true
   plan:
@@ -38,7 +42,7 @@ jobs:
   - get: 1h
     trigger: true
   - task: run-smoke-tests
-    file: loggregator-ci/tasks/smoke-test.yml
+    file: loggregator-ci/tasks/cf-logs-smoke-test.yml
     params:
       CYCLES: 1000
       DELAY: "500"
@@ -49,3 +53,44 @@ jobs:
       USERNAME: {{pws-username}}
       PASSWORD: {{pws-password}}
       DATADOG_API_KEY: {{datadog-prod-api-key}}
+
+- name: coconut-scalable-syslog-https-drain-smoke-test
+  public: false
+  serial: true
+  plan:
+  - get: loggregator-ci
+  - get: loggregator
+  - get: 1h
+    trigger: true
+  - task: run-smoke-tests
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source:
+        - repository: loggregator/bosh20
+      inputs:
+      - name: loggregator
+      params:
+        CF_SYSTEM_DOMAIN: coconut.cf-app.com
+        CF_USERNAME: {{coconut-username}}
+        CF_PASSWORD: {{coconut-password}}
+        CF_SPACE: space
+        CF_ORG: org
+        CYCLES: 10000
+        DELAY_US: 100
+        DATADOG_API_KEY: {{datadog-dev-api-key}}
+        DRAIN_VERSION: 2.0
+        NUM_APPS: 1
+      run:
+        path: bash
+        args:
+        - -c
+        - |
+          #!/bin/bash
+
+          set -e
+
+          cd loggregator/src/tools/smokes
+
+          ./push.sh && ./hammer.sh && ./report.sh && teardown.sh
