@@ -52,7 +52,7 @@ resources:
   type: git
   source:
     uri: https://github.com/cloudfoundry/cf-deployment-concourse-tasks
-    branch: master
+    branch: v1.6
 
 # This is here because concourse has a bug in which putting to a git resource
 # creates a new version that can trigger jobs even if the commit has [ci skip]
