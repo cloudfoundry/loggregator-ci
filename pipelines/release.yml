@@ -180,13 +180,12 @@ jobs:
       globs:
       - github-release/*.tgz
 
-- name: test-and-bump-cf-release
+- name: bump-cf-release
   plan:
     - get: loggregator-master
       resource: loggregator-final-release-master
       passed: [create-final-release]
     - get: cf-release
-    - get: deployments-loggregator
     - task: bump-submodule
       config:
         image_resource:
@@ -196,7 +195,6 @@ jobs:
         platform: linux
         inputs:
         - name: loggregator-master
-        - name: deployments-loggregator
         - name: cf-release
         outputs:
         - name: cf-release-bump
@@ -218,31 +216,7 @@ jobs:
                 git submodule update --init --recursive
               popd
 
-              password=$(cat deployments-loggregator/gcp/release-lite/creds.yml |
-                grep admin_password |
-                awk '{print $2}')
-              bosh -u admin -p "$password" target 10.102.0.6 lite
-              bosh login admin "$password"
-
               pushd cf-release
-                cat <<EOF > acceptance-stub.yml
-              properties:
-                acceptance_tests:
-                  backend: diego
-                  cf_push_timeout: 4
-                  default_timeout: 300
-              EOF
-
-                echo "Deploying Release to Bosh Lite"
-                ./scripts/generate-bosh-lite-dev-manifest acceptance-stub.yml
-                bosh --parallel 10 sync blobs
-                bosh create release --name cf --force
-                bosh -t 10.102.0.6 -n upload release --rebase
-                bosh -t 10.102.0.6 -d bosh-lite/deployments/cf.yml -n deploy
-
-                echo "Running CATs with most recent Loggregator"
-                bosh -t 10.102.0.6 run errand acceptance_tests
-
                 echo "Configuring Git"
                 git config --global user.email "cf-loggregator@pivotal.io"
                 git config --global user.name "Loggregator CI"
