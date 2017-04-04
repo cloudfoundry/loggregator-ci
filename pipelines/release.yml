@@ -1,11 +1,4 @@
 resources:
-- name: deployments-loggregator
-  type: git
-  source: &deployments_loggregator
-    uri: git@github.com:cloudfoundry/deployments-loggregator.git
-    branch: master
-    private_key: {{deployments-loggregator-key}}
-
 - name: loggregator-develop
   type: git
   source: &loggregator_develop
