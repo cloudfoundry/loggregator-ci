@@ -1,0 +1,70 @@
+platform: linux
+image_resource:
+  type: docker-image
+  source:
+  - repository: loggregator/bosh20
+run:
+  path: bash
+  args:
+  - -c
+  - |
+    #!/bin/bash
+    set -e -x
+
+    # target api
+    cf_api="api.aws.trackerred.com"
+    cf login -a $cf_api \
+        -u $USERNAME \
+        -p $PASSWORD \
+        -s development \
+        -o loggregator
+
+    # cf logs to a file
+    rm -f output.txt
+    echo "Collecting logs for $APP_NAME"
+    cf logs "$APP_NAME" > output.txt 2>&1 &
+    sleep 30 #wait 30 seconds for socket connection
+
+    echo "Triggering $APP_NAME"
+    # curl my logspinner
+    curl "$APP_NAME.aws.trkr.io?cycles=$CYCLES&delay=$DELAY$DELAY_UNIT&text=$MESSAGE"
+
+    sleep $WAIT # wait for a bit
+
+    msg_count=$(cat output.txt | grep -c $MESSAGE)
+
+    echo $msg_count
+
+    currenttime=$(date +%s)
+    curl  -X POST -H "Content-type: application/json" \
+    -d "{ \"series\" :
+             [{\"metric\":\"smoke_test.loggregator.msg_count\",
+              \"points\":[[${currenttime}, ${msg_count}]],
+              \"type\":\"gauge\",
+              \"host\":\"${cf_api}\",
+              \"tags\":[\"${APP_NAME}\"]}
+            ]
+        }" \
+    'https://app.datadoghq.com/api/v1/series?api_key='$DATADOG_API_KEY
+
+    curl  -X POST -H "Content-type: application/json" \
+    -d "{ \"series\" :
+             [{\"metric\":\"smoke_test.loggregator.delay\",
+              \"points\":[[${currenttime}, $DELAY]],
+              \"type\":\"gauge\",
+              \"host\":\"${cf_api}\",
+              \"tags\":[\"${APP_NAME}\"]}
+            ]
+        }" \
+    'https://app.datadoghq.com/api/v1/series?api_key='$DATADOG_API_KEY
+
+    curl  -X POST -H "Content-type: application/json" \
+    -d "{ \"series\" :
+             [{\"metric\":\"smoke_test.loggregator.cycles\",
+              \"points\":[[${currenttime}, ${CYCLES}]],
+              \"type\":\"gauge\",
+              \"host\":\"${cf_api}\",
+              \"tags\":[\"${APP_NAME}\"]}
+            ]
+        }" \
+    'https://app.datadoghq.com/api/v1/series?api_key='$DATADOG_API_KEY
