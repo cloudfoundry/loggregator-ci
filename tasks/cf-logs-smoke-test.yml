@@ -27,7 +27,7 @@ run:
 
     echo "Triggering $APP_NAME"
     # curl my logspinner
-    curl "$APP_NAME.cfapps.io?cycles=$CYCLES&delay=$DELAY$DELAY_UNIT&text=$MESSAGE"
+    curl "$(cf app $APP_NAME | grep urls | awk '{print $2})?cycles=$CYCLES&delay=$DELAY$DELAY_UNIT&text=$MESSAGE"
 
     sleep $WAIT # wait for a bit
 
