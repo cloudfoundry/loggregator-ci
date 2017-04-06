@@ -26,8 +26,11 @@ run:
     sleep 30 #wait 30 seconds for socket connection
 
     echo "Triggering $APP_NAME"
+
+    app_domain=$(cf app $APP_NAME | grep urls | awk '{print $2}')
+
     # curl my logspinner
-    curl "$(cf app $APP_NAME | grep urls | awk '{print $2})?cycles=$CYCLES&delay=$DELAY$DELAY_UNIT&text=$MESSAGE"
+    curl "$app_domain?cycles=$CYCLES&delay=$DELAY$DELAY_UNIT&text=$MESSAGE"
 
     sleep $WAIT # wait for a bit
 
