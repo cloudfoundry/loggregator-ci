@@ -17,7 +17,7 @@ run:
         -u $USERNAME \
         -p $PASSWORD \
         -s development \
-        -o cf-lamb
+        -o cf-lamb --skip-ssl-validation
 
     # cf logs to a file
     rm -f output.txt
