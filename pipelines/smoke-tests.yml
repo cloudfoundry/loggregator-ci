@@ -31,6 +31,7 @@ jobs:
       MESSAGE: "FIFTEEN-MINUTE"
       APP_NAME: "floodspinner"
       WAIT: 300
+      API_ENDPOINT: api.run.pivotal.io
       USERNAME: {{pws-username}}
       PASSWORD: {{pws-password}}
       DATADOG_API_KEY: {{datadog-prod-api-key}}
@@ -69,6 +70,7 @@ jobs:
       MESSAGE: "HOURLY"
       APP_NAME: "dripspinner"
       WAIT: 600
+      API_ENDPOINT: api.run.pivotal.io
       USERNAME: {{pws-username}}
       PASSWORD: {{pws-password}}
       DATADOG_API_KEY: {{datadog-prod-api-key}}

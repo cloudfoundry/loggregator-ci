@@ -12,7 +12,7 @@ run:
     set -e -x
 
     # target api
-    cf_api="api.run.pivotal.io"
+    cf_api="$API_ENDPOINT"
     cf login -a $cf_api \
         -u $USERNAME \
         -p $PASSWORD \
