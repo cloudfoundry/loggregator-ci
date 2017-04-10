@@ -241,6 +241,60 @@ jobs:
       repository: updated-vars-store
       rebase: true
 
+- name: cf-deploy-for-smokes
+  serial: true
+  plan:
+  - aggregate:
+    - get: bbl-state
+      resource: deployments-loggregator
+      trigger: false
+    - get: cf-deployment
+      trigger: true
+    - get: cf-deployment-concourse-tasks
+      trigger: false
+    - get: release
+      resource: loggregator-develop
+      trigger: true
+      passed:
+      - run-tests
+      - run-windows-tests
+    - get: vars-store
+      resource: deployments-loggregator
+      trigger: false
+  - task: upload-stemcell
+    file: cf-deployment-concourse-tasks/bosh-upload-stemcell-from-cf-deployment/task.yml
+    params:
+      BBL_STATE_DIR: gcp/loggregator-tip-bbl
+  - task: copy-ops-files
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source: { repository: ubuntu }
+      inputs:
+      - name: bbl-state
+      - name: cf-deployment
+      outputs:
+      - name: ops-files
+      run:
+        path: /bin/bash
+        args:
+        - "-c"
+        - |
+          cp cf-deployment/operations/workarounds/use-4-azs-for-router.yml ops-files/
+          cp bbl-state/gcp/loggregator-tip-bbl/ops-files/*.yml ops-files/
+  - task: cf-deploy
+    file: cf-deployment-concourse-tasks/bosh-deploy-with-created-release/task.yml
+    params:
+      BBL_STATE_DIR: gcp/loggregator-tip-bbl
+      SYSTEM_DOMAIN: loggregator-tip.cf-app.com
+      VARS_STORE_FILE: gcp/loggregator-tip-bbl/deployment-vars.yml
+      OPS_FILES: "clients.yml use-4-azs-for-router.yml"
+  - put: deployments-loggregator-with-changes
+    params:
+      repository: updated-vars-store
+      rebase: true
+
 - name: cf-release-deploy
   serial: true
   serial_groups:
