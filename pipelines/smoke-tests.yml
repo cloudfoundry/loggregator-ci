@@ -30,7 +30,7 @@ jobs:
       DELAY_UNIT: "us"
       MESSAGE: "FIFTEEN-MINUTE"
       APP_NAME: "floodspinner"
-      WAIT: 300
+      WAIT: 60
       API_ENDPOINT: api.run.pivotal.io
       USERNAME: {{pws-username}}
       PASSWORD: {{pws-password}}
@@ -50,7 +50,7 @@ jobs:
       DELAY_UNIT: "us"
       MESSAGE: "FIFTEEN-MINUTE"
       APP_NAME: "trkr-floodspinner"
-      WAIT: 300
+      WAIT: 60
       USERNAME: {{trkr-username}}
       PASSWORD: {{trkr-password}}
       DATADOG_API_KEY: {{datadog-prod-api-key}}
@@ -151,3 +151,47 @@ jobs:
       CF_ORG: org
       DATADOG_API_KEY: {{datadog-dev-api-key}}
       DRAIN_VERSION: "2.0"
+
+- name: tip-floodspinner
+  public: false
+  serial: true
+  plan:
+  - get: loggregator-ci
+  - get: 15m
+    trigger: true
+  - task: run-smoke-tests
+    file: loggregator-ci/tasks/cf-logs-smoke-test.yml
+    params:
+      CYCLES: 10000
+      DELAY: "2"
+      DELAY_UNIT: "us"
+      MESSAGE: "FIFTEEN-MINUTE"
+      APP_NAME: "floodspinner"
+      WAIT: 60
+      API_ENDPOINT: api.loggregator-tip.cf-app.com
+      USERNAME: {{loggregator-tip-username}}
+      PASSWORD: {{loggregator-tip-password}}
+      DATADOG_API_KEY: {{datadog-dev-api-key}}
+      SKIP_SSL_VALIDATION: true
+- name: tip-dripspinner
+  public: false
+  serial: true
+  plan:
+  - get: loggregator-ci
+  - get: 1h
+    trigger: true
+  - task: run-smoke-tests
+    file: loggregator-ci/tasks/cf-logs-smoke-test.yml
+    params:
+      CYCLES: 1000
+      DELAY: "500"
+      DELAY_UNIT: "ms"
+      MESSAGE: "HOURLY"
+      APP_NAME: "dripspinner"
+      WAIT: 600
+      API_ENDPOINT: api.loggregator-tip.cf-app.com
+      USERNAME: {{loggregator-tip-username}}
+      PASSWORD: {{loggregator-tip-password}}
+      DATADOG_API_KEY: {{datadog-dev-api-key}}
+      SKIP_SSL_VALIDATION: true
+
