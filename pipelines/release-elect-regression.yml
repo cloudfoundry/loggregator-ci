@@ -1,0 +1,608 @@
+resource_types:
+  - name: gcs-resource
+    type: docker-image
+    source:
+      repository: frodenas/gcs-resource
+
+resources:
+  - name: loggregator-release-elect
+    type: git
+    source:
+      uri: git@github.com:cloudfoundry/loggregator.git
+      branch: release-elect
+      private_key: {{loggregator-key}}
+      ignore_paths:
+        - .final_builds
+        - releases
+
+  - name: loggregator-develop
+    type: git
+    source:
+      uri: git@github.com:cloudfoundry/loggregator.git
+      branch: develop
+      private_key: {{loggregator-key}}
+      ignore_paths:
+      - .final_builds
+      - releases
+
+  - name: loggregator-latest
+    type: bosh-io-release
+    source:
+      repository: cloudfoundry/loggregator
+
+  - name: deployments-loggregator
+    type: git
+    source: &deployments_loggregator
+      uri: git@github.com:cloudfoundry/deployments-loggregator.git
+      branch: master
+      private_key: {{deployments-loggregator-key}}
+
+  - name: deployments-loggregator-with-changes
+    type: git
+    source: *deployments_loggregator
+
+  - name: cf-deployment
+    type: git
+    source:
+      uri: https://github.com/cloudfoundry/cf-deployment
+      branch: develop
+
+  - name: cf-deployment-concourse-tasks
+    type: git
+    source:
+      uri: https://github.com/cloudfoundry/cf-deployment-concourse-tasks
+      branch: v2.1
+
+  - name: 5m
+    type: time
+    source: {interval: 5m}
+
+  - name: loggregator-ci
+    type: git
+    source:
+      uri: https://github.com/cloudfoundry/loggregator-ci
+
+  - name: regression-test-control
+    type: gcs-resource
+    source:
+      bucket: regression-test-control
+      json_key: {{bbl_gcp_service_account_key}}
+      regexp: timestamp
+
+jobs:
+- name: loggregator-elect-bbl-create
+  plan:
+  - get: cf-deployment-concourse-tasks
+    trigger: false
+  - get: bbl-state
+    resource: deployments-loggregator
+    trigger: false
+  - task: bbl-up
+    file: cf-deployment-concourse-tasks/bbl-up/task.yml
+    params:
+      BBL_GCP_SERVICE_ACCOUNT_KEY: service-account.key.json
+      BBL_GCP_PROJECT_ID: cff-loggregator
+      BBL_GCP_ZONE: us-central1-a
+      BBL_GCP_REGION: us-central1
+      BBL_STATE_DIR: gcp/loggregator-elect-bbl
+      BBL_IAAS: gcp
+      BBL_LB_CERT: {{coconut_director_cert}}
+      BBL_LB_KEY: {{coconut_director_key}}
+      BBL_ENV_NAME: loggregator-elect-bbl
+      LB_DOMAIN: loggregator-elect.cf-app.com
+  - put: deployments-loggregator-with-changes
+    params:
+      repository: updated-bbl-state
+      rebase: true
+- name: loggregator-elect-bbl-destroy
+  plan:
+  - get: cf-deployment-concourse-tasks
+    trigger: false
+  - get: bbl-state
+    resource: deployments-loggregator
+    trigger: false
+  - task: bbl-destroy
+    file: cf-deployment-concourse-tasks/bbl-destroy/task.yml
+    params:
+      BBL_STATE_DIR: gcp/loggregator-elect-bbl
+  - put: deployments-loggregator-with-changes
+    params:
+      repository: updated-bbl-state
+      rebase: true
+- name: loggregator-latest-bbl-create
+  plan:
+  - get: cf-deployment-concourse-tasks
+    trigger: false
+  - get: bbl-state
+    resource: deployments-loggregator
+    trigger: false
+  - task: bbl-up
+    file: cf-deployment-concourse-tasks/bbl-up/task.yml
+    params:
+      BBL_GCP_SERVICE_ACCOUNT_KEY: service-account.key.json
+      BBL_GCP_PROJECT_ID: cff-loggregator
+      BBL_GCP_ZONE: us-central1-a
+      BBL_GCP_REGION: us-central1
+      BBL_STATE_DIR: gcp/loggregator-latest-bbl
+      BBL_IAAS: gcp
+      BBL_LB_CERT: {{coconut_director_cert}}
+      BBL_LB_KEY: {{coconut_director_key}}
+      BBL_ENV_NAME: loggregator-latest-bbl
+      LB_DOMAIN: loggregator-latest.cf-app.com
+  - put: deployments-loggregator-with-changes
+    params:
+      repository: updated-bbl-state
+      rebase: true
+- name: loggregator-latest-bbl-destroy
+  plan:
+  - get: cf-deployment-concourse-tasks
+    trigger: false
+  - get: bbl-state
+    resource: deployments-loggregator
+    trigger: false
+  - task: bbl-destroy
+    file: cf-deployment-concourse-tasks/bbl-destroy/task.yml
+    params:
+      BBL_STATE_DIR: gcp/loggregator-latest-bbl
+  - put: deployments-loggregator-with-changes
+    params:
+      repository: updated-bbl-state
+      rebase: true
+
+- name: start-pipeline
+  serial: true
+  plan:
+  - task: start-pipeline
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source: { repository: ubuntu }
+      outputs:
+      - name: regression-test-control
+      run:
+        path: /bin/bash
+        args:
+        - "-c"
+        - |
+          #!/bin/bash
+          set -ex
+
+          date > regression-test-control/timestamp
+  - put: regression-test-control
+    params:
+      file: regression-test-control/timestamp
+
+
+- name: loggregator-elect-deploy
+  serial: true
+  serial_groups: ["loggregator-elect"]
+  plan:
+  - aggregate:
+    - get: regression-test-control
+      passed: ["start-pipeline"]
+      trigger: true
+    - get: bbl-state
+      resource: deployments-loggregator
+    - get: cf-deployment
+    - get: cf-deployment-concourse-tasks
+    - get: release
+      resource: loggregator-release-elect
+    - get: vars-store
+      resource: deployments-loggregator
+  - task: upload-stemcell
+    file: cf-deployment-concourse-tasks/bosh-upload-stemcell-from-cf-deployment/task.yml
+    params:
+      BBL_STATE_DIR: gcp/loggregator-elect-bbl
+  - task: copy-ops-files
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source: { repository: ubuntu }
+      inputs:
+      - name: bbl-state
+      - name: cf-deployment
+      outputs:
+      - name: ops-files
+      run:
+        path: /bin/bash
+        args:
+        - "-c"
+        - |
+          #!/bin/bash
+          set -ex
+
+          cp cf-deployment/operations/workarounds/use-4-azs-for-router.yml ops-files/
+          cp bbl-state/gcp/loggregator-elect-bbl/ops-files/*.yml ops-files/
+
+  - task: cf-deploy
+    file: cf-deployment-concourse-tasks/bosh-deploy-with-created-release/task.yml
+    params:
+      BBL_STATE_DIR: gcp/loggregator-elect-bbl
+      SYSTEM_DOMAIN: loggregator-elect.cf-app.com
+      VARS_STORE_FILE: gcp/loggregator-elect-bbl/deployment-vars.yml
+      OPS_FILES: "clients.yml use-4-azs-for-router.yml"
+  - put: deployments-loggregator-with-changes
+    params:
+      repository: updated-vars-store
+      rebase: true
+
+
+- name: loggregator-latest-deploy
+  serial: true
+  serial_groups: ["loggregator-latest"]
+  plan:
+  - aggregate:
+    - get: regression-test-control
+      passed: ["start-pipeline"]
+      trigger: true
+    - get: bbl-state
+      resource: deployments-loggregator
+    - get: cf-deployment
+    - get: cf-deployment-concourse-tasks
+    - get: vars-store
+      resource: deployments-loggregator
+    - get: release
+      resource: loggregator-latest
+  - task: upload-stemcell
+    file: cf-deployment-concourse-tasks/bosh-upload-stemcell-from-cf-deployment/task.yml
+    params:
+      BBL_STATE_DIR: gcp/loggregator-latest-bbl
+  - task: copy-ops-files
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source: { repository: ubuntu }
+      inputs:
+      - name: bbl-state
+      - name: cf-deployment
+      - name: release
+      outputs:
+      - name: ops-files
+      run:
+        path: /bin/bash
+        args:
+        - "-c"
+        - |
+          #!/bin/bash
+          set -ex
+
+          cp cf-deployment/operations/workarounds/use-4-azs-for-router.yml ops-files/
+          cp bbl-state/gcp/loggregator-latest-bbl/ops-files/*.yml ops-files/
+
+          version=$(cat release/version)
+          sha=$(cat release/sha1)
+
+          echo <<EOT >> ops-files/loggregator-version.yml
+          - type: replace
+            path: /releases/name=loggregator
+            value:
+              name: loggregator
+              url: https://bosh.io/d/github.com/cloudfoundry/loggregator?v=$version
+              version: "$version"
+              sha1: "$sha"
+          EOT
+  - task: cf-deploy
+    file: cf-deployment-concourse-tasks/bosh-deploy/task.yml
+    params:
+      BBL_STATE_DIR: gcp/loggregator-latest-bbl
+      SYSTEM_DOMAIN: loggregator-latest.cf-app.com
+      VARS_STORE_FILE: gcp/loggregator-latest-bbl/deployment-vars.yml
+      OPS_FILES: "clients.yml use-4-azs-for-router.yml loggregator-version.yml"
+  - put: deployments-loggregator-with-changes
+    params:
+      repository: updated-vars-store
+      rebase: true
+
+- name: cf-setup
+  serial: true
+  serial_groups: ["loggregator-elect", "loggregator-latest"]
+  plan:
+  - aggregate:
+    - get: regression-test-control
+      passed: ["loggregator-latest-deploy", "loggregator-elect-deploy"]
+      trigger: true
+    - get: vars-store
+      resource: deployments-loggregator-with-changes
+    - get: loggregator
+      resource: loggregator-develop
+    - get: release-elect
+      passed:
+        - loggregator-elect-deploy
+      resource: loggregator-release-elect
+    - get: release-latest
+      passed:
+        - loggregator-latest-deploy
+      resource: loggregator-latest
+  - aggregate:
+    - task: setup-loggregator-elect
+      config:
+        platform: linux
+        image_resource:
+          type: docker-image
+          source:
+            repository: relintdockerhubpushbot/cf-deployment-concourse-tasks
+        params:
+          SYSTEM_DOMAIN: loggregator-elect.cf-app.com
+          VARS_STORE_FILE: gcp/loggregator-elect-bbl/deployment-vars.yml
+          ORG: cf-lamb
+          SPACE: development
+        inputs:
+        - name: vars-store
+        - name: loggregator
+        run:
+          path: bash
+          args:
+          - -c
+          - |
+            #!/bin/bash
+            set -ex
+            password=$(grep scim vars-store/$VARS_STORE_FILE | awk '{print $2}')
+
+            cf login -a api.$SYSTEM_DOMAIN -u admin -p $password -o system --skip-ssl-validation
+
+            set +e
+            cf org $ORG
+            set -e
+            if [ $? -eq 0 ]; then
+              cf create-org $ORG
+            fi
+            cf target -o $ORG
+
+            set +e
+            cf space $SPACE
+            set -e
+            if [ $? -eq 0 ]; then
+              cf create-space $SPACE
+            fi
+            cf target -s $SPACE
+
+            pushd loggregator/src/tools/logspinner
+              cf push floodspinner
+            popd
+    - task: setup-loggregator-latest
+      config:
+        platform: linux
+        image_resource:
+          type: docker-image
+          source:
+            repository: relintdockerhubpushbot/cf-deployment-concourse-tasks
+        params:
+          SYSTEM_DOMAIN: loggregator-latest.cf-app.com
+          VARS_STORE_FILE: gcp/loggregator-latest-bbl/deployment-vars.yml
+          ORG: cf-lamb
+          SPACE: development
+        inputs:
+        - name: vars-store
+        - name: loggregator
+        run:
+          path: bash
+          args:
+          - -c
+          - |
+            #!/bin/bash
+            set -ex
+            password=$(grep scim vars-store/$VARS_STORE_FILE | awk '{print $2}')
+
+            cf login -a api.$SYSTEM_DOMAIN -u admin -p $password -o system --skip-ssl-validation
+
+            set +e
+            cf org $ORG
+            set -e
+            if [ $? -eq 0 ]; then
+              cf create-org $ORG
+            fi
+            cf target -o $ORG
+
+            set +e
+            cf space $SPACE
+            set -e
+            if [ $? -eq 0 ]; then
+              cf create-space $SPACE
+            fi
+            cf target -s $SPACE
+
+            pushd loggregator/src/tools/logspinner
+              cf push floodspinner
+            popd
+
+- name: setup-datadog
+  serial: true
+  serial_groups: ["loggregator-elect", "loggregator-latest"]
+  plan:
+  - aggregate:
+    - get: regression-test-control
+      passed: ["cf-setup"]
+      trigger: true
+    - get: release-latest
+      resource: loggregator-latest
+      passed:
+      - cf-setup
+    - get: release-elect
+      resource: loggregator-release-elect
+      passed:
+      - cf-setup
+  - task: setup-dashboard
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source:
+          repository: loggregator/bosh10
+      inputs:
+      - name: release-latest
+      - name: release-elect
+      params:
+        DATADOG_API_KEY: {{datadog-dev-api-key}}
+        DATADOG_APP_KEY: {{datadog-dev-app-key}}
+        LATEST_SYSTEM_DOMAIN: loggregator-latest.cf-app.com
+        ELECT_SYSTEM_DOMAIN: loggregator-elect.cf-app.com
+      run:
+        path: bash
+        args:
+        - -c
+        - |
+          #/bin/bash
+          set -ex
+
+          pushd release-elect
+            ELECT_SHA=$(git rev-parse HEAD)
+          popd
+
+          LATEST_VERSION=$(cat release-latest/version)
+
+          cat <<EOF >> /tmp/request-body.json
+          {
+            "title": "Release Elect Regression (v$LATEST_VERSION..$ELECT_SHA)",
+            "description": "Release Elect Regression (v$LATEST_VERSION..$ELECT_SHA)",
+            "read_only": "True",
+            "graphs" : [
+              {
+                "title": "Release Elect Version vs Previous Version % Improvement",
+                "definition": {
+                  "viz": "query_value",
+                  "requests": [
+                    {
+                      "q": "( ( avg:regression.smoke_test.loggregator.msg_count{floodspinner,host:api.$ELECT_SYSTEM_DOMAIN} / avg:regression.smoke_test.loggregator.cycles{floodspinner} ) - ( avg:regression.smoke_test.loggregator.msg_count{floodspinner,host:api.$LATEST_SYSTEM_DOMAIN} / avg:regression.smoke_test.loggregator.cycles{floodspinner} ) ) * 100",
+                      "aggregator": "avg",
+                      "conditional_formats": [
+                        {
+                          "palette": "white_on_green",
+                          "comparator": ">=",
+                          "value": "0"
+                        },
+                        {
+                          "palette": "white_on_red",
+                          "comparator": "<",
+                          "value": "0"
+                        }
+                      ],
+                      "type": "line"
+                    }
+                  ],
+                  "autoscale": true,
+                  "markers": [
+                    {
+                      "dim": "y",
+                      "type": "error dashed",
+                      "val": 0,
+                      "value": "y = 0",
+                      "label": "Previous Version Baseline"
+                    }
+                  ]
+                }
+              },
+              {
+                "title": "Floodspinner Release Elect and Previous Release",
+                "definition": {
+                  "viz": "timeseries",
+                  "requests": [
+                    {
+                      "q": "avg:regression.smoke_test.loggregator.msg_count{floodspinner,host:api.$ELECT_SYSTEM_DOMAIN}",
+                      "style": {
+                        "palette": "cool",
+                        "width": "thin"
+                      },
+                      "type": "line",
+                      "conditional_formats": [],
+                      "aggregator": "avg"
+                    },
+                    {
+                      "q": "avg:regression.smoke_test.loggregator.msg_count{floodspinner,host:api.$LATEST_SYSTEM_DOMAIN}",
+                      "style": {
+                        "palette": "cool",
+                        "width": "thin"
+                      },
+                      "type": "line"
+                    }
+                  ],
+                  "autoscale": true
+                }
+              },
+              {
+                "title": "Release Elect Version vs Previous Version % Improvement",
+                "definition": {
+                  "viz": "timeseries",
+                  "requests": [
+                    {
+                      "q": "( ( avg:regression.smoke_test.loggregator.msg_count{floodspinner,host:api.$ELECT_SYSTEM_DOMAIN} / avg:regression.smoke_test.loggregator.cycles{floodspinner} ) - ( avg:regression.smoke_test.loggregator.msg_count{floodspinner,host:api.$LATEST_SYSTEM_DOMAIN} / avg:regression.smoke_test.loggregator.cycles{floodspinner} ) ) * 100",
+                      "aggregator": "avg",
+                      "style": {
+                        "palette": "cool",
+                        "width": "thin"
+                      },
+                      "type": "line",
+                      "conditional_formats": []
+                    }
+                  ],
+                  "autoscale": true,
+                  "markers": [
+                    {
+                      "dim": "y",
+                      "type": "error dashed",
+                      "val": 0,
+                      "value": "y = 0",
+                      "label": "Previous Version Baseline"
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+          EOF
+
+          curl "https://app.datadoghq.com/api/v1/dash?api_key=${DATADOG_API_KEY}&application_key=${DATADOG_APP_KEY}" -X POST -H "Content-type: application/json" -d "@/tmp/request-body.json"
+
+- name: smoke-tests
+  serial: true
+  serial_groups: ["loggregator-elect", "loggregator-latest"]
+  plan:
+  - aggregate:
+    - get: regression-test-control
+      passed: ["setup-datadog"]
+      trigger: true
+    - get: release-elect
+      resource: loggregator-release-elect
+      passed:
+      - setup-datadog
+    - get: release-latest
+      resource: loggregator-latest
+      passed:
+      - setup-datadog
+    - get: loggregator-ci
+  - get: 5m
+    trigger: true
+  - aggregate:
+    - task: loggregator-elect
+      file: loggregator-ci/tasks/cf-logs-smoke-test.yml
+      params:
+        PREFIX: "regression."
+        CYCLES: 10000
+        DELAY: "2"
+        DELAY_UNIT: "us"
+        MESSAGE: "FIFTEEN-MINUTE"
+        APP_NAME: "floodspinner"
+        WAIT: 60
+        API_ENDPOINT: api.loggregator-elect.cf-app.com
+        USERNAME: admin
+        PASSWORD: {{loggregator-elect-password}}
+        DATADOG_API_KEY: {{datadog-dev-api-key}}
+        SKIP_SSL_VALIDATION: true
+    - task: loggregator-latest
+      file: loggregator-ci/tasks/cf-logs-smoke-test.yml
+      params:
+        PREFIX: "regression."
+        CYCLES: 10000
+        DELAY: "2"
+        DELAY_UNIT: "us"
+        MESSAGE: "FIFTEEN-MINUTE"
+        APP_NAME: "floodspinner"
+        WAIT: 60
+        API_ENDPOINT: api.loggregator-latest.cf-app.com
+        USERNAME: admin
+        PASSWORD: {{loggregator-latest-password}}
+        DATADOG_API_KEY: {{datadog-dev-api-key}}
+        SKIP_SSL_VALIDATION: true
+
