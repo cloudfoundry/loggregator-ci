@@ -455,10 +455,13 @@ jobs:
 
           LATEST_VERSION=$(cat release-latest/version)
 
+          DASHBOARD_TITLE="Release Elect Regression (v$LATEST_VERSION..$ELECT_SHA)"
+          echo $DASHBOARD_TITLE
+
           cat <<EOF >> /tmp/request-body.json
           {
-            "title": "Release Elect Regression (v$LATEST_VERSION..$ELECT_SHA)",
-            "description": "Release Elect Regression (v$LATEST_VERSION..$ELECT_SHA)",
+            "title": "$DASHBOARD_TITLE",
+            "description": "$DASHBOARD_TITLE",
             "read_only": "True",
             "graphs" : [
               {
