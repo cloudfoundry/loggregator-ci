@@ -41,7 +41,7 @@ run:
     currenttime=$(date +%s)
     curl  -X POST -H "Content-type: application/json" \
     -d "{ \"series\" :
-             [{\"metric\":\"smoke_test.loggregator.msg_count\",
+             [{\"metric\":\"${PREFIX}smoke_test.loggregator.msg_count\",
               \"points\":[[${currenttime}, ${msg_count}]],
               \"type\":\"gauge\",
               \"host\":\"${cf_api}\",
@@ -52,7 +52,7 @@ run:
 
     curl  -X POST -H "Content-type: application/json" \
     -d "{ \"series\" :
-             [{\"metric\":\"smoke_test.loggregator.delay\",
+             [{\"metric\":\"${PREFIX}smoke_test.loggregator.delay\",
               \"points\":[[${currenttime}, $DELAY]],
               \"type\":\"gauge\",
               \"host\":\"${cf_api}\",
@@ -63,7 +63,7 @@ run:
 
     curl  -X POST -H "Content-type: application/json" \
     -d "{ \"series\" :
-             [{\"metric\":\"smoke_test.loggregator.cycles\",
+             [{\"metric\":\"${PREFIX}smoke_test.loggregator.cycles\",
               \"points\":[[${currenttime}, ${CYCLES}]],
               \"type\":\"gauge\",
               \"host\":\"${cf_api}\",
