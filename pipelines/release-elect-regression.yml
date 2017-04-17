@@ -67,7 +67,7 @@ resources:
     source:
       bucket: regression-test-control
       json_key: {{bbl_gcp_service_account_key}}
-      regexp: timestamp
+      regexp: timestamp-(.*)
 
 jobs:
 - name: loggregator-elect-bbl-create
@@ -168,10 +168,12 @@ jobs:
           #!/bin/bash
           set -ex
 
-          date > regression-test-control/timestamp
+          now=$(date "+%s")
+
+          echo $now > regression-test-control/timestamp-$now
   - put: regression-test-control
     params:
-      file: regression-test-control/timestamp
+      file: regression-test-control/timestamp-*
 
 
 - name: loggregator-elect-deploy
