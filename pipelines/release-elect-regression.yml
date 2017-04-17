@@ -1,0 +1,421 @@
+resources:
+- name: loggregator-release-elect
+  type: git
+  source:
+    uri: git@github.com:cloudfoundry/loggregator.git
+    branch: release-elect
+    private_key: {{loggregator-key}}
+    ignore_paths:
+    - .final_builds
+    - releases
+
+- name: loggregator-develop
+  type: git
+  source:
+    uri: git@github.com:cloudfoundry/loggregator.git
+    branch: develop
+    private_key: {{loggregator-key}}
+    ignore_paths:
+    - .final_builds
+    - releases
+
+- name: loggregator-latest
+  type: bosh-io-release
+  source:
+    repository: cloudfoundry/loggregator
+
+- name: deployments-loggregator
+  type: git
+  source: &deployments_loggregator
+    uri: git@github.com:cloudfoundry/deployments-loggregator.git
+    branch: master
+    private_key: {{deployments-loggregator-key}}
+
+- name: deployments-loggregator-with-changes
+  type: git
+  source: *deployments_loggregator
+
+- name: cf-deployment
+  type: git
+  source:
+    uri: https://github.com/cloudfoundry/cf-deployment
+    branch: develop
+
+- name: cf-deployment-concourse-tasks
+  type: git
+  source:
+    uri: https://github.com/cloudfoundry/cf-deployment-concourse-tasks
+    branch: v2.1
+
+jobs:
+- name: loggregator-elect-bbl-create
+  plan:
+  - get: cf-deployment-concourse-tasks
+    trigger: false
+  - get: bbl-state
+    resource: deployments-loggregator
+    trigger: false
+  - task: bbl-up
+    file: cf-deployment-concourse-tasks/bbl-up/task.yml
+    params:
+      BBL_GCP_SERVICE_ACCOUNT_KEY: service-account.key.json
+      BBL_GCP_PROJECT_ID: cff-loggregator
+      BBL_GCP_ZONE: us-central1-a
+      BBL_GCP_REGION: us-central1
+      BBL_STATE_DIR: gcp/loggregator-elect-bbl
+      BBL_IAAS: gcp
+      BBL_LB_CERT: {{coconut_director_cert}}
+      BBL_LB_KEY: {{coconut_director_key}}
+      BBL_ENV_NAME: loggregator-elect-bbl
+      LB_DOMAIN: loggregator-elect.cf-app.com
+  - put: deployments-loggregator-with-changes
+    params:
+      repository: updated-bbl-state
+      rebase: true
+
+- name: loggregator-elect-bbl-destroy
+  plan:
+  - get: cf-deployment-concourse-tasks
+    trigger: false
+  - get: bbl-state
+    resource: deployments-loggregator
+    trigger: false
+  - task: bbl-destroy
+    file: cf-deployment-concourse-tasks/bbl-destroy/task.yml
+    params:
+      BBL_STATE_DIR: gcp/loggregator-elect-bbl
+  - put: deployments-loggregator-with-changes
+    params:
+      repository: updated-bbl-state
+      rebase: true
+
+- name: loggregator-latest-bbl-create
+  plan:
+  - get: cf-deployment-concourse-tasks
+    trigger: false
+  - get: bbl-state
+    resource: deployments-loggregator
+    trigger: false
+  - task: bbl-up
+    file: cf-deployment-concourse-tasks/bbl-up/task.yml
+    params:
+      BBL_GCP_SERVICE_ACCOUNT_KEY: service-account.key.json
+      BBL_GCP_PROJECT_ID: cff-loggregator
+      BBL_GCP_ZONE: us-central1-a
+      BBL_GCP_REGION: us-central1
+      BBL_STATE_DIR: gcp/loggregator-latest-bbl
+      BBL_IAAS: gcp
+      BBL_LB_CERT: {{coconut_director_cert}}
+      BBL_LB_KEY: {{coconut_director_key}}
+      BBL_ENV_NAME: loggregator-latest-bbl
+      LB_DOMAIN: loggregator-latest.cf-app.com
+  - put: deployments-loggregator-with-changes
+    params:
+      repository: updated-bbl-state
+      rebase: true
+
+- name: loggregator-latest-bbl-destroy
+  plan:
+  - get: cf-deployment-concourse-tasks
+    trigger: false
+  - get: bbl-state
+    resource: deployments-loggregator
+    trigger: false
+  - task: bbl-destroy
+    file: cf-deployment-concourse-tasks/bbl-destroy/task.yml
+    params:
+      BBL_STATE_DIR: gcp/loggregator-latest-bbl
+  - put: deployments-loggregator-with-changes
+    params:
+      repository: updated-bbl-state
+      rebase: true
+
+- name: loggregator-elect-deploy
+  serial: true
+  plan:
+  - aggregate:
+    - get: bbl-state
+      resource: deployments-loggregator
+      trigger: false
+    - get: cf-deployment
+      trigger: false
+    - get: cf-deployment-concourse-tasks
+      trigger: false
+    - get: release
+      resource: loggregator-release-elect
+    - get: vars-store
+      resource: deployments-loggregator
+      trigger: false
+  - task: upload-stemcell
+    file: cf-deployment-concourse-tasks/bosh-upload-stemcell-from-cf-deployment/task.yml
+    params:
+      BBL_STATE_DIR: gcp/loggregator-elect-bbl
+  - task: copy-ops-files
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source: { repository: ubuntu }
+      inputs:
+      - name: bbl-state
+      - name: cf-deployment
+      outputs:
+      - name: ops-files
+      run:
+        path: /bin/bash
+        args:
+        - "-c"
+        - |
+          #!/bin/bash
+          set -ex
+
+          cp cf-deployment/operations/workarounds/use-4-azs-for-router.yml ops-files/
+          cp bbl-state/gcp/loggregator-elect-bbl/ops-files/*.yml ops-files/
+
+  - task: cf-deploy
+    file: cf-deployment-concourse-tasks/bosh-deploy-with-created-release/task.yml
+    params:
+      BBL_STATE_DIR: gcp/loggregator-elect-bbl
+      SYSTEM_DOMAIN: loggregator-elect.cf-app.com
+      VARS_STORE_FILE: gcp/loggregator-elect-bbl/deployment-vars.yml
+      OPS_FILES: "clients.yml use-4-azs-for-router.yml"
+  - put: deployments-loggregator-with-changes
+    params:
+      repository: updated-vars-store
+      rebase: true
+
+- name: loggregator-elect-setup
+  serial: true
+  plan:
+  - aggregate:
+    - get: release
+      resource: loggregator-release-elect
+      passed: ["loggregator-elect-deploy"]
+      trigger: false
+    - get: vars-store
+      resource: deployments-loggregator-with-changes
+      passed: ["loggregator-elect-deploy"]
+      trigger: true
+    - get: loggregator
+      resource: loggregator-develop
+      trigger: false
+  - task: setup-environment
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source:
+          repository: relintdockerhubpushbot/cf-deployment-concourse-tasks
+      params:
+        SYSTEM_DOMAIN: loggregator-elect.cf-app.com
+        VARS_STORE_FILE: gcp/loggregator-elect-bbl/deployment-vars.yml
+        ORG: cf-lamb
+        SPACE: development
+      inputs:
+      - name: release
+      - name: vars-store
+      run:
+        path: bash
+        args:
+        - -c
+        - |
+          #!/bin/bash
+          set -ex
+          password=$(grep scim vars-store/$VARS_STORE_FILE | awk '{print $2}')
+
+          cf login -a api.$SYSTEM_DOMAIN -u admin -p $password --skip-ssl-validation
+
+          set +e
+          cf org $ORG
+          set -e
+          if [ $? -eq 0 ]; then
+            cf create-org $ORG
+          fi
+          cf target -o $ORG
+
+          set +e
+          cf space $SPACE
+          set -e
+          if [ $? -eq 0 ]; then
+            cf create-space $SPACE
+          fi
+          cf target -s $SPACE
+
+          pushd loggregator/src/tools/logspinner
+            cf push floodspinner
+            cf push dripspinner
+          popd
+
+- name: loggregator-latest-deploy
+  serial: true
+  plan:
+  - aggregate:
+    - get: bbl-state
+      resource: deployments-loggregator
+      trigger: false
+    - get: cf-deployment
+      trigger: false
+    - get: cf-deployment-concourse-tasks
+      trigger: false
+    - get: vars-store
+      resource: deployments-loggregator
+      trigger: false
+    - get: release
+      resource: loggregator-latest
+  - task: upload-stemcell
+    file: cf-deployment-concourse-tasks/bosh-upload-stemcell-from-cf-deployment/task.yml
+    params:
+      BBL_STATE_DIR: gcp/loggregator-latest-bbl
+  - task: copy-ops-files
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source: { repository: ubuntu }
+      inputs:
+      - name: bbl-state
+      - name: cf-deployment
+      - name: release
+      outputs:
+      - name: ops-files
+      run:
+        path: /bin/bash
+        args:
+        - "-c"
+        - |
+          #!/bin/bash
+          set -ex
+
+          cp cf-deployment/operations/workarounds/use-4-azs-for-router.yml ops-files/
+          cp bbl-state/gcp/loggregator-latest-bbl/ops-files/*.yml ops-files/
+
+          version=$(cat release/version)
+          sha=$(cat release/sha1)
+
+          echo <<EOT >> ops-files/loggregator-version.yml
+          - type: replace
+            path: /releases/name=loggregator
+            value:
+              name: loggregator
+              url: https://bosh.io/d/github.com/cloudfoundry/loggregator?v=$version
+              version: "$version"
+              sha1: "$sha"
+          EOT
+  - task: cf-deploy
+    file: cf-deployment-concourse-tasks/bosh-deploy/task.yml
+    params:
+      BBL_STATE_DIR: gcp/loggregator-latest-bbl
+      SYSTEM_DOMAIN: loggregator-latest.cf-app.com
+      VARS_STORE_FILE: gcp/loggregator-latest-bbl/deployment-vars.yml
+      OPS_FILES: "clients.yml use-4-azs-for-router.yml loggregator-version.yml"
+  - put: deployments-loggregator-with-changes
+    params:
+      repository: updated-vars-store
+      rebase: true
+
+- name: loggregator-latest-setup
+  serial: true
+  plan:
+  - aggregate:
+    - get: release
+      resource: loggregator-latest
+      passed: ["loggregator-latest-deploy"]
+      trigger: false
+    - get: vars-store
+      resource: deployments-loggregator-with-changes
+      passed: ["loggregator-latest-deploy"]
+      trigger: true
+    - get: loggregator
+      resource: loggregator-develop
+      trigger: false
+  - task: setup-environment
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source:
+          repository: relintdockerhubpushbot/cf-deployment-concourse-tasks
+      params:
+        SYSTEM_DOMAIN: loggregator-latest.cf-app.com
+        VARS_STORE_FILE: gcp/loggregator-latest-bbl/deployment-vars.yml
+        ORG: cf-lamb
+        SPACE: development
+      inputs:
+      - name: release
+      - name: vars-store
+      run:
+        path: bash
+        args:
+        - -c
+        - |
+          #!/bin/bash
+          set -ex
+          password=$(grep scim vars-store/$VARS_STORE_FILE | awk '{print $2}')
+
+          cf login -a api.$SYSTEM_DOMAIN -u admin -p $password --skip-ssl-validation
+
+          set +e
+          cf org $ORG
+          set -e
+          if [ $? -eq 0 ]; then
+            cf create-org $ORG
+          fi
+          cf target -o $ORG
+
+          set +e
+          cf space $SPACE
+          set -e
+          if [ $? -eq 0 ]; then
+            cf create-space $SPACE
+          fi
+          cf target -s $SPACE
+
+          pushd loggregator/src/tools/logspinner
+            cf push floodspinner
+            cf push dripspinner
+          popd
+
+- name: setup-datadog
+  serial: true
+  plan:
+  - aggregate:
+    - get: vars-store
+      resource: deployments-loggregator-with-changes
+      passed:
+      - loggregator-elect-setup
+      - loggregator-latest-setup
+      trigger: true
+    - get: latest-release
+      resource: loggregator-latest
+      passed:
+      - loggregator-latest-setup
+    - get: elect-release
+      resource: loggregator-release-elect
+      passed:
+      - loggregator-elect-setup
+  - task: setup-dashboard
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source:
+          repository: relintdockerhubpushbot/cf-deployment-concourse-tasks
+      params:
+        DATADOG_API_KEY: {{datadog-prod-api-key}}
+      run:
+        path: bash
+        args:
+        - -c
+        - |
+          #/bin/bash
+          set -ex
+
+          pushd elect-release
+            elect_sha=$(git rev-parse HEAD)
+          popd
+
+          latest_version=$(cat latest-release/version)
+
+          echo $elect_sha
+          echo $latest_version
+
