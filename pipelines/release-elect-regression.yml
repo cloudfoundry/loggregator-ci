@@ -47,6 +47,15 @@ resources:
     uri: https://github.com/cloudfoundry/cf-deployment-concourse-tasks
     branch: v2.1
 
+- name: 10m
+  type: time
+  source: {interval: 10m}
+
+- name: loggregator-ci
+  type: git
+  source:
+    uri: https://github.com/cloudfoundry/loggregator-ci
+
 jobs:
 - name: loggregator-elect-bbl-create
   plan:
@@ -191,7 +200,7 @@ jobs:
     - get: release
       resource: loggregator-release-elect
       passed: ["loggregator-elect-deploy"]
-      trigger: false
+      trigger: true
     - get: vars-store
       resource: deployments-loggregator-with-changes
       passed: ["loggregator-elect-deploy"]
@@ -212,8 +221,8 @@ jobs:
         ORG: cf-lamb
         SPACE: development
       inputs:
-      - name: release
       - name: vars-store
+      - name: loggregator
       run:
         path: bash
         args:
@@ -223,7 +232,7 @@ jobs:
           set -ex
           password=$(grep scim vars-store/$VARS_STORE_FILE | awk '{print $2}')
 
-          cf login -a api.$SYSTEM_DOMAIN -u admin -p $password --skip-ssl-validation
+          cf login -a api.$SYSTEM_DOMAIN -u admin -p $password -o system --skip-ssl-validation
 
           set +e
           cf org $ORG
@@ -243,7 +252,6 @@ jobs:
 
           pushd loggregator/src/tools/logspinner
             cf push floodspinner
-            cf push dripspinner
           popd
 
 - name: loggregator-latest-deploy
@@ -320,7 +328,7 @@ jobs:
     - get: release
       resource: loggregator-latest
       passed: ["loggregator-latest-deploy"]
-      trigger: false
+      trigger: true
     - get: vars-store
       resource: deployments-loggregator-with-changes
       passed: ["loggregator-latest-deploy"]
@@ -341,8 +349,8 @@ jobs:
         ORG: cf-lamb
         SPACE: development
       inputs:
-      - name: release
       - name: vars-store
+      - name: loggregator
       run:
         path: bash
         args:
@@ -352,7 +360,7 @@ jobs:
           set -ex
           password=$(grep scim vars-store/$VARS_STORE_FILE | awk '{print $2}')
 
-          cf login -a api.$SYSTEM_DOMAIN -u admin -p $password --skip-ssl-validation
+          cf login -a api.$SYSTEM_DOMAIN -u admin -p $password -o system --skip-ssl-validation
 
           set +e
           cf org $ORG
@@ -372,36 +380,37 @@ jobs:
 
           pushd loggregator/src/tools/logspinner
             cf push floodspinner
-            cf push dripspinner
           popd
 
 - name: setup-datadog
   serial: true
   plan:
   - aggregate:
-    - get: vars-store
-      resource: deployments-loggregator-with-changes
-      passed:
-      - loggregator-elect-setup
-      - loggregator-latest-setup
-      trigger: true
-    - get: latest-release
+    - get: release-latest
       resource: loggregator-latest
       passed:
       - loggregator-latest-setup
-    - get: elect-release
+      trigger: true
+    - get: release-elect
       resource: loggregator-release-elect
       passed:
       - loggregator-elect-setup
+      trigger: true
   - task: setup-dashboard
     config:
       platform: linux
       image_resource:
         type: docker-image
         source:
-          repository: relintdockerhubpushbot/cf-deployment-concourse-tasks
+          repository: loggregator/bosh10
+      inputs:
+      - name: release-latest
+      - name: release-elect
       params:
-        DATADOG_API_KEY: {{datadog-prod-api-key}}
+        DATADOG_API_KEY: {{datadog-dev-api-key}}
+        DATADOG_APP_KEY: {{datadog-dev-app-key}}
+        LATEST_SYSTEM_DOMAIN: loggregator-latest.cf-app.com
+        ELECT_SYSTEM_DOMAIN: loggregator-elect.cf-app.com
       run:
         path: bash
         args:
@@ -410,12 +419,164 @@ jobs:
           #/bin/bash
           set -ex
 
-          pushd elect-release
-            elect_sha=$(git rev-parse HEAD)
+          pushd release-elect
+            ELECT_SHA=$(git rev-parse HEAD)
           popd
 
-          latest_version=$(cat latest-release/version)
+          LATEST_VERSION=$(cat release-latest/version)
 
-          echo $elect_sha
-          echo $latest_version
+          cat <<EOF >> /tmp/request-body.json
+          {
+            "title": "Release Elect Regression (v$LATEST_VERSION..$ELECT_SHA)",
+            "description": "Release Elect Regression (v$LATEST_VERSION..$ELECT_SHA)",
+            "read_only": "True",
+            "graphs" : [
+              {
+                "viz": "query_value",
+                "title": "Release Elect Version vs Previous Version % Improvement Average",
+                "definition": {
+                  "requests": [
+                    {
+                      "q": "( ( avg:smoke_test.loggregator.msg_count{floodspinner,host:api.$ELECT_SYSTEM_DOMAIN} / avg:smoke_test.loggregator.cycles{floodspinner} ) - ( avg:smoke_test.loggregator.msg_count{floodspinner,host:api.$LATEST_SYSTEM_DOMAIN} / avg:smoke_test.loggregator.cycles{floodspinner} ) ) * 100",
+                      "aggregator": "avg",
+                      "conditional_formats": [
+                        {
+                          "palette": "white_on_green",
+                          "comparator": ">=",
+                          "value": "0"
+                        },
+                        {
+                          "palette": "white_on_red",
+                          "comparator": "<",
+                          "value": "0"
+                        }
+                      ],
+                      "type": "line"
+                    }
+                  ],
+                  "autoscale": true,
+                  "markers": [
+                    {
+                      "dim": "y",
+                      "type": "error dashed",
+                      "val": 0,
+                      "value": "y = 0",
+                      "label": "Previous Version Baseline"
+                    }
+                  ]
+                }
+              },
+              {
+                "title": "Floodspinner Release Elect and Previous Release",
+                "viz": "timeseries",
+                "definition": {
+                  "requests": [
+                    {
+                      "q": "avg:smoke_test.loggregator.msg_count{floodspinner,host:api.$ELECT_SYSTEM_DOMAIN}",
+                      "style": {
+                        "palette": "cool",
+                        "width": "thin"
+                      },
+                      "type": "line",
+                      "conditional_formats": [],
+                      "aggregator": "avg"
+                    },
+                    {
+                      "q": "avg:smoke_test.loggregator.msg_count{floodspinner,host:api.$LATEST_SYSTEM_DOMAIN}",
+                      "style": {
+                        "palette": "cool",
+                        "width": "thin"
+                      },
+                      "type": "line"
+                    }
+                  ],
+                  "autoscale": true
+                }
+              },
+              {
+                "title": "Release Elect Version vs Previous Version % Improvement",
+                "viz": "timeseries",
+                "definition": {
+                  "requests": [
+                    {
+                      "q": "( ( avg:smoke_test.loggregator.msg_count{floodspinner,host:api.$ELECT_SYSTEM_DOMAIN} / avg:smoke_test.loggregator.cycles{floodspinner} ) - ( avg:smoke_test.loggregator.msg_count{floodspinner,host:api.$LATEST_SYSTEM_DOMAIN} / avg:smoke_test.loggregator.cycles{floodspinner} ) ) * 100",
+                      "aggregator": "avg",
+                      "style": {
+                        "palette": "cool",
+                        "width": "thin"
+                      },
+                      "type": "line",
+                      "conditional_formats": []
+                    }
+                  ],
+                  "autoscale": true,
+                  "markers": [
+                    {
+                      "dim": "y",
+                      "type": "error dashed",
+                      "val": 0,
+                      "value": "y = 0",
+                      "label": "Previous Version Baseline"
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+          EOF
 
+          curl "https://app.datadoghq.com/api/v1/dash?api_key=${DATADOG_API_KEY}&application_key=${DATADOG_APP_KEY}" -X POST -H "Content-type: application/json" -d "@/tmp/request-body.json"
+
+- name: elect-floodspinner
+  serial: true
+  plan:
+  - aggregate:
+    - get: release-elect
+      resource: loggregator-release-elect
+      passed:
+      - setup-datadog
+      trigger: true
+    - get: loggregator-ci
+  - get: 10m
+    trigger: true
+  - task: run-smoke-tests
+    file: loggregator-ci/tasks/cf-logs-smoke-test.yml
+    params:
+      CYCLES: 10000
+      DELAY: "2"
+      DELAY_UNIT: "us"
+      MESSAGE: "FIFTEEN-MINUTE"
+      APP_NAME: "floodspinner"
+      WAIT: 60
+      API_ENDPOINT: api.loggregator-elect.cf-app.com
+      USERNAME: admin
+      PASSWORD: {{loggregator-elect-password}}
+      DATADOG_API_KEY: {{datadog-dev-api-key}}
+      SKIP_SSL_VALIDATION: true
+
+- name: latest-floodspinner
+  serial: true
+  plan:
+  - aggregate:
+    - get: release-latest
+      resource: loggregator-latest
+      passed:
+      - setup-datadog
+      trigger: true
+    - get: loggregator-ci
+  - get: 10m
+    trigger: true
+  - task: run-smoke-tests
+    file: loggregator-ci/tasks/cf-logs-smoke-test.yml
+    params:
+      CYCLES: 10000
+      DELAY: "2"
+      DELAY_UNIT: "us"
+      MESSAGE: "FIFTEEN-MINUTE"
+      APP_NAME: "floodspinner"
+      WAIT: 60
+      API_ENDPOINT: api.loggregator-latest.cf-app.com
+      USERNAME: admin
+      PASSWORD: {{loggregator-latest-password}}
+      DATADOG_API_KEY: {{datadog-dev-api-key}}
+      SKIP_SSL_VALIDATION: true
