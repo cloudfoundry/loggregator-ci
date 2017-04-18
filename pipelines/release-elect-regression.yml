@@ -69,6 +69,14 @@ resources:
       json_key: {{bbl_gcp_service_account_key}}
       regexp: timestamp-(.*)
 
+  - name: pipeline-lock
+    type: pool
+    source:
+      uri: git@github.com:cloudfoundry-incubator/locks.git
+      branch: master
+      pool: release-elect-regression-pipeline
+      private_key: {{loggregator-key}}
+
 jobs:
 - name: loggregator-elect-bbl-create
   plan:
@@ -174,6 +182,8 @@ jobs:
   - put: regression-test-control
     params:
       file: regression-test-control/timestamp-*
+  - put: pipeline-lock
+    params: {acquire: true}
 
 
 - name: loggregator-elect-deploy
@@ -181,6 +191,8 @@ jobs:
   serial_groups: ["loggregator-elect"]
   plan:
   - aggregate:
+    - put: pipeline-lock
+      passed: ["start-pipeline"]
     - get: regression-test-control
       passed: ["start-pipeline"]
       trigger: true
@@ -236,6 +248,8 @@ jobs:
   serial_groups: ["loggregator-latest"]
   plan:
   - aggregate:
+    - put: pipeline-lock
+      passed: ["start-pipeline"]
     - get: regression-test-control
       passed: ["start-pipeline"]
       trigger: true
@@ -303,6 +317,8 @@ jobs:
   serial_groups: ["loggregator-elect", "loggregator-latest"]
   plan:
   - aggregate:
+    - put: pipeline-lock
+      passed: ["loggregator-latest-deploy", "loggregator-elect-deploy"]
     - get: regression-test-control
       passed: ["loggregator-latest-deploy", "loggregator-elect-deploy"]
       trigger: true
@@ -415,6 +431,8 @@ jobs:
   serial_groups: ["loggregator-elect", "loggregator-latest"]
   plan:
   - aggregate:
+    - get: pipeline-lock
+      passed: ["setup-datadog"]
     - get: regression-test-control
       passed: ["cf-setup"]
       trigger: true
@@ -427,144 +445,22 @@ jobs:
       passed:
       - cf-setup
   - task: setup-dashboard
-    config:
-      platform: linux
-      image_resource:
-        type: docker-image
-        source:
-          repository: loggregator/bosh10
-      inputs:
-      - name: release-latest
-      - name: release-elect
-      params:
-        DATADOG_API_KEY: {{datadog-dev-api-key}}
-        DATADOG_APP_KEY: {{datadog-dev-app-key}}
-        LATEST_SYSTEM_DOMAIN: loggregator-latest.cf-app.com
-        ELECT_SYSTEM_DOMAIN: loggregator-elect.cf-app.com
-      run:
-        path: bash
-        args:
-        - -c
-        - |
-          #/bin/bash
-          set -ex
-
-          pushd release-elect
-            ELECT_SHA=$(git rev-parse HEAD)
-          popd
-
-          LATEST_VERSION=$(cat release-latest/version)
-
-          DASHBOARD_TITLE="Release Elect Regression (v$LATEST_VERSION..$ELECT_SHA)"
-          echo $DASHBOARD_TITLE
-
-          cat <<EOF >> /tmp/request-body.json
-          {
-            "title": "$DASHBOARD_TITLE",
-            "description": "$DASHBOARD_TITLE",
-            "read_only": "True",
-            "graphs" : [
-              {
-                "title": "Release Elect Version vs Previous Version % Improvement",
-                "definition": {
-                  "viz": "query_value",
-                  "requests": [
-                    {
-                      "q": "( ( avg:regression.smoke_test.loggregator.msg_count{floodspinner,host:api.$ELECT_SYSTEM_DOMAIN} / avg:regression.smoke_test.loggregator.cycles{floodspinner} ) - ( avg:regression.smoke_test.loggregator.msg_count{floodspinner,host:api.$LATEST_SYSTEM_DOMAIN} / avg:regression.smoke_test.loggregator.cycles{floodspinner} ) ) * 100",
-                      "aggregator": "avg",
-                      "conditional_formats": [
-                        {
-                          "palette": "white_on_green",
-                          "comparator": ">=",
-                          "value": "0"
-                        },
-                        {
-                          "palette": "white_on_red",
-                          "comparator": "<",
-                          "value": "0"
-                        }
-                      ],
-                      "type": "line"
-                    }
-                  ],
-                  "autoscale": true,
-                  "markers": [
-                    {
-                      "dim": "y",
-                      "type": "error dashed",
-                      "val": 0,
-                      "value": "y = 0",
-                      "label": "Previous Version Baseline"
-                    }
-                  ]
-                }
-              },
-              {
-                "title": "Floodspinner Release Elect and Previous Release",
-                "definition": {
-                  "viz": "timeseries",
-                  "requests": [
-                    {
-                      "q": "avg:regression.smoke_test.loggregator.msg_count{floodspinner,host:api.$ELECT_SYSTEM_DOMAIN}",
-                      "style": {
-                        "palette": "cool",
-                        "width": "thin"
-                      },
-                      "type": "line",
-                      "conditional_formats": [],
-                      "aggregator": "avg"
-                    },
-                    {
-                      "q": "avg:regression.smoke_test.loggregator.msg_count{floodspinner,host:api.$LATEST_SYSTEM_DOMAIN}",
-                      "style": {
-                        "palette": "cool",
-                        "width": "thin"
-                      },
-                      "type": "line"
-                    }
-                  ],
-                  "autoscale": true
-                }
-              },
-              {
-                "title": "Release Elect Version vs Previous Version % Improvement",
-                "definition": {
-                  "viz": "timeseries",
-                  "requests": [
-                    {
-                      "q": "( ( avg:regression.smoke_test.loggregator.msg_count{floodspinner,host:api.$ELECT_SYSTEM_DOMAIN} / avg:regression.smoke_test.loggregator.cycles{floodspinner} ) - ( avg:regression.smoke_test.loggregator.msg_count{floodspinner,host:api.$LATEST_SYSTEM_DOMAIN} / avg:regression.smoke_test.loggregator.cycles{floodspinner} ) ) * 100",
-                      "aggregator": "avg",
-                      "style": {
-                        "palette": "cool",
-                        "width": "thin"
-                      },
-                      "type": "line",
-                      "conditional_formats": []
-                    }
-                  ],
-                  "autoscale": true,
-                  "markers": [
-                    {
-                      "dim": "y",
-                      "type": "error dashed",
-                      "val": 0,
-                      "value": "y = 0",
-                      "label": "Previous Version Baseline"
-                    }
-                  ]
-                }
-              }
-            ]
-          }
-          EOF
-
-          curl "https://app.datadoghq.com/api/v1/dash?api_key=${DATADOG_API_KEY}&application_key=${DATADOG_APP_KEY}" -X POST -H "Content-type: application/json" -d "@/tmp/request-body.json"
+    file: loggregator-ci/tasks/release-elect-regression/setup-datadog-dashboard.yml
+    params:
+      DATADOG_API_KEY: {{datadog-dev-api-key}}
+      DATADOG_APP_KEY: {{datadog-dev-app-key}}
+      LATEST_SYSTEM_DOMAIN: loggregator-latest.cf-app.com
+      ELECT_SYSTEM_DOMAIN: loggregator-elect.cf-app.com
+  - put: pipeline-lock
+    params: {release: pipeline-lock}
 
 - name: smoke-tests
   serial: true
   serial_groups: ["loggregator-elect", "loggregator-latest"]
   plan:
   - aggregate:
+    - get: pipeline-lock
+      passed: ["setup-datadog"]
     - get: regression-test-control
       passed: ["setup-datadog"]
       trigger: true
