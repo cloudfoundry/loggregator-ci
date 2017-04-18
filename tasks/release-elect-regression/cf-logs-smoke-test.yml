@@ -1,0 +1,77 @@
+platform: linux
+image_resource:
+  type: docker-image
+  source:
+  - repository: loggregator/bosh20
+inputs:
+  - name: release-info
+run:
+  path: bash
+  args:
+  - -c
+  - |
+    #!/bin/bash
+    set -e -x
+
+    version=$(cat release-info/version)
+
+    # target api
+    cf_api="$API_ENDPOINT"
+    cf login -a $cf_api \
+        -u $USERNAME \
+        -p $PASSWORD \
+        -s development \
+        -o cf-lamb --skip-ssl-validation
+
+    # cf logs to a file
+    rm -f output.txt
+    echo "Collecting logs for $APP_NAME"
+    cf logs "$APP_NAME" > output.txt 2>&1 &
+    sleep 30 #wait 30 seconds for socket connection
+
+    echo "Triggering $APP_NAME"
+
+    app_domain=$(cf app $APP_NAME | grep urls | awk '{print $2}')
+
+    # curl my logspinner
+    curl "$app_domain?cycles=$CYCLES&delay=$DELAY$DELAY_UNIT&text=$MESSAGE"
+
+    sleep $WAIT # wait for a bit
+
+    msg_count=$(cat output.txt | grep -c $MESSAGE)
+
+    echo $msg_count
+
+    currenttime=$(date +%s)
+    curl  -X POST -H "Content-type: application/json" \
+    -d "{ \"series\" :
+             [{\"metric\":\"${PREFIX}smoke_test.loggregator.msg_count\",
+              \"points\":[[${currenttime}, ${msg_count}]],
+              \"type\":\"gauge\",
+              \"host\":\"${cf_api}\",
+              \"tags\":[\"${APP_NAME}\", \"loggregator_version:${version}\"]}
+            ]
+        }" \
+    'https://app.datadoghq.com/api/v1/series?api_key='$DATADOG_API_KEY
+
+    curl  -X POST -H "Content-type: application/json" \
+    -d "{ \"series\" :
+             [{\"metric\":\"${PREFIX}smoke_test.loggregator.delay\",
+              \"points\":[[${currenttime}, $DELAY]],
+              \"type\":\"gauge\",
+              \"host\":\"${cf_api}\",
+              \"tags\":[\"${APP_NAME}\", \"loggregator_version:${version}\"]}
+            ]
+        }" \
+    'https://app.datadoghq.com/api/v1/series?api_key='$DATADOG_API_KEY
+
+    curl  -X POST -H "Content-type: application/json" \
+    -d "{ \"series\" :
+             [{\"metric\":\"${PREFIX}smoke_test.loggregator.cycles\",
+              \"points\":[[${currenttime}, ${CYCLES}]],
+              \"type\":\"gauge\",
+              \"host\":\"${cf_api}\",
+              \"tags\":[\"${APP_NAME}\", \"loggregator_version:${version}\"]}
+            ]
+        }" \
+    'https://app.datadoghq.com/api/v1/series?api_key='$DATADOG_API_KEY

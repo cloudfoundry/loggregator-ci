@@ -402,7 +402,7 @@ jobs:
                 cd release-elect
                 git rev-parse HEAD > ../release-info/version
         - task: loggregator-elect
-          file: loggregator-ci/tasks/cf-logs-smoke-test.yml
+          file: loggregator-ci/tasks/release-elect-regression/cf-logs-smoke-test.yml
           params:
             PREFIX: "regression."
             CYCLES: 10000
@@ -438,7 +438,7 @@ jobs:
 
                 cp release-latest/version release-info/version
         - task: loggregator-latest
-          file: loggregator-ci/tasks/cf-logs-smoke-test.yml
+          file: loggregator-ci/tasks/release-elect-regression/cf-logs-smoke-test.yml
           params:
             PREFIX: "regression."
             CYCLES: 10000
