@@ -27,7 +27,7 @@ run:
     rm -f output.txt
     echo "Collecting logs for $APP_NAME"
     cf logs "$APP_NAME" > output.txt 2>&1 &
-    sleep 30 #wait 30 seconds for socket connection
+    sleep 15 #wait 30 seconds for socket connection
 
     echo "Triggering $APP_NAME"
 
