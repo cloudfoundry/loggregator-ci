@@ -40,7 +40,7 @@ run:
             "viz": "query_value",
             "requests": [
               {
-                "q": "( ( avg:regression.smoke_test.loggregator.msg_count{floodspinner,host:api.$ELECT_SYSTEM_DOMAIN} / avg:regression.smoke_test.loggregator.cycles{floodspinner} ) - ( avg:regression.smoke_test.loggregator.msg_count{floodspinner,host:api.$LATEST_SYSTEM_DOMAIN} / avg:regression.smoke_test.loggregator.cycles{floodspinner} ) ) * 100",
+                "q": "( ( avg:regression.smoke_test.loggregator.msg_count{floodspinner,host:api.$ELECT_SYSTEM_DOMAIN,loggregator_version:$ELECT_SHA} / avg:regression.smoke_test.loggregator.cycles{floodspinner} ) - ( avg:regression.smoke_test.loggregator.msg_count{floodspinner,host:api.$LATEST_SYSTEM_DOMAIN,loggregator_version:$LATEST_VERSION} / avg:regression.smoke_test.loggregator.cycles{floodspinner} ) ) * 100",
                 "aggregator": "avg",
                 "conditional_formats": [
                   {
@@ -75,7 +75,7 @@ run:
             "viz": "timeseries",
             "requests": [
               {
-                "q": "avg:regression.smoke_test.loggregator.msg_count{floodspinner,host:api.$ELECT_SYSTEM_DOMAIN}",
+                "q": "avg:regression.smoke_test.loggregator.msg_count{floodspinner,host:api.$ELECT_SYSTEM_DOMAIN,loggregator_version:$ELECT_SHA}",
                 "style": {
                   "palette": "cool",
                   "width": "thin"
@@ -85,7 +85,7 @@ run:
                 "aggregator": "avg"
               },
               {
-                "q": "avg:regression.smoke_test.loggregator.msg_count{floodspinner,host:api.$LATEST_SYSTEM_DOMAIN}",
+                "q": "avg:regression.smoke_test.loggregator.msg_count{floodspinner,host:api.$LATEST_SYSTEM_DOMAIN,loggregator_version:$LATEST_VERSION}",
                 "style": {
                   "palette": "cool",
                   "width": "thin"
@@ -102,7 +102,7 @@ run:
             "viz": "timeseries",
             "requests": [
               {
-                "q": "( ( avg:regression.smoke_test.loggregator.msg_count{floodspinner,host:api.$ELECT_SYSTEM_DOMAIN} / avg:regression.smoke_test.loggregator.cycles{floodspinner} ) - ( avg:regression.smoke_test.loggregator.msg_count{floodspinner,host:api.$LATEST_SYSTEM_DOMAIN} / avg:regression.smoke_test.loggregator.cycles{floodspinner} ) ) * 100",
+                "q": "( ( avg:regression.smoke_test.loggregator.msg_count{floodspinner,host:api.$ELECT_SYSTEM_DOMAIN,loggregator_version:$ELECT_SHA} / avg:regression.smoke_test.loggregator.cycles{floodspinner} ) - ( avg:regression.smoke_test.loggregator.msg_count{floodspinner,host:api.$LATEST_SYSTEM_DOMAIN,loggregator_version:$LATEST_VERSION} / avg:regression.smoke_test.loggregator.cycles{floodspinner} ) ) * 100",
                 "aggregator": "avg",
                 "style": {
                   "palette": "cool",
