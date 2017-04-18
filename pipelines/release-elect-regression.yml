@@ -334,97 +334,22 @@ jobs:
       passed:
         - loggregator-latest-deploy
       resource: loggregator-latest
+    - get: loggregator-ci
   - aggregate:
     - task: setup-loggregator-elect
-      config:
-        platform: linux
-        image_resource:
-          type: docker-image
-          source:
-            repository: relintdockerhubpushbot/cf-deployment-concourse-tasks
-        params:
-          SYSTEM_DOMAIN: loggregator-elect.cf-app.com
-          VARS_STORE_FILE: gcp/loggregator-elect-bbl/deployment-vars.yml
-          ORG: cf-lamb
-          SPACE: development
-        inputs:
-        - name: vars-store
-        - name: loggregator
-        run:
-          path: bash
-          args:
-          - -c
-          - |
-            #!/bin/bash
-            set -ex
-            password=$(grep scim vars-store/$VARS_STORE_FILE | awk '{print $2}')
-
-            cf login -a api.$SYSTEM_DOMAIN -u admin -p $password -o system --skip-ssl-validation
-
-            set +e
-            cf org $ORG
-            set -e
-            if [ $? -eq 0 ]; then
-              cf create-org $ORG
-            fi
-            cf target -o $ORG
-
-            set +e
-            cf space $SPACE
-            set -e
-            if [ $? -eq 0 ]; then
-              cf create-space $SPACE
-            fi
-            cf target -s $SPACE
-
-            pushd loggregator/src/tools/logspinner
-              cf push floodspinner
-            popd
+      file: loggregator-ci/tasks/release-elect-regression/setup-cf.yml
+      params:
+        SYSTEM_DOMAIN: loggregator-elect.cf-app.com
+        VARS_STORE_FILE: gcp/loggregator-elect-bbl/deployment-vars.yml
+        ORG: cf-lamb
+        SPACE: development
     - task: setup-loggregator-latest
-      config:
-        platform: linux
-        image_resource:
-          type: docker-image
-          source:
-            repository: relintdockerhubpushbot/cf-deployment-concourse-tasks
-        params:
-          SYSTEM_DOMAIN: loggregator-latest.cf-app.com
-          VARS_STORE_FILE: gcp/loggregator-latest-bbl/deployment-vars.yml
-          ORG: cf-lamb
-          SPACE: development
-        inputs:
-        - name: vars-store
-        - name: loggregator
-        run:
-          path: bash
-          args:
-          - -c
-          - |
-            #!/bin/bash
-            set -ex
-            password=$(grep scim vars-store/$VARS_STORE_FILE | awk '{print $2}')
-
-            cf login -a api.$SYSTEM_DOMAIN -u admin -p $password -o system --skip-ssl-validation
-
-            set +e
-            cf org $ORG
-            set -e
-            if [ $? -eq 0 ]; then
-              cf create-org $ORG
-            fi
-            cf target -o $ORG
-
-            set +e
-            cf space $SPACE
-            set -e
-            if [ $? -eq 0 ]; then
-              cf create-space $SPACE
-            fi
-            cf target -s $SPACE
-
-            pushd loggregator/src/tools/logspinner
-              cf push floodspinner
-            popd
+      file: loggregator-ci/tasks/release-elect-regression/setup-cf.yml
+      params:
+        SYSTEM_DOMAIN: loggregator-latest.cf-app.com
+        VARS_STORE_FILE: gcp/loggregator-latest-bbl/deployment-vars.yml
+        ORG: cf-lamb
+        SPACE: development
 
 - name: setup-datadog
   serial: true
@@ -444,6 +369,7 @@ jobs:
       resource: loggregator-release-elect
       passed:
       - cf-setup
+    - get: loggregator-ci
   - task: setup-dashboard
     file: loggregator-ci/tasks/release-elect-regression/setup-datadog-dashboard.yml
     params:

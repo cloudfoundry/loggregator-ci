@@ -7,10 +7,10 @@ inputs:
 - name: release-latest
 - name: release-elect
 params:
-  DATADOG_API_KEY: {{datadog-dev-api-key}}
-  DATADOG_APP_KEY: {{datadog-dev-app-key}}
-  LATEST_SYSTEM_DOMAIN: loggregator-latest.cf-app.com
-  ELECT_SYSTEM_DOMAIN: loggregator-elect.cf-app.com
+  DATADOG_API_KEY:
+  DATADOG_APP_KEY:
+  LATEST_SYSTEM_DOMAIN:
+  ELECT_SYSTEM_DOMAIN:
 run:
   path: bash
   args:
