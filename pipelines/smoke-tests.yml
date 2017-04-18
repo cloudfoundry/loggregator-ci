@@ -43,13 +43,14 @@ jobs:
   - get: 15m
     trigger: true
   - task: run-smoke-tests
-    file: loggregator-ci/tasks/trkr-cf-logs-smoke-test.yml
+    file: loggregator-ci/tasks/cf-logs-smoke-test.yml
     params:
       CYCLES: 10000
       DELAY: "2"
       DELAY_UNIT: "us"
       MESSAGE: "FIFTEEN-MINUTE"
       APP_NAME: "trkr-floodspinner"
+      ORG_NAME: loggregator
       WAIT: 60
       USERNAME: {{trkr-username}}
       PASSWORD: {{trkr-password}}
@@ -82,13 +83,14 @@ jobs:
   - get: 1h
     trigger: true
   - task: run-smoke-tests
-    file: loggregator-ci/tasks/trkr-cf-logs-smoke-test.yml
+    file: loggregator-ci/tasks/cf-logs-smoke-test.yml
     params:
       CYCLES: 1000
       DELAY: "500"
       DELAY_UNIT: "ms"
       MESSAGE: "HOURLY"
       APP_NAME: "trkr-dripspinner"
+      ORG_NAME: loggregator
       WAIT: 600
       USERNAME: {{trkr-username}}
       PASSWORD: {{trkr-password}}
