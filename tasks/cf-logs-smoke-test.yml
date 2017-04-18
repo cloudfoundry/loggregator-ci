@@ -34,7 +34,7 @@ run:
 
     sleep $WAIT # wait for a bit
 
-    msg_count=$(cat output.txt | grep -c $MESSAGE)
+    msg_count=$(cat output.txt | grep APP | grep -c $MESSAGE)
 
     echo $msg_count
 
