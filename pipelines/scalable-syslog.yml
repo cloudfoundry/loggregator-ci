@@ -401,4 +401,4 @@ jobs:
   - put: scalable-syslog-release-release-elect
     params:
       repository: promote-develop
-      rebase: false
+      rebase: true
