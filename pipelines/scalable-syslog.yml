@@ -151,7 +151,7 @@ jobs:
   - put: scalable-syslog-release
     params:
       repository: bumped-scalable-syslog-release
-      rebase: false
+      rebase: true
 
 - name: scalable-syslog-deploy
   serial: true
