@@ -1,9 +1,3 @@
-resource_types:
-  - name: gcs-resource
-    type: docker-image
-    source:
-      repository: frodenas/gcs-resource
-
 resources:
   - name: loggregator-release-elect
     type: git
@@ -62,12 +56,13 @@ resources:
     source:
       uri: https://github.com/cloudfoundry/loggregator-ci
 
-  - name: regression-test-control
-    type: gcs-resource
+  - name: pipeline-lock
+    type: pool
     source:
-      bucket: regression-test-control
-      json_key: {{bbl_gcp_service_account_key}}
-      regexp: timestamp-(.*)
+      uri: git@github.com:cloudfoundry/loggregator-locks.git
+      branch: master
+      pool: release-elect-regression
+      private_key: {{cf-loggregator-oauth-bot-key}}
 
 jobs:
 - name: loggregator-elect-bbl-create
@@ -152,35 +147,17 @@ jobs:
 - name: start-pipeline
   serial: true
   plan:
-  - task: start-pipeline
-    config:
-      platform: linux
-      image_resource:
-        type: docker-image
-        source: { repository: ubuntu }
-      outputs:
-      - name: regression-test-control
-      run:
-        path: /bin/bash
-        args:
-        - "-c"
-        - |
-          #!/bin/bash
-          set -ex
-
-          now=$(date "+%s")
-
-          echo $now > regression-test-control/timestamp-$now
-  - put: regression-test-control
+  - get: pipeline-lock
+  - put: pipeline-lock
     params:
-      file: regression-test-control/timestamp-*
+      claim: pipeline
 
 - name: loggregator-elect-deploy
   serial: true
   serial_groups: ["loggregator-elect"]
   plan:
   - aggregate:
-    - get: regression-test-control
+    - get: pipeline-lock
       passed: ["start-pipeline"]
       trigger: true
     - get: bbl-state
@@ -235,7 +212,7 @@ jobs:
   serial_groups: ["loggregator-latest"]
   plan:
   - aggregate:
-    - get: regression-test-control
+    - get: pipeline-lock
       passed: ["start-pipeline"]
       trigger: true
     - get: bbl-state
@@ -302,7 +279,7 @@ jobs:
   serial_groups: ["loggregator-elect", "loggregator-latest"]
   plan:
   - aggregate:
-    - get: regression-test-control
+    - get: pipeline-lock
       passed: ["loggregator-latest-deploy", "loggregator-elect-deploy"]
       trigger: true
     - get: vars-store
@@ -339,7 +316,7 @@ jobs:
   serial_groups: ["loggregator-elect", "loggregator-latest"]
   plan:
   - aggregate:
-    - get: regression-test-control
+    - get: pipeline-lock
       passed: ["cf-setup"]
       trigger: true
     - get: release-latest
@@ -358,15 +335,18 @@ jobs:
       DATADOG_APP_KEY: {{datadog-dev-app-key}}
       LATEST_SYSTEM_DOMAIN: loggregator-latest.cf-app.com
       ELECT_SYSTEM_DOMAIN: loggregator-elect.cf-app.com
+  - put: pipeline-lock
+    params:
+      release: pipeline-lock
 
 - name: smoke-tests
   serial: true
-  serial_groups: ["loggregator-elect", "loggregator-latest"]
   plan:
     - aggregate:
-      - get: regression-test-control
-        passed: ["setup-datadog"]
-        trigger: true
+      - get: pipeline-lock
+      - put: pipeline-lock
+        params:
+          claim: "pipeline"
       - get: release-elect
         resource: loggregator-release-elect
         passed:
@@ -452,4 +432,6 @@ jobs:
             PASSWORD: {{loggregator-latest-password}}
             DATADOG_API_KEY: {{datadog-dev-api-key}}
             SKIP_SSL_VALIDATION: true
-
+      - put: pipeline-lock
+        params:
+          release: release-elect-regression
