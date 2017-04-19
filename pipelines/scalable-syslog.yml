@@ -19,6 +19,13 @@ resources:
     - .final_builds
     - releases
 
+- name: loggregator-ci
+  type: git
+  source:
+    uri: git@github.com:cloudfoundry/loggregator-ci
+    branch: master
+    private_key: {{cf-loggregator-oauth-bot-key}}
+
 - name: scalable-syslog
   type: git
   source:
@@ -382,41 +389,15 @@ jobs:
   serial: true
   plan:
   - aggregate:
-    - get: scalable-syslog-release
+    - get: develop
+      resource: scalable-syslog-release
       trigger: true
       passed: ["scalable-syslog-deploy", "cf-scalable-syslog-deploy"]
-    - get: scalable-syslog-release-release-elect
+    - get: release-elect
+      resource: scalable-syslog-release-release-elect
+    - get: loggregator-ci
   - task: promote
-    config:
-      image_resource:
-        type: docker-image
-        source:
-          - repository: loggregator/bosh20
-      platform: linux
-      inputs:
-        - name: scalable-syslog-release
-        - name: scalable-syslog-release-release-elect
-      outputs:
-        - name: promote-develop
-      run:
-        path: bash
-        args:
-          - -c
-          - |
-            #!/bin/bash -ex
-            set -e
-
-            pushd scalable-syslog-release
-              git checkout -b merge-branch
-            popd
-
-            pushd scalable-syslog-release-release-elect
-              git remote add -f develop-repo ../scalable-syslog-release
-              git checkout release-elect
-              git merge -v "develop-repo/merge-branch" -m "Merging develop into release-elect"
-            popd
-
-            rsync -ac scalable-syslog-release-release-elect/ promote-develop/
+    file: loggregator-ci/tasks/promote.yml
   - put: scalable-syslog-release-release-elect
     params:
       repository: promote-develop

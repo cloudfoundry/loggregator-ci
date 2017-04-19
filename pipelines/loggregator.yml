@@ -86,6 +86,13 @@ resources:
     - .final_builds
     - releases
 
+- name: loggregator-ci
+  type: git
+  source:
+    uri: git@github.com:cloudfoundry/loggregator-ci
+    branch: master
+    private_key: {{cf-loggregator-oauth-bot-key}}
+
 jobs:
 - name: run-tests
   public: true
@@ -615,43 +622,16 @@ jobs:
   serial: true
   plan:
   - aggregate:
-    - get: loggregator-release-elect
+    - get: release-elect
+      resource: loggregator-release-elect
       trigger: false
-    - get: loggregator
+    - get: develop
       resource: loggregator-develop
       trigger: true
-      passed:
-      - lats
-      - cf-release-cats
+      passed: ["lats", "cf-release-cats"]
+    - get: loggregator-ci
   - task: promote
-    config:
-      image_resource:
-        type: docker-image
-        source:
-        - repository: loggregator/bosh20
-      platform: linux
-      inputs:
-          - name: loggregator
-          - name: loggregator-release-elect
-      outputs:
-          - name: promote-develop
-      run:
-        path: bash
-        args:
-          - -c
-          - |
-            #!/bin/bash -ex
-            mkdir -p ~/.ssh/
-            ssh-keyscan github.com >> ~/.ssh/known_hosts
-            pushd loggregator
-              git checkout -b merge-branch
-            popd
-            pushd loggregator-release-elect
-              git remote add -f develop-repo ../loggregator
-              git checkout release-elect
-              git merge -v "develop-repo/merge-branch" -m "Merging develop into release-elect"
-            popd
-            rsync -ac loggregator-release-elect/ promote-develop/
+    file: loggregator-ci/tasks/promote.yml
   - put: loggregator-release-elect
     params:
       repository: promote-develop
