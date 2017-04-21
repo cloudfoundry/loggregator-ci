@@ -557,7 +557,6 @@ jobs:
           export CONFIG="$PWD/config.json"
           echo "$CONFIG_DATA" > $CONFIG
 
-          # Insert admin password from cf-vars.yml
           pushd deployments-loggregator-with-changes
             export CF_PASSWORD_VARS=$(bosh interpolate gcp/bbl/deployment-vars.yml --path /uaa_scim_users_admin_password)
             sed -i "s/CF_PASSWORD_FROM_VARS/$CF_PASSWORD_VARS/" $CONFIG
