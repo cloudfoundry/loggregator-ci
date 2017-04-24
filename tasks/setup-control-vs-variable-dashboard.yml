@@ -19,13 +19,13 @@ run:
     #/bin/bash
     set -ex
 
-    pushd control
-      CONTROL_SHA=$(git rev-parse HEAD)
+    pushd variable
+      VARIABLE_SHA=$(git rev-parse HEAD)
     popd
 
-    VARIABLE_VERSION=$(cat changed/version)
+    CONTROL_VERSION=$(cat control/version)
 
-    DASHBOARD_TITLE="Control vs Variable ($CONTROL_SHA vs v$VARIABLE_VERSION)"
+    DASHBOARD_TITLE="Control vs Variable (v$CONTROL_VERSION vs $VARIABLE_SHA)"
     echo $DASHBOARD_TITLE
 
     cat <<EOF >> /tmp/request-body.json
@@ -35,12 +35,12 @@ run:
       "read_only": "True",
       "graphs" : [
         {
-          "title": "Control Version vs Variable Version % Improvement",
+          "title": "Variable Version vs Control Version % Improvement",
           "definition": {
             "viz": "query_value",
             "requests": [
               {
-                "q": "( ( avg:regression.smoke_test.loggregator.msg_count{floodspinner,host:api.$CONTROL_SYSTEM_DOMAIN,loggregator_version:$CONTROL_SHA} / avg:regression.smoke_test.loggregator.cycles{floodspinner} ) - ( avg:regression.smoke_test.loggregator.msg_count{floodspinner,host:api.$VARIABLE_SYSTEM_DOMAIN,loggregator_version:$VARIABLE_VERSION} / avg:regression.smoke_test.loggregator.cycles{floodspinner} ) ) * 100",
+                "q": "( ( avg:regression.smoke_test.loggregator.msg_count{floodspinner,host:api.$VARIABLE_SYSTEM_DOMAIN,loggregator_version:$VARIABLE_SHA} / avg:regression.smoke_test.loggregator.cycles{floodspinner} ) - ( avg:regression.smoke_test.loggregator.msg_count{floodspinner,host:api.$CONTROL_SYSTEM_DOMAIN,loggregator_version:$CONTROL_VERSION} / avg:regression.smoke_test.loggregator.cycles{floodspinner} ) ) * 100",
                 "aggregator": "avg",
                 "conditional_formats": [
                   {
@@ -64,18 +64,18 @@ run:
                 "type": "error dashed",
                 "val": 0,
                 "value": "y = 0",
-                "label": "Baseline"
+                "label": "Previous Version Baseline"
               }
             ]
           }
         },
         {
-          "title": "Floodspinner Control and Variable",
+          "title": "Floodspinner Variable and Control",
           "definition": {
             "viz": "timeseries",
             "requests": [
               {
-                "q": "avg:regression.smoke_test.loggregator.msg_count{floodspinner,host:api.$CONTROL_SYSTEM_DOMAIN,loggregator_version:$CONTROL_SHA}",
+                "q": "avg:regression.smoke_test.loggregator.msg_count{floodspinner,host:api.$VARIABLE_SYSTEM_DOMAIN,loggregator_version:$VARIABLE_SHA}",
                 "style": {
                   "palette": "cool",
                   "width": "thin"
@@ -85,7 +85,7 @@ run:
                 "aggregator": "avg"
               },
               {
-                "q": "avg:regression.smoke_test.loggregator.msg_count{floodspinner,host:api.$VARIABLE_SYSTEM_DOMAIN,loggregator_version:$VARIABLE_VERSION}",
+                "q": "avg:regression.smoke_test.loggregator.msg_count{floodspinner,host:api.$CONTROL_SYSTEM_DOMAIN,loggregator_version:$CONTROL_VERSION}",
                 "style": {
                   "palette": "cool",
                   "width": "thin"
@@ -97,12 +97,12 @@ run:
           }
         },
         {
-          "title": "Control vs Variable Version % Improvement",
+          "title": "Variable Version vs Control Version % Improvement",
           "definition": {
             "viz": "timeseries",
             "requests": [
               {
-                "q": "( ( avg:regression.smoke_test.loggregator.msg_count{floodspinner,host:api.$CONTROL_SYSTEM_DOMAIN,loggregator_version:$ELECT_SHA} / avg:regression.smoke_test.loggregator.cycles{floodspinner} ) - ( avg:regression.smoke_test.loggregator.msg_count{floodspinner,host:api.$VARIABLE_SYSTEM_DOMAIN,loggregator_version:$VARIABLE_VERSION} / avg:regression.smoke_test.loggregator.cycles{floodspinner} ) ) * 100",
+                "q": "( ( avg:regression.smoke_test.loggregator.msg_count{floodspinner,host:api.$VARIABLE_SYSTEM_DOMAIN,loggregator_version:$VARIABLE_SHA} / avg:regression.smoke_test.loggregator.cycles{floodspinner} ) - ( avg:regression.smoke_test.loggregator.msg_count{floodspinner,host:api.$CONTROL_SYSTEM_DOMAIN,loggregator_version:$CONTROL_VERSION} / avg:regression.smoke_test.loggregator.cycles{floodspinner} ) ) * 100",
                 "aggregator": "avg",
                 "style": {
                   "palette": "cool",
@@ -119,7 +119,7 @@ run:
                 "type": "error dashed",
                 "val": 0,
                 "value": "y = 0",
-                "label": "Baseline"
+                "label": "Previous Version Baseline"
               }
             ]
           }
