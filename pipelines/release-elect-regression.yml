@@ -253,7 +253,7 @@ jobs:
             version=$(cat release/version)
             sha=$(cat release/sha1)
 
-            echo <<EOT >> ops-files/loggregator-version.yml
+            cat <<EOT >> ops-files/loggregator-version.yml
             - type: replace
               path: /releases/name=loggregator
               value:

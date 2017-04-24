@@ -149,8 +149,8 @@ jobs:
         resource: deployments-loggregator
       - get: release
         resource: loggregator-77
-        params:
-          version: 77
+        version:
+          version: "77"
     - task: upload-stemcell
       file: cf-deployment-concourse-tasks/bosh-upload-stemcell-from-cf-deployment/task.yml
       params:
@@ -181,7 +181,7 @@ jobs:
             version=$(cat release/version)
             sha=$(cat release/sha1)
 
-            echo <<EOT >> ops-files/loggregator-version.yml
+            cat <<EOT >> ops-files/loggregator-version.yml
             - type: replace
               path: /releases/name=loggregator
               value:
@@ -265,6 +265,8 @@ jobs:
         passed:
           - loggregator-77-deploy
         resource: loggregator-77
+        version:
+          version: "77"
       - get: loggregator-77-patched
         passed:
           - loggregator-77-patched-deploy
@@ -295,6 +297,8 @@ jobs:
         resource: loggregator-77
         passed:
         - cf-setup
+        version:
+          version: "77"
       - get: variable
         resource: loggregator-77-patched
         passed:
@@ -316,6 +320,8 @@ jobs:
         resource: loggregator-77
         passed:
         - setup-datadog
+        version:
+          version: "77"
       - get: loggregator-77-patched
         resource: loggregator-77-patched
         passed:
@@ -344,10 +350,7 @@ jobs:
                 #/bin/bash
                 set -ex
 
-                cd loggregator-77
-                # cf-logs-smoke-test script reads in the version from
-                # release-info/version
-                git rev-parse HEAD > ../release-info/version
+                cp loggregator-77/version release-info/version
         - task: smoke-loggregator-77
           file: loggregator-ci/tasks/release-elect-regression/cf-logs-smoke-test.yml
           params:
@@ -383,7 +386,8 @@ jobs:
                 #/bin/bash
                 set -ex
 
-                cp loggregator-77-patched/version release-info/version
+                cd loggregator-77-patched
+                git rev-parse HEAD > ../release-info/version
         - task: loggregator-77-patched
           file: loggregator-ci/tasks/release-elect-regression/cf-logs-smoke-test.yml
           params:
