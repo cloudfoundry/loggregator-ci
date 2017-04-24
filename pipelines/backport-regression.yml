@@ -301,7 +301,7 @@ jobs:
         - cf-setup
       - get: loggregator-ci
     - task: setup-dashboard
-      file: loggregator-ci/tasks/release-elect-regression/setup-datadog-dashboard.yml
+      file: loggregator-ci/tasks/setup-control-vs-variable-dashboard.yml
       params:
         DATADOG_API_KEY: {{datadog-dev-api-key}}
         DATADOG_APP_KEY: {{datadog-dev-app-key}}

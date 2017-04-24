@@ -19,7 +19,7 @@ run:
     #/bin/bash
     set -ex
 
-    pushd baseline
+    pushd control
       CONTROL_SHA=$(git rev-parse HEAD)
     popd
 
