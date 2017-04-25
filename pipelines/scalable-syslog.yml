@@ -341,20 +341,11 @@ jobs:
             deployment_dir="$PWD/deployments-loggregator/gcp/coconut"
             bbl_dir="$PWD/deployments-loggregator/gcp/bbl"
 
-            bosh int "$bbl_dir/deployment-vars.yml" --path /loggregator_ca > /tmp/vars.yml
-            sed -i -e 's/^/  /' /tmp/vars.yml
-            echo "loggregator_ca:" > /tmp/loggregator_ca.yml
-            cat /tmp/vars.yml >> /tmp/loggregator_ca.yml
-
-            bosh int "$bbl_dir/deployment-vars.yml" --path /service_cf_internal_ca > /tmp/vars.yml
-            sed -i -e 's/^/  /' /tmp/vars.yml
-            echo "service_cf_internal_ca:" >> /tmp/loggregator_ca.yml
-            cat /tmp/vars.yml >> /tmp/loggregator_ca.yml
-
             bosh -n -d cf-scalablesyslog deploy \
               --vars-store "$deployment_dir/cf-scalable-syslog-vars.yml" \
               --ops-file "$bbl_dir/ops-files/scalable-syslog/coconut.yml" \
-              --vars-file /tmp/loggregator_ca.yml \
+              --vars-file "$bbl_dir/deployment-vars.yml" \
+              -v "system_domain=coconut.cf-app.com" \
               "$ss_dir/manifests/scalable-syslog.yml"
 
             rsync -ac deployments-loggregator/ updated-deployments-loggregator
