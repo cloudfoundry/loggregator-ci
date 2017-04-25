@@ -396,9 +396,6 @@ jobs:
     - get: release-elect
       resource: scalable-syslog-release-release-elect
     - get: loggregator-ci
-  - task: promote
-    file: loggregator-ci/tasks/promote.yml
   - put: scalable-syslog-release-release-elect
     params:
-      repository: promote-develop
-      rebase: true
+      repository: develop
