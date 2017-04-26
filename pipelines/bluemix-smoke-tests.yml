@@ -29,7 +29,7 @@ jobs:
       WAIT: 300
       USERNAME: {{bluemix-username}}
       PASSWORD: {{bluemix-password}}
-      DATADOG_API_KEY: {{datadog-prod-api-key}}
+      DATADOG_API_KEY: {{datadog-loggregator-api-key}}
       CF_API: "api.ng.bluemix.net"
       APP_DOMAIN: "floodspinner.mybluemix.net"
       ORG: "Cloud Foundry Flintstone"
@@ -53,7 +53,7 @@ jobs:
       WAIT: 600
       USERNAME: {{bluemix-username}}
       PASSWORD: {{bluemix-password}}
-      DATADOG_API_KEY: {{datadog-prod-api-key}}
+      DATADOG_API_KEY: {{datadog-loggregator-api-key}}
       CF_API: "api.ng.bluemix.net"
       APP_DOMAIN: "dripspinner.mybluemix.net"
       ORG: "Cloud Foundry Flintstone"

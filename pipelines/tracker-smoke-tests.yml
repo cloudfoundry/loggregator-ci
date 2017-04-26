@@ -29,7 +29,7 @@ jobs:
       MESSAGE: "FIFTEEN-MINUTE"
       USERNAME: {{trkr-username}}
       PASSWORD: {{trkr-password}}
-      DATADOG_API_KEY: {{datadog-prod-api-key}}
+      DATADOG_API_KEY: {{datadog-loggregator-api-key}}
       CF_API: "api.aws.trackerred.com"
       APP_DOMAIN: "trkr-floodspinner.aws.trkr.io"
       ORG: "loggregator"
@@ -53,7 +53,7 @@ jobs:
       MESSAGE: "HOURLY"
       USERNAME: {{trkr-username}}
       PASSWORD: {{trkr-password}}
-      DATADOG_API_KEY: {{datadog-prod-api-key}}
+      DATADOG_API_KEY: {{datadog-loggregator-api-key}}
       CF_API: "api.aws.trackerred.com"
       APP_DOMAIN: "trkr-dripspinner.aws.trkr.io"
       ORG: "loggregator"

@@ -32,10 +32,9 @@ jobs:
       APP_NAME: "floodspinner"
       USERNAME: {{pws-username}}
       PASSWORD: {{pws-password}}
-
       WAIT: 60
       CYCLES: 10000
-      DATADOG_API_KEY: {{datadog-prod-api-key}}
+      DATADOG_API_KEY: {{datadog-loggregator-api-key}}
       DELAY: "2"
       DELAY_UNIT: "us"
       MESSAGE: "FIFTEEN-MINUTE"
@@ -57,10 +56,9 @@ jobs:
       APP_NAME: "dripspinner"
       USERNAME: {{pws-username}}
       PASSWORD: {{pws-password}}
-
       WAIT: 600
       CYCLES: 1000
-      DATADOG_API_KEY: {{datadog-prod-api-key}}
+      DATADOG_API_KEY: {{datadog-loggregator-api-key}}
       DELAY: "500"
       DELAY_UNIT: "ms"
       MESSAGE: "HOURLY"
@@ -82,7 +80,7 @@ jobs:
       CF_APP_DOMAIN: cfapps.io
       CF_SYSTEM_DOMAIN: run.pivotal.io
       CF_USERNAME: {{pws-username}}
-      DATADOG_API_KEY: {{datadog-prod-api-key}}
+      DATADOG_API_KEY: {{datadog-loggregator-api-key}}
       DRAIN_VERSION: "1.0"
       DRAIN_TYPE: "https"
   - task: v2-drain
@@ -94,7 +92,7 @@ jobs:
       CF_APP_DOMAIN: cfapps.io
       CF_SYSTEM_DOMAIN: run.pivotal.io
       CF_USERNAME: {{pws-username}}
-      DATADOG_API_KEY: {{datadog-prod-api-key}}
+      DATADOG_API_KEY: {{datadog-loggregator-api-key}}
       DRAIN_VERSION: "2.0"
       DRAIN_TYPE: "https"
 
@@ -115,7 +113,7 @@ jobs:
       CF_APP_DOMAIN: cf-tcpapps.io
       CF_SYSTEM_DOMAIN: run.pivotal.io
       CF_USERNAME: {{pws-username}}
-      DATADOG_API_KEY: {{datadog-prod-api-key}}
+      DATADOG_API_KEY: {{datadog-loggregator-api-key}}
       DRAIN_VERSION: "1.0"
       DRAIN_TYPE: "syslog"
   - task: v2-drain
@@ -127,6 +125,6 @@ jobs:
       CF_APP_DOMAIN: cf-tcpapps.io
       CF_SYSTEM_DOMAIN: run.pivotal.io
       CF_USERNAME: {{pws-username}}
-      DATADOG_API_KEY: {{datadog-prod-api-key}}
+      DATADOG_API_KEY: {{datadog-loggregator-api-key}}
       DRAIN_VERSION: "2.0"
       DRAIN_TYPE: "syslog"
