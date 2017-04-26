@@ -83,6 +83,7 @@ jobs:
       DATADOG_API_KEY: {{datadog-loggregator-api-key}}
       DRAIN_VERSION: "1.0"
       DRAIN_TYPE: "https"
+      METRIC_PREFIX: ""
   - task: v2-drain
     file: loggregator-ci/tasks/scalable-syslog-smoke-test.yml
     params:
@@ -95,6 +96,7 @@ jobs:
       DATADOG_API_KEY: {{datadog-loggregator-api-key}}
       DRAIN_VERSION: "2.0"
       DRAIN_TYPE: "https"
+      METRIC_PREFIX: ""
 
 - name: tcp-syslog-drain
   public: false
@@ -116,6 +118,7 @@ jobs:
       DATADOG_API_KEY: {{datadog-loggregator-api-key}}
       DRAIN_VERSION: "1.0"
       DRAIN_TYPE: "syslog"
+      METRIC_PREFIX: ""
   - task: v2-drain
     file: loggregator-ci/tasks/scalable-syslog-smoke-test.yml
     params:
@@ -128,3 +131,4 @@ jobs:
       DATADOG_API_KEY: {{datadog-loggregator-api-key}}
       DRAIN_VERSION: "2.0"
       DRAIN_TYPE: "syslog"
+      METRIC_PREFIX: ""
