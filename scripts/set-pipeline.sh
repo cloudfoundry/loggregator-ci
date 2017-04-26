@@ -3,11 +3,22 @@
 pipeline_name=$1
 
 if [ -z "$pipeline_name" ]; then
-    echo "usage: $0 <pipeline_name>"
+    echo "usage: $0 <pipeline_name> | all"
     exit 1
 fi
 
-fly -t loggregator set-pipeline -p "$pipeline_name" \
-    -c pipelines/"$pipeline_name".yml \
-    -l ~/workspace/loggregator-credentials/shared-secrets.yml \
-    -l ~/workspace/loggregator-ci/scripts.yml
+function set_pipeline {
+    echo setting pipeline for "$1"
+    fly -t loggregator set-pipeline -p "$1" \
+        -c pipelines/"$1".yml \
+        -l ~/workspace/loggregator-credentials/shared-secrets.yml \
+        -l ~/workspace/loggregator-ci/scripts.yml
+}
+
+if [ "$pipeline_name" = all ]; then
+    for pipeline_file in $(ls pipelines); do
+        set_pipeline "${pipeline_file%.yml}"
+    done
+else
+    set_pipeline "$pipeline_name"
+fi
