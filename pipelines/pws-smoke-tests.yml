@@ -9,7 +9,7 @@ resources:
   type: git
   source:
     uri: https://github.com/cloudfoundry/loggregator-ci
-- name: scalable-syslog
+- name: scalable-syslog-release
   type: git
   source:
     uri: https://github.com/cloudfoundry-incubator/scalable-syslog-release
@@ -70,7 +70,7 @@ jobs:
   serial: true
   plan:
   - get: loggregator-ci
-  - get: scalable-syslog
+  - get: scalable-syslog-release
   - get: 1h
     trigger: true
   - task: v1-drain
@@ -79,6 +79,7 @@ jobs:
       CF_ORG: cf-lamb
       CF_PASSWORD: {{pws-password}}
       CF_SPACE: development
+      CF_APP_DOMAIN: cfapps.io
       CF_SYSTEM_DOMAIN: run.pivotal.io
       CF_USERNAME: {{pws-username}}
       DATADOG_API_KEY: {{datadog-prod-api-key}}
@@ -90,6 +91,7 @@ jobs:
       CF_ORG: cf-lamb
       CF_PASSWORD: {{pws-password}}
       CF_SPACE: development
+      CF_APP_DOMAIN: cfapps.io
       CF_SYSTEM_DOMAIN: run.pivotal.io
       CF_USERNAME: {{pws-username}}
       DATADOG_API_KEY: {{datadog-prod-api-key}}
@@ -101,7 +103,7 @@ jobs:
   serial: true
   plan:
   - get: loggregator-ci
-  - get: scalable-syslog
+  - get: scalable-syslog-release
   - get: 1h
     trigger: true
   - task: v1-drain
@@ -110,6 +112,7 @@ jobs:
       CF_ORG: cf-lamb
       CF_PASSWORD: {{pws-password}}
       CF_SPACE: development
+      CF_APP_DOMAIN: cf-tcpapps.io
       CF_SYSTEM_DOMAIN: run.pivotal.io
       CF_USERNAME: {{pws-username}}
       DATADOG_API_KEY: {{datadog-prod-api-key}}
@@ -121,6 +124,7 @@ jobs:
       CF_ORG: cf-lamb
       CF_PASSWORD: {{pws-password}}
       CF_SPACE: development
+      CF_APP_DOMAIN: cf-tcpapps.io
       CF_SYSTEM_DOMAIN: run.pivotal.io
       CF_USERNAME: {{pws-username}}
       DATADOG_API_KEY: {{datadog-prod-api-key}}
