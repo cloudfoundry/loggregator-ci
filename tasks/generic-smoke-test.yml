@@ -6,4 +6,4 @@ image_resource:
 inputs:
   - name: loggregator-ci
 run:
-  path: loggregator-ci/scripts/run-smoke-tests.sh
+  path: loggregator-ci/scripts/run-smoke-test.sh
