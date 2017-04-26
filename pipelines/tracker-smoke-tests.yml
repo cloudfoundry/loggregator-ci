@@ -1,0 +1,60 @@
+resources:
+- name: 15m
+  type: time
+  source: {interval: 15m}
+- name: 1h
+  type: time
+  source: {interval: 1h}
+- name: loggregator-ci
+  type: git
+  source:
+    uri: https://github.com/cloudfoundry/loggregator-ci
+
+jobs:
+- name: floodspinner
+  public: false
+  serial: true
+  plan:
+  - get: loggregator-ci
+  - get: 15m
+    trigger: true
+  - task: run-smoke-tests
+    file: loggregator-ci/tasks/generic-smoke-test.yml
+    params:
+      CYCLES: 10000
+      DELAY: "2"
+      DELAY_UNIT: "us"
+      APP_NAME: "trkr-floodspinner"
+      WAIT: 60
+      MESSAGE: "FIFTEEN-MINUTE"
+      USERNAME: {{trkr-username}}
+      PASSWORD: {{trkr-password}}
+      DATADOG_API_KEY: {{datadog-prod-api-key}}
+      CF_API: "api.aws.trackerred.com"
+      APP_DOMAIN: "trkr-floodspinner.aws.trkr.io"
+      ORG: "loggregator"
+      SPACE: "development"
+
+- name: dripspinner
+  public: false
+  serial: true
+  plan:
+  - get: loggregator-ci
+  - get: 1h
+    trigger: true
+  - task: run-smoke-tests
+    file: loggregator-ci/tasks/generic-smoke-test.yml
+    params:
+      CYCLES: 1000
+      DELAY: "500"
+      DELAY_UNIT: "ms"
+      APP_NAME: "trkr-dripspinner"
+      WAIT: 600
+      MESSAGE: "HOURLY"
+      USERNAME: {{trkr-username}}
+      PASSWORD: {{trkr-password}}
+      DATADOG_API_KEY: {{datadog-prod-api-key}}
+      CF_API: "api.aws.trackerred.com"
+      APP_DOMAIN: "trkr-dripspinner.aws.trkr.io"
+      ORG: "loggregator"
+      SPACE: "development"

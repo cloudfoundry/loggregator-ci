@@ -1,7 +1,4 @@
 resources:
-- name: 15m
-  type: time
-  source: {interval: 15m}
 - name: 1h
   type: time
   source: {interval: 1h}
@@ -15,49 +12,6 @@ resources:
     uri: https://github.com/cloudfoundry-incubator/scalable-syslog
 
 jobs:
-- name: trkr-cf-logs-floodspinner-smoke-test
-  public: false
-  serial: true
-  plan:
-  - get: loggregator-ci
-  - get: 15m
-    trigger: true
-  - task: run-smoke-tests
-    file: loggregator-ci/tasks/cf-logs-smoke-test.yml
-    params:
-      API_ENDPOINT: api.aws.trackerred.com
-      APP_NAME: "trkr-floodspinner"
-      CYCLES: 10000
-      DATADOG_API_KEY: {{datadog-prod-api-key}}
-      DELAY: "2"
-      DELAY_UNIT: "us"
-      MESSAGE: "FIFTEEN-MINUTE"
-      ORG_NAME: loggregator
-      PASSWORD: {{trkr-password}}
-      USERNAME: {{trkr-username}}
-      WAIT: 60
-- name: trkr-cf-logs-dripspinner-smoke-test
-  public: false
-  serial: true
-  plan:
-  - get: loggregator-ci
-  - get: 1h
-    trigger: true
-  - task: run-smoke-tests
-    file: loggregator-ci/tasks/cf-logs-smoke-test.yml
-    params:
-      API_ENDPOINT: api.aws.trackerred.com
-      APP_NAME: "trkr-dripspinner"
-      CYCLES: 1000
-      DATADOG_API_KEY: {{datadog-prod-api-key}}
-      DELAY: "500"
-      DELAY_UNIT: "ms"
-      MESSAGE: "HOURLY"
-      ORG_NAME: loggregator
-      PASSWORD: {{trkr-password}}
-      USERNAME: {{trkr-username}}
-      WAIT: 600
-
 - name: pws-scalable-syslog-https-drain-smoke-test
   public: false
   serial: true
