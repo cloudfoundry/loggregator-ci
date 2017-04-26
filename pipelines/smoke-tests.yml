@@ -9,10 +9,10 @@ resources:
   type: git
   source:
     uri: https://github.com/cloudfoundry/loggregator-ci
-- name: loggregator
+- name: scalable-syslog
   type: git
   source:
-    uri: https://github.com/cloudfoundry/loggregator
+    uri: https://github.com/cloudfoundry-incubator/scalable-syslog
 
 jobs:
 - name: pws-cf-logs-floodspinner-smoke-test
@@ -105,7 +105,7 @@ jobs:
   serial: true
   plan:
   - get: loggregator-ci
-  - get: loggregator
+  - get: scalable-syslog
   - get: 1h
     trigger: true
   - task: v1-drain-smoke-tests
