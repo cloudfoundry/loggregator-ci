@@ -9,10 +9,6 @@ resources:
   type: git
   source:
     uri: https://github.com/cloudfoundry/loggregator-ci
-- name: scalable-syslog
-  type: git
-  source:
-    uri: https://github.com/cloudfoundry-incubator/scalable-syslog
 
 jobs:
 - name: floodspinner
