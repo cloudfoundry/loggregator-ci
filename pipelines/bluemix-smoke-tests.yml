@@ -1,0 +1,60 @@
+resources:
+- name: 15m
+  type: time
+  source: {interval: 15m}
+- name: 1h
+  type: time
+  source: {interval: 1h}
+- name: loggregator-ci
+  type: git
+  source:
+    uri: https://github.com/cloudfoundry/loggregator-ci
+- name: loggregator
+  type: git
+  source:
+    uri: https://github.com/cloudfoundry/loggregator
+
+jobs:
+- name: floodspinner
+  public: false
+  serial: true
+  plan:
+  - get: loggregator-ci
+  - get: 15m
+    trigger: true
+  - task: run-smoke-tests
+    file: loggregator-ci/tasks/generic-smoke-test.yml
+    params:
+      CYCLES: 10000
+      DELAY: "2"
+      DELAY_UNIT: "us"
+      MESSAGE: "FIFTEEN-MINUTE"
+      APP_NAME: "floodspinner"
+      WAIT: 300
+      USERNAME: {{bluemix-username}}
+      PASSWORD: {{bluemix-password}}
+      DATADOG_API_KEY: {{datadog-prod-api-key}}
+      CF_API: "api.ng.bluemix.net"
+      APP_DOMAIN: "floodspinner.mybluemix.net"
+
+- name: dripspinner
+  public: false
+  serial: true
+  plan:
+  - get: loggregator-ci
+  - get: 1h
+    trigger: true
+  - task: run-smoke-tests
+    file: loggregator-ci/tasks/generic-smoke-test.yml
+    params:
+      CYCLES: 1000
+      DELAY: "500"
+      DELAY_UNIT: "ms"
+      MESSAGE: "HOURLY"
+      APP_NAME: "dripspinner"
+      WAIT: 600
+      USERNAME: {{bluemix-username}}
+      PASSWORD: {{bluemix-password}}
+      DATADOG_API_KEY: {{datadog-prod-api-key}}
+      CF_API: "api.ng.bluemix.net"
+      APP_DOMAIN: "dripspinner.mybluemix.net"
