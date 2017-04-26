@@ -9,10 +9,6 @@ resources:
   type: git
   source:
     uri: https://github.com/cloudfoundry/loggregator-ci
-- name: loggregator
-  type: git
-  source:
-    uri: https://github.com/cloudfoundry/loggregator
 
 jobs:
 - name: floodspinner
