@@ -4,7 +4,7 @@ image_resource:
   source:
   - repository: loggregator/bosh20
 inputs:
-- name: scalable-syslog
+- name: scalable-syslog-release
 params:
   CF_SYSTEM_DOMAIN:
   CF_USERNAME:
@@ -25,6 +25,9 @@ run:
 
     set -e
 
-    cd scalable-syslog/tools/smokes
+    cd scalable-syslog-release
+      export GOPATH=$PWD
+      export PATH=$GOPATH/bin:$PATH
 
-    ./push.sh && ./hammer.sh && ./report.sh && ./teardown.sh
+      cd src/github.com/cloudfoundry-incubator/scalable-syslog/tools/smokes
+        ./push.sh && ./hammer.sh && ./report.sh && ./teardown.sh
