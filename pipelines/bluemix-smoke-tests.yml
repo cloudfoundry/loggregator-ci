@@ -32,6 +32,8 @@ jobs:
       DATADOG_API_KEY: {{datadog-prod-api-key}}
       CF_API: "api.ng.bluemix.net"
       APP_DOMAIN: "floodspinner.mybluemix.net"
+      ORG: "Cloud Foundry Flintstone"
+      SPACE: loggregator
 
 - name: dripspinner
   public: false
@@ -54,3 +56,5 @@ jobs:
       DATADOG_API_KEY: {{datadog-prod-api-key}}
       CF_API: "api.ng.bluemix.net"
       APP_DOMAIN: "dripspinner.mybluemix.net"
+      ORG: "Cloud Foundry Flintstone"
+      SPACE: loggregator

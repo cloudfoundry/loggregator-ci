@@ -15,8 +15,8 @@ run:
     cf login -a $CF_API \
         -u $USERNAME \
         -p $PASSWORD \
-        -s development \
-        -o cf-lamb
+        -s $SPACE \
+        -o $ORG
 
     # cf logs to a file
     rm -f output.txt
