@@ -16,6 +16,7 @@ params:
   DATADOG_API_KEY:
   DRAIN_VERSION:
   NUM_APPS: 1
+  TEARDOWN: true
 run:
   path: bash
   args:
@@ -26,8 +27,13 @@ run:
     set -e
 
     cd scalable-syslog-release
-      export GOPATH=$PWD
-      export PATH=$GOPATH/bin:$PATH
+    export GOPATH=$PWD
+    export PATH=$GOPATH/bin:$PATH
 
-      cd src/github.com/cloudfoundry-incubator/scalable-syslog/tools/smokes
-        ./push.sh && ./hammer.sh && ./report.sh && ./teardown.sh
+    cd src/github.com/cloudfoundry-incubator/scalable-syslog/tools/smokes
+    ./push.sh
+    ./hammer.sh
+    ./report.sh
+    if [ "$TEARDOWN" = "true" ]; then
+      ./teardown.sh
+    fi
