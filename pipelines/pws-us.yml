@@ -83,7 +83,6 @@ jobs:
       DATADOG_API_KEY: {{datadog-loggregator-api-key}}
       DRAIN_VERSION: "1.0"
       DRAIN_TYPE: "https"
-      METRIC_PREFIX: ""
   - task: v2-drain
     file: loggregator-ci/tasks/scalable-syslog-smoke-test.yml
     params:
@@ -96,7 +95,6 @@ jobs:
       DATADOG_API_KEY: {{datadog-loggregator-api-key}}
       DRAIN_VERSION: "2.0"
       DRAIN_TYPE: "https"
-      METRIC_PREFIX: ""
 
 - name: tcp-syslog-drain
   public: false
@@ -118,7 +116,6 @@ jobs:
       DATADOG_API_KEY: {{datadog-loggregator-api-key}}
       DRAIN_VERSION: "1.0"
       DRAIN_TYPE: "syslog"
-      METRIC_PREFIX: ""
   - task: v2-drain
     file: loggregator-ci/tasks/scalable-syslog-smoke-test.yml
     params:
@@ -131,4 +128,49 @@ jobs:
       DATADOG_API_KEY: {{datadog-loggregator-api-key}}
       DRAIN_VERSION: "2.0"
       DRAIN_TYPE: "syslog"
-      METRIC_PREFIX: ""
+
+- name: https-syslog-drain-no-teardown
+  public: false
+  serial: true
+  plan:
+  - get: loggregator-ci
+  - get: scalable-syslog-release
+  - get: 1h
+    trigger: true
+  - task: v2-drain
+    file: loggregator-ci/tasks/scalable-syslog-smoke-test.yml
+    params:
+      TEARDOWN: false
+      CF_ORG: cf-lamb
+      CF_PASSWORD: {{pws-password}}
+      CF_SPACE: development
+      CF_APP_DOMAIN: cfapps.io
+      CF_SYSTEM_DOMAIN: run.pivotal.io
+      CF_USERNAME: {{pws-username}}
+      DATADOG_API_KEY: {{datadog-loggregator-api-key}}
+      DRAIN_VERSION: "2.0"
+      DRAIN_TYPE: "https"
+      JOB_NAME: "https-no-teardown"
+
+- name: tcp-syslog-drain-no-teardown
+  public: false
+  serial: true
+  plan:
+  - get: loggregator-ci
+  - get: scalable-syslog-release
+  - get: 1h
+    trigger: true
+  - task: v2-drain
+    file: loggregator-ci/tasks/scalable-syslog-smoke-test.yml
+    params:
+      TEARDOWN: false
+      CF_ORG: cf-lamb
+      CF_PASSWORD: {{pws-password}}
+      CF_SPACE: development
+      CF_APP_DOMAIN: cf-tcpapps.io
+      CF_SYSTEM_DOMAIN: run.pivotal.io
+      CF_USERNAME: {{pws-username}}
+      DATADOG_API_KEY: {{datadog-loggregator-api-key}}
+      DRAIN_VERSION: "2.0"
+      DRAIN_TYPE: "syslog"
+      JOB_NAME: "syslog-no-teardown"

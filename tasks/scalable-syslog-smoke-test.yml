@@ -17,6 +17,7 @@ params:
   DRAIN_VERSION:
   NUM_APPS: 1
   TEARDOWN: true
+  JOB_NAME:
 run:
   path: bash
   args:
