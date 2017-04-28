@@ -37,4 +37,6 @@ run:
     ./report.sh
     if [ "$TEARDOWN" = "true" ]; then
       ./teardown.sh
+    else
+      ./restart.sh
     fi
