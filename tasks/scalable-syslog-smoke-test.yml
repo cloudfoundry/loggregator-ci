@@ -31,12 +31,21 @@ run:
     export GOPATH=$PWD
     export PATH=$GOPATH/bin:$PATH
 
+    function teardown {
+      ./teardown.sh
+    }
+
+    function restart {
+      ./restart.sh
+    }
+
+    if [ "$TEARDOWN" = "true" ]; then
+      trap teardown EXIT
+    else
+      trap restart EXIT
+    fi
+
     cd src/github.com/cloudfoundry-incubator/scalable-syslog/tools/smokes
     ./push.sh
     ./hammer.sh
     ./report.sh
-    if [ "$TEARDOWN" = "true" ]; then
-      ./teardown.sh
-    else
-      ./restart.sh
-    fi
