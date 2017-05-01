@@ -45,7 +45,7 @@ run:
       trap restart EXIT
     fi
 
-    cd src/github.com/cloudfoundry-incubator/scalable-syslog/tools/smokes
+    cd src/code.cloudfoundry.org/scalable-syslog/tools/smokes
     ./push.sh
     ./hammer.sh
     ./report.sh

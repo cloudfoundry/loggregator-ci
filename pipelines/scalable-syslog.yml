@@ -103,7 +103,7 @@ jobs:
         PARENT: scalable-syslog-release
         OUTPUT: updated-scalable-syslog-release
         CHILD: scalable-syslog
-        CHILD_PATH: src/github.com/cloudfoundry-incubator/scalable-syslog
+        CHILD_PATH: src/code.cloudfoundry.org/scalable-syslog
       run:
         path: bash
         args:
@@ -140,7 +140,7 @@ jobs:
       - name: bumped-scalable-syslog-release
       params:
         SOURCE: synced-scalable-syslog-release
-        PATHS: src/github.com/cloudfoundry-incubator/scalable-syslog packages/
+        PATHS: src/code.cloudfoundry.org/scalable-syslog packages/
         COMMIT_MESSAGE: "Bump scalable-syslog"
         OUTPUT: bumped-scalable-syslog-release
       run:

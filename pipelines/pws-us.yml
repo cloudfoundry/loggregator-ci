@@ -12,7 +12,7 @@ resources:
 - name: scalable-syslog-release
   type: git
   source:
-    uri: https://github.com/cloudfoundry-incubator/scalable-syslog-release
+    uri: https://code.cloudfoundry.org/scalable-syslog-release
 
 jobs:
 - name: floodspinner
