@@ -55,7 +55,7 @@ resources:
 - name: scalable-syslog-release-develop
   type: git
   source:
-    uri: git@github.com:cloudfoundry-incubator/scalable-syslog-release
+    uri: git@github.com:cloudfoundry/scalable-syslog-release
     branch: develop
     private_key: {{cf-loggregator-oauth-bot-key}}
     ignore_paths:
@@ -65,7 +65,7 @@ resources:
 - name: scalable-syslog-release-final-develop
   type: git
   source:
-    uri: git@github.com:cloudfoundry-incubator/scalable-syslog-release
+    uri: git@github.com:cloudfoundry/scalable-syslog-release
     branch: develop
     private_key: {{cf-loggregator-oauth-bot-key}}
     ignore_paths:
@@ -75,7 +75,7 @@ resources:
 - name: scalable-syslog-release-master
   type: git
   source:
-    uri: git@github.com:cloudfoundry-incubator/scalable-syslog-release
+    uri: git@github.com:cloudfoundry/scalable-syslog-release
     branch: master
     private_key: {{cf-loggregator-oauth-bot-key}}
     ignore_paths:
@@ -85,7 +85,7 @@ resources:
 - name: scalable-syslog-release-final-master
   type: git
   source:
-    uri: git@github.com:cloudfoundry-incubator/scalable-syslog-release
+    uri: git@github.com:cloudfoundry/scalable-syslog-release
     branch: master
     private_key: {{cf-loggregator-oauth-bot-key}}
     ignore_paths:
