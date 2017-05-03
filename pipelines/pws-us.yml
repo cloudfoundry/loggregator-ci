@@ -12,7 +12,7 @@ resources:
 - name: scalable-syslog-release
   type: git
   source:
-    uri: https://code.cloudfoundry.org/scalable-syslog-release
+    uri: https://github.com/cloudfoundry/scalable-syslog-release
 
 jobs:
 - name: floodspinner
@@ -83,6 +83,7 @@ jobs:
       DATADOG_API_KEY: {{datadog-loggregator-api-key}}
       DRAIN_VERSION: "1.0"
       DRAIN_TYPE: "https"
+      NUM_APPS: 50
   - task: v2-drain
     file: loggregator-ci/tasks/scalable-syslog-smoke-test.yml
     params:
@@ -95,6 +96,7 @@ jobs:
       DATADOG_API_KEY: {{datadog-loggregator-api-key}}
       DRAIN_VERSION: "2.0"
       DRAIN_TYPE: "https"
+      NUM_APPS: 50
 
 - name: tcp-syslog-drain
   public: false
@@ -116,6 +118,7 @@ jobs:
       DATADOG_API_KEY: {{datadog-loggregator-api-key}}
       DRAIN_VERSION: "1.0"
       DRAIN_TYPE: "syslog"
+      NUM_APPS: 50
   - task: v2-drain
     file: loggregator-ci/tasks/scalable-syslog-smoke-test.yml
     params:
@@ -128,6 +131,7 @@ jobs:
       DATADOG_API_KEY: {{datadog-loggregator-api-key}}
       DRAIN_VERSION: "2.0"
       DRAIN_TYPE: "syslog"
+      NUM_APPS: 50
 
 - name: https-syslog-drain-no-teardown
   public: false
