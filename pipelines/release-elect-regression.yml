@@ -56,14 +56,6 @@ resources:
     source:
       uri: https://github.com/cloudfoundry/loggregator-ci
 
-  - name: pipeline-lock
-    type: pool
-    source:
-      uri: git@github.com:cloudfoundry/loggregator-locks.git
-      branch: master
-      pool: release-elect-regression
-      private_key: {{cf-loggregator-oauth-bot-key}}
-
 jobs:
 - name: loggregator-elect-bbl-create
   plan:
@@ -144,23 +136,11 @@ jobs:
       repository: updated-bbl-state
       rebase: true
 
-- name: start-pipeline
-  serial: true
-  serial_group: ["locking"]
-  plan:
-    - get: pipeline-lock
-    - put: pipeline-lock
-      params:
-        claim: pipeline
-
 - name: loggregator-elect-deploy
   serial: true
   serial_groups: ["loggregator-elect"]
   plan:
     - aggregate:
-      - get: pipeline-lock
-        passed: ["start-pipeline"]
-        trigger: true
       - get: bbl-state
         resource: deployments-loggregator
       - get: cf-deployment
@@ -212,9 +192,6 @@ jobs:
   serial_groups: ["loggregator-latest"]
   plan:
     - aggregate:
-      - get: pipeline-lock
-        passed: ["start-pipeline"]
-        trigger: true
       - get: bbl-state
         resource: deployments-loggregator
       - get: cf-deployment
@@ -279,9 +256,6 @@ jobs:
   serial_groups: ["loggregator-elect", "loggregator-latest"]
   plan:
     - aggregate:
-      - get: pipeline-lock
-        passed: ["loggregator-latest-deploy", "loggregator-elect-deploy"]
-        trigger: true
       - get: vars-store
         resource: deployments-loggregator-with-changes
       - get: loggregator
@@ -316,9 +290,6 @@ jobs:
   serial_groups: ["loggregator-elect", "loggregator-latest"]
   plan:
     - aggregate:
-      - get: pipeline-lock
-        passed: ["cf-setup"]
-        trigger: true
       - get: release-latest
         resource: loggregator-latest
         passed:
@@ -335,18 +306,11 @@ jobs:
         DATADOG_APP_KEY: {{datadog-dev-app-key}}
         LATEST_SYSTEM_DOMAIN: loggregator-latest.cf-app.com
         ELECT_SYSTEM_DOMAIN: loggregator-elect.cf-app.com
-    - put: pipeline-lock
-      params:
-        release: pipeline-lock
 
 - name: smoke-tests
   serial: true
   serial_group: ["locking"]
   plan:
-    - get: pipeline-lock
-    - put: pipeline-lock
-      params:
-        claim: "pipeline"
     - aggregate:
       - get: release-elect
         resource: loggregator-release-elect
@@ -433,6 +397,3 @@ jobs:
             PASSWORD: {{loggregator-latest-password}}
             DATADOG_API_KEY: {{datadog-dev-api-key}}
             SKIP_SSL_VALIDATION: true
-    - put: pipeline-lock
-      params:
-        release: pipeline-lock
