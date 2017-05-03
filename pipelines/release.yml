@@ -95,7 +95,7 @@ resources:
 - name: scalable-syslog-release-github-release-drafts
   type: github-release
   source:
-    user: cloudfoundry-incubator
+    user: cloudfoundry
     repository: scalable-syslog-release
     access_token: {{access-token}}
     drafts: true
