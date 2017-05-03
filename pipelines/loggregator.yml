@@ -99,6 +99,7 @@ resources:
 
 jobs:
 - name: run-tests
+  serial: true
   public: true
   plan:
   - get: 15m
