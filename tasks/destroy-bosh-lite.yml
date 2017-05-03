@@ -39,7 +39,7 @@ run:
         -v internal_cidr="$subnet_prefix".0/24 \
         -v network_name=litenet0 \
         -v outbound_network_name=NatNetwork \
-        --var-file gcp_credentials_json=deployments-loggregator/gcp/coconut/tf/terraform-bosh.key.json \
+        --var-file gcp_credentials_json=deployments-loggregator/gcp/jumpbox/terraform-bosh.key.json \
         -v network=cf-network \
         -v subnetwork=$subnetwork \
         -v project_id=cff-loggregator \
