@@ -75,10 +75,10 @@ jobs:
       - name: statsd-injector-release
       - name: statsd-injector
       outputs:
-      - name: updated-statsd-injector-release
+      - name: bumped-statsd-injector-release
       params:
         PARENT: statsd-injector-release
-        OUTPUT: updated-statsd-injector-release
+        OUTPUT: bumped-statsd-injector-release
         CHILD: statsd-injector
         CHILD_PATH: src/github.com/cloudfoundry/statsd-injector
       run:
@@ -86,6 +86,25 @@ jobs:
         args:
         - -c
         - {{update_submodule}}
+  - task: sync-package-spec
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source:
+          repository: loggregator/go17
+      inputs:
+        - name: bumped-statsd-injector-release
+      outputs:
+        - name: synced-statsd-injector-release
+      params:
+        RELEASE: bumped-statsd-injector-release
+        OUTPUT: synced-statsd-injector-release
+      run:
+        path: bash
+        args:
+        - -c
+        - {{update_package_specs}}
   - task: commit
     config:
       platform: linux
@@ -94,14 +113,14 @@ jobs:
         source:
           repository: loggregator/go17
       inputs:
-      - name: updated-statsd-injector-release
+        - name: synced-statsd-injector-release
       outputs:
-      - name: bumped-statsd-injector-release
+      - name: committed-statsd-injector-release
       params:
-        SOURCE: updated-statsd-injector-release
+        SOURCE: synced-statsd-injector-release
         PATHS: src/github.com/cloudfoundry/statsd-injector
         COMMIT_MESSAGE: "Bump statsd-injector"
-        OUTPUT: bumped-statsd-injector-release
+        OUTPUT: committed-statsd-injector-release
       run:
         path: bash
         args:
@@ -109,7 +128,7 @@ jobs:
         - {{commit}}
   - put: statsd-injector-release
     params:
-      repository: bumped-statsd-injector-release
+      repository: committed-statsd-injector-release
       rebase: false
 
 - name: create-final-release
