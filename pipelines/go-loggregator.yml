@@ -1,0 +1,40 @@
+resources:
+- name: go-loggregator
+  type: git
+  source:
+    uri: git@github.com:cloudfoundry-incubator/go-loggregator.git
+    branch: master
+    private_key: {{loggregator-key}}
+
+jobs:
+- name: tests
+  plan:
+  - get: go-loggregator
+    trigger: true
+  - task: run-tests
+    config:
+      image_resource:
+        type: docker-image
+        source:
+        - repository: loggregator/go17
+      platform: linux
+      inputs:
+      - name: go-loggregator
+      run:
+        path: bash
+        args:
+        - -c
+        - |
+          #!/bin/bash
+          set -ex
+
+          export GOPATH=/go
+          export PATH=$GOPATH/bin:$PATH
+
+          mkdir -p $GOPATH/src/code.cloudfoundry.org/
+          cp -r go-loggregator $GOPATH/src/code.cloudfoundry.org/
+
+          cd $GOPATH/src/code.cloudfoundry.org/go-loggregator
+
+          ./scripts/dep-ensure
+          ./scripts/test
