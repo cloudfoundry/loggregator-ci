@@ -250,7 +250,7 @@ jobs:
       BBL_STATE_DIR: gcp/bbl
       SYSTEM_DOMAIN: coconut.cf-app.com
       VARS_STORE_FILE: gcp/bbl/deployment-vars.yml
-      OPS_FILES: "clients.yml use-4-azs-for-router.yml rlp.yml tcp-routing-gcp.yml"
+      OPS_FILES: "clients.yml use-4-azs-for-router.yml rlp.yml tcp-routing-gcp.yml datadog-agent.yml diego.yml"
   - put: deployments-loggregator-with-changes
     params:
       repository: updated-vars-store
