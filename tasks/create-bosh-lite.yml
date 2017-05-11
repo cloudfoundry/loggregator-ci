@@ -53,6 +53,7 @@ run:
       bosh alias-env lite -e "$subnet_prefix".6 --ca-cert <(bosh interpolate $deploy_dir/creds.yml --path /director_ssl/ca)
       export BOSH_CLIENT=admin
       export BOSH_CLIENT_SECRET=$(bosh interpolate $deploy_dir/creds.yml --path /admin_password)
-      bosh -e lite upload-stemcell https://bosh.io/d/stemcells/bosh-warden-boshlite-ubuntu-trusty-go_agent
+      bosh -e lite upload-stemcell https://s3.amazonaws.com/bosh-core-stemcells/warden/bosh-stemcell-3312.24-warden-boshlite-ubuntu-trusty-go_agent.tgz
+
 
       rsync -ac deployments-loggregator/ updated-deployments-loggregator
