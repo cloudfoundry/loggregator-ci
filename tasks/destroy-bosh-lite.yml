@@ -30,7 +30,9 @@ run:
       bosh delete-env bosh-deployment/bosh.yml \
         --state $deploy_dir/state.json \
         -o bosh-deployment/gcp/cpi.yml \
+        -o bosh-deployment/local-dns.yml \
         -o bosh-deployment/bosh-lite.yml \
+        -o bosh-deployment/bosh-lite-runc.yml \
         -o bosh-deployment/jumpbox-user.yml \
         --vars-store $deploy_dir/creds.yml \
         -v director_name="Bosh Lite Director" \
