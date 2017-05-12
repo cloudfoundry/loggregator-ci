@@ -317,7 +317,7 @@ jobs:
 
             bosh -n create release --name cf --force
             bosh -n upload release --rebase
-            ./scripts/generate-bosh-lite-dev-manifest
+            ./scripts/generate-bosh-lite-dev-manifest $workspace/deployments-loggregator/gcp/loggregator-lite/runner.yml
             bosh -n deploy
           popd
 
@@ -327,7 +327,7 @@ jobs:
           done
 
           pushd diego-release
-            ./scripts/generate-bosh-lite-manifests
+            ./scripts/generate-bosh-lite-manifests -r
             sed -i -e 's/use_v2_api: true/use_v2_api: false/g' bosh-lite/deployments/diego.yml
             bosh -n deployment bosh-lite/deployments/diego.yml
             bosh -n deploy
