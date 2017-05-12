@@ -328,7 +328,6 @@ jobs:
 
           pushd diego-release
             ./scripts/generate-bosh-lite-manifests -r
-            sed -i -e 's/use_v2_api: true/use_v2_api: false/g' bosh-lite/deployments/diego.yml
             bosh -n deployment bosh-lite/deployments/diego.yml
             bosh -n deploy
           popd
