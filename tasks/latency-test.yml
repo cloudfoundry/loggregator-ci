@@ -20,6 +20,8 @@ run:
         -s "$SPACE" \
         -o "$ORG"
 
+      export GOPATH=$PWD/loggregator
+
       cd loggregator/src/tools/latency
 
       go build

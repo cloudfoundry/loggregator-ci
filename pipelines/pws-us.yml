@@ -189,6 +189,7 @@ jobs:
   serial: true
   plan:
   - get: loggregator
+  - get: loggregator-ci
   - get: 15m
     trigger: true
   - task: run-latency-tests
