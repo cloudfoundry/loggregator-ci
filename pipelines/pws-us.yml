@@ -189,6 +189,8 @@ jobs:
   serial: true
   plan:
   - get: loggregator
+  - get: 15m
+    trigger: true
   - task: run-latency-tests
     file: loggregator-ci/tasks/latency-test.yml
     params:
