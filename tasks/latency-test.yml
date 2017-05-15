@@ -12,6 +12,8 @@ run:
     - |
       #!/bin/bash
 
+      set -ex
+
       # target api
       cf login \
         -a "$CF_API" \
