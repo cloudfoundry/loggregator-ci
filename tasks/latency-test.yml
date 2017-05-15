@@ -1,0 +1,41 @@
+platform: linux
+image_resource:
+  type: docker-image
+  source:
+  - repository: loggregator/bosh20
+inputs:
+  - name: loggregator
+run:
+  path: bash
+  args:
+    - -c
+    - |
+      #!/bin/bash
+
+      # target api
+      cf login \
+        -a "$CF_API" \
+        -u "$USERNAME" \
+        -p "$PASSWORD" \
+        -s "$SPACE" \
+        -o "$ORG"
+
+      cd loggregator/src/tools/latency
+
+      go build
+
+      ./cf/push.sh
+
+      latency=$(curl "$APP_DOMAIN/latency?samples=100")
+
+      currenttime=$(date +%s)
+      curl  -X POST -H "Content-type: application/json" \
+      -d "{ \"series\" :
+               [{\"metric\":\"smoke_test.loggregator.latency\",
+                \"points\":[[${currenttime}, ${latency}]],
+                \"type\":\"gauge\",
+                \"host\":\"${CF_API}\",
+                \"tags\":[\"${APP_NAME}\"]}
+              ]
+          }" \
+      'https://app.datadoghq.com/api/v1/series?api_key='"$DATADOG_API_KEY"
