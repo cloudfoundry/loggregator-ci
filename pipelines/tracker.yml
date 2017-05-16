@@ -34,6 +34,23 @@ jobs:
       APP_DOMAIN: "trkr-floodspinner.aws.trkr.io"
       ORG: "loggregator"
       SPACE: "development"
+  - task: run-recent-logs-smoke-tests
+    file: loggregator-ci/tasks/generic-recent-logs-smoke-test.yml
+    params:
+      CYCLES: 10000
+      DELAY: "2"
+      DELAY_UNIT: "us"
+      APP_NAME: "trkr-floodspinner"
+      LOGGREGATOR_ADDR: "wss://doppler.aws.trackerred.com:4443"
+      WAIT: 60
+      MESSAGE: "FIFTEEN-MINUTE"
+      USERNAME: {{trkr-username}}
+      PASSWORD: {{trkr-password}}
+      DATADOG_API_KEY: {{datadog-loggregator-api-key}}
+      CF_API: "api.aws.trackerred.com"
+      APP_DOMAIN: "trkr-floodspinner.aws.trkr.io"
+      ORG: "loggregator"
+      SPACE: "development"
 
 - name: dripspinner
   public: false

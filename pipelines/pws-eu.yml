@@ -38,6 +38,23 @@ jobs:
       DELAY: "2"
       DELAY_UNIT: "us"
       MESSAGE: "FIFTEEN-MINUTE"
+  - task: run-recent-logs-smoke-tests
+    file: loggregator-ci/tasks/generic-recent-logs-smoke-test.yml
+    params:
+      CF_API: "api.eu-pws.pivotal.io"
+      APP_DOMAIN: "floodspinner.eu-pwsapps.io"
+      LOGGREGATOR_ADDR: "wss://doppler.eu-pws.pivotal.io:443"
+      ORG: "system"
+      SPACE: "loggregator-team"
+      APP_NAME: "floodspinner"
+      USERNAME: {{pws-eu-username}}
+      PASSWORD: {{pws-eu-password}}
+      WAIT: 60
+      CYCLES: 10000
+      DATADOG_API_KEY: {{datadog-loggregator-api-key}}
+      DELAY: "2"
+      DELAY_UNIT: "us"
+      MESSAGE: "FIFTEEN-MINUTE"
 
 - name: dripspinner
   public: false
