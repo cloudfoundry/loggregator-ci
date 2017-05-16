@@ -20,6 +20,8 @@ var (
 )
 
 func main() {
+	validateSettings()
+
 	re := regexp.MustCompile("[0-9]+")
 
 	consumer := consumer.New(loggregatorAddr, &tls.Config{InsecureSkipVerify: true}, nil)
@@ -27,12 +29,10 @@ func main() {
 
 	start := time.Now()
 	messages, err := consumer.RecentLogs(appGuid, authToken)
-	fmt.Printf("Latency: %d\n", time.Since(start))
-
 	if err != nil {
-		log.Printf("Error getting recent messages: %v", err)
-		return
+		log.Fatalf("Error getting recent messages: %v", err)
 	}
+	fmt.Printf("Latency: %d\n", time.Since(start))
 
 	var results []int
 	for _, msg := range messages {
@@ -47,6 +47,18 @@ func main() {
 	sort.Sort(sort.IntSlice(results))
 	fmt.Printf("Holes: %d\n", findHoles(results))
 	fmt.Printf("Total: %d\n", len(results))
+}
+
+func validateSettings() {
+	if loggregatorAddr == "" {
+		log.Fatal("LOGGREGATOR_ADDR is not set")
+	}
+	if appGuid == "" {
+		log.Fatal("APP_GUID is not set")
+	}
+	if authToken == "" {
+		log.Fatal("CF_ACCESS_TOKEN is not set")
+	}
 }
 
 func findHoles(results []int) int {

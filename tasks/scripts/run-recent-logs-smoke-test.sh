@@ -17,13 +17,16 @@ export GOPATH=/tmp/gopath
 export PATH=$PATH:$GOPATH/bin
 go get github.com/cloudfoundry/loggregator-ci/tools/recent_logs
 
+export APP_GUID=$(cf app $APP_NAME --guid)
+export CF_ACCESS_TOKEN=$(cf oauth-token | grep bearer)
+
 results_name=/tmp/recent_logs.results
 
 recent_logs > $results_name
 cat $results_name
 msg_count=$(cat $results_name | grep "Total" | cut -d ' ' -f2)
-latency=$(cat $results_name | grep "Holes" | cut -d ' ' -f2)
-holes=$(cat $results_name | grep "Latency" | cut -d ' ' -f2)
+latency=$(cat $results_name | grep "Latency" | cut -d ' ' -f2)
+holes=$(cat $results_name | grep "Holes" | cut -d ' ' -f2)
 
 currenttime=$(date +%s)
 curl  -X POST -H "Content-type: application/json" \
