@@ -43,6 +43,22 @@ jobs:
       DELAY: "2"
       DELAY_UNIT: "us"
       MESSAGE: "FIFTEEN-MINUTE"
+  - task: run-recent-logs-smoke-tests
+    file: loggregator-ci/tasks/generic-recent-logs-smoke-test.yml
+    params:
+      CF_API: "api.run.pivotal.io"
+      APP_DOMAIN: "floodspinner.cfapps.io"
+      ORG: "cf-lamb"
+      SPACE: "development"
+      APP_NAME: "floodspinner"
+      USERNAME: {{pws-username}}
+      PASSWORD: {{pws-password}}
+      WAIT: 60
+      CYCLES: 10000
+      DATADOG_API_KEY: {{datadog-loggregator-api-key}}
+      DELAY: "2"
+      DELAY_UNIT: "us"
+      MESSAGE: "FIFTEEN-MINUTE"
 
 - name: dripspinner
   public: false

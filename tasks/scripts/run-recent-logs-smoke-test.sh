@@ -1,0 +1,60 @@
+#!/bin/bash
+
+set -e -x
+
+# target api
+cf login \
+    -a "$CF_API" \
+    -u "$USERNAME" \
+    -p "$PASSWORD" \
+    -s "$SPACE" \
+    -o "$ORG" \
+    --skip-ssl-validation # TODO: pass this in as a param
+
+# build recent logs measure tool
+mkdir /tmp/gopath
+export GOPATH=/tmp/gopath
+export PATH=$PATH:$GOPATH/bin
+go get github.com/cloudfoundry/loggregator-ci/tools/recent_logs
+
+results_name=/tmp/recent_logs.results
+
+recent_logs > $results_name
+cat $results_name
+msg_count=$(cat $results_name | grep "Total" | cut -d ' ' -f2)
+latency=$(cat $results_name | grep "Holes" | cut -d ' ' -f2)
+holes=$(cat $results_name | grep "Latency" | cut -d ' ' -f2)
+
+currenttime=$(date +%s)
+curl  -X POST -H "Content-type: application/json" \
+-d "{ \"series\" :
+         [{\"metric\":\"smoke_test.loggregator.recent_msg_count\",
+          \"points\":[[${currenttime}, ${msg_count}]],
+          \"type\":\"gauge\",
+          \"host\":\"${CF_API}\",
+          \"tags\":[\"${APP_NAME}\"]}
+        ]
+    }" \
+'https://app.datadoghq.com/api/v1/series?api_key='"$DATADOG_API_KEY"
+
+curl  -X POST -H "Content-type: application/json" \
+-d "{ \"series\" :
+         [{\"metric\":\"smoke_test.loggregator.recent_roundtrip_latency\",
+          \"points\":[[${currenttime}, ${latency}]],
+          \"type\":\"gauge\",
+          \"host\":\"${CF_API}\",
+          \"tags\":[\"${APP_NAME}\"]}
+        ]
+    }" \
+'https://app.datadoghq.com/api/v1/series?api_key='"$DATADOG_API_KEY"
+
+curl  -X POST -H "Content-type: application/json" \
+-d "{ \"series\" :
+         [{\"metric\":\"smoke_test.loggregator.recent_missing_msg_count\",
+          \"points\":[[${currenttime}, ${holes}]],
+          \"type\":\"gauge\",
+          \"host\":\"${CF_API}\",
+          \"tags\":[\"${APP_NAME}\"]}
+        ]
+    }" \
+'https://app.datadoghq.com/api/v1/series?api_key='"$DATADOG_API_KEY"
