@@ -48,7 +48,7 @@ jobs:
     params:
       CF_API: "api.run.pivotal.io"
       APP_DOMAIN: "floodspinner.cfapps.io"
-      LOGGREGATOR_ADDR: "doppler.run.pivotal.io:443"
+      LOGGREGATOR_ADDR: "wss://doppler.run.pivotal.io:443"
       ORG: "cf-lamb"
       SPACE: "development"
       APP_NAME: "floodspinner"

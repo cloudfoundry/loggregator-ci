@@ -17,6 +17,7 @@ export GOPATH=/tmp/gopath
 export PATH=$PATH:$GOPATH/bin
 go get github.com/cloudfoundry/loggregator-ci/tools/recent_logs
 
+echo $LOGGREGATOR_ADDR
 export APP_GUID=$(cf app $APP_NAME --guid)
 export CF_ACCESS_TOKEN=$(cf oauth-token | grep bearer)
 
