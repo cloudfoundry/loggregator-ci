@@ -11,7 +11,6 @@ cf login \
     -o "$ORG" \
     --skip-ssl-validation # TODO: pass this in as a param
 
-# build recent logs measure tool
 mkdir /tmp/gopath
 export GOPATH=/tmp/gopath
 export PATH=$PATH:$GOPATH/bin
@@ -21,9 +20,9 @@ echo $LOGGREGATOR_ADDR
 export APP_GUID=$(cf app $APP_NAME --guid)
 export CF_ACCESS_TOKEN=$(cf oauth-token | grep bearer)
 
-results_name=/tmp/recent_logs.results
+results_name=/tmp/container_metrics.results
 
-recent_logs > $results_name
+container_metrics > $results_name
 cat $results_name
 latency=$(cat $results_name | grep "Latency" | cut -d ' ' -f2)
 
