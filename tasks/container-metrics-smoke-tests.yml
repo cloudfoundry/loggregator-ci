@@ -1,0 +1,9 @@
+platform: linux
+image_resource:
+  type: docker-image
+  source:
+  - repository: loggregator/bosh20
+inputs:
+  - name: loggregator-ci
+run:
+  path: loggregator-ci/tasks/scripts/container-metrics-smoke-tests.sh
