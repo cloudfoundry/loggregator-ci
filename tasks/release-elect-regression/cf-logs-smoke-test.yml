@@ -5,6 +5,7 @@ image_resource:
   - repository: loggregator/bosh20
 inputs:
   - name: release-info
+  - name: vars-store
 run:
   path: bash
   args:
@@ -19,7 +20,7 @@ run:
     cf_api="$API_ENDPOINT"
     cf login -a $cf_api \
         -u $USERNAME \
-        -p $PASSWORD \
+        -p $(bosh int vars-store/$VARS_STORE_FILE --path=/cf_admin_password) \
         -s development \
         -o cf-lamb --skip-ssl-validation
 

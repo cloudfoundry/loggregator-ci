@@ -383,6 +383,8 @@ jobs:
       params:
         claim: "pipeline"
     - aggregate:
+      - get: vars-store
+        resource: deployments-loggregator-with-changes
       - get: release-elect
         resource: loggregator-release-elect
         passed:
@@ -430,9 +432,9 @@ jobs:
               WAIT: 60
               API_ENDPOINT: api.loggregator-elect.cf-app.com
               USERNAME: admin
-              PASSWORD: {{loggregator-elect-password}}
               DATADOG_API_KEY: {{datadog-dev-api-key}}
               SKIP_SSL_VALIDATION: true
+              VARS_STORE_FILE: gcp/loggregator-elect-bbl/deployment-vars.yml
         - do:
           - task: get-release-version
             config:
@@ -466,9 +468,9 @@ jobs:
               WAIT: 60
               API_ENDPOINT: api.loggregator-latest.cf-app.com
               USERNAME: admin
-              PASSWORD: {{loggregator-latest-password}}
               DATADOG_API_KEY: {{datadog-dev-api-key}}
               SKIP_SSL_VALIDATION: true
+              VARS_STORE_FILE: gcp/loggregator-latest-bbl/deployment-vars.yml
       timeout: 5m
       ensure:
         put: pipeline-lock
