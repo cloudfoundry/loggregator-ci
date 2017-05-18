@@ -340,6 +340,7 @@ jobs:
             VARS_STORE_FILE: gcp/loggregator-latest-bbl/deployment-vars.yml
             ORG: cf-lamb
             SPACE: development
+      timeout: 5m
       on_failure: *slack-failure-alert
 
 - name: setup-datadog
@@ -370,6 +371,7 @@ jobs:
       - put: pipeline-lock
         params:
           release: pipeline-lock
+      timeout: 5m
       on_failure: *slack-failure-alert
 
 - name: smoke-tests
