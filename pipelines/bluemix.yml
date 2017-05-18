@@ -36,21 +36,18 @@ jobs:
       SPACE: loggregator
   - task: run-recent-logs-smoke-tests
     file: loggregator-ci/tasks/generic-recent-logs-smoke-test.yml
-    params:
-      CYCLES: 10000
-      DELAY: "2"
-      DELAY_UNIT: "us"
-      MESSAGE: "FIFTEEN-MINUTE"
+    params: &basic-smoke-details
       APP_NAME: "floodspinner"
-      WAIT: 300
-      USERNAME: {{bluemix-username}}
-      PASSWORD: {{bluemix-password}}
-      DATADOG_API_KEY: {{datadog-loggregator-api-key}}
       CF_API: "api.ng.bluemix.net"
-      APP_DOMAIN: "floodspinner.mybluemix.net"
+      DATADOG_API_KEY: {{datadog-loggregator-api-key}}
       LOGGREGATOR_ADDR: "wss://doppler.ng.bluemix.net:443"
       ORG: "Cloud Foundry Flintstone"
+      PASSWORD: {{bluemix-password}}
       SPACE: loggregator
+      USERNAME: {{bluemix-username}}
+  - task: container metrics
+    file: loggregator-ci/tasks/container-metrics-smoke-test.yml
+    params: *basic-smoke-details
 
 - name: dripspinner
   public: false
