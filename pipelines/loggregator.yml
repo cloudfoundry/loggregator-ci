@@ -108,6 +108,7 @@ jobs:
     resource: loggregator-develop
     trigger: true
   - task: run-tests
+    timeout: 10m
     config:
       platform: linux
       image_resource:
