@@ -51,6 +51,13 @@ resources:
     type: time
     source: {interval: 5m}
 
+  - name: daily
+    type: time
+    source:
+      start: 8:00 PM
+      stop: 9:00 PM
+      location: America/Denver
+
   - name: loggregator-ci
     type: git
     source:
@@ -146,8 +153,10 @@ jobs:
 
 - name: start-pipeline
   serial: true
-  serial_group: ["locking"]
+  serial_groups: ["locking"]
   plan:
+    - get: daily
+      trigger: true
     - get: pipeline-lock
     - put: pipeline-lock
       params:
@@ -341,7 +350,7 @@ jobs:
 
 - name: smoke-tests
   serial: true
-  serial_group: ["locking"]
+  serial_groups: ["locking"]
   plan:
     - get: pipeline-lock
     - put: pipeline-lock
