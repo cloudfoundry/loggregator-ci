@@ -18,7 +18,7 @@ run:
   - |
     #!/bin/bash
     set -ex
-    password=$(grep scim vars-store/$VARS_STORE_FILE | awk '{print $2}')
+    password=$(bosh int vars-store/$VARS_STORE_FILE --path=/cf_admin_password)
 
     cf login -a api.$SYSTEM_DOMAIN -u admin -p $password -o system --skip-ssl-validation
 
