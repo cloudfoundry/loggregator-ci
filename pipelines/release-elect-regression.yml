@@ -359,80 +359,83 @@ jobs:
       - get: loggregator-ci
     - get: 5m
       trigger: true
-    - aggregate:
-      - do:
-        - task: get-release-version
-          config:
-            platform: linux
-            image_resource:
-              type: docker-image
-              source:
-                repository: loggregator/bosh20
-            inputs:
-              - name: release-elect
-            outputs:
-              - name: release-info
-            run:
-              path: bash
-              args:
-              - -c
-              - |
-                #/bin/bash
-                set -ex
+    - do:
+      - aggregate:
+        - do:
+          - task: get-release-version
+            config:
+              platform: linux
+              image_resource:
+                type: docker-image
+                source:
+                  repository: loggregator/bosh20
+              inputs:
+                - name: release-elect
+              outputs:
+                - name: release-info
+              run:
+                path: bash
+                args:
+                - -c
+                - |
+                  #/bin/bash
+                  set -ex
 
-                cd release-elect
-                git rev-parse HEAD > ../release-info/version
-        - task: loggregator-elect
-          file: loggregator-ci/tasks/release-elect-regression/cf-logs-smoke-test.yml
-          params:
-            PREFIX: "regression."
-            CYCLES: 10000
-            DELAY: "2"
-            DELAY_UNIT: "us"
-            MESSAGE: "FIFTEEN-MINUTE"
-            APP_NAME: "floodspinner"
-            WAIT: 60
-            API_ENDPOINT: api.loggregator-elect.cf-app.com
-            USERNAME: admin
-            PASSWORD: {{loggregator-elect-password}}
-            DATADOG_API_KEY: {{datadog-dev-api-key}}
-            SKIP_SSL_VALIDATION: true
-      - do:
-        - task: get-release-version
-          config:
-            platform: linux
-            image_resource:
-              type: docker-image
-              source:
-                repository: loggregator/bosh20
-            inputs:
-              - name: release-latest
-            outputs:
-              - name: release-info
-            run:
-              path: bash
-              args:
-              - -c
-              - |
-                #/bin/bash
-                set -ex
+                  cd release-elect
+                  git rev-parse HEAD > ../release-info/version
+          - task: loggregator-elect
+            file: loggregator-ci/tasks/release-elect-regression/cf-logs-smoke-test.yml
+            params:
+              PREFIX: "regression."
+              CYCLES: 10000
+              DELAY: "2"
+              DELAY_UNIT: "us"
+              MESSAGE: "FIFTEEN-MINUTE"
+              APP_NAME: "floodspinner"
+              WAIT: 60
+              API_ENDPOINT: api.loggregator-elect.cf-app.com
+              USERNAME: admin
+              PASSWORD: {{loggregator-elect-password}}
+              DATADOG_API_KEY: {{datadog-dev-api-key}}
+              SKIP_SSL_VALIDATION: true
+        - do:
+          - task: get-release-version
+            config:
+              platform: linux
+              image_resource:
+                type: docker-image
+                source:
+                  repository: loggregator/bosh20
+              inputs:
+                - name: release-latest
+              outputs:
+                - name: release-info
+              run:
+                path: bash
+                args:
+                - -c
+                - |
+                  #/bin/bash
+                  set -ex
 
-                cp release-latest/version release-info/version
-        - task: loggregator-latest
-          file: loggregator-ci/tasks/release-elect-regression/cf-logs-smoke-test.yml
-          params:
-            PREFIX: "regression."
-            CYCLES: 10000
-            DELAY: "2"
-            DELAY_UNIT: "us"
-            MESSAGE: "FIFTEEN-MINUTE"
-            APP_NAME: "floodspinner"
-            WAIT: 60
-            API_ENDPOINT: api.loggregator-latest.cf-app.com
-            USERNAME: admin
-            PASSWORD: {{loggregator-latest-password}}
-            DATADOG_API_KEY: {{datadog-dev-api-key}}
-            SKIP_SSL_VALIDATION: true
-    - put: pipeline-lock
-      params:
-        release: pipeline-lock
+                  cp release-latest/version release-info/version
+          - task: loggregator-latest
+            file: loggregator-ci/tasks/release-elect-regression/cf-logs-smoke-test.yml
+            params:
+              PREFIX: "regression."
+              CYCLES: 10000
+              DELAY: "2"
+              DELAY_UNIT: "us"
+              MESSAGE: "FIFTEEN-MINUTE"
+              APP_NAME: "floodspinner"
+              WAIT: 60
+              API_ENDPOINT: api.loggregator-latest.cf-app.com
+              USERNAME: admin
+              PASSWORD: {{loggregator-latest-password}}
+              DATADOG_API_KEY: {{datadog-dev-api-key}}
+              SKIP_SSL_VALIDATION: true
+      timeout: 5m
+      ensure:
+        put: pipeline-lock
+        params:
+          release: pipeline-lock
