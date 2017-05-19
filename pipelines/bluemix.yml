@@ -9,6 +9,11 @@ resources:
   type: git
   source:
     uri: https://github.com/cloudfoundry/loggregator-ci
+- name: loggregator
+  type: git
+  source:
+    uri: https://github.com/cloudfoundry/loggregator
+    branch: develop
 
 jobs:
 - name: floodspinner
@@ -72,3 +77,23 @@ jobs:
       APP_DOMAIN: "dripspinner.mybluemix.net"
       ORG: "Cloud Foundry Flintstone"
       SPACE: loggregator
+
+- name: latency
+  public: false
+  serial: true
+  plan:
+  - get: loggregator
+  - get: loggregator-ci
+  - get: 15m
+    trigger: true
+  - task: run-latency-tests
+    file: loggregator-ci/tasks/latency-test.yml
+    params:
+      APP_DOMAIN: "loggregator-latency.mybluemix.net"
+      APP_NAME: "loggregator-latency"
+      CF_API: "api.ng.bluemix.net"
+      DATADOG_API_KEY: {{datadog-loggregator-api-key}}
+      ORG: "Cloud Foundry Flintstone"
+      SPACE: loggregator
+      USERNAME: {{bluemix-username}}
+      PASSWORD: {{bluemix-password}}

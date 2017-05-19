@@ -9,6 +9,11 @@ resources:
   type: git
   source:
     uri: https://github.com/cloudfoundry/loggregator-ci
+- name: loggregator
+  type: git
+  source:
+    uri: https://github.com/cloudfoundry/loggregator
+    branch: develop
 - name: scalable-syslog-release
   type: git
   source:
@@ -113,3 +118,23 @@ jobs:
       DRAIN_VERSION: "2.0"
       DRAIN_TYPE: "https"
       METRIC_PREFIX: ""
+
+- name: latency
+  public: false
+  serial: true
+  plan:
+  - get: loggregator
+  - get: loggregator-ci
+  - get: 15m
+    trigger: true
+  - task: run-latency-tests
+    file: loggregator-ci/tasks/latency-test.yml
+    params:
+      APP_DOMAIN: "loggregator-latency.eu-pwsapps.io"
+      APP_NAME: "loggregator-latency"
+      CF_API: "api.eu-pws.pivotal.io"
+      DATADOG_API_KEY: {{datadog-loggregator-api-key}}
+      ORG: "system"
+      PASSWORD: {{pws-eu-password}}
+      SPACE: "loggregator-team"
+      USERNAME: {{pws-eu-username}}
