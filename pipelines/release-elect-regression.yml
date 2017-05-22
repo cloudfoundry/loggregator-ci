@@ -189,6 +189,8 @@ jobs:
         resource: loggregator-release-elect
       - get: vars-store
         resource: deployments-loggregator
+      - get: vars-files
+        resource: deployments-loggregator
     - do:
       - task: upload-stemcell
         file: cf-deployment-concourse-tasks/bosh-upload-stemcell-from-cf-deployment/task.yml
@@ -250,6 +252,8 @@ jobs:
         resource: deployments-loggregator
       - get: release
         resource: loggregator-latest
+      - get: vars-files
+        resource: deployments-loggregator
     - do:
       - task: upload-stemcell
         file: cf-deployment-concourse-tasks/bosh-upload-stemcell-from-cf-deployment/task.yml

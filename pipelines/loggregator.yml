@@ -471,7 +471,6 @@ jobs:
 
             bosh -n -d loggregator deploy \
               --vars-store "$deployment_dir/loggregator-vars.yml" \
-              -o "$PWD/deployments-loggregator/gcp/bbl/ops-files/loggregator/coconut.yml" \
               "$loggregator_dir/templates/loggregator.yml"
 
             rsync -ac deployments-loggregator/ updated-deployments-loggregator
