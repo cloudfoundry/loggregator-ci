@@ -56,7 +56,7 @@ resources:
   type: git
   source:
     uri: https://github.com/cloudfoundry/cf-deployment-concourse-tasks
-    branch: v1.6
+    branch: v3.1
 
 # This is here because concourse has a bug in which putting to a git resource
 # creates a new version that can trigger jobs even if the commit has [ci skip]
@@ -221,6 +221,8 @@ jobs:
     - get: vars-store
       resource: deployments-loggregator
       trigger: false
+    - get: vars-files
+      resource: deployments-loggregator
   - task: upload-stemcell
     file: cf-deployment-concourse-tasks/bosh-upload-stemcell-from-cf-deployment/task.yml
     params:
