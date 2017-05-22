@@ -471,6 +471,7 @@ jobs:
 
             bosh -n -d loggregator deploy \
               --vars-store "$deployment_dir/loggregator-vars.yml" \
+              -o "$PWD/deployments-loggregator/gcp/bbl/ops-files/loggregator/coconut.yml" \
               "$loggregator_dir/templates/loggregator.yml"
 
             rsync -ac deployments-loggregator/ updated-deployments-loggregator
@@ -566,7 +567,7 @@ jobs:
           echo "$CONFIG_DATA" > $CONFIG
 
           pushd deployments-loggregator-with-changes
-            export CF_PASSWORD_VARS=$(bosh interpolate gcp/bbl/deployment-vars.yml --path /uaa_scim_users_admin_password)
+            export CF_PASSWORD_VARS=$(bosh interpolate gcp/bbl/deployment-vars.yml --path /cf_admin_password)
             sed -i "s/CF_PASSWORD_FROM_VARS/$CF_PASSWORD_VARS/" $CONFIG
           popd
 
