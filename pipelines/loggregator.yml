@@ -24,7 +24,7 @@ resources:
   type: git
   source:
     uri: https://github.com/cloudfoundry/cf-release
-    branch: release-candidate
+    branch: develop
 
 - name: cf-release-develop
   type: git
