@@ -1,4 +1,4 @@
-FROM loggregator/go17
+FROM loggregator/go18
 
 # get v3 protoc from github, it was in beta at the time of writing
 RUN cd /tmp \
