@@ -114,7 +114,7 @@ jobs:
       image_resource:
         type: docker-image
         source:
-        - repository: loggregator/go17
+        - repository: loggregator/go18
       inputs:
       - name: loggregator
       run:
@@ -148,7 +148,7 @@ jobs:
       image_resource:
         type: docker-image
         source:
-        - repository: loggregator/go17
+        - repository: loggregator/go18
       inputs:
       - name: loggregator
       outputs:
