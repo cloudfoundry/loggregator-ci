@@ -1,63 +1,26 @@
 resources:
 
-- name: ubuntu-base
+- name: base-image
   type: docker-image
   source:
-    repository: loggregator/ubuntu-base
+    repository: loggregator/base
     username: {{docker-hub-username}}
     password: {{docker-hub-password}}
 
-- name: go-image
-  type: docker-image
-  source:
-    repository: loggregator/go17
-    username: {{docker-hub-username}}
-    password: {{docker-hub-password}}
-
-- name: go-image-dockerfile
+- name: base-image-dockerfile
   type: git
   source:
     uri: https://github.com/cloudfoundry/loggregator-ci
     branch: master
     paths:
-    - docker-images/go17
+    - docker-images/base
 
-- name: protoc-image
-  type: docker-image
-  source:
-    repository: loggregator/protoc
-    username: {{docker-hub-username}}
-    password: {{docker-hub-password}}
-
-- name: protoc-image-dockerfile
-  type: git
-  source:
-    uri: https://github.com/cloudfoundry/loggregator-ci
-    branch: master
-    paths:
-    - docker-images/protoc
-
-- name: bosh20-image
-  type: docker-image
-  source:
-    repository: loggregator/bosh20
-    username: {{docker-hub-username}}
-    password: {{docker-hub-password}}
-
-- name: bosh20-image-dockerfile
-  type: git
-  source:
-    uri: https://github.com/cloudfoundry/loggregator-ci
-    branch: master
-    paths:
-    - docker-images/bosh20
-
-- name: golang-1.7-tarball
+- name: golang-1.8-tarball
   type: s3
   source:
     endpoint: storage.googleapis.com
     bucket: golang
-    regexp: 'go(1\.7(\.\d+)?)\.linux-amd64\.tar.gz'
+    regexp: 'go(1\.8(\.\d+)?)\.linux-amd64\.tar.gz'
 
 - name: bosh10-image-dockerfile
   type: git
@@ -75,63 +38,21 @@ resources:
     password: {{docker-hub-password}}
 
 jobs:
-- name: build-go-image
+- name: build-base-image
   public: true
   plan:
   - aggregate:
-    - get: ubuntu-base
+    - get: golang-1.8-tarball
       trigger: true
     - get: image-dockerfile
-      resource: go-image-dockerfile
-      trigger: true
-    - get: additional-files
-      resource: golang-1.7-tarball
+      resource: base-image-dockerfile
       trigger: true
   - task: prepare-image-build
     config:
       image_resource:
         type: docker-image
         source:
-          repository: loggregator/ubuntu-base
-          tag: latest
-      platform: linux
-      inputs:
-      - name: image-dockerfile
-      - name: additional-files
-      outputs:
-      - name: build-image
-      params:
-        IMAGE_NAME: go17
-      run:
-        path: bash
-        args:
-        - -c
-        - {{prepare-docker-image}}
-  - put: go-image
-    params:
-      build: build-image/build
-      tag: build-image/tag
-      tag_as_latest: true
-      cache: true
-      cache_tag: latest
-
-- name: build-protoc-image
-  public: true
-  plan:
-  - aggregate:
-    - get: go-image
-      trigger: true
-      passed:
-      - build-go-image
-    - get: image-dockerfile
-      resource: protoc-image-dockerfile
-      trigger: true
-  - task: prepare-image-build
-    config:
-      image_resource:
-        type: docker-image
-        source:
-          repository: loggregator/ubuntu-base
+          repository: golang
           tag: latest
       platform: linux
       inputs:
@@ -139,56 +60,17 @@ jobs:
       outputs:
       - name: build-image
       params:
-        IMAGE_NAME: protoc
+        IMAGE_NAME: base
       run:
         path: bash
         args:
         - -c
         - {{prepare-docker-image}}
-  - put: protoc-image
+  - put: base-image
     params:
       build: build-image/build
       tag: build-image/tag
       tag_as_latest: true
-      cache: true
-      cache_tag: latest
-
-- name: build-bosh20-image
-  public: true
-  plan:
-  - aggregate:
-    - get: go-image
-      trigger: true
-      passed:
-      - build-go-image
-    - get: image-dockerfile
-      resource: bosh20-image-dockerfile
-      trigger: true
-  - task: prepare-image-build
-    config:
-      image_resource:
-        type: docker-image
-        source:
-          repository: loggregator/ubuntu-base
-          tag: latest
-      platform: linux
-      inputs:
-      - name: image-dockerfile
-      outputs:
-      - name: build-image
-      params:
-        IMAGE_NAME: bosh20
-      run:
-        path: bash
-        args:
-        - -c
-        - {{prepare-docker-image}}
-  - put: bosh20-image
-    params:
-      build: build-image/build
-      tag: build-image/tag
-      tag_as_latest: true
-      cache: true
       cache_tag: latest
 
 - name: bosh10
@@ -199,5 +81,4 @@ jobs:
       params:
         build: bosh10-image-dockerfile/docker-images/bosh10
         tag_as_latest: true
-        cache: true
         cache_tag: latest
