@@ -31,7 +31,7 @@ run:
       ./cf/push.sh
 
       attempts=0
-      until [ curl -f $APP_DOMAIN ] do;
+      until [ curl -f $APP_DOMAIN ]; do
         ((attempts++))
         if [ "$attempts" -gt 600 ]
         then
