@@ -39,7 +39,7 @@ jobs:
       image_resource:
         type: docker-image
         source:
-        - repository: loggregator/go18
+        - repository: loggregator/base
       platform: linux
       inputs:
       - name: bosh-hm-forwarder-release
@@ -67,7 +67,7 @@ jobs:
       image_resource:
         type: docker-image
         source:
-          repository: loggregator/go18
+          repository: loggregator/base
       inputs:
       - name: bosh-hm-forwarder-release
       - name: bosh-hm-forwarder
@@ -89,7 +89,7 @@ jobs:
       image_resource:
         type: docker-image
         source:
-          repository: loggregator/go18
+          repository: loggregator/base
       inputs:
       - name: updated-bosh-hm-forwarder-release
       outputs:
@@ -126,7 +126,7 @@ jobs:
       image_resource:
         type: docker-image
         source:
-          repository: loggregator/bosh20
+          repository: loggregator/base
       inputs:
       - name: version
       - name: bosh-hm-forwarder-release

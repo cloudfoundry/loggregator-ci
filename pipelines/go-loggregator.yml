@@ -16,7 +16,7 @@ jobs:
       image_resource:
         type: docker-image
         source:
-        - repository: golang
+        - repository: loggregator/base
       platform: linux
       inputs:
       - name: go-loggregator

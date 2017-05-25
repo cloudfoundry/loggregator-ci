@@ -114,7 +114,7 @@ jobs:
       image_resource:
         type: docker-image
         source:
-        - repository: loggregator/bosh20
+        - repository: loggregator/base
       platform: linux
       params:
         S3_ACCESS_KEY: {{s3-access-key}}
@@ -289,7 +289,7 @@ jobs:
       image_resource:
         type: docker-image
         source:
-        - repository: loggregator/bosh20
+        - repository: loggregator/base
       platform: linux
       params:
         S3_ACCESS_KEY: {{s3-access-key-id}}
