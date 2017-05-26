@@ -32,7 +32,8 @@ run:
 
     echo "Triggering $APP_NAME"
 
-    app_domain=$(cf app $APP_NAME | grep urls | awk '{print $2}')
+    app_guid=$(cf app $APP_NAME --guid)
+    app_domain=$(cf curl /v2/apps/$app_guid/stats | jq -r .\"0\".stats.uris[0])
 
     # curl my logspinner
     curl "$app_domain?cycles=$CYCLES&delay=$DELAY$DELAY_UNIT&text=$MESSAGE"
