@@ -30,6 +30,8 @@ run:
 
       ./cf/push.sh
 
+      set +e
+      set +x
       attempts=0
       until curl -f $APP_DOMAIN; do
         ((attempts++))
@@ -40,6 +42,7 @@ run:
         fi
         sleep 1
       done
+      set -ex
 
       latency=$(curl "$APP_DOMAIN/latency?samples=100")
 
