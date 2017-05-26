@@ -258,6 +258,9 @@ jobs:
               popd
 
               pushd cf-release
+                echo "Running ./scripts/test"
+                ./scripts/test
+
                 echo "Configuring Git"
                 git config --global user.email "cf-loggregator@pivotal.io"
                 git config --global user.name "Loggregator CI"
