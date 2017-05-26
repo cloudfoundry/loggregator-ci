@@ -30,21 +30,8 @@ run:
 
       ./cf/push.sh
 
-      set +e
-      set +x
-      attempts=0
-      until curl -f $APP_DOMAIN; do
-        ((attempts++))
-        if [ "$attempts" -gt 600 ]
-        then
-          echo "$APP_DOMAIN failed to respond with a successful status. Aborting latency test."
-          exit 1
-        fi
-        sleep 1
-      done
-      set -ex
-
-      latency=$(curl "$APP_DOMAIN/latency?samples=100")
+      sleep 30
+      latency=$(curl --retry 10 "$APP_DOMAIN/latency?samples=100")
 
       currenttime=$(date +%s)
       curl  -X POST -H "Content-type: application/json" \
