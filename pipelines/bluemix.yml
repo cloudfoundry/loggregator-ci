@@ -39,6 +39,7 @@ jobs:
       APP_DOMAIN: "floodspinner.mybluemix.net"
       ORG: "Cloud Foundry Flintstone"
       SPACE: loggregator
+    timeout: 15m
   - task: run-recent-logs-smoke-tests
     file: loggregator-ci/tasks/generic-recent-logs-smoke-test.yml
     params: &basic-smoke-details
@@ -50,9 +51,11 @@ jobs:
       PASSWORD: {{bluemix-password}}
       SPACE: loggregator
       USERNAME: {{bluemix-username}}
+    timeout: 15m
   - task: container metrics
     file: loggregator-ci/tasks/container-metrics-smoke-test.yml
     params: *basic-smoke-details
+    timeout: 15m
 
 - name: dripspinner
   public: false
@@ -77,6 +80,32 @@ jobs:
       APP_DOMAIN: "dripspinner.mybluemix.net"
       ORG: "Cloud Foundry Flintstone"
       SPACE: loggregator
+    timeout: 15m
+
+- name: flowspinner
+  public: false
+  serial: true
+  plan:
+  - get: loggregator-ci
+  - get: 1h
+    trigger: true
+  - task: run-smoke-tests
+    file: loggregator-ci/tasks/generic-smoke-test.yml
+    params:
+      CYCLES: 1000
+      DELAY: "1"
+      DELAY_UNIT: "ms"
+      MESSAGE: "HOURLY"
+      APP_NAME: "flowspinner"
+      WAIT: 60
+      USERNAME: {{bluemix-username}}
+      PASSWORD: {{bluemix-password}}
+      DATADOG_API_KEY: {{datadog-loggregator-api-key}}
+      CF_API: "api.ng.bluemix.net"
+      APP_DOMAIN: "flowspinner.mybluemix.net"
+      ORG: "Cloud Foundry Flintstone"
+      SPACE: loggregator
+    timeout: 15m
 
 - name: latency
   public: false
@@ -97,3 +126,4 @@ jobs:
       SPACE: loggregator
       USERNAME: {{bluemix-username}}
       PASSWORD: {{bluemix-password}}
+    timeout: 15m
