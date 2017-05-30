@@ -43,6 +43,7 @@ jobs:
       DELAY: "2"
       DELAY_UNIT: "us"
       MESSAGE: "FIFTEEN-MINUTE"
+    timeout: 15m
   - task: run-recent-logs-smoke-tests
     file: loggregator-ci/tasks/generic-recent-logs-smoke-test.yml
     params: &basic-smoke-details
@@ -54,9 +55,11 @@ jobs:
       PASSWORD: {{pws-eu-password}}
       SPACE: "loggregator-team"
       USERNAME: {{pws-eu-username}}
+    timeout: 15m
   - task: container metrics
     file: loggregator-ci/tasks/container-metrics-smoke-test.yml
     params: *basic-smoke-details
+    timeout: 15m
 
 - name: dripspinner
   public: false
@@ -81,6 +84,7 @@ jobs:
       DELAY: "500"
       DELAY_UNIT: "ms"
       MESSAGE: "HOURLY"
+    timeout: 15m
 
 - name: https-syslog-drain
   public: false
@@ -104,6 +108,7 @@ jobs:
       DRAIN_VERSION: "1.0"
       DRAIN_TYPE: "https"
       METRIC_PREFIX: ""
+    timeout: 15m
   - task: v2-drain
     file: loggregator-ci/tasks/scalable-syslog-smoke-test.yml
     params:
@@ -118,6 +123,7 @@ jobs:
       DRAIN_VERSION: "2.0"
       DRAIN_TYPE: "https"
       METRIC_PREFIX: ""
+    timeout: 15m
 
 - name: latency
   public: false
@@ -138,3 +144,4 @@ jobs:
       PASSWORD: {{pws-eu-password}}
       SPACE: "loggregator-team"
       USERNAME: {{pws-eu-username}}
+    timeout: 15m
