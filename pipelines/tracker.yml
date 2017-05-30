@@ -39,6 +39,7 @@ jobs:
       APP_DOMAIN: "trkr-floodspinner.aws.trkr.io"
       ORG: "loggregator"
       SPACE: "development"
+    timeout: 15m
   - task: run-recent-logs-smoke-tests
     file: loggregator-ci/tasks/generic-recent-logs-smoke-test.yml
     params: &basic-smoke-details
@@ -50,9 +51,11 @@ jobs:
       PASSWORD: {{trkr-password}}
       SPACE: "development"
       USERNAME: {{trkr-username}}
+    timeout: 15m
   - task: container metrics
     file: loggregator-ci/tasks/container-metrics-smoke-test.yml
     params: *basic-smoke-details
+    timeout: 15m
 
 - name: dripspinner
   public: false
@@ -77,6 +80,7 @@ jobs:
       APP_DOMAIN: "trkr-dripspinner.aws.trkr.io"
       ORG: "loggregator"
       SPACE: "development"
+    timeout: 15m
 
 - name: latency
   public: false
@@ -97,3 +101,4 @@ jobs:
       SPACE: "development"
       USERNAME: {{trkr-username}}
       PASSWORD: {{trkr-password}}
+    timeout: 15m
