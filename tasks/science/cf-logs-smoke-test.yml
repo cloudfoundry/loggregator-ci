@@ -51,7 +51,7 @@ run:
               \"points\":[[${currenttime}, ${msg_count}]],
               \"type\":\"gauge\",
               \"host\":\"${cf_api}\",
-              \"tags\":[\"${APP_NAME}\", \"loggregator_version:${version}\"]}
+              \"tags\":[\"${APP_NAME}\", \"loggregator_version:${version}\", \"release_version:${VERSION_TAG}\"]}
             ]
         }" \
     'https://app.datadoghq.com/api/v1/series?api_key='$DATADOG_API_KEY
@@ -62,7 +62,7 @@ run:
               \"points\":[[${currenttime}, $DELAY]],
               \"type\":\"gauge\",
               \"host\":\"${cf_api}\",
-              \"tags\":[\"${APP_NAME}\", \"loggregator_version:${version}\"]}
+              \"tags\":[\"${APP_NAME}\", \"loggregator_version:${version}\", \"release_version:${VERSION_TAG}\"]}
             ]
         }" \
     'https://app.datadoghq.com/api/v1/series?api_key='$DATADOG_API_KEY
@@ -73,7 +73,7 @@ run:
               \"points\":[[${currenttime}, ${CYCLES}]],
               \"type\":\"gauge\",
               \"host\":\"${cf_api}\",
-              \"tags\":[\"${APP_NAME}\", \"loggregator_version:${version}\"]}
+              \"tags\":[\"${APP_NAME}\", \"loggregator_version:${version}\", \"release_version:${VERSION_TAG}\"]}
             ]
         }" \
     'https://app.datadoghq.com/api/v1/series?api_key='$DATADOG_API_KEY
