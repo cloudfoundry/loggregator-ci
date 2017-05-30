@@ -43,6 +43,7 @@ jobs:
       DELAY: "2"
       DELAY_UNIT: "us"
       MESSAGE: "FIFTEEN-MINUTE"
+    timeout: 15m
   - task: run-recent-logs-smoke-tests
     file: loggregator-ci/tasks/generic-recent-logs-smoke-test.yml
     params: &basic-smoke-details
@@ -54,9 +55,11 @@ jobs:
       PASSWORD: {{pws-password}}
       SPACE: "development"
       USERNAME: {{pws-username}}
+    timeout: 15m
   - task: container metrics
     file: loggregator-ci/tasks/container-metrics-smoke-test.yml
     params: *basic-smoke-details
+    timeout: 15m
 
 - name: dripspinner
   public: false
@@ -81,6 +84,32 @@ jobs:
       DELAY: "500"
       DELAY_UNIT: "ms"
       MESSAGE: "HOURLY"
+    timeout: 15m
+
+- name: flowspinner
+  public: false
+  serial: true
+  plan:
+  - get: loggregator-ci
+  - get: 1h
+    trigger: true
+  - task: run-smoke-tests
+    file: loggregator-ci/tasks/generic-smoke-test.yml
+    params:
+      CF_API: "api.run.pivotal.io"
+      APP_DOMAIN: "flowspinner.cfapps.io"
+      ORG: "cf-lamb"
+      SPACE: "development"
+      APP_NAME: "flowspinner"
+      USERNAME: {{pws-username}}
+      PASSWORD: {{pws-password}}
+      WAIT: 60
+      CYCLES: 1000
+      DATADOG_API_KEY: {{datadog-loggregator-api-key}}
+      DELAY: "1"
+      DELAY_UNIT: "ms"
+      MESSAGE: "HOURLY"
+    timeout: 15m
 
 - name: https-syslog-drain
   public: false
@@ -103,6 +132,7 @@ jobs:
       DRAIN_VERSION: "2.0"
       DRAIN_TYPE: "https"
       NUM_APPS: 1
+    timeout: 15m
 
 - name: tcp-syslog-drain
   public: false
@@ -125,6 +155,7 @@ jobs:
       DRAIN_VERSION: "2.0"
       DRAIN_TYPE: "syslog"
       NUM_APPS: 1
+    timeout: 15m
 
 - name: https-syslog-drain-no-teardown
   public: false
@@ -148,6 +179,7 @@ jobs:
       DRAIN_VERSION: "2.0"
       DRAIN_TYPE: "https"
       JOB_NAME: "https-no-teardown"
+    timeout: 15m
 
 - name: tcp-syslog-drain-no-teardown
   public: false
@@ -171,6 +203,7 @@ jobs:
       DRAIN_VERSION: "2.0"
       DRAIN_TYPE: "syslog"
       JOB_NAME: "syslog-no-teardown"
+    timeout: 15m
 
 - name: latency
   public: false
@@ -191,3 +224,4 @@ jobs:
       PASSWORD: {{pws-password}}
       SPACE: "development"
       USERNAME: {{pws-username}}
+    timeout: 15m
