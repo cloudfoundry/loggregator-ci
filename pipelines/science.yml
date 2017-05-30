@@ -375,6 +375,10 @@ jobs:
       - put: pipeline-lock
         params:
           release: pipeline-lock
+      - put: slack-alert
+        params:
+          text: |
+            The science pipeline has created a new datadog dashboard: $(cat datadog-url/url)
       timeout: 5m
       on_failure: *slack-failure-alert
 

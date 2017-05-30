@@ -6,6 +6,8 @@ image_resource:
 inputs:
 - name: release-latest
 - name: release-elect
+outputs:
+- name: datadog-url
 params:
   DATADOG_API_KEY:
   DATADOG_APP_KEY:
@@ -128,4 +130,5 @@ run:
     }
     EOF
 
-    curl "https://app.datadoghq.com/api/v1/dash?api_key=${DATADOG_API_KEY}&application_key=${DATADOG_APP_KEY}" -X POST -H "Content-type: application/json" -d "@/tmp/request-body.json"
+    response=$(curl "https://app.datadoghq.com/api/v1/dash?api_key=${DATADOG_API_KEY}&application_key=${DATADOG_APP_KEY}" -X POST -H "Content-type: application/json" -d "@/tmp/request-body.json")
+    echo $response | jq .url > datadog-url/url
