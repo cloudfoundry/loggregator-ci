@@ -233,7 +233,7 @@ jobs:
         put: slack-alert
         params:
           text: |
-            The `release-elect-regression` pipeline has failed. Please resolve any issues and ensure the pipeline lock was released. Check it out at:
+            The `science` pipeline has failed. Please resolve any issues and ensure the pipeline lock was released. Check it out at:
             $ATC_EXTERNAL_URL/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME
 
 - name: loggregator-latest-deploy
@@ -331,14 +331,14 @@ jobs:
     - do:
       - aggregate:
         - task: setup-loggregator-elect
-          file: loggregator-ci/tasks/release-elect-regression/setup-cf.yml
+          file: loggregator-ci/tasks/science/setup-cf.yml
           params:
             SYSTEM_DOMAIN: loggregator-elect.cf-app.com
             VARS_STORE_FILE: gcp/loggregator-elect-bbl/deployment-vars.yml
             ORG: cf-lamb
             SPACE: development
         - task: setup-loggregator-latest
-          file: loggregator-ci/tasks/release-elect-regression/setup-cf.yml
+          file: loggregator-ci/tasks/science/setup-cf.yml
           params:
             SYSTEM_DOMAIN: loggregator-latest.cf-app.com
             VARS_STORE_FILE: gcp/loggregator-latest-bbl/deployment-vars.yml
@@ -366,7 +366,7 @@ jobs:
       - get: loggregator-ci
     - do:
       - task: setup-dashboard
-        file: loggregator-ci/tasks/release-elect-regression/setup-datadog-dashboard.yml
+        file: loggregator-ci/tasks/science/setup-datadog-dashboard.yml
         params:
           DATADOG_API_KEY: {{datadog-dev-api-key}}
           DATADOG_APP_KEY: {{datadog-dev-app-key}}
@@ -375,10 +375,6 @@ jobs:
       - put: pipeline-lock
         params:
           release: pipeline-lock
-      - put: slack-alert
-        params:
-          text: |
-            The science pipeline has created a new datadog dashboard: $(cat datadog-url/url)
       timeout: 5m
       on_failure: *slack-failure-alert
 
@@ -429,7 +425,7 @@ jobs:
                   cd release-elect
                   git rev-parse HEAD > ../release-info/version
           - task: loggregator-elect
-            file: loggregator-ci/tasks/release-elect-regression/cf-logs-smoke-test.yml
+            file: loggregator-ci/tasks/science/cf-logs-smoke-test.yml
             params:
               PREFIX: "regression."
               CYCLES: 10000
@@ -465,7 +461,7 @@ jobs:
 
                   cp release-latest/version release-info/version
           - task: loggregator-latest
-            file: loggregator-ci/tasks/release-elect-regression/cf-logs-smoke-test.yml
+            file: loggregator-ci/tasks/science/cf-logs-smoke-test.yml
             params:
               PREFIX: "regression."
               CYCLES: 10000
