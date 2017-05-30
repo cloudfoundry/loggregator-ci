@@ -365,8 +365,8 @@ jobs:
         - cf-setup
       - get: loggregator-ci
     - do:
-      - task: setup-dashboard
-        file: loggregator-ci/tasks/science/setup-datadog-dashboard.yml
+      - task: setup-event
+        file: loggregator-ci/tasks/science/setup-datadog-event.yml
         params:
           DATADOG_API_KEY: {{datadog-dev-api-key}}
           DATADOG_APP_KEY: {{datadog-dev-app-key}}
@@ -439,6 +439,7 @@ jobs:
               DATADOG_API_KEY: {{datadog-dev-api-key}}
               SKIP_SSL_VALIDATION: true
               VARS_STORE_FILE: gcp/loggregator-elect-bbl/deployment-vars.yml
+              VERSION_TAG: elect
         - do:
           - task: get-release-version
             config:
@@ -475,6 +476,7 @@ jobs:
               DATADOG_API_KEY: {{datadog-dev-api-key}}
               SKIP_SSL_VALIDATION: true
               VARS_STORE_FILE: gcp/loggregator-latest-bbl/deployment-vars.yml
+              VERSION_TAG: latest
       timeout: 5m
       ensure:
         put: pipeline-lock
