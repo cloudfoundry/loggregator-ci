@@ -103,7 +103,7 @@ jobs:
       APP_NAME: "flowspinner"
       USERNAME: {{pws-eu-username}}
       PASSWORD: {{pws-eu-password}}
-      WAIT: 600
+      WAIT: 60
       CYCLES: 1000
       DATADOG_API_KEY: {{datadog-loggregator-api-key}}
       DELAY: "1"
