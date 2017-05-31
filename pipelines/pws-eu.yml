@@ -86,6 +86,31 @@ jobs:
       MESSAGE: "HOURLY"
     timeout: 15m
 
+- name: flowspinner
+  public: false
+  serial: true
+  plan:
+  - get: loggregator-ci
+  - get: 1h
+    trigger: true
+  - task: run-smoke-tests
+    file: loggregator-ci/tasks/generic-smoke-test.yml
+    params:
+      CF_API: "api.eu-pws.pivotal.io"
+      APP_DOMAIN: "flowspinner.eu-pwsapps.io"
+      ORG: "system"
+      SPACE: "loggregator-team"
+      APP_NAME: "flowspinner"
+      USERNAME: {{pws-eu-username}}
+      PASSWORD: {{pws-eu-password}}
+      WAIT: 600
+      CYCLES: 1000
+      DATADOG_API_KEY: {{datadog-loggregator-api-key}}
+      DELAY: "1"
+      DELAY_UNIT: "ms"
+      MESSAGE: "HOURLY"
+    timeout: 15m
+
 - name: https-syslog-drain
   public: false
   serial: true
