@@ -2,7 +2,7 @@ platform: linux
 image_resource:
   type: docker-image
   source:
-    repository: relintdockerhubpushbot/cf-deployment-concourse-tasks
+    repository: loggregator/base
 params:
   CF_API:
   ORG:
