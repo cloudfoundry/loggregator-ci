@@ -1,0 +1,30 @@
+platform: linux
+image_resource:
+  type: docker-image
+  source:
+    repository: relintdockerhubpushbot/cf-deployment-concourse-tasks
+params:
+  CF_API:
+  ORG:
+  SPACE:
+  APP_NAMES:
+  USERNAME:
+  PASSWORD:
+run:
+  path: bash
+  args:
+    - -c
+    - |
+      #!/bin/bash
+      set -ex
+
+      cf login \
+        -a "$CF_API" \
+        -u "$USERNAME" \
+        -p "$PASSWORD" \
+        -s "$SPACE" \
+        -o "$ORG"
+
+      for app in "$APP_NAMES"; do
+        cf restage $app
+      done

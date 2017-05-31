@@ -5,6 +5,12 @@ resources:
 - name: 1h
   type: time
   source: {interval: 1h}
+- name: daily
+  type: time
+  source:
+    start: 8:00 PM
+    stop: 9:00 PM
+    location: America/Denver
 - name: loggregator-ci
   type: git
   source:
@@ -20,9 +26,28 @@ resources:
     uri: https://github.com/cloudfoundry/scalable-syslog-release
 
 jobs:
+- name: stage-logspinners
+  public: false
+  serial: true
+  serial_groups: ["restage"]
+  plan:
+  - get: daily
+    trigger: true
+  - get: loggregator-ci
+  - task: stage-logspinner
+    file: loggregator-ci/tasks/restage-apps.yml
+    params:
+      CF_API: "api.run.pivotal.io"
+      ORG: "cf-lamb"
+      SPACE: "development"
+      APP_NAMES: "floodspinner dripspinner flowspinner"
+      USERNAME: {{pws-username}}
+      PASSWORD: {{pws-password}}
+
 - name: floodspinner
   public: false
   serial: true
+  serial_groups: ["restage"]
   plan:
   - get: loggregator-ci
   - get: 15m
@@ -64,6 +89,7 @@ jobs:
 - name: dripspinner
   public: false
   serial: true
+  serial_groups: ["restage"]
   plan:
   - get: loggregator-ci
   - get: 1h
@@ -89,6 +115,7 @@ jobs:
 - name: flowspinner
   public: false
   serial: true
+  serial_groups: ["restage"]
   plan:
   - get: loggregator-ci
   - get: 1h
