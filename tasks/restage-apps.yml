@@ -28,11 +28,13 @@ run:
         -o "$ORG"
 
       for app_name in $APP_NAMES; do
+        set +x
         echo "##################################################"
         echo "#"
         echo "# Setting up $app_name"
         echo "#"
         echo "##################################################"
+        set -x
         set +e
         cf app $app_name
         ret=$?

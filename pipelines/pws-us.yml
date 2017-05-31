@@ -26,7 +26,7 @@ resources:
     uri: https://github.com/cloudfoundry/scalable-syslog-release
 
 jobs:
-- name: stage-logspinners
+- name: restage-logspinners
   public: false
   serial: true
   serial_groups: ["restage"]
@@ -34,7 +34,7 @@ jobs:
   - get: daily
     trigger: true
   - get: loggregator-ci
-  - task: stage-logspinner
+  - task: restage-logspinner
     file: loggregator-ci/tasks/restage-apps.yml
     params:
       CF_API: "api.run.pivotal.io"
