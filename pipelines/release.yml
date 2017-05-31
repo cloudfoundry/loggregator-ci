@@ -100,6 +100,40 @@ resources:
     access_token: {{access-token}}
     drafts: true
 
+- name: bosh-hm-forwarder-version
+  type: semver
+  source:
+    initial_version: 1.0.0
+    bucket: bosh-hm-forwarder-release-blobs
+    key: version
+    access_key_id: {{s3-access-key-id}}
+    secret_access_key: {{s3-secret-access-key}}
+
+- name: bosh-hm-forwarder-release
+  type: git
+  source:
+    uri: git@github.com:cloudfoundry/bosh-hm-forwarder-release
+    branch: master
+    private_key: {{bosh-hm-forwarder-key}}
+
+- name: bosh-hm-forwarder-final-release
+  type: git
+  source:
+    uri: git@github.com:cloudfoundry/bosh-hm-forwarder-release
+    branch: master
+    private_key: {{bosh-hm-forwarder-key}}
+    ignore_paths:
+    - .final_builds
+    - releases
+
+- name: bosh-hm-forwarder-release-github-release-drafts
+  type: github-release
+  source:
+    user: cloudfoundry
+    repository: bosh-hm-forwarder-release
+    access_token: {{access-token}}
+    drafts: true
+
 jobs:
 - name: loggregator-create-final-release
   serial: true
@@ -392,6 +426,92 @@ jobs:
       repository: create-final-release/scalable-syslog-release-develop
       rebase: false
   - put: scalable-syslog-release-github-release-drafts
+    params:
+      name: github-release/name
+      tag: github-release/tag
+      body: github-release/body
+      globs:
+      - github-release/*.tgz
+
+- name: bosh-hm-forwarder-create-final-release
+  serial: true
+  public: true
+  plan:
+  - aggregate:
+    - get: bosh-hm-forwarder-version
+      params:
+        bump: patch
+    - get: bosh-hm-forwarder-release
+  - task: create-final-release
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source:
+          repository: loggregator/base
+      inputs:
+      - name: bosh-hm-forwarder-version
+      - name: bosh-hm-forwarder-release
+      outputs:
+      - name: final-bosh-hm-forwarder-release
+      - name: github-release
+      params:
+        RELEASE: bosh-hm-forwarder-release
+        S3_BUCKET: bosh-hm-forwarder-release-blobs
+        S3_ACCESS_KEY: {{s3-access-key-id}}
+        S3_SECRET_KEY: {{s3-secret-access-key}}
+        OUTPUT: final-bosh-hm-forwarder-release
+      run:
+        path: bash
+        args:
+        - -c
+        - |
+          #!/bin/bash
+
+          set -e -x
+
+          new_version=$(cat bosh-hm-forwarder-version/version)
+          tag_name="v$new_version"
+
+          # write out github release files
+          echo "Bosh HM Forwarder $new_version" > github-release/name
+          echo $tag_name > github-release/tag
+          echo "TBD" > github-release/body
+
+          pushd $RELEASE
+            cat << EOF > config/private.yml
+          ---
+          blobstore:
+            provider: s3
+            options:
+              bucket_name: $S3_BUCKET
+              access_key_id: $S3_ACCESS_KEY
+              secret_access_key: $S3_SECRET_KEY
+          EOF
+
+            bosh -n create-release --final \
+              --tarball ../github-release/release.tgz \
+              --version "$new_version"
+            git config user.email "cf-loggregator@pivotal.io"
+            git config user.name "Loggregator CI"
+            git add .
+            git commit -m "Create final release\
+
+
+            [ci skip]"
+          popd
+
+          cp -r "${RELEASE}/." "${OUTPUT}/"
+  - put: bosh-hm-forwarder-version
+    params:
+      file: bosh-hm-forwarder-version/version
+  - put: bosh-hm-forwarder-final-release
+    params:
+      repository: final-bosh-hm-forwarder-release
+      rebase: false
+      tag: bosh-hm-forwarder-version/version
+      tag_prefix: v
+  - put: bosh-hm-forwarder-release-github-release-drafts
     params:
       name: github-release/name
       tag: github-release/tag
