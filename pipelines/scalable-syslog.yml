@@ -344,6 +344,7 @@ jobs:
             bosh -n -d cf-scalablesyslog deploy \
               --vars-store "$deployment_dir/cf-scalable-syslog-vars.yml" \
               --ops-file "$bbl_dir/ops-files/scalable-syslog/coconut.yml" \
+              --ops-file "$bbl_dir/ops-files/scalable-syslog/datadog-agent.yml" \
               --vars-file "$bbl_dir/deployment-vars.yml" \
               -v "system_domain=coconut.cf-app.com" \
               "$ss_dir/manifests/scalable-syslog.yml"
