@@ -25,6 +25,6 @@ run:
         -s "$SPACE" \
         -o "$ORG"
 
-      for app in "$APP_NAMES"; do
+      for app in $APP_NAMES; do
         cf restage $app
       done
