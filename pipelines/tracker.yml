@@ -82,6 +82,31 @@ jobs:
       SPACE: "development"
     timeout: 15m
 
+- name: flowspinner
+  public: false
+  serial: true
+  plan:
+  - get: loggregator-ci
+  - get: 1h
+    trigger: true
+  - task: run-smoke-tests
+    file: loggregator-ci/tasks/generic-smoke-test.yml
+    params:
+      CYCLES: 1000
+      DELAY: "1"
+      DELAY_UNIT: "ms"
+      APP_NAME: "trkr-flowspinner"
+      WAIT: 60
+      MESSAGE: "HOURLY"
+      USERNAME: {{trkr-username}}
+      PASSWORD: {{trkr-password}}
+      DATADOG_API_KEY: {{datadog-loggregator-api-key}}
+      CF_API: "api.aws.trackerred.com"
+      APP_DOMAIN: "trkr-flowspinner.aws.trkr.io"
+      ORG: "loggregator"
+      SPACE: "development"
+    timeout: 15m
+
 - name: latency
   public: false
   serial: true
