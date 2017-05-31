@@ -28,9 +28,12 @@ run:
         -o "$ORG"
 
       for app_name in $APP_NAMES; do
+        set +e
         cf app $app_name
+        ret=$?
+        set -e
 
-        if [ $? -ne 0 ]; then
+        if [ $ret -ne 0 ]; then
           pushd loggregator-ci/tools/logspinner
             go build
             cf push $app_name -b binary_buildpack -c ./logspinner -m 64M
