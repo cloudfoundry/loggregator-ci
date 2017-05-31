@@ -10,6 +10,8 @@ params:
   APP_NAMES:
   USERNAME:
   PASSWORD:
+inputs:
+- loggregator-ci
 run:
   path: bash
   args:
@@ -25,6 +27,15 @@ run:
         -s "$SPACE" \
         -o "$ORG"
 
-      for app in $APP_NAMES; do
-        cf restage $app
+      for app_name in $APP_NAMES; do
+        cf app $app_name
+
+        if [ $? -ne 0 ]; then
+          pushd loggregator-ci/tools/logspinner
+            go build
+            cf push $app_name -b binary_buildpack -c ./logspinner -m 64M
+          popd
+        fi
+
+        cf restage $app_name
       done
