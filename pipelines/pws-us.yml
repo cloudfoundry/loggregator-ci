@@ -37,12 +37,12 @@ jobs:
   - task: restage-logspinner
     file: loggregator-ci/tasks/restage-apps.yml
     params:
+      APP_NAMES: "floodspinner dripspinner flowspinner"
       CF_API: "api.run.pivotal.io"
       ORG: "cf-lamb"
-      SPACE: "development"
-      APP_NAMES: "floodspinner dripspinner flowspinner"
-      USERNAME: {{pws-username}}
       PASSWORD: {{pws-password}}
+      SPACE: "development"
+      USERNAME: {{pws-username}}
 
 - name: floodspinner
   public: false

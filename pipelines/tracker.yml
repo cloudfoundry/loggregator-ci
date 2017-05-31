@@ -5,6 +5,12 @@ resources:
 - name: 1h
   type: time
   source: {interval: 1h}
+- name: daily
+  type: time
+  source:
+    start: 8:00 PM
+    stop: 9:00 PM
+    location: America/Denver
 - name: loggregator-ci
   type: git
   source:
@@ -16,9 +22,28 @@ resources:
     branch: develop
 
 jobs:
+- name: restage-logspinners
+  public: false
+  serial: true
+  serial_groups: ["restage"]
+  plan:
+  - get: daily
+    trigger: true
+  - get: loggregator-ci
+  - task: restage-logspinner
+    file: loggregator-ci/tasks/restage-apps.yml
+    params:
+      APP_NAMES: "trkr-floodspinner trkr-dripspinner trkr-flowspinner"
+      CF_API: "api.aws.trackerred.com"
+      ORG: "loggregator"
+      PASSWORD: {{trkr-password}}
+      SPACE: "development"
+      USERNAME: {{trkr-username}}
+
 - name: floodspinner
   public: false
   serial: true
+  serial_groups: ["restage"]
   plan:
   - get: loggregator-ci
   - get: 15m
@@ -60,6 +85,7 @@ jobs:
 - name: dripspinner
   public: false
   serial: true
+  serial_groups: ["restage"]
   plan:
   - get: loggregator-ci
   - get: 1h
@@ -85,6 +111,7 @@ jobs:
 - name: flowspinner
   public: false
   serial: true
+  serial_groups: ["restage"]
   plan:
   - get: loggregator-ci
   - get: 1h

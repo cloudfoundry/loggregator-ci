@@ -33,5 +33,6 @@ jobs:
 
             cd src/github.com/cloudfoundry-incubator/health-nozzle
             go get github.com/Masterminds/glide
+            go get github.com/onsi/ginkgo/ginkgo
             glide install
             ginkgo -r -race
