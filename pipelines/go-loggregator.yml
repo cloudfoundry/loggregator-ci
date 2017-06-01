@@ -28,15 +28,13 @@ jobs:
           #!/bin/bash
           set -ex
 
-          export GOPATH=/go
-          export PATH=$GOPATH/bin:$PATH
-
           mkdir -p $GOPATH/src/code.cloudfoundry.org/
           cp -r go-loggregator $GOPATH/src/code.cloudfoundry.org/
 
           cd $GOPATH/src/code.cloudfoundry.org/go-loggregator
 
           go get github.com/onsi/ginkgo/ginkgo
+          go get github.com/golang/dep/...
 
-          ./scripts/dep-ensure
+          dep ensure
           ./scripts/test
