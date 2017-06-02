@@ -1,0 +1,22 @@
+{
+    "name": "Blackbox test `drain_msg_count` alert on {{host.name}}",
+	"type": "metric alert",
+	"query": "min(last_1h):min:smoke_test.ss.loggregator.drain_msg_count{!drain_version:1.0} by {host,job_name} <= 0",
+	"message": "`drain_msg_count` {{#is_no_data}}has no data{{/is_no_data}} {{^is_no_data}}is zero{{/is_no_data}} on {{host.name}}/{{job_name.name}}.\nSee build for details: \n{{#is_match \"host.name\" \"eu-pws.pivotal.io\"}}https://loggregator.ci.cf-app.com/teams/main/pipelines/pws-eu/jobs/https-syslog-drain{{/is_match}}\n{{#is_match \"host.name\" \"run.pivotal.io\"}}\n  {{#is_match \"job_name.name\" \"syslog-drain\"}}https://loggregator.ci.cf-app.com/teams/main/pipelines/pws-us/jobs/tcp-syslog-drain{{/is_match}}\n  {{#is_match \"job_name.name\" \"https-drain\"}}https://loggregator.ci.cf-app.com/teams/main/pipelines/pws-us/jobs/https-syslog-drain{{/is_match}}\n  {{#is_match \"job_name.name\" \"syslog-drain-no-teardown\"}}https://loggregator.ci.cf-app.com/teams/main/pipelines/pws-us/jobs/tcp-syslog-drain-no-teardown{{/is_match}}\n  {{#is_match \"job_name.name\" \"https-drain-no-teardown\"}}https://loggregator.ci.cf-app.com/teams/main/pipelines/pws-us/jobs/https-syslog-drain-no-teardown{{/is_match}}\n{{/is_match}} @slack-loggregator-team",
+	"tags": [],
+	"options": {
+		"notify_audit": true,
+		"locked": false,
+		"timeout_h": 0,
+		"silenced": {},
+		"thresholds": {
+			"critical": 0
+		},
+		"new_host_delay": 300,
+		"require_full_window": false,
+		"notify_no_data": true,
+		"renotify_interval": 0,
+		"evaluation_delay": "",
+		"no_data_timeframe": 120
+	}
+}
