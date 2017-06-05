@@ -17,12 +17,6 @@ func main() {
 		logMessage += "!"
 	}
 
-	go func() {
-		for range time.Tick(time.Second) {
-			fmt.Printf("----------------\n")
-		}
-	}()
-
 	interval := time.Second / time.Duration(*logsPerSecond)
 	for {
 		startTime := time.Now()
