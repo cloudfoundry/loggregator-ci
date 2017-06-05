@@ -1,0 +1,15 @@
+image_resource:
+  type: docker-image
+  source:
+    repository: loggregator/base
+platform: linux
+inputs:
+  - name: vars-store
+  - name: loggregator-ci
+params:
+  VARS_STORE_FILE:
+  ORG:
+  SPACE:
+  SYSTEM_DOMAIN:
+run:
+  path: loggregator-ci/tasks/scripts/create-org-and-space.sh

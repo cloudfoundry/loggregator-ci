@@ -12,6 +12,13 @@ resources:
     branch: master
     private_key: {{deployments-loggregator-key}}
 
+- name: loggregator-ci
+  type: git
+  source:
+    uri: git@github.com:cloudfoundry/loggregator-ci.git
+    branch: master
+    private_key: {{deployments-loggregator-key}}
+
 - name: cf-deployment
   type: git
   source:
@@ -189,7 +196,6 @@ jobs:
 
             cd datadog-firehose-nozzle-release
             bosh -n create-release --tarball ../datadog-release/release.tgz
-
   - task: deploy
     config:
       image_resource:
@@ -227,4 +233,60 @@ jobs:
             bosh -n upload-release datadog-release/*.tgz --rebase
             bosh -n -d ${DEPLOYMENT_NAME} deploy ${MANIFEST_FILE} -l ${MANIFEST_VARS} -v datadog.metric_prefix=${METRIC_PREFIX}
 
+- name: test-applications-deploy
+  serial: true
+  plan:
+    - aggregate:
+      - get: loggregator-ci
+      - get: vars-store
+        resource: deployments-loggregator
+        passed: ["datadog-nozzle-deploy"]
+    - task: create-org-and-space
+      file: loggregator-ci/tasks/create-org-and-space.yml
+      params:
+        VARS_STORE_FILE: gcp/loggregator-capacity-planning/deployment-vars.yml
+        ORG: capacity-planning
+        SPACE: capacity-planning
+        SYSTEM_DOMAIN: loggregator-capacity-planning.cf-app.com
+    - task: deploy-log-emitter
+      config:
+        image_resource:
+          type: docker-image
+          source:
+            repository: loggregator/base
+        platform: linux
+        inputs:
+          - name: vars-store
+          - name: loggregator-ci
+        params:
+          VARS_STORE_FILE: gcp/loggregator-capacity-planning/deployment-vars.yml
+          ORG: capacity-planning
+          SPACE: capacity-planning
+          SYSTEM_DOMAIN: loggregator-capacity-planning.cf-app.com
+          LOGS_PER_SECOND: 1000
+          LOG_BYTES: 1000
+          INSTANCES_PER_APP: 4
+          NUMBER_OF_APPS: 2
+        run:
+          path: bash
+          args:
+          - -c
+          - |
+            #!/bin/bash
+            set -ex
+            password=$(bosh int vars-store/$VARS_STORE_FILE --path=/cf_admin_password)
 
+            cf login -a api.$SYSTEM_DOMAIN -u admin -p $password -o $ORG -s $SPACE --skip-ssl-validation
+
+            pushd loggregator-ci/tools/log_emitter
+              go build
+
+              for i in $(seq $NUMBER_OF_APPS); do
+                cf push "log_emitter-$i" \
+                  -b binary_buildpack \
+                  -c "./log_emitter --logs-per-second=$LOGS_PER_SECOND --log-bytes=$LOG_BYTES" \
+                  -i $INSTANCES_PER_APP \
+                  -m 32M \
+                  -u none
+              done
+            popd
