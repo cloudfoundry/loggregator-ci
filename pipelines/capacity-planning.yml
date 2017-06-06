@@ -23,7 +23,7 @@ resources:
   type: git
   source:
     uri: https://github.com/cloudfoundry/cf-deployment
-    branch: develop
+    branch: master
 
 # This is here because concourse has a bug in which putting to a git resource
 # creates a new version that can trigger jobs even if the commit has [ci skip]
@@ -79,16 +79,17 @@ jobs:
   - get: bbl-state
     resource: deployments-loggregator
     trigger: false
-  - task: delete-datadog-firehose-nozzle
-    file: cf-deployment-concourse-tasks/bosh-delete-deployment/task.yml
-    params:
-      BBL_STATE_DIR: gcp/loggregator-capacity-planning
-      DEPLOYMENT_NAME: datadog-firehose-nozzle
-  - task: delete-cf
-    file: cf-deployment-concourse-tasks/bosh-delete-deployment/task.yml
-    params:
-      BBL_STATE_DIR: gcp/loggregator-capacity-planning
-      DEPLOYMENT_NAME: cf
+  - aggregate:
+    - task: delete-datadog-firehose-nozzle
+      file: cf-deployment-concourse-tasks/bosh-delete-deployment/task.yml
+      params:
+        BBL_STATE_DIR: gcp/loggregator-capacity-planning
+        DEPLOYMENT_NAME: datadog-firehose-nozzle
+    - task: delete-cf
+      file: cf-deployment-concourse-tasks/bosh-delete-deployment/task.yml
+      params:
+        BBL_STATE_DIR: gcp/loggregator-capacity-planning
+        DEPLOYMENT_NAME: cf
   - task: bbl-destroy
     file: cf-deployment-concourse-tasks/bbl-destroy/task.yml
     params:
@@ -173,7 +174,6 @@ jobs:
       trigger: false
     - get: deployments-loggregator
       trigger: false
-      passed: ["loggregator-capacity-planning-deploy"]
   - task: create-release
     config:
       image_resource:
@@ -210,7 +210,7 @@ jobs:
       params:
         MANIFEST_FILE: datadog-firehose-nozzle-release/templates/datadog-bosh2.yml
         MANIFEST_VARS: deployments-loggregator/gcp/loggregator-capacity-planning/datadog-vars.yml
-        DEPLOYMENT_NAME: datadog-firehose-nozzle
+        DEPLOYMENT_NAME: datadog
         METRIC_PREFIX: capacity-planning.datadog.nozzle.
       run:
         path: bash
@@ -231,7 +231,8 @@ jobs:
             popd
 
             bosh -n upload-release datadog-release/*.tgz --rebase
-            bosh -n -d ${DEPLOYMENT_NAME} deploy ${MANIFEST_FILE} -l ${MANIFEST_VARS} -v datadog.metric_prefix=${METRIC_PREFIX}
+            bosh -n -d ${DEPLOYMENT_NAME} deploy ${MANIFEST_FILE} -l ${MANIFEST_VARS} \
+              -o deployments-loggregator/gcp/loggregator-capacity-planning/ops-files/datadog.yml
 
 - name: test-applications-deploy
   serial: true
