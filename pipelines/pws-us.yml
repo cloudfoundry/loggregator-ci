@@ -158,7 +158,7 @@ jobs:
       DATADOG_API_KEY: {{datadog-loggregator-api-key}}
       DRAIN_VERSION: "2.0"
       DRAIN_TYPE: "https"
-      NUM_APPS: 1
+      JOB_NAME: "https-teardown"
     timeout: 15m
 
 - name: tcp-syslog-drain
@@ -181,7 +181,7 @@ jobs:
       DATADOG_API_KEY: {{datadog-loggregator-api-key}}
       DRAIN_VERSION: "2.0"
       DRAIN_TYPE: "syslog"
-      NUM_APPS: 1
+      JOB_NAME: "syslog-teardown"
     timeout: 15m
 
 - name: https-syslog-drain-no-teardown
