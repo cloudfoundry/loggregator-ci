@@ -21,6 +21,13 @@ resources:
     uri: https://github.com/cloudfoundry/cf-release
     branch: develop
 
+- name: deployments-loggregator
+  type: git
+  source: &deployments_loggregator
+    uri: git@github.com:cloudfoundry/deployments-loggregator.git
+    branch: master
+    private_key: {{deployments-loggregator-key}}
+
 jobs:
 - name: unit-tests
   serial: true
@@ -121,6 +128,73 @@ jobs:
     params:
       repository: committed-statsd-injector-release
       rebase: false
+
+- name: deploy
+  serial: true
+  public: false
+  plan:
+  - aggregate:
+    - get: statsd-injector-release
+      trigger: true
+      passed:
+      - bump-release-submodule
+    - get: deployments-loggregator
+      trigger: false
+  - task: deploy
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source:
+          repository: relintdockerhubpushbot/cf-deployment-concourse-tasks
+      inputs:
+      - name: statsd-injector-release
+      - name: deployments-loggregator
+      outputs:
+      - name: updated-deployments-loggregator
+      run:
+        path: bash
+        args:
+          - -c
+          - |
+            #!/bin/bash
+            set -e
+
+            bbl_dir="$PWD/deployments-loggregator/gcp/bbl"
+            statsd_dir="$PWD/statsd-injector-release"
+
+            pushd deployments-loggregator/gcp/bbl
+              export BOSH_CLIENT=`bbl director-username`
+              export BOSH_CLIENT_SECRET=`bbl director-password`
+              export BOSH_CA_CERT=`bbl director-ca-cert`
+              export BOSH_ENVIRONMENT=`bbl director-address`
+            popd
+
+            pushd statsd-injector-release
+              bosh create-release
+              bosh upload-release --rebase
+
+              bosh -n -d statsd-injector deploy \
+                --vars-store "$bbl_dir/statsd-injector-vars.yml" \
+                --vars-file "$bbl_dir/deployment-vars.yml" \
+                "$statsd_dir/manifests/statsd-injector.yml"
+            popd
+
+            set +e
+            pushd deployments-loggregator
+              git config user.email "cf-loggregator@pivotal.io"
+              git config user.name "Loggregator CI"
+              git add . --all
+              git commit -m "Updated statsd-injector deployment vars
+
+              [ci-skip]"
+            popd
+
+            rsync -ac deployments-loggregator/ updated-deployments-loggregator
+  - put: deployments-loggregator
+    params:
+      repository: updated-deployments-loggregator
+      rebase: true
 
 - name: diff-cert-generation-scripts
   plan:
