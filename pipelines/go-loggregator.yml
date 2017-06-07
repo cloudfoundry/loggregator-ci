@@ -34,7 +34,5 @@ jobs:
           cd $GOPATH/src/code.cloudfoundry.org/go-loggregator
 
           go get github.com/onsi/ginkgo/ginkgo
-          go get github.com/golang/dep/...
 
-          dep ensure
           ./scripts/test
