@@ -31,6 +31,28 @@ resources:
     source:
       repository: cloudfoundry/loggregator
 
+  - name: scalable-syslog-release-elect
+    type: git
+    source:
+      uri: git@github.com:cloudfoundry/scalable-syslog-release.git
+      branch: release-elect
+      private_key: {{loggregator-key}}
+      ignore_paths:
+      - .final_builds
+      - releases
+
+  - name: scalable-syslog-github-release
+    type: github-release
+    source:
+      user: cloudfoundry
+      repository: scalable-syslog-release
+      access_token: {{access-token}}
+
+  - name: consul-release
+    type: bosh-io-release
+    source:
+      repository: cloudfoundry-incubator/consul-release
+
   - name: deployments-loggregator
     type: git
     source: &deployments_loggregator
@@ -53,6 +75,7 @@ resources:
     source:
       uri: https://github.com/cloudfoundry/cf-deployment-concourse-tasks
       branch: v3.1
+
   - name: loggregator-ci
     type: git
     source:
@@ -191,6 +214,8 @@ jobs:
         resource: deployments-loggregator
       - get: vars-files
         resource: deployments-loggregator
+      - get: consul-release
+      - get: scalable-syslog-release-elect
     - do:
       - task: upload-stemcell
         file: cf-deployment-concourse-tasks/bosh-upload-stemcell-from-cf-deployment/task.yml
@@ -225,9 +250,67 @@ jobs:
           SYSTEM_DOMAIN: loggregator-elect.cf-app.com
           VARS_STORE_FILE: gcp/loggregator-elect-bbl/deployment-vars.yml
           OPS_FILES: "clients.yml use-4-azs-for-router.yml"
+      - task: deploy-scalable-syslog
+        config:
+          image_resource:
+            type: docker-image
+            source:
+              repository: relintdockerhubpushbot/cf-deployment-concourse-tasks
+          platform: linux
+          inputs:
+          - name: scalable-syslog-release-elect
+          - name: consul-release
+          - name: updated-vars-store
+          outputs:
+          - name: updated-deployments-loggregator
+          params:
+          run:
+            path: bash
+            args:
+              - -c
+              - |
+                #!/bin/bash
+                set -eux
+
+                pushd updated-vars-store/gcp/loggregator-elect-bbl
+                  export BOSH_CLIENT=`bbl director-username`
+                  export BOSH_CLIENT_SECRET=`bbl director-password`
+                  export BOSH_CA_CERT=`bbl director-ca-cert`
+                  export BOSH_ENVIRONMENT=`bbl director-address`
+                popd
+
+                for release in $(find consul-release -name '*.tgz'); do
+                  bosh upload-release $release
+                done
+
+                pushd scalable-syslog-release-elect
+                  bosh create-release --force
+                  bosh upload-release --rebase
+                popd
+
+                ss_dir="$PWD/scalable-syslog-release-elect"
+                bbl_dir="updated-vars-store/gcp/loggregator-elect-bbl"
+
+                bosh -n -d scalablesyslog deploy \
+                  --vars-store "$bbl_dir/scalablesyslog-vars.yml" \
+                  --ops-file "$ss_dir/manifests/cf-deployment-ops.yml" \
+                  --vars-file "$bbl_dir/deployment-vars.yml" \
+                  -v "system_domain=loggregator-elect.cf-app.com" \
+                  "$ss_dir/manifests/scalable-syslog.yml"
+
+                pushd updated-vars-store
+                  git config user.email "cf-loggregator@pivotal.io"
+                  git config user.name "Loggregator CI"
+                  git add . --all
+                  git commit -m "Updated scalable syslog deployment vars
+
+                  [ci-skip]"
+                popd
+
+                rsync -ac updated-vars-store/ updated-deployments-loggregator
       - put: deployments-loggregator-with-changes
         params:
-          repository: updated-vars-store
+          repository: updated-deployments-loggregator
           rebase: true
       on_failure: &slack-failure-alert
         put: slack-alert
@@ -254,6 +337,9 @@ jobs:
         resource: loggregator-latest
       - get: vars-files
         resource: deployments-loggregator
+      - get: consul-release
+      - get: scalable-syslog-release-elect
+      - get: scalable-syslog-github-release
     - do:
       - task: upload-stemcell
         file: cf-deployment-concourse-tasks/bosh-upload-stemcell-from-cf-deployment/task.yml
@@ -301,9 +387,71 @@ jobs:
           SYSTEM_DOMAIN: loggregator-latest.cf-app.com
           VARS_STORE_FILE: gcp/loggregator-latest-bbl/deployment-vars.yml
           OPS_FILES: "clients.yml use-4-azs-for-router.yml loggregator-version.yml"
+      - task: deploy-scalable-syslog
+        config:
+          image_resource:
+            type: docker-image
+            source:
+              repository: relintdockerhubpushbot/cf-deployment-concourse-tasks
+          platform: linux
+          inputs:
+          - name: scalable-syslog-github-release
+          - name: scalable-syslog-release-elect
+          - name: consul-release
+          - name: updated-vars-store
+          outputs:
+          - name: updated-deployments-loggregator
+          params:
+          run:
+            path: bash
+            args:
+              - -c
+              - |
+                #!/bin/bash
+                set -eux
+
+                pushd updated-vars-store/gcp/loggregator-latest-bbl
+                  export BOSH_CLIENT=`bbl director-username`
+                  export BOSH_CLIENT_SECRET=`bbl director-password`
+                  export BOSH_CA_CERT=`bbl director-ca-cert`
+                  export BOSH_ENVIRONMENT=`bbl director-address`
+                popd
+
+                for release in $(find consul-release -name '*.tgz'); do
+                  bosh upload-release $release
+                done
+
+                pushd scalable-syslog-github-release
+                  bosh upload-release *.tgz
+                popd
+
+                pushd scalable-syslog-release-elect
+                  git checkout $(cat ../scalable-syslog-github-release/tag)
+                popd
+
+                ss_dir="$PWD/scalable-syslog-release-elect"
+                bbl_dir="updated-vars-store/gcp/loggregator-latest-bbl"
+
+                bosh -n -d scalablesyslog deploy \
+                  --vars-store "$bbl_dir/scalablesyslog-vars.yml" \
+                  --ops-file "$ss_dir/manifests/cf-deployment-ops.yml" \
+                  --vars-file "$bbl_dir/deployment-vars.yml" \
+                  -v "system_domain=loggregator-latest.cf-app.com" \
+                  "$ss_dir/manifests/scalable-syslog.yml"
+
+                pushd updated-vars-store
+                  git config user.email "cf-loggregator@pivotal.io"
+                  git config user.name "Loggregator CI"
+                  git add . --all
+                  git commit -m "Updated scalable syslog deployment vars
+
+                  [ci-skip]"
+                popd
+
+                rsync -ac updated-vars-store/ updated-deployments-loggregator
       - put: deployments-loggregator-with-changes
         params:
-          repository: updated-vars-store
+          repository: updated-deployments-loggregator
           rebase: true
       on_failure: *slack-failure-alert
 
