@@ -1,0 +1,37 @@
+resources:
+- name: 1h
+  type: time
+  source: {interval: 1h}
+- name: loggregator-ci
+  type: git
+  source:
+    uri: https://github.com/cloudfoundry/loggregator-ci
+- name: scalable-syslog-release
+  type: git
+  source:
+    uri: https://github.com/cloudfoundry/scalable-syslog-release
+
+jobs:
+
+- name: https-syslog-drain
+  public: false
+  serial: true
+  plan:
+  - get: loggregator-ci
+  - get: scalable-syslog-release
+  - get: 1h
+    trigger: true
+  - task: v2-drain
+    file: loggregator-ci/tasks/scalable-syslog-smoke-test.yml
+    params:
+      CF_ORG: system
+      CF_PASSWORD: {{coconut-password}}
+      CF_SPACE: s
+      CF_APP_DOMAIN: coconut.cf-app.com
+      CF_SYSTEM_DOMAIN: coconut.cf-app.com
+      CF_USERNAME: {{coconut-username}}
+      DATADOG_API_KEY: {{datadog-loggregator-api-key}}
+      DRAIN_VERSION: "2.0"
+      DRAIN_TYPE: "https"
+      JOB_NAME: "https-teardown"
+    timeout: 15m
