@@ -50,8 +50,6 @@ type V2Info struct {
 }
 
 type AuthInfo struct {
-	Username     string
-	Password     string
 	ClientID     string
 	ClientSecret string
 }
@@ -62,8 +60,6 @@ func main() {
 	datadogAPIKey := flag.String("datadog-api-key", "", "Datadog API key for emitting metrics.")
 
 	var authInfo AuthInfo
-	flag.StringVar(&authInfo.Username, "cf-username", "", "CloudFoundry Username for connecting to log stream.")
-	flag.StringVar(&authInfo.Password, "cf-password", "", "CloudFoundry Password for connecting to log stream.")
 	flag.StringVar(&authInfo.ClientID, "client-id", "", "ID of client used for authentication.")
 	flag.StringVar(&authInfo.ClientSecret, "client-secret", "", "Secret used for authentication.")
 
@@ -231,10 +227,8 @@ func emitLog() {
 
 func authenticateWithUaa(uaaAddr string, authInfo AuthInfo) (string, error) {
 	response, err := httpClient.PostForm(uaaAddr+"/oauth/token", url.Values{
-		"username":      []string{authInfo.Username},
-		"password":      []string{authInfo.Password},
 		"response_type": []string{"token"},
-		"grant_type":    []string{"password"},
+		"grant_type":    []string{"client_credentials"},
 		"client_id":     []string{authInfo.ClientID},
 		"client_secret": []string{authInfo.ClientSecret},
 	})
