@@ -276,6 +276,7 @@ jobs:
             #!/bin/bash
             set -ex
             CF_PASSWORD=$(bosh int vars-store/$VARS_STORE_FILE --path=/cf_admin_password)
+            CF_USERNAME=admin
             CLIENT_ID="capacity_planning_authenticator"
             CLIENT_SECRET=$(bosh int vars-store/$VARS_STORE_FILE --path=/capacity_planning_authenticator_secret)
 
