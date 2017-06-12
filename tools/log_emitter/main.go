@@ -261,7 +261,7 @@ func authenticateWithUaa(uaaAddr string, authInfo AuthInfo) (string, error) {
 		return "", errors.New("access_token on UAA oauth response not a string")
 	}
 
-	return accessToken, nil
+	return "bearer " + accessToken, nil
 }
 
 func getV2Info(uaaAddr string) (*V2Info, error) {
