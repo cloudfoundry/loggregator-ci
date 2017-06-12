@@ -196,7 +196,7 @@ func readLogsLoop(vcapApp *VCAPApplication, v2Info *V2Info, authInfo AuthInfo) {
 func readLogs(appID, dopplerAddr, authToken string) {
 	cmr := consumer.New(dopplerAddr, tlsConfig, nil)
 
-	msgChan, errChan := cmr.FilteredFirehose(appID, authToken, consumer.LogMessages)
+	msgChan, errChan := cmr.Stream(appID, authToken)
 
 	go func() {
 		for err := range errChan {
