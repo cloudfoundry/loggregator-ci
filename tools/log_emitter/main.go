@@ -128,6 +128,8 @@ func report(appName, host, datadogAPIKey string) {
 			continue
 		}
 
+		log.Printf("Sending data to datadog: %s", data)
+
 		response, err := httpClient.Post(dURL.String(), "application/json", bytes.NewBuffer(data))
 		if err != nil {
 			log.Printf("failed to post to datadog: %s", err)
@@ -216,7 +218,7 @@ func readLogs(appID, dopplerAddr, authToken string) {
 
 		if msg.GetEventType() == events.Envelope_LogMessage {
 			log := msg.GetLogMessage()
-			if log.GetAppId() == appID && bytes.Contains(log.GetMessage(), []byte(logMessage)) {
+			if bytes.Contains(log.GetMessage(), []byte(logMessage)) {
 				atomic.AddInt64(&messagesReceived, 1)
 			}
 		}
