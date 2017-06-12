@@ -241,7 +241,6 @@ jobs:
       - get: loggregator-ci
       - get: vars-store
         resource: deployments-loggregator
-        passed: ["datadog-nozzle-deploy"]
     - task: create-org-and-space
       file: loggregator-ci/tasks/create-org-and-space.yml
       params:
@@ -291,15 +290,18 @@ jobs:
             flags="$flags --client-id=$CLIENT_ID"
             flags="$flags --client-secret=$CLIENT_SECRET"
 
+            go get github.com/cloudfoundry/loggregator-ci/tools/log_emitter
+
             pushd loggregator-ci/tools/log_emitter
-              go build
+              cp $GOPATH/bin/log_emitter .
 
               for i in $(seq $NUMBER_OF_APPS); do
                 cf push "log_emitter-$i" \
                   -b binary_buildpack \
                   -c "./log_emitter $flags" \
                   -i $INSTANCES_PER_APP \
-                  -m 32M \
+                  -m 64M \
+                  -k 128M \
                   -u none
               done
             popd

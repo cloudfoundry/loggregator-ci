@@ -69,14 +69,18 @@ func main() {
 
 	flag.Parse()
 
-	vcapApp := loadVCAP()
-	v2Info, err := getV2Info(vcapApp.APIAddr)
-	if err != nil {
-		log.Fatalf("failed to get API info: %s", err)
-	}
+	instanceIdx := os.Getenv("INSTANCE_INDEX")
 
-	go readLogsLoop(vcapApp, v2Info, authInfo)
-	go report(vcapApp.AppName, vcapApp.APIAddr, *datadogAPIKey)
+	if instanceIdx == "0" {
+		vcapApp := loadVCAP()
+		v2Info, err := getV2Info(vcapApp.APIAddr)
+		if err != nil {
+			log.Fatalf("failed to get API info: %s", err)
+		}
+
+		go readLogsLoop(vcapApp, v2Info, authInfo)
+		go report(vcapApp.AppName, vcapApp.APIAddr, *datadogAPIKey)
+	}
 
 	for i := uint(0); i < *logSize; i++ {
 		logMessage += "?"
