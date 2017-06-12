@@ -65,9 +65,7 @@ func main() {
 
 	flag.Parse()
 
-	instanceIdx := os.Getenv("INSTANCE_INDEX")
-
-	if instanceIdx == "0" {
+	if os.Getenv("INSTANCE_INDEX") == "0" {
 		vcapApp := loadVCAP()
 		v2Info, err := getV2Info(vcapApp.APIAddr)
 		if err != nil {
@@ -184,8 +182,6 @@ func readLogsLoop(vcapApp *VCAPApplication, v2Info *V2Info, authInfo AuthInfo) {
 			time.Sleep(time.Second)
 			continue
 		}
-
-		fmt.Println(authToken)
 
 		readLogs(vcapApp.AppID, v2Info.DopplerAddr, authToken)
 	}
