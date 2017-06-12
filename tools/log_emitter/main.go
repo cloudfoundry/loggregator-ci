@@ -34,6 +34,8 @@ var (
 			TLSClientConfig: tlsConfig,
 		},
 	}
+
+	reportReadMessages bool
 )
 
 const datadogAddr = "https://app.datadoghq.com/api/v1/series"
@@ -65,16 +67,18 @@ func main() {
 
 	flag.Parse()
 
-	if os.Getenv("INSTANCE_INDEX") == "0" {
-		vcapApp := loadVCAP()
+	vcapApp := loadVCAP()
+	reportReadMessages = os.Getenv("INSTANCE_INDEX") == "0"
+	if reportReadMessages {
 		v2Info, err := getV2Info(vcapApp.APIAddr)
 		if err != nil {
 			log.Fatalf("failed to get API info: %s", err)
 		}
 
 		go readLogsLoop(vcapApp, v2Info, authInfo)
-		go report(vcapApp.AppName, vcapApp.APIAddr, *datadogAPIKey)
 	}
+
+	go report(vcapApp.AppName, vcapApp.APIAddr, *datadogAPIKey)
 
 	for i := uint(0); i < *logSize; i++ {
 		logMessage += "?"
@@ -148,28 +152,31 @@ type Metric struct {
 func buildMessagesBody(host, appName string, sent, received int64) ([]byte, error) {
 	currentTime := time.Now()
 
-	body := map[string][]Metric{
-		"series": []Metric{
-			{
-				Metric: "capacity_planning.messages_sent",
-				Points: [][]int64{
-					[]int64{currentTime.Unix(), sent},
-				},
-				Type: "gauge",
-				Host: host,
-				Tags: []string{appName},
+	metrics := []Metric{
+		{
+			Metric: "capacity_planning.messages_sent",
+			Points: [][]int64{
+				[]int64{currentTime.Unix(), sent},
 			},
-			{
-				Metric: "capacity_planning.messages_received",
-				Points: [][]int64{
-					[]int64{currentTime.Unix(), received},
-				},
-				Type: "gauge",
-				Host: host,
-				Tags: []string{appName},
-			},
+			Type: "gauge",
+			Host: host,
+			Tags: []string{appName},
 		},
 	}
+
+	if reportReadMessages {
+		metrics = append(metrics, Metric{
+			Metric: "capacity_planning.messages_received",
+			Points: [][]int64{
+				[]int64{currentTime.Unix(), received},
+			},
+			Type: "gauge",
+			Host: host,
+			Tags: []string{appName},
+		})
+	}
+
+	body := map[string][]Metric{"series": metrics}
 
 	return json.Marshal(&body)
 }
