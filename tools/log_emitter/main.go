@@ -162,7 +162,10 @@ func buildMessagesBody(host, appName string, sent, received int64) ([]byte, erro
 			},
 			Type: "gauge",
 			Host: host,
-			Tags: []string{appName},
+			Tags: []string{
+				appName,
+				"instance_index:" + os.Getenv("INSTANCE_INDEX"),
+			},
 		},
 	}
 
@@ -174,7 +177,10 @@ func buildMessagesBody(host, appName string, sent, received int64) ([]byte, erro
 			},
 			Type: "gauge",
 			Host: host,
-			Tags: []string{appName},
+			Tags: []string{
+				appName,
+				"instance_index:" + os.Getenv("INSTANCE_INDEX"),
+			},
 		})
 	}
 
