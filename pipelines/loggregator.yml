@@ -171,7 +171,7 @@ jobs:
           for pkg in $(go list code.cloudfoundry.org/loggregator/metron/...); do
             go test -c -o ../test-binaries/$(munge $pkg)_test.exe $pkg
           done
-          go build -o ../binaries/metron.exe metron
+          go build -o ../binaries/metron.exe code.cloudfoundry.org/loggregator/metron
   - task: run-windows-tests
     config:
       platform: windows
