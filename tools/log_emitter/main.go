@@ -189,6 +189,8 @@ func readLogsLoop(vcapApp *VCAPApplication, v2Info *V2Info, authInfo AuthInfo) {
 			continue
 		}
 
+		fmt.Println(authToken)
+
 		readLogs(vcapApp.AppID, v2Info.DopplerAddr, authToken)
 	}
 }
