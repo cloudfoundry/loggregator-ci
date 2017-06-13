@@ -249,6 +249,7 @@ jobs:
               set -ex
 
               cp cf-deployment/operations/workarounds/use-4-azs-for-router.yml ops-files/
+              cp cf-deployment/operations/tcp-routing-gcp.yml ops-files/
               cp bbl-state/gcp/loggregator-elect-bbl/ops-files/*.yml ops-files/
 
       - task: cf-deploy
@@ -257,7 +258,7 @@ jobs:
           BBL_STATE_DIR: gcp/loggregator-elect-bbl
           SYSTEM_DOMAIN: loggregator-elect.cf-app.com
           VARS_STORE_FILE: gcp/loggregator-elect-bbl/deployment-vars.yml
-          OPS_FILES: "clients.yml use-4-azs-for-router.yml"
+          OPS_FILES: "clients.yml use-4-azs-for-router.yml tcp-routing-gcp.yml"
       - task: deploy-scalable-syslog
         config:
           image_resource:
@@ -374,6 +375,7 @@ jobs:
               set -ex
 
               cp cf-deployment/operations/workarounds/use-4-azs-for-router.yml ops-files/
+              cp cf-deployment/operations/tcp-routing-gcp.yml ops-files/
               cp bbl-state/gcp/loggregator-latest-bbl/ops-files/*.yml ops-files/
 
               version=$(cat release/version)
@@ -394,7 +396,7 @@ jobs:
           BBL_STATE_DIR: gcp/loggregator-latest-bbl
           SYSTEM_DOMAIN: loggregator-latest.cf-app.com
           VARS_STORE_FILE: gcp/loggregator-latest-bbl/deployment-vars.yml
-          OPS_FILES: "clients.yml use-4-azs-for-router.yml loggregator-version.yml"
+          OPS_FILES: "clients.yml use-4-azs-for-router.yml loggregator-version.yml tcp-routing-gcp.yml"
       - task: deploy-scalable-syslog
         config:
           image_resource:
