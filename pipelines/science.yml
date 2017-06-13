@@ -34,9 +34,17 @@ resources:
   - name: scalable-syslog-release-elect
     type: git
     source:
-      uri: git@github.com:cloudfoundry/scalable-syslog-release.git
+      uri: http://github.com/cloudfoundry/scalable-syslog-release.git
       branch: release-elect
-      private_key: {{loggregator-key}}
+      ignore_paths:
+      - .final_builds
+      - releases
+
+  - name: scalable-syslog-develop
+    type: git
+    source:
+      uri: http://github.com/cloudfoundry/scalable-syslog-release.git
+      branch: develop
       ignore_paths:
       - .final_builds
       - releases
@@ -338,7 +346,7 @@ jobs:
       - get: vars-files
         resource: deployments-loggregator
       - get: consul-release
-      - get: scalable-syslog-release-elect
+      - get: scalable-syslog-develop
       - get: scalable-syslog-github-release
     - do:
       - task: upload-stemcell
@@ -396,7 +404,7 @@ jobs:
           platform: linux
           inputs:
           - name: scalable-syslog-github-release
-          - name: scalable-syslog-release-elect
+          - name: scalable-syslog-develop
           - name: consul-release
           - name: updated-vars-store
           outputs:
@@ -425,13 +433,12 @@ jobs:
                   bosh upload-release *.tgz
                 popd
 
-                pushd scalable-syslog-release-elect
-                  local tag=$(cat ../scalable-syslog-github-release/tag)
-                  git fetch $tag
+                pushd scalable-syslog-develop
+                  tag=$(cat ../scalable-syslog-github-release/tag)
                   git checkout $tag
                 popd
 
-                ss_dir="$PWD/scalable-syslog-release-elect"
+                ss_dir="$PWD/scalable-syslog-develop"
                 bbl_dir="updated-vars-store/gcp/loggregator-latest-bbl"
 
                 bosh -n -d scalablesyslog deploy \
