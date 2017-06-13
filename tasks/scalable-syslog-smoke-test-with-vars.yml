@@ -24,7 +24,7 @@ run:
   - |
     #!/bin/bash
 
-    set -e
+    set -ex
 
     export CF_PASSWORD=$(bosh int vars-store/$VARS_STORE_FILE --path /cf_admin_password)
 
