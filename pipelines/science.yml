@@ -426,7 +426,9 @@ jobs:
                 popd
 
                 pushd scalable-syslog-release-elect
-                  git checkout $(cat ../scalable-syslog-github-release/tag)
+                  local tag=$(cat ../scalable-syslog-github-release/tag)
+                  git fetch $tag
+                  git checkout $tag
                 popd
 
                 ss_dir="$PWD/scalable-syslog-release-elect"
