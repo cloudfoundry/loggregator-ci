@@ -1,0 +1,42 @@
+platform: linux
+image_resource:
+  type: docker-image
+  source:
+    repository: relintdockerhubpushbot/cf-deployment-concourse-tasks
+inputs:
+- name: bbl-state
+params:
+  DATADOG_API_KEY:
+  DATADOG_APP_KEY:
+run:
+  path: bash
+  args:
+  - -c
+  - |
+    #/bin/bash
+    set -ex
+
+    pushd bbl-state/gcp/loggregator-capacity-planning
+      export BOSH_CLIENT=`bbl director-username`
+      export BOSH_CLIENT_SECRET=`bbl director-password`
+      export BOSH_CA_CERT=`bbl director-ca-cert`
+      export BOSH_ENVIRONMENT=`bbl director-address`
+    popd
+
+    DOPPLER_COUNT=$(bosh -d cf vms | grep doppler | wc -l)
+    TC_COUNT=$(bosh -d cf vms | grep log-api | wc -l)
+    DIEGO_CELL_COUNT=$(bosh -d cf vms | grep deigo-cell | wc -l)
+
+    cat <<EOF >> /tmp/request-body.json
+    {
+      "title": "Capacity Planning Scale",
+      "text": "Dopplers: $DOPPLER_COUNT, TCs: $TC_COUNT, Diego Cells: $DIEGO_CELL_COUNT",
+      "tags": [
+        "dopplers:$DOPPLER_COUNT",
+        "trafficcontrollers:$TC_COUNT",
+        "diego_cells:$DIEGO_CELL_COUNT",
+      ]
+    }
+    EOF
+
+    curl "https://app.datadoghq.com/api/v1/events?api_key=${DATADOG_API_KEY}&application_key=${DATADOG_APP_KEY}" -X POST -H "Content-type: application/json" -d "@/tmp/request-body.json"
