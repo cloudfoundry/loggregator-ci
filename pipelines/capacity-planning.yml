@@ -127,7 +127,7 @@ jobs:
         outputs:
         - name: ops-files
         params:
-          DOPPLER_INSTANCE_COUNT: 1
+          DOPPLER_INSTANCE_COUNT: 2
           LOG_API_INSTANCE_COUNT: 1
           DIEGO_CELL_INSTANCE_COUNT: 2
         run:
@@ -159,6 +159,10 @@ jobs:
         SYSTEM_DOMAIN: loggregator-capacity-planning.cf-app.com
         VARS_STORE_FILE: gcp/loggregator-capacity-planning/deployment-vars.yml
         OPS_FILES: "clients.yml use-4-azs-for-router.yml capacity-planning-config.yml"
+    - task: setup-datadog-event
+      file: loggregator-ci/tasks/capacity-planning/setup-datadog-event.yml
+      params:
+          DATADOG_API_KEY: {{datadog-dev-api-key}}
     - put: deployments-loggregator-with-changes
       params:
         repository: updated-vars-store
@@ -265,8 +269,8 @@ jobs:
           SYSTEM_DOMAIN: loggregator-capacity-planning.cf-app.com
           LOGS_PER_SECOND: 1000
           LOG_BYTES: 1000
-          INSTANCES_PER_APP: 4
-          NUMBER_OF_APPS: 2
+          INSTANCES_PER_APP: 2
+          NUMBER_OF_APPS: 5
           DATADOG_API_KEY: {{datadog-dev-api-key}}
         run:
           path: bash
