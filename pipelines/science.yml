@@ -31,6 +31,11 @@ resources:
     source:
       repository: cloudfoundry/loggregator
 
+  - name: scalable-syslog-release
+    type: git
+    source:
+      uri: https://github.com/cloudfoundry/scalable-syslog-release
+
   - name: scalable-syslog-release-elect
     type: git
     source:
@@ -250,6 +255,7 @@ jobs:
 
               cp cf-deployment/operations/workarounds/use-4-azs-for-router.yml ops-files/
               cp cf-deployment/operations/tcp-routing-gcp.yml ops-files/
+              cp cf-deployment/operations/experimental/enable-rlp.yml ops-files/
               cp bbl-state/gcp/loggregator-elect-bbl/ops-files/*.yml ops-files/
 
       - task: cf-deploy
@@ -258,7 +264,7 @@ jobs:
           BBL_STATE_DIR: gcp/loggregator-elect-bbl
           SYSTEM_DOMAIN: loggregator-elect.cf-app.com
           VARS_STORE_FILE: gcp/loggregator-elect-bbl/deployment-vars.yml
-          OPS_FILES: "clients.yml use-4-azs-for-router.yml tcp-routing-gcp.yml"
+          OPS_FILES: "clients.yml use-4-azs-for-router.yml tcp-routing-gcp.yml enable-rlp.yml"
       - task: deploy-scalable-syslog
         config:
           image_resource:
@@ -303,6 +309,7 @@ jobs:
                 bosh -n -d scalablesyslog deploy \
                   --vars-store "$bbl_dir/scalablesyslog-vars.yml" \
                   --ops-file "$ss_dir/manifests/cf-deployment-ops.yml" \
+                  --ops-file "$bbl_dir/ops-files/allow-insecure-syslog-drains.yml" \
                   --vars-file "$bbl_dir/deployment-vars.yml" \
                   -v "system_domain=loggregator-elect.cf-app.com" \
                   "$ss_dir/manifests/scalable-syslog.yml"
@@ -376,6 +383,7 @@ jobs:
 
               cp cf-deployment/operations/workarounds/use-4-azs-for-router.yml ops-files/
               cp cf-deployment/operations/tcp-routing-gcp.yml ops-files/
+              cp cf-deployment/operations/experimental/enable-rlp.yml ops-files/
               cp bbl-state/gcp/loggregator-latest-bbl/ops-files/*.yml ops-files/
 
               version=$(cat release/version)
@@ -396,7 +404,7 @@ jobs:
           BBL_STATE_DIR: gcp/loggregator-latest-bbl
           SYSTEM_DOMAIN: loggregator-latest.cf-app.com
           VARS_STORE_FILE: gcp/loggregator-latest-bbl/deployment-vars.yml
-          OPS_FILES: "clients.yml use-4-azs-for-router.yml loggregator-version.yml tcp-routing-gcp.yml"
+          OPS_FILES: "clients.yml use-4-azs-for-router.yml loggregator-version.yml tcp-routing-gcp.yml enable-rlp.yml"
       - task: deploy-scalable-syslog
         config:
           image_resource:
@@ -446,6 +454,7 @@ jobs:
                 bosh -n -d scalablesyslog deploy \
                   --vars-store "$bbl_dir/scalablesyslog-vars.yml" \
                   --ops-file "$ss_dir/manifests/cf-deployment-ops.yml" \
+                  --ops-file "$bbl_dir/ops-files/allow-insecure-syslog-drains.yml" \
                   --vars-file "$bbl_dir/deployment-vars.yml" \
                   -v "system_domain=loggregator-latest.cf-app.com" \
                   "$ss_dir/manifests/scalable-syslog.yml"
@@ -546,6 +555,7 @@ jobs:
       params:
         claim: "pipeline"
     - aggregate:
+      - get: scalable-syslog-release
       - get: vars-store
         resource: deployments-loggregator-with-changes
       - get: release-elect
@@ -559,84 +569,140 @@ jobs:
       - get: loggregator-ci
     - get: 5m
       trigger: true
-    - do:
-      - aggregate:
-        - do:
-          - task: get-release-version
-            config:
-              platform: linux
-              image_resource:
-                type: docker-image
-                source:
-                  repository: loggregator/base
-              inputs:
-                - name: release-elect
-              outputs:
-                - name: release-info
-              run:
-                path: bash
-                args:
-                - -c
-                - |
-                  #/bin/bash
-                  set -ex
+    - aggregate:
+      - do:
+        - task: get-release-version
+          config:
+            platform: linux
+            image_resource:
+              type: docker-image
+              source:
+                repository: loggregator/base
+            inputs:
+              - name: release-elect
+            outputs:
+              - name: release-info
+            run:
+              path: bash
+              args:
+              - -c
+              - |
+                #/bin/bash
+                set -ex
 
-                  cd release-elect
-                  git rev-parse HEAD > ../release-info/version
-          - task: loggregator-elect
-            file: loggregator-ci/tasks/science/cf-logs-smoke-test.yml
-            params:
-              PREFIX: "regression."
-              CYCLES: 10000
-              DELAY: "2"
-              DELAY_UNIT: "us"
-              MESSAGE: "FIFTEEN-MINUTE"
-              APP_NAME: "floodspinner"
-              WAIT: 60
-              API_ENDPOINT: api.loggregator-elect.cf-app.com
-              USERNAME: admin
-              DATADOG_API_KEY: {{datadog-dev-api-key}}
-              SKIP_SSL_VALIDATION: true
-              VARS_STORE_FILE: gcp/loggregator-elect-bbl/deployment-vars.yml
-              VERSION_TAG: elect
-        - do:
-          - task: get-release-version
-            config:
-              platform: linux
-              image_resource:
-                type: docker-image
-                source:
-                  repository: loggregator/base
-              inputs:
-                - name: release-latest
-              outputs:
-                - name: release-info
-              run:
-                path: bash
-                args:
-                - -c
-                - |
-                  #/bin/bash
-                  set -ex
+                cd release-elect
+                git rev-parse HEAD > ../release-info/version
+        - task: loggregator-elect
+          file: loggregator-ci/tasks/science/cf-logs-smoke-test.yml
+          params:
+            PREFIX: "regression."
+            CYCLES: 10000
+            DELAY: "2"
+            DELAY_UNIT: "us"
+            MESSAGE: "FIFTEEN-MINUTE"
+            APP_NAME: "floodspinner"
+            WAIT: 60
+            API_ENDPOINT: api.loggregator-elect.cf-app.com
+            USERNAME: admin
+            DATADOG_API_KEY: {{datadog-dev-api-key}}
+            SKIP_SSL_VALIDATION: true
+            VARS_STORE_FILE: gcp/loggregator-elect-bbl/deployment-vars.yml
+            VERSION_TAG: elect
+      - task: http-drain
+        file: loggregator-ci/tasks/scalable-syslog-smoke-test-with-vars.yml
+        params:
+          CF_ORG: cf-lamb
+          CF_SPACE: development
+          CF_APP_DOMAIN: loggregator-elect.cf-app.com
+          CF_SYSTEM_DOMAIN: loggregator-elect.cf-app.com
+          CF_USERNAME: admin
+          DATADOG_API_KEY: {{datadog-loggregator-api-key}}
+          DRAIN_VERSION: "2.0"
+          DRAIN_TYPE: "https"
+          JOB_NAME: "https-teardown"
+          TEARDOWN: false
+          VARS_STORE_FILE: gcp/loggregator-elect-bbl/deployment-vars.yml
+        timeout: 15m
+      - task: tcp-drain
+        file: loggregator-ci/tasks/scalable-syslog-smoke-test-with-vars.yml
+        params:
+          CF_ORG: cf-lamb
+          CF_SPACE: development
+          CF_APP_DOMAIN: tcp.loggregator-elect.cf-app.com
+          CF_SYSTEM_DOMAIN: loggregator-elect.cf-app.com
+          CF_USERNAME: admin
+          DATADOG_API_KEY: {{datadog-loggregator-api-key}}
+          DRAIN_VERSION: "2.0"
+          DRAIN_TYPE: "syslog"
+          JOB_NAME: "syslog-teardown"
+          VARS_STORE_FILE: gcp/loggregator-elect-bbl/deployment-vars.yml
+        timeout: 15m
+      - do:
+        - task: get-release-version
+          config:
+            platform: linux
+            image_resource:
+              type: docker-image
+              source:
+                repository: loggregator/base
+            inputs:
+              - name: release-latest
+            outputs:
+              - name: release-info
+            run:
+              path: bash
+              args:
+              - -c
+              - |
+                #/bin/bash
+                set -ex
 
-                  cp release-latest/version release-info/version
-          - task: loggregator-latest
-            file: loggregator-ci/tasks/science/cf-logs-smoke-test.yml
-            params:
-              PREFIX: "regression."
-              CYCLES: 10000
-              DELAY: "2"
-              DELAY_UNIT: "us"
-              MESSAGE: "FIFTEEN-MINUTE"
-              APP_NAME: "floodspinner"
-              WAIT: 60
-              API_ENDPOINT: api.loggregator-latest.cf-app.com
-              USERNAME: admin
-              DATADOG_API_KEY: {{datadog-dev-api-key}}
-              SKIP_SSL_VALIDATION: true
-              VARS_STORE_FILE: gcp/loggregator-latest-bbl/deployment-vars.yml
-              VERSION_TAG: latest
-      timeout: 5m
+                cp release-latest/version release-info/version
+        - task: loggregator-latest
+          file: loggregator-ci/tasks/science/cf-logs-smoke-test.yml
+          params:
+            PREFIX: "regression."
+            CYCLES: 10000
+            DELAY: "2"
+            DELAY_UNIT: "us"
+            MESSAGE: "FIFTEEN-MINUTE"
+            APP_NAME: "floodspinner"
+            WAIT: 60
+            API_ENDPOINT: api.loggregator-latest.cf-app.com
+            USERNAME: admin
+            DATADOG_API_KEY: {{datadog-dev-api-key}}
+            SKIP_SSL_VALIDATION: true
+            VARS_STORE_FILE: gcp/loggregator-latest-bbl/deployment-vars.yml
+            VERSION_TAG: latest
+      - task: http-drain
+        file: loggregator-ci/tasks/scalable-syslog-smoke-test-with-vars.yml
+        params:
+          CF_ORG: cf-lamb
+          CF_SPACE: development
+          CF_APP_DOMAIN: loggregator-latest.cf-app.com
+          CF_SYSTEM_DOMAIN: loggregator-latest.cf-app.com
+          CF_USERNAME: admin
+          DATADOG_API_KEY: {{datadog-loggregator-api-key}}
+          DRAIN_VERSION: "2.0"
+          DRAIN_TYPE: "https"
+          JOB_NAME: "https-teardown"
+          VARS_STORE_FILE: gcp/loggregator-latest-bbl/deployment-vars.yml
+        timeout: 15m
+      - task: tcp-drain
+        file: loggregator-ci/tasks/scalable-syslog-smoke-test-with-vars.yml
+        params:
+          CF_ORG: cf-lamb
+          CF_SPACE: development
+          CF_APP_DOMAIN: tcp.loggregator-latest.cf-app.com
+          CF_SYSTEM_DOMAIN: loggregator-latest.cf-app.com
+          CF_USERNAME: admin
+          DATADOG_API_KEY: {{datadog-loggregator-api-key}}
+          DRAIN_VERSION: "2.0"
+          DRAIN_TYPE: "syslog"
+          JOB_NAME: "syslog-teardown"
+          VARS_STORE_FILE: gcp/loggregator-latest-bbl/deployment-vars.yml
+        timeout: 15m
+      timeout: 10m
       ensure:
         put: pipeline-lock
         params:
