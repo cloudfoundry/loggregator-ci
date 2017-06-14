@@ -128,9 +128,10 @@ jobs:
         outputs:
         - name: ops-files
         params:
-          DOPPLER_INSTANCE_COUNT: 2
-          LOG_API_INSTANCE_COUNT: 2
+          DOPPLER_INSTANCE_COUNT: 5
+          LOG_API_INSTANCE_COUNT: 5
           DIEGO_CELL_INSTANCE_COUNT: 2
+          ROUTER_COUNT: 4
         run:
           path: /bin/bash
           args:
@@ -146,6 +147,9 @@ jobs:
             - type: replace
               path: /instance_groups/name=doppler/instances
               value: $DOPPLER_INSTANCE_COUNT
+            - type: replace
+              path: /instance_groups/name=router/instances
+              value: $ROUTER_COUNT
             - type: replace
               path: /instance_groups/name=log-api/instances
               value: $LOG_API_INSTANCE_COUNT

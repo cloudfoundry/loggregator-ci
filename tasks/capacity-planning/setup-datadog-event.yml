@@ -25,15 +25,17 @@ run:
     DOPPLER_COUNT=$(bosh -d cf vms | grep doppler | wc -l)
     TC_COUNT=$(bosh -d cf vms | grep log-api | wc -l)
     DIEGO_CELL_COUNT=$(bosh -d cf vms | grep diego-cell | wc -l)
+    ROUTER_COUNT=$(bosh -d cf vms | grep router | wc -l)
 
     cat <<EOF >> /tmp/request-body.json
     {
       "title": "Capacity Planning Scale",
-      "text": "Dopplers: $DOPPLER_COUNT, TCs: $TC_COUNT, Diego Cells: $DIEGO_CELL_COUNT",
+      "text": "Dopplers: $DOPPLER_COUNT, TCs: $TC_COUNT, Diego Cells: $DIEGO_CELL_COUNT, Routers: $ROUTER_COUNT",
       "tags": [
         "dopplers:$DOPPLER_COUNT",
         "trafficcontrollers:$TC_COUNT",
-        "diego_cells:$DIEGO_CELL_COUNT"
+        "diego_cells:$DIEGO_CELL_COUNT",
+        "routers:$ROUTER_COUNT"
       ]
     }
     EOF
