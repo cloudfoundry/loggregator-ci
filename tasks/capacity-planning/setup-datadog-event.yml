@@ -33,7 +33,7 @@ run:
       "tags": [
         "dopplers:$DOPPLER_COUNT",
         "trafficcontrollers:$TC_COUNT",
-        "diego_cells:$DIEGO_CELL_COUNT",
+        "diego_cells:$DIEGO_CELL_COUNT"
       ]
     }
     EOF
