@@ -260,6 +260,10 @@ jobs:
     params:
       repository: updated-vars-store
       rebase: true
+  - task: cleanup
+    file: cf-deployment-concourse-tasks/bosh-cleanup/task.yml
+    params:
+      BBL_STATE_DIR: gcp/bbl
 
 - name: cf-release-deploy
   serial: true
