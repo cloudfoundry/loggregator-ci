@@ -103,6 +103,7 @@ jobs:
   serial: true
   plan:
     - aggregate:
+      - get: loggregator-ci
       - get: bbl-state
         resource: deployments-loggregator
       - get: cf-deployment
@@ -128,7 +129,7 @@ jobs:
         - name: ops-files
         params:
           DOPPLER_INSTANCE_COUNT: 2
-          LOG_API_INSTANCE_COUNT: 1
+          LOG_API_INSTANCE_COUNT: 2
           DIEGO_CELL_INSTANCE_COUNT: 2
         run:
           path: /bin/bash

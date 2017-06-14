@@ -24,7 +24,7 @@ run:
 
     DOPPLER_COUNT=$(bosh -d cf vms | grep doppler | wc -l)
     TC_COUNT=$(bosh -d cf vms | grep log-api | wc -l)
-    DIEGO_CELL_COUNT=$(bosh -d cf vms | grep deigo-cell | wc -l)
+    DIEGO_CELL_COUNT=$(bosh -d cf vms | grep diego-cell | wc -l)
 
     cat <<EOF >> /tmp/request-body.json
     {
