@@ -84,7 +84,7 @@ jobs:
       file: cf-deployment-concourse-tasks/bosh-delete-deployment/task.yml
       params:
         BBL_STATE_DIR: gcp/loggregator-capacity-planning
-        DEPLOYMENT_NAME: datadog-firehose-nozzle
+        DEPLOYMENT_NAME: datadog
     - task: delete-cf
       file: cf-deployment-concourse-tasks/bosh-delete-deployment/task.yml
       params:
