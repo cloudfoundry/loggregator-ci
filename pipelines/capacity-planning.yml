@@ -128,10 +128,10 @@ jobs:
         outputs:
         - name: ops-files
         params:
-          DOPPLER_INSTANCE_COUNT: 5
-          LOG_API_INSTANCE_COUNT: 5
-          DIEGO_CELL_INSTANCE_COUNT: 2
-          ROUTER_COUNT: 4
+          DOPPLER_INSTANCE_COUNT: 20
+          LOG_API_INSTANCE_COUNT: 10
+          DIEGO_CELL_INSTANCE_COUNT: 50
+          ROUTER_COUNT: 5
         run:
           path: /bin/bash
           args:
@@ -272,10 +272,10 @@ jobs:
           ORG: capacity-planning
           SPACE: capacity-planning
           SYSTEM_DOMAIN: loggregator-capacity-planning.cf-app.com
-          LOGS_PER_SECOND: 1000
+          LOGS_PER_SECOND: 500
           LOG_BYTES: 1000
           INSTANCES_PER_APP: 2
-          NUMBER_OF_APPS: 5
+          NUMBER_OF_APPS: 50
           DATADOG_API_KEY: {{datadog-dev-api-key}}
         run:
           path: bash
