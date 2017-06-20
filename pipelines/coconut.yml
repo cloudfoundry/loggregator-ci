@@ -1,17 +1,144 @@
 resources:
+- name: 15m
+  type: time
+  source: {interval: 15m}
 - name: 1h
   type: time
   source: {interval: 1h}
+- name: daily
+  type: time
+  source:
+    start: 8:00 PM
+    stop: 9:00 PM
+    location: America/Denver
 - name: loggregator-ci
   type: git
   source:
     uri: https://github.com/cloudfoundry/loggregator-ci
+- name: loggregator
+  type: git
+  source:
+    uri: https://github.com/cloudfoundry/loggregator
+    branch: develop
 - name: scalable-syslog-release
   type: git
   source:
     uri: https://github.com/cloudfoundry/scalable-syslog-release
 
 jobs:
+- name: restage-logspinners
+  public: false
+  serial: true
+  serial_groups: ["restage"]
+  plan:
+  - get: daily
+    trigger: true
+  - get: loggregator-ci
+  - task: restage-logspinner
+    file: loggregator-ci/tasks/restage-apps.yml
+    params:
+      APP_NAMES: "floodspinner dripspinner flowspinner"
+      CF_API: "api.coconut.cf-app.com"
+      ORG: "system"
+      SPACE: "blackbox-testing"
+      USERNAME: {{coconut-username}}
+      PASSWORD: {{coconut-password}}
+
+- name: floodspinner
+  public: false
+  serial: true
+  serial_groups: ["restage"]
+  plan:
+  - get: loggregator-ci
+  - get: 15m
+    trigger: true
+  - task: run-smoke-tests
+    file: loggregator-ci/tasks/generic-smoke-test.yml
+    params:
+      CF_API: "api.coconut.cf-app.com"
+      ORG: "system"
+      SPACE: "blackbox-testing"
+      USERNAME: {{coconut-username}}
+      PASSWORD: {{coconut-password}}
+      APP_DOMAIN: "floodspinner.coconut.cf-app.com"
+      APP_NAME: "floodspinner"
+      WAIT: 60
+      CYCLES: 10000
+      DATADOG_API_KEY: {{datadog-loggregator-api-key}}
+      DELAY: "2"
+      DELAY_UNIT: "us"
+      MESSAGE: "FIFTEEN-MINUTE"
+    timeout: 15m
+  - task: run-recent-logs-smoke-tests
+    file: loggregator-ci/tasks/generic-recent-logs-smoke-test.yml
+    params: &basic-smoke-details
+      APP_NAME: "floodspinner"
+      CF_API: "api.coconut.cf-app.com"
+      DATADOG_API_KEY: {{datadog-loggregator-api-key}}
+      LOGGREGATOR_ADDR: "wss://doppler.coconut.cf-app.com:443"
+      ORG: "system"
+      SPACE: "blackbox-testing"
+      USERNAME: {{coconut-username}}
+      PASSWORD: {{coconut-password}}
+    timeout: 15m
+  - task: container metrics
+    file: loggregator-ci/tasks/container-metrics-smoke-test.yml
+    params: *basic-smoke-details
+    timeout: 15m
+
+- name: dripspinner
+  public: false
+  serial: true
+  serial_groups: ["restage"]
+  plan:
+  - get: loggregator-ci
+  - get: 1h
+    trigger: true
+  - task: run-smoke-tests
+    file: loggregator-ci/tasks/generic-smoke-test.yml
+    params:
+      CF_API: "api.coconut.cf-app.com"
+      DATADOG_API_KEY: {{datadog-loggregator-api-key}}
+      LOGGREGATOR_ADDR: "wss://doppler.coconut.cf-app.com:443"
+      ORG: "system"
+      SPACE: "blackbox-testing"
+      USERNAME: {{coconut-username}}
+      PASSWORD: {{coconut-password}}
+      APP_DOMAIN: "dripspinner.coconut.cf-app.com"
+      APP_NAME: "dripspinner"
+      WAIT: 600
+      CYCLES: 1000
+      DELAY: "500"
+      DELAY_UNIT: "ms"
+      MESSAGE: "HOURLY"
+    timeout: 15m
+
+- name: flowspinner
+  public: false
+  serial: true
+  serial_groups: ["restage"]
+  plan:
+  - get: loggregator-ci
+  - get: 1h
+    trigger: true
+  - task: run-smoke-tests
+    file: loggregator-ci/tasks/generic-smoke-test.yml
+    params:
+      CF_API: "api.coconut.cf-app.com"
+      DATADOG_API_KEY: {{datadog-loggregator-api-key}}
+      LOGGREGATOR_ADDR: "wss://doppler.coconut.cf-app.com:443"
+      ORG: "system"
+      SPACE: "blackbox-testing"
+      USERNAME: {{coconut-username}}
+      PASSWORD: {{coconut-password}}
+      APP_DOMAIN: "flowspinner.coconut.cf-app.com"
+      APP_NAME: "flowspinner"
+      WAIT: 60
+      CYCLES: 1000
+      DELAY: "1"
+      DELAY_UNIT: "ms"
+      MESSAGE: "HOURLY"
+    timeout: 15m
 
 - name: https-syslog-drain
   public: false
@@ -25,13 +152,58 @@ jobs:
     file: loggregator-ci/tasks/scalable-syslog-smoke-test.yml
     params:
       CF_ORG: system
-      CF_PASSWORD: {{coconut-password}}
       CF_SPACE: blackbox-testing
       CF_APP_DOMAIN: coconut.cf-app.com
       CF_SYSTEM_DOMAIN: coconut.cf-app.com
       CF_USERNAME: {{coconut-username}}
+      CF_PASSWORD: {{coconut-password}}
       DATADOG_API_KEY: {{datadog-loggregator-api-key}}
       DRAIN_VERSION: "2.0"
       DRAIN_TYPE: "https"
       JOB_NAME: "https-teardown"
+    timeout: 15m
+
+- name: https-syslog-drain-no-teardown
+  public: false
+  serial: true
+  plan:
+  - get: loggregator-ci
+  - get: scalable-syslog-release
+  - get: 1h
+    trigger: true
+  - task: v2-drain
+    file: loggregator-ci/tasks/scalable-syslog-smoke-test.yml
+    params:
+      TEARDOWN: false
+      CF_ORG: system
+      CF_SPACE: blackbox-testing
+      CF_APP_DOMAIN: coconut.cf-app.com
+      CF_SYSTEM_DOMAIN: coconut.cf-app.com
+      CF_USERNAME: {{coconut-username}}
+      CF_PASSWORD: {{coconut-password}}
+      DATADOG_API_KEY: {{datadog-loggregator-api-key}}
+      DRAIN_VERSION: "2.0"
+      DRAIN_TYPE: "https"
+      JOB_NAME: "https-no-teardown"
+    timeout: 15m
+
+- name: latency
+  public: false
+  serial: true
+  plan:
+  - get: loggregator
+  - get: loggregator-ci
+  - get: 15m
+    trigger: true
+  - task: run-latency-tests
+    file: loggregator-ci/tasks/latency-test.yml
+    params:
+      APP_DOMAIN: "loggregator-latency.coconut.cf-app.com"
+      APP_NAME: "loggregator-latency"
+      CF_API: "api.coconut.cf-app.com"
+      DATADOG_API_KEY: {{datadog-loggregator-api-key}}
+      ORG: system
+      SPACE: blackbox-testing
+      USERNAME: {{coconut-username}}
+      PASSWORD: {{coconut-password}}
     timeout: 15m
