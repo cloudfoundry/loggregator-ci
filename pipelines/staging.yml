@@ -80,7 +80,7 @@ jobs:
                 bosh -n create-release \
                   --name ouroboros \
                   --tarball ../ouroboros-release/release.tgz \
-                  --version 0.0.4
+                  --version 0.0.6
               popd
     - task: create-scalable-syslog-release
       config:
