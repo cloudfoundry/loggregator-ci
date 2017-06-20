@@ -1,6 +1,6 @@
 #!/bin/bash
 
-function send_to_datadog {
+function report_to_datadog {
     echo "$msg_count"
 
     currenttime=$(date +%s)
@@ -42,7 +42,7 @@ set -e -x
 
 msg_count=0
 
-trap zero_msg_count EXIT
+trap report_to_datadog EXIT
 
 # target api
 cf login \
