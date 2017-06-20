@@ -33,10 +33,12 @@ run:
     export PATH=$GOPATH/bin:$PATH
 
     function teardown {
+      ./report.sh
       ./teardown.sh
     }
 
     function restart {
+      ./report.sh
       ./restart.sh
     }
 
@@ -49,4 +51,3 @@ run:
     cd src/code.cloudfoundry.org/scalable-syslog/tools/smokes
     ./push.sh
     ./hammer.sh
-    ./report.sh
