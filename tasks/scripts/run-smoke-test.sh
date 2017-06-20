@@ -1,6 +1,48 @@
 #!/bin/bash
 
+function send_to_datadog {
+    echo "$msg_count"
+
+    currenttime=$(date +%s)
+    curl  -X POST -H "Content-type: application/json" \
+    -d "{ \"series\" :
+             [{\"metric\":\"smoke_test.loggregator.msg_count\",
+              \"points\":[[${currenttime}, ${msg_count}]],
+              \"type\":\"gauge\",
+              \"host\":\"${CF_API}\",
+              \"tags\":[\"${APP_NAME}\"]}
+            ]
+        }" \
+    'https://app.datadoghq.com/api/v1/series?api_key='"$DATADOG_API_KEY"
+
+    curl  -X POST -H "Content-type: application/json" \
+    -d "{ \"series\" :
+             [{\"metric\":\"smoke_test.loggregator.delay\",
+              \"points\":[[${currenttime}, $DELAY]],
+              \"type\":\"gauge\",
+              \"host\":\"${CF_API}\",
+              \"tags\":[\"${APP_NAME}\"]}
+            ]
+        }" \
+    'https://app.datadoghq.com/api/v1/series?api_key='"$DATADOG_API_KEY"
+
+    curl  -X POST -H "Content-type: application/json" \
+    -d "{ \"series\" :
+             [{\"metric\":\"smoke_test.loggregator.cycles\",
+              \"points\":[[${currenttime}, ${CYCLES}]],
+              \"type\":\"gauge\",
+              \"host\":\"${CF_API}\",
+              \"tags\":[\"${APP_NAME}\"]}
+            ]
+        }" \
+    'https://app.datadoghq.com/api/v1/series?api_key='"$DATADOG_API_KEY"
+}
+
 set -e -x
+
+msg_count=0
+
+trap zero_msg_count EXIT
 
 # target api
 cf login \
@@ -24,38 +66,5 @@ curl "$APP_DOMAIN?cycles=$CYCLES&delay=$DELAY$DELAY_UNIT&text=$MESSAGE"
 sleep "$WAIT" # wait for a bit to collect logs
 
 msg_count=$(grep APP output.txt | grep -c "$MESSAGE")
-echo "$msg_count"
 
-currenttime=$(date +%s)
-curl  -X POST -H "Content-type: application/json" \
--d "{ \"series\" :
-         [{\"metric\":\"smoke_test.loggregator.msg_count\",
-          \"points\":[[${currenttime}, ${msg_count}]],
-          \"type\":\"gauge\",
-          \"host\":\"${CF_API}\",
-          \"tags\":[\"${APP_NAME}\"]}
-        ]
-    }" \
-'https://app.datadoghq.com/api/v1/series?api_key='"$DATADOG_API_KEY"
-
-curl  -X POST -H "Content-type: application/json" \
--d "{ \"series\" :
-         [{\"metric\":\"smoke_test.loggregator.delay\",
-          \"points\":[[${currenttime}, $DELAY]],
-          \"type\":\"gauge\",
-          \"host\":\"${CF_API}\",
-          \"tags\":[\"${APP_NAME}\"]}
-        ]
-    }" \
-'https://app.datadoghq.com/api/v1/series?api_key='"$DATADOG_API_KEY"
-
-curl  -X POST -H "Content-type: application/json" \
--d "{ \"series\" :
-         [{\"metric\":\"smoke_test.loggregator.cycles\",
-          \"points\":[[${currenttime}, ${CYCLES}]],
-          \"type\":\"gauge\",
-          \"host\":\"${CF_API}\",
-          \"tags\":[\"${APP_NAME}\"]}
-        ]
-    }" \
-'https://app.datadoghq.com/api/v1/series?api_key='"$DATADOG_API_KEY"
+# Trap will send metrics to datadog
