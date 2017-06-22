@@ -1,0 +1,108 @@
+# This pipeline is used for deploying loggregator-staging.
+# It exists to make it easier to bring up/down the bosh deployment.
+# It should not be used with the `scripts/set-pipeline` as it requires
+# different access to secrets.
+
+resource_types:
+- name: bosh-deployment
+  type: docker-image
+  source:
+    repository: cloudfoundry/bosh-deployment-resource
+
+resources:
+- name: scalable-syslog-release
+  type: git
+  source:
+    uri: https://github.com/cloudfoundry/scalable-syslog-release
+- name: loggregator
+  type: git
+  source:
+    uri: https://github.com/cloudfoundry/loggregator
+- name: prod-aws
+  type: git
+  source:
+    uri: git@github.com:pivotal-cf/prod-aws.git
+    private_key: {{ci_concourse_github_key}}
+- name: secrets-prod
+  type: git
+  source:
+    uri: git@github.com:pivotal-cloudops/secrets-prod.git
+    private_key: {{ci_concourse_github_key}}
+jobs:
+- name: dry-run
+  plan:
+    - aggregate:
+      - get: scalable-syslog-release
+      - get: loggregator
+        params:
+          submodules: none
+      - get: prod-aws
+        params:
+          submodules: none
+      - get: secrets-prod
+    - task: diff
+      tags: [ prod ]
+      config:
+        platform: linux
+        image_resource:
+          type: docker-image
+          source:
+            repository: loggregator/base
+        inputs:
+          - name: scalable-syslog-release
+          - name: loggregator
+          - name: prod-aws
+          - name: secrets-prod
+        params:
+          BOSH_CLIENT: {{prod_bosh_client_id}}
+          BOSH_CLIENT_SECRET: {{prod_bosh_client_secret}}
+          BOSH_CA_CERT: {{prod_bosh_ca_cert}}
+          BOSH_ENVIRONMENT: {{prod_bosh_target}}
+          BOSH_DEPLOYMENT: scalablesyslog
+        run:
+          path: bash
+          args:
+            - -c
+            - |
+              #!/bin/bash
+              set -e
+
+              SECRETS_DIR=$PWD/secrets-prod
+
+              gem install secrets-sanitizer --no-rdoc --no-ri
+
+              function release_version {
+                echo $(bosh int $1 --path=/builds | grep version | cut -d ":" -f 2 | cut -d " " -f 2 | cut -d '"' -f 2 | sort -n | tail -n 1)
+              }
+
+              CF_VERSION=$(bosh int prod-aws/deployments/cf-cfapps-io2.yml --path=/releases/name=cf/version)
+              LOGGREGATOR_VERSION=$(release_version "loggregator/releases/loggregator/index.yml")
+              SCALABLE_SYSLOG_VERSION=$(release_version "scalable-syslog-release/releases/scalablesyslog/index.yml")
+
+              echo "CF Version: $CF_VERSION"
+              echo "Loggregator Version: $LOGGREGATOR_VERSION"
+              echo "Scalable Syslog Version: $SCALABLE_SYSLOG_VERSION"
+
+              pushd prod-aws/deployments
+                opsfile=`mktemp`
+                manifest=`mktemp`
+
+                cat > $opsfile << OPSFILE
+              - type: replace
+                path: /releases/name=cf/version
+                value: $CF_VERSION
+              - type: replace
+                path: /releases/name=loggregator/version
+                value: $LOGGREGATOR_VERSION
+              - type: replace
+                path: /releases/name=scalablesyslog/version
+                value: $SCALABLE_SYSLOG_VERSION
+              OPSFILE
+
+                bosh int scalablesyslog.yml -o $opsfile > $manifest
+                mv $manifest scalablesyslog.yml
+
+                desanitize -f -i scalablesyslog.yml -s $SECRETS_DIR/deployments
+
+                bosh deploy scalablesyslog.yml -n --dry-run
+              popd
