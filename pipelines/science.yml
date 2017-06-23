@@ -264,7 +264,7 @@ jobs:
           BBL_STATE_DIR: gcp/loggregator-elect-bbl
           SYSTEM_DOMAIN: loggregator-elect.cf-app.com
           VARS_STORE_FILE: gcp/loggregator-elect-bbl/deployment-vars.yml
-          OPS_FILES: "clients.yml use-4-azs-for-router.yml tcp-routing-gcp.yml enable-rlp.yml"
+          OPS_FILES: "clients.yml use-4-azs-for-router.yml tcp-routing-gcp.yml enable-rlp.yml metron-health.yml"
       - task: deploy-scalable-syslog
         config:
           image_resource:
