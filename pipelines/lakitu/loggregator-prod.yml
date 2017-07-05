@@ -1,7 +1,4 @@
-# This pipeline is used for deploying loggregator-staging.
-# It exists to make it easier to bring up/down the bosh deployment.
-# It should not be used with the `scripts/set-pipeline` as it requires
-# different access to secrets.
+# This pipeline deploys scalable syslog to production
 
 resource_types:
 - name: bosh-deployment

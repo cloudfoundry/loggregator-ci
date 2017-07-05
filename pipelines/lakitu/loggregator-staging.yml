@@ -1,7 +1,5 @@
-# This pipeline is used for deploying loggregator-staging.
-# It exists to make it easier to bring up/down the bosh deployment.
-# It should not be used with the `scripts/set-pipeline` as it requires
-# different access to secrets.
+# This pipeline deploys loggregator to the staging environment for load
+# testing
 
 resource_types:
 - name: bosh-deployment
@@ -102,7 +100,9 @@ jobs:
               set -ex
 
               pushd scalable-syslog
-                bosh -n create-release --name scalablesyslog --tarball ../scalable-syslog-release/release.tgz
+                bosh -n create-release \
+                  --name scalablesyslog \
+                  --tarball ../scalable-syslog-release/release.tgz
               popd
   - put: loggregator-staging
     tags: [ prod ]
