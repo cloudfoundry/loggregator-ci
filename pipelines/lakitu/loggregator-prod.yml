@@ -71,7 +71,13 @@ jobs:
               gem install secrets-sanitizer --no-rdoc --no-ri
 
               function release_version {
-                echo $(bosh int $1 --path=/builds | grep version | cut -d ":" -f 2 | cut -d " " -f 2 | cut -d '"' -f 2 | sort -n | tail -n 1)
+                echo $(bosh int $1 --path=/builds |
+                  grep version |
+                  cut -d ":" -f 2 |
+                  cut -d " " -f 2 |
+                  cut -d '"' -f 2 |
+                  sort -n |
+                  tail -n 1)
               }
 
               SECRETS_DIR=$PWD/secrets-prod
@@ -84,6 +90,13 @@ jobs:
               echo "Loggregator Version: $LOGGREGATOR_VERSION"
               echo "Scalable Syslog Version: $SCALABLE_SYSLOG_VERSION"
               echo
+
+              pushd loggregator
+                bosh upload-release "releases/loggregator/loggregator-${LOGGREGATOR_VERSION}.yml"
+              popd
+              pushd scalable-syslog-release
+                bosh upload-release "releases/scalablesyslog/scalablesyslog-${SCALABLE_SYSLOG_VERSION}.yml"
+              popd
 
               pushd prod-aws/deployments
                 opsfile=`mktemp`
