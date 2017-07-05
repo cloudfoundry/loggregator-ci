@@ -27,7 +27,7 @@ resources:
     uri: git@github.com:pivotal-cloudops/secrets-prod.git
     private_key: {{ci_concourse_github_key}}
 jobs:
-- name: dry-run-scalable-syslog
+- name: update-scalable-syslog-manifest
   serial: true
   plan:
     - aggregate:
@@ -124,7 +124,7 @@ jobs:
   plan:
     - aggregate:
       - get: scalable-syslog-release
-        passed: ["dry-run-scalable-syslog"]
+        passed: ["update-scalable-syslog-manifest"]
       - get: loggregator
         params:
           submodules: none
