@@ -27,7 +27,7 @@ resources:
     uri: git@github.com:pivotal-cloudops/secrets-prod.git
     private_key: {{ci_concourse_github_key}}
 jobs:
-- name: dry-run
+- name: dry-run-scalable-syslog
   serial: true
   plan:
     - aggregate:
@@ -119,12 +119,12 @@ jobs:
     - put: prod-aws
       params:
         repository: updated-prod-aws
-- name: deploy
+- name: deploy-scalable-syslog
   serial: true
   plan:
     - aggregate:
       - get: scalable-syslog-release
-        passed: ["dry-run"]
+        passed: ["dry-run-scalable-syslog"]
       - get: loggregator
         params:
           submodules: none

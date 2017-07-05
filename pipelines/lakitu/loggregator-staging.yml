@@ -1,6 +1,5 @@
-# This pipeline deploys loggregator to the staging environment for load
-# testing
-
+# This pipeline deploys a number of components to staging for load testing,
+# namely loggregator, scalable-syslog.
 resource_types:
 - name: bosh-deployment
   type: docker-image
