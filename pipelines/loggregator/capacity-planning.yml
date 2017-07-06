@@ -12,6 +12,12 @@ resources:
     branch: master
     private_key: {{deployments-loggregator-key}}
 
+- name: loggregator-capacity-planning-release
+  type: git
+  source: &deployments_loggregator
+    uri: https://github.com/cloudfoundry-incubator/loggregator-capacity-planning-release
+    branch: master
+
 - name: loggregator-ci
   type: git
   source:
@@ -112,6 +118,7 @@ jobs:
         resource: deployments-loggregator
       - get: vars-files
         resource: deployments-loggregator
+      - get: loggregator-capacity-planning-release
     - task: upload-stemcell
       file: cf-deployment-concourse-tasks/bosh-upload-stemcell-from-cf-deployment/task.yml
       params:
@@ -128,10 +135,10 @@ jobs:
         outputs:
         - name: ops-files
         params:
-          DOPPLER_INSTANCE_COUNT: 20
-          LOG_API_INSTANCE_COUNT: 10
-          DIEGO_CELL_INSTANCE_COUNT: 50
-          ROUTER_COUNT: 5
+          DOPPLER_INSTANCE_COUNT: 1
+          LOG_API_INSTANCE_COUNT: 1
+          DIEGO_CELL_INSTANCE_COUNT: 1
+          ROUTER_COUNT: 4
         run:
           path: /bin/bash
           args:
@@ -164,14 +171,60 @@ jobs:
         SYSTEM_DOMAIN: loggregator-capacity-planning.cf-app.com
         VARS_STORE_FILE: gcp/loggregator-capacity-planning/deployment-vars.yml
         OPS_FILES: "clients.yml use-4-azs-for-router.yml capacity-planning-config.yml"
-    - task: setup-datadog-event
-      file: loggregator-ci/tasks/capacity-planning/setup-datadog-event.yml
-      params:
-          DATADOG_API_KEY: {{datadog-dev-api-key}}
     - put: deployments-loggregator-with-changes
       params:
         repository: updated-vars-store
         rebase: true
+    - task: capacity-planning-deploy
+      config:
+        platform: linux
+        image_resource:
+          type: docker-image
+          source:
+            repository: relintdockerhubpushbot/cf-deployment-concourse-tasks
+            tag: v2.2.0
+        inputs:
+        - name: bbl-state
+        - name: loggregator-capacity-planning-release
+        - name: updated-vars-store
+        params:
+          SYSTEM_DOMAIN: loggregator-capacity-planning.cf-app.com
+          CLIENT_ID: capacity_planning_authenticator
+        run:
+          path: /bin/bash
+          args:
+          - "-c"
+          - |
+            #!/bin/bash
+            set -ex
+
+            BBL_DIR=$PWD/bbl-state/gcp/loggregator-capacity-planning
+
+
+            pushd updated-vars-store/gcp/loggregator-capacity-planning
+              export BOSH_CLIENT=`bbl director-username`
+              export BOSH_CLIENT_SECRET=`bbl director-password`
+              export BOSH_CA_CERT=`bbl director-ca-cert`
+              export BOSH_ENVIRONMENT=`bbl director-address`
+
+              export DATADOG_API_KEY=`bosh int datadog-vars.yml --path=/datadog_key`
+              export CLIENT_SECRET=`bosh int deployment-vars.yml --path=/capacity_planning_authenticator_secret`
+            popd
+
+            pushd loggregator-capacity-planning-release
+              bosh create-release
+              bosh upload-release --rebase
+
+              bosh -d loggregator_capacity_planning deploy -n manifests/loggregator-capacity-planning.yml \
+                -v system_domain=$SYSTEM_DOMAIN \
+                -v datadog_api_key=$DATADOG_API_KEY \
+                -v client_id=$CLIENT_ID \
+                -v client_secret=$CLIENT_SECRET
+            popd
+    - task: setup-datadog-event
+      file: loggregator-ci/tasks/capacity-planning/setup-datadog-event.yml
+      params:
+          DATADOG_API_KEY: {{datadog-dev-api-key}}
 
 - name: datadog-nozzle-deploy
   serial: true
@@ -275,7 +328,7 @@ jobs:
           LOGS_PER_SECOND: 500
           LOG_BYTES: 1000
           INSTANCES_PER_APP: 2
-          NUMBER_OF_APPS: 50
+          NUMBER_OF_APPS: 1
           DATADOG_API_KEY: {{datadog-dev-api-key}}
         run:
           path: bash
