@@ -30,7 +30,8 @@ resources:
   type: time
   source:
     location: America/Denver
-    start: 8:00 am
+    start: 8:00 AM
+    stop: 9:00 AM
 
 jobs:
 - name: create-bosh-lite
