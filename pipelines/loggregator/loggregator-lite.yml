@@ -26,6 +26,12 @@ resources:
     branch: master
     private_key: {{deployments-loggregator-key}}
 
+- name: one-hour-before-work
+  type: time
+  source:
+    location: America/Denver
+    start: 8:00 am
+
 jobs:
 - name: create-bosh-lite
   serial_groups:
@@ -79,6 +85,8 @@ jobs:
     - get: bosh-deployment
     - get: deployments-loggregator
     - get: loggregator-ci
+    - get: one-hour-before-work
+      trigger: true
   - task: delete-bosh-lite
     file: loggregator-ci/tasks/destroy-bosh-lite.yml
     params:
