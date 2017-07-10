@@ -14,7 +14,7 @@ resources:
 
 - name: loggregator-capacity-planning-release
   type: git
-  source: &deployments_loggregator
+  source:
     uri: https://github.com/cloudfoundry-incubator/loggregator-capacity-planning-release
     branch: master
 
@@ -187,6 +187,8 @@ jobs:
         - name: bbl-state
         - name: loggregator-capacity-planning-release
         - name: updated-vars-store
+        outputs:
+        - name: updated-capacity-planning-vars-store
         params:
           SYSTEM_DOMAIN: loggregator-capacity-planning.cf-app.com
           CLIENT_ID: capacity_planning_authenticator
@@ -198,8 +200,7 @@ jobs:
             #!/bin/bash
             set -ex
 
-            BBL_DIR=$PWD/bbl-state/gcp/loggregator-capacity-planning
-
+            BBL_DIR=$PWD/updated-vars-store/gcp/loggregator-capacity-planning
 
             pushd updated-vars-store/gcp/loggregator-capacity-planning
               export BOSH_CLIENT=`bbl director-username`
@@ -219,8 +220,27 @@ jobs:
                 -v system_domain=$SYSTEM_DOMAIN \
                 -v datadog_api_key=$DATADOG_API_KEY \
                 -v client_id=$CLIENT_ID \
-                -v client_secret=$CLIENT_SECRET
+                -v client_secret=$CLIENT_SECRET \
+                -l $BBL_DIR/deployment-vars.yml \
+                --vars-store $BBL_DIR/capacity-planning-vars.yml
             popd
+
+            pushd updated-vars-store
+              if [ ! "$(git status --porcelain)" = "" ]; then
+                git config user.email "cf-loggregator@pivotal.io"
+                git config user.name "Loggregator CI"
+                git add .
+                git commit -m "Updating capacity planning deployment vars"
+              else
+                echo "No changes to commit"
+              fi
+            popd
+
+            rsync -ac updated-vars-store/ updated-capacity-planning-vars-store/.
+    - put: deployments-loggregator-with-changes
+      params:
+        repository: updated-capacity-planning-vars-store
+        rebase: true
     - task: setup-datadog-event
       file: loggregator-ci/tasks/capacity-planning/setup-datadog-event.yml
       params:
