@@ -341,9 +341,9 @@ jobs:
   serial: true
   plan:
     - aggregate:
-      - get: loggregator-ci
       - get: vars-store
         resource: deployments-loggregator
+      - get: loggregator-capacity-planning-release
     - task: create-org-and-space
       file: loggregator-ci/tasks/create-org-and-space.yml
       params:
