@@ -360,7 +360,7 @@ jobs:
         platform: linux
         inputs:
           - name: vars-store
-          - name: loggregator-ci
+          - name: loggregator-capacity-planning-release
         params:
           VARS_STORE_FILE: gcp/loggregator-capacity-planning/deployment-vars.yml
           ORG: capacity-planning
@@ -391,10 +391,9 @@ jobs:
             flags="$flags --client-id=$CLIENT_ID"
             flags="$flags --client-secret=$CLIENT_SECRET"
 
-            go get github.com/cloudfoundry/loggregator-ci/tools/log_emitter
-
-            pushd loggregator-ci/tools/log_emitter
-              cp $GOPATH/bin/log_emitter .
+            export GOPATH="loggregator-capacity-planning-release"
+            pushd loggregator-capacity-planning-release/src/code.cloudfoundry.org/log_emitter
+              go build
 
               for i in $(seq $NUMBER_OF_APPS); do
                 cf push "log_emitter-$i" \
