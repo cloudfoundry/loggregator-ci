@@ -147,6 +147,7 @@ jobs:
             #!/bin/bash
             set -ex
 
+            cp cf-deployment/operations/experimental/enable-loggregator-v2-diego-cell.yml ops-files/
             cp cf-deployment/operations/workarounds/use-4-azs-for-router.yml ops-files/
             cp bbl-state/gcp/loggregator-capacity-planning/ops-files/*.yml ops-files/
 
@@ -170,7 +171,7 @@ jobs:
         BBL_STATE_DIR: gcp/loggregator-capacity-planning
         SYSTEM_DOMAIN: loggregator-capacity-planning.cf-app.com
         VARS_STORE_FILE: gcp/loggregator-capacity-planning/deployment-vars.yml
-        OPS_FILES: "clients.yml use-4-azs-for-router.yml capacity-planning-config.yml"
+        OPS_FILES: "clients.yml use-4-azs-for-router.yml capacity-planning-config.yml enable-loggregator-v2-diego-cell.yml"
     - put: deployments-loggregator-with-changes
       params:
         repository: updated-vars-store
@@ -192,9 +193,9 @@ jobs:
         params:
           SYSTEM_DOMAIN: loggregator-capacity-planning.cf-app.com
           CLIENT_ID: capacity_planning_authenticator
-          API_VERSION: v1
-          METRICS_PER_SECOND: 3000
-          METRIC_EMITTER_COUNT: 1
+          API_VERSION: v2
+          METRICS_PER_SECOND: 1500
+          METRIC_EMITTER_COUNT: 2
           EVENT_COUNTER_COUNT: 2
         run:
           path: /bin/bash
