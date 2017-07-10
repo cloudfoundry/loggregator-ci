@@ -341,6 +341,7 @@ jobs:
   serial: true
   plan:
     - aggregate:
+      - get: loggregator-ci
       - get: vars-store
         resource: deployments-loggregator
       - get: loggregator-capacity-planning-release
