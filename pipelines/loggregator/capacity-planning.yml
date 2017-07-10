@@ -137,7 +137,7 @@ jobs:
         params:
           DOPPLER_INSTANCE_COUNT: 1
           LOG_API_INSTANCE_COUNT: 1
-          DIEGO_CELL_INSTANCE_COUNT: 1
+          DIEGO_CELL_INSTANCE_COUNT: 2
           ROUTER_COUNT: 4
         run:
           path: /bin/bash
@@ -192,6 +192,10 @@ jobs:
         params:
           SYSTEM_DOMAIN: loggregator-capacity-planning.cf-app.com
           CLIENT_ID: capacity_planning_authenticator
+          API_VERSION: v1
+          METRICS_PER_SECOND: 3000
+          METRIC_EMITTER_COUNT: 1
+          EVENT_COUNTER_COUNT: 2
         run:
           path: /bin/bash
           args:
@@ -212,6 +216,21 @@ jobs:
               export CLIENT_SECRET=`bosh int deployment-vars.yml --path=/capacity_planning_authenticator_secret`
             popd
 
+            cat <<EOT >> /tmp/overrides.yml
+            - type: replace
+              path: /instance_groups/name=event_counter/instances?
+              value: $EVENT_COUNTER_COUNT
+            - type: replace
+              path: /instance_groups/name=metric_emitter/instances?
+              value: $METRIC_EMITTER_COUNT
+            - type: replace
+              path: /instance_groups/name=metric_emitter/jobs/name=metric_emitter/properties/metric_emitter/api_version?
+              value: $API_VERSION
+            - type: replace
+              path: /instance_groups/name=metric_emitter/jobs/name=metric_emitter/properties/metric_emitter/metrics_per_second?
+              value: $METRICS_PER_SECOND
+            EOT
+
             pushd loggregator-capacity-planning-release
               bosh create-release
               bosh upload-release --rebase
@@ -222,6 +241,7 @@ jobs:
                 -v client_id=$CLIENT_ID \
                 -v client_secret=$CLIENT_SECRET \
                 -l $BBL_DIR/deployment-vars.yml \
+                -o /tmp/overrides.yml \
                 --vars-store $BBL_DIR/capacity-planning-vars.yml
             popd
 
@@ -345,10 +365,10 @@ jobs:
           ORG: capacity-planning
           SPACE: capacity-planning
           SYSTEM_DOMAIN: loggregator-capacity-planning.cf-app.com
-          LOGS_PER_SECOND: 500
+          LOGS_PER_SECOND: 375
           LOG_BYTES: 1000
           INSTANCES_PER_APP: 2
-          NUMBER_OF_APPS: 1
+          NUMBER_OF_APPS: 4
           DATADOG_API_KEY: {{datadog-dev-api-key}}
         run:
           path: bash
