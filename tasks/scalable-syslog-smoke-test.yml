@@ -31,20 +31,28 @@ run:
     export PATH=$GOPATH/bin:$PATH
 
     function teardown {
-      ./report.sh
+      exit_code=$?
       ./teardown.sh
+      exit $exit_code
     }
 
     function restart {
-      ./report.sh
+      exit_code=$?
       ./restart.sh
+      exit $exit_code
     }
 
-    if [ "$TEARDOWN" = "true" ]; then
-      trap teardown EXIT
-    else
-      trap restart EXIT
-    fi
+    function report {
+      if [ "$TEARDOWN" = "true" ]; then
+        trap teardown EXIT
+      else
+        trap restart EXIT
+      fi
+
+      ./report.sh
+    }
+
+    trap report EXIT
 
     cd src/code.cloudfoundry.org/scalable-syslog/tools/smokes
     ./push.sh
