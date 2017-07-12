@@ -643,7 +643,7 @@ jobs:
     - get: develop
       resource: loggregator-develop
       trigger: true
-      passed: ["lats", "cf-release-cats"]
+      passed: ["lats", "cats"]
     - get: loggregator-ci
   - task: promote
     file: loggregator-ci/tasks/promote.yml
