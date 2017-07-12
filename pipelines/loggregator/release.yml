@@ -242,7 +242,7 @@ jobs:
             EOF
 
               # create final release and commit artifcats
-              bosh -n create-release --final \
+              bosh -n create-release --sha2 --final \
                 --tarball ../github-release/release.tgz \
                 --version $new_version
               git add .
