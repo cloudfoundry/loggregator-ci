@@ -194,7 +194,7 @@ jobs:
           SYSTEM_DOMAIN: loggregator-capacity-planning.cf-app.com
           CLIENT_ID: capacity_planning_authenticator
           API_VERSION: v2
-          METRICS_PER_SECOND: 750
+          METRICS_PER_SECOND: 500
           METRIC_EMITTER_COUNT: 2
           EVENT_COUNTER_COUNT: 2
         run:
