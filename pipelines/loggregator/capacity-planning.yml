@@ -194,7 +194,7 @@ jobs:
           SYSTEM_DOMAIN: loggregator-capacity-planning.cf-app.com
           CLIENT_ID: capacity_planning_authenticator
           API_VERSION: v2
-          METRICS_PER_SECOND: 1500
+          METRICS_PER_SECOND: 1000
           METRIC_EMITTER_COUNT: 2
           EVENT_COUNTER_COUNT: 2
         run:
@@ -262,6 +262,67 @@ jobs:
       params:
         repository: updated-capacity-planning-vars-store
         rebase: true
+    - task: create-org-and-space
+      file: loggregator-ci/tasks/create-org-and-space.yml
+      params:
+        VARS_STORE_FILE: gcp/loggregator-capacity-planning/deployment-vars.yml
+        ORG: capacity-planning
+        SPACE: capacity-planning
+        SYSTEM_DOMAIN: loggregator-capacity-planning.cf-app.com
+    - task: deploy-log-emitter
+      config:
+        image_resource:
+          type: docker-image
+          source:
+            repository: loggregator/base
+        platform: linux
+        inputs:
+          - name: vars-store
+          - name: loggregator-capacity-planning-release
+        params:
+          VARS_STORE_FILE: gcp/loggregator-capacity-planning/deployment-vars.yml
+          ORG: capacity-planning
+          SPACE: capacity-planning
+          SYSTEM_DOMAIN: loggregator-capacity-planning.cf-app.com
+          LOGS_PER_SECOND: 250
+          LOG_BYTES: 1000
+          INSTANCES_PER_APP: 2
+          NUMBER_OF_APPS: 4
+          DATADOG_API_KEY: {{datadog-dev-api-key}}
+        run:
+          path: bash
+          args:
+          - -c
+          - |
+            #!/bin/bash
+            set -ex
+            CF_PASSWORD=$(bosh int vars-store/$VARS_STORE_FILE --path=/cf_admin_password)
+            CF_USERNAME=admin
+            CLIENT_ID="capacity_planning_authenticator"
+            CLIENT_SECRET=$(bosh int vars-store/$VARS_STORE_FILE --path=/capacity_planning_authenticator_secret)
+
+            cf login -a api.$SYSTEM_DOMAIN -u $CF_USERNAME -p $CF_PASSWORD -o $ORG -s $SPACE --skip-ssl-validation
+
+            flags="--logs-per-second=$LOGS_PER_SECOND"
+            flags="$flags --log-bytes=$LOG_BYTES"
+            flags="$flags --datadog-api-key=$DATADOG_API_KEY"
+            flags="$flags --client-id=$CLIENT_ID"
+            flags="$flags --client-secret=$CLIENT_SECRET"
+
+            export GOPATH="$PWD/loggregator-capacity-planning-release"
+            pushd loggregator-capacity-planning-release/src/code.cloudfoundry.org/log_emitter
+              go build
+
+              for i in $(seq $NUMBER_OF_APPS); do
+                cf push "log_emitter-$i" \
+                  -b binary_buildpack \
+                  -c "./log_emitter $flags" \
+                  -i $INSTANCES_PER_APP \
+                  -m 64M \
+                  -k 128M \
+                  -u none
+              done
+            popd
     - task: setup-datadog-event
       file: loggregator-ci/tasks/capacity-planning/setup-datadog-event.yml
       params:
@@ -337,72 +398,3 @@ jobs:
             bosh -n -d ${DEPLOYMENT_NAME} deploy ${MANIFEST_FILE} -l ${MANIFEST_VARS} \
               -o deployments-loggregator/gcp/loggregator-capacity-planning/ops-files/datadog.yml
 
-- name: test-applications-deploy
-  serial: true
-  plan:
-    - aggregate:
-      - get: loggregator-ci
-      - get: vars-store
-        resource: deployments-loggregator
-      - get: loggregator-capacity-planning-release
-    - task: create-org-and-space
-      file: loggregator-ci/tasks/create-org-and-space.yml
-      params:
-        VARS_STORE_FILE: gcp/loggregator-capacity-planning/deployment-vars.yml
-        ORG: capacity-planning
-        SPACE: capacity-planning
-        SYSTEM_DOMAIN: loggregator-capacity-planning.cf-app.com
-    - task: deploy-log-emitter
-      config:
-        image_resource:
-          type: docker-image
-          source:
-            repository: loggregator/base
-        platform: linux
-        inputs:
-          - name: vars-store
-          - name: loggregator-capacity-planning-release
-        params:
-          VARS_STORE_FILE: gcp/loggregator-capacity-planning/deployment-vars.yml
-          ORG: capacity-planning
-          SPACE: capacity-planning
-          SYSTEM_DOMAIN: loggregator-capacity-planning.cf-app.com
-          LOGS_PER_SECOND: 375
-          LOG_BYTES: 1000
-          INSTANCES_PER_APP: 2
-          NUMBER_OF_APPS: 4
-          DATADOG_API_KEY: {{datadog-dev-api-key}}
-        run:
-          path: bash
-          args:
-          - -c
-          - |
-            #!/bin/bash
-            set -ex
-            CF_PASSWORD=$(bosh int vars-store/$VARS_STORE_FILE --path=/cf_admin_password)
-            CF_USERNAME=admin
-            CLIENT_ID="capacity_planning_authenticator"
-            CLIENT_SECRET=$(bosh int vars-store/$VARS_STORE_FILE --path=/capacity_planning_authenticator_secret)
-
-            cf login -a api.$SYSTEM_DOMAIN -u $CF_USERNAME -p $CF_PASSWORD -o $ORG -s $SPACE --skip-ssl-validation
-
-            flags="--logs-per-second=$LOGS_PER_SECOND"
-            flags="$flags --log-bytes=$LOG_BYTES"
-            flags="$flags --datadog-api-key=$DATADOG_API_KEY"
-            flags="$flags --client-id=$CLIENT_ID"
-            flags="$flags --client-secret=$CLIENT_SECRET"
-
-            export GOPATH="$PWD/loggregator-capacity-planning-release"
-            pushd loggregator-capacity-planning-release/src/code.cloudfoundry.org/log_emitter
-              go build
-
-              for i in $(seq $NUMBER_OF_APPS); do
-                cf push "log_emitter-$i" \
-                  -b binary_buildpack \
-                  -c "./log_emitter $flags" \
-                  -i $INSTANCES_PER_APP \
-                  -m 64M \
-                  -k 128M \
-                  -u none
-              done
-            popd
