@@ -33,13 +33,23 @@ run:
     export PATH=$GOPATH/bin:$PATH
 
     function teardown {
-      ./teardown.sh
+      set +e
       ./report.sh
+      exit_code=$?
+
+      ./teardown.sh
+
+      exit $exit_code
     }
 
     function restart {
-      ./restart.sh
+      set +e
       ./report.sh
+      exit_code=$?
+
+      ./restart.sh
+
+      exit $exit_code
     }
 
     if [ "$TEARDOWN" = "true" ]; then
