@@ -171,7 +171,7 @@ jobs:
         BBL_STATE_DIR: gcp/loggregator-capacity-planning
         SYSTEM_DOMAIN: loggregator-capacity-planning.cf-app.com
         VARS_STORE_FILE: gcp/loggregator-capacity-planning/deployment-vars.yml
-        OPS_FILES: "clients.yml use-4-azs-for-router.yml capacity-planning-config.yml enable-loggregator-v2-diego-cell.yml"
+        OPS_FILES: "clients.yml use-4-azs-for-router.yml capacity-planning-config.yml enable-loggregator-v2-diego-cell.yml instance-types.yml"
     - put: deployments-loggregator-with-changes
       params:
         repository: updated-vars-store
