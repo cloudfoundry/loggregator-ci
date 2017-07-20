@@ -6,10 +6,10 @@ import json
 
 
 def run_cf(*args, **env):
+    env.update({"CF_HOME": os.getcwd()})
     return subprocess.Popen(
         ["/usr/bin/cf"] + list(args),
         env=env,
-        cwd=os.getcwd(),
     ).wait()
 
 
@@ -76,7 +76,7 @@ def endpoints():
         "/usr/bin/cf",
         "curl",
         "/v2/info",
-    ], cwd=os.getcwd(), stdout=subprocess.PIPE).stdout
+    ], stdout=subprocess.PIPE, env={"CF_HOME": os.getcwd()}).stdout
     info = json.load(info)
     return info["token_endpoint"], info["doppler_logging_endpoint"]
 
