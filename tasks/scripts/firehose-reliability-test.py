@@ -75,7 +75,7 @@ def endpoints():
         "/usr/bin/cf",
         "curl",
         "/v2/info",
-    ], cwd=os.getcwd(), stdout=submodule.PIPE).stdout
+    ], cwd=os.getcwd(), stdout=subprocess.PIPE).stdout
     info = json.load(info)
     return info["token_endpoint"], info["doppler_logging_endpoint"]
 
