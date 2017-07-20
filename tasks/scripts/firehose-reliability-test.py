@@ -66,6 +66,16 @@ def trigger_test(app_domain, cycles, delay, timeout):
     ])
 
 
+def endpoints():
+    info = subprocess.check_output([
+        "/usr/bin/cf",
+        "curl",
+        "/v2/info",
+    ])
+    info = json.loads(info)
+    return info["token_endpoint"], info["doppler_logging_endpoint"]
+
+
 def main():
     cf_login(
         os.environ['CF_API'],
@@ -74,13 +84,14 @@ def main():
         os.environ['SPACE'],
         os.environ['ORG'],
     )
+    uaa_endpoint, log_endpoint = endpoints()
     ensure_app_pushed(
         os.environ['APP_NAME'],
-        UAA_ADDR=os.environ['UAA_ADDR'],
+        UAA_ADDR=uaa_endpoint,
         CLIENT_ID=os.environ['CLIENT_ID'],
         CLIENT_SECRET=os.environ['CLIENT_SECRET'],
         DATADOG_API_KEY=os.environ['DATADOG_API_KEY'],
-        LOG_ENDPOINT=os.environ['LOG_ENDPOINT'],
+        LOG_ENDPOINT=log_endpoint,
     )
 
     # # flood
