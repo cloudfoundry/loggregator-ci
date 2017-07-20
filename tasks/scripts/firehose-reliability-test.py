@@ -62,12 +62,16 @@ def ensure_app_pushed(app_name, **kwargs):
 
 
 def trigger_test(app_domain, cycles, delay, timeout):
-    payload = '''{"cycles": {}, "delay": "{}", "timeout": "{}"}'''
+    payload = {
+        "cycles": cycles,
+        "delay": delay,
+        "timeout": timeout,
+    }
     subprocess.call([
       "/usr/bin/curl",
       app_domain + "/tests",
       "-H", "Content-Type: application/json",
-      "-d", payload.format(cycles, delay, timeout),
+      "-d", payload.dumps(),
     ])
 
 
