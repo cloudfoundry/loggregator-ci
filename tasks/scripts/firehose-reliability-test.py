@@ -71,7 +71,7 @@ def trigger_test(app_domain, cycles, delay, timeout):
       "/usr/bin/curl",
       app_domain + "/tests",
       "-H", "Content-Type: application/json",
-      "-d", payload.dumps(),
+      "-d", json.dumps(payload),
     ])
 
 
