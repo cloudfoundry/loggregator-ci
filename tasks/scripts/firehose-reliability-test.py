@@ -5,7 +5,11 @@ import os
 
 
 def run_cf(*args, **env):
-    return subprocess.Popen(["/usr/bin/cf"] + list(args), env=env).wait()
+    return subprocess.Popen(
+        ["/usr/bin/cf"] + list(args),
+        env=env,
+        cwd=os.getcwd(),
+    ).wait()
 
 
 def check_cf(*args, **env):
@@ -67,12 +71,12 @@ def trigger_test(app_domain, cycles, delay, timeout):
 
 
 def endpoints():
-    info = subprocess.check_output([
+    info = subprocess.Popen([
         "/usr/bin/cf",
         "curl",
         "/v2/info",
-    ])
-    info = json.loads(info)
+    ], cwd=os.getcwd(), stdout=submodule.PIPE).stdout
+    info = json.load(info)
     return info["token_endpoint"], info["doppler_logging_endpoint"]
 
 
