@@ -99,29 +99,29 @@ def main():
         LOG_ENDPOINT=log_endpoint,
     )
 
-    # # flood
-    # trigger_test(
-    #     os.environ['APP_DOMAIN'],
-    #     10000,
-    #     "2us",
-    #     "60s",
-    # )
+    # flood
+    trigger_test(
+        os.environ['APP_DOMAIN'],
+        10000,
+        "2us",
+        "60s",
+    )
 
-    # # flow
-    # trigger_test(
-    #     os.environ['APP_DOMAIN'],
-    #     1000,
-    #     "1ms",
-    #     "60s",
-    # )
+    # flow
+    trigger_test(
+        os.environ['APP_DOMAIN'],
+        1000,
+        "1ms",
+        "60s",
+    )
 
-    # # drip
-    # trigger_test(
-    #     os.environ['APP_DOMAIN'],
-    #     1000,
-    #     "500ms",
-    #     "10m",
-    # )
+    # drip
+    trigger_test(
+        os.environ['APP_DOMAIN'],
+        1000,
+        "500ms",
+        "10m",
+    )
 
 
 if __name__ == "__main__":
