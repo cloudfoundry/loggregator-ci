@@ -50,7 +50,7 @@ def push_app(app_name, **kwargs):
         PWD=pwd,
     )
 
-    for k, v in kwargs:
+    for k, v in kwargs.items():
         check_cf("set-env", app_name, k, v)
 
     check_cf("start", app_name)
