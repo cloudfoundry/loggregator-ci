@@ -45,19 +45,8 @@ def push_app(app_name, *kwargs):
         PWD=pwd,
     )
 
-    # TODO: set env vars via loop over kwargs
-        # os.environ['UAA_ADDR'],
-        # os.environ['CLIENT_ID'],
-        # os.environ['CLIENT_SECRET'],
-        # os.environ['DATADOG_API_KEY'],
-        # os.environ['LOG_ENDPOINT'],
-    # for ev in kwargs:
-        # check_cf(
-        #     "set-env",
-        #     app_name,
-        #     "",
-        #     "",
-        # )
+    for k, v in kwargs:
+        check_cf("set-env", app_name, k, v)
 
     check_cf("start", app_name)
 
@@ -85,14 +74,14 @@ def main():
         os.environ['SPACE'],
         os.environ['ORG'],
     )
-    # ensure_app_pushed(
-    #     os.environ['APP_NAME'],
-    #     UAA_ADDR=os.environ['UAA_ADDR'],
-    #     CLIENT_ID=os.environ['CLIENT_ID'],
-    #     CLIENT_SECRET=os.environ['CLIENT_SECRET'],
-    #     DATADOG_API_KEY=os.environ['DATADOG_API_KEY'],
-    #     LOG_ENDPOINT=os.environ['LOG_ENDPOINT'],
-    # )
+    ensure_app_pushed(
+        os.environ['APP_NAME'],
+        UAA_ADDR=os.environ['UAA_ADDR'],
+        CLIENT_ID=os.environ['CLIENT_ID'],
+        CLIENT_SECRET=os.environ['CLIENT_SECRET'],
+        DATADOG_API_KEY=os.environ['DATADOG_API_KEY'],
+        LOG_ENDPOINT=os.environ['LOG_ENDPOINT'],
+    )
 
     # # flood
     # trigger_test(
