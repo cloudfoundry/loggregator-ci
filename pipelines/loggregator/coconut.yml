@@ -1,4 +1,7 @@
 resources:
+- name: 10m
+  type: time
+  source: {interval: 10m}
 - name: 15m
   type: time
   source: {interval: 15m}
@@ -207,3 +210,25 @@ jobs:
       USERNAME: {{coconut-username}}
       PASSWORD: {{coconut-password}}
     timeout: 15m
+
+- name: firehose-reliability
+  public: false
+  serial: true
+  plan:
+  - get: loggregator
+  - get: loggregator-ci
+  - get: 10m
+    trigger: true
+  - task: run-firehose-reliability
+    file: loggregator-ci/tasks/firehose-reliability-test.yml
+    params:
+      APP_DOMAIN: "loggregator-firehose-reliability.coconut.cf-app.com"
+      APP_NAME: "loggregator-firehose-reliability"
+      CF_API: "api.coconut.cf-app.com"
+      DATADOG_API_KEY: {{datadog-loggregator-api-key}}
+      ORG: system
+      SPACE: blackbox-testing
+      USERNAME: {{coconut-username}}
+      PASSWORD: {{coconut-password}}
+      CLIENT_ID: {{coconut-firehose-reliability-client-id}}
+      CLIENT_SECRET: {{coconut-firehose-reliability-client-secret}}
