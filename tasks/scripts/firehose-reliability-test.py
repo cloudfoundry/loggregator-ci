@@ -29,7 +29,7 @@ def cf_login(api, username, password, space, org):
     )
 
 
-def push_app(app_name, *kwargs):
+def push_app(app_name, **kwargs):
     # build the nozzle bin
     gopath=os.path.join(os.getcwd(), "loggregator")
     pwd=os.path.join(gopath, "src/tools/reliability/cmd/nozzle")
