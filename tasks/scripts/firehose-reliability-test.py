@@ -10,6 +10,7 @@ def run_cf(*args, **env):
     return subprocess.Popen(
         ["/usr/bin/cf"] + list(args),
         env=env,
+        cwd=env.get("PWD"),
     ).wait()
 
 
@@ -32,13 +33,12 @@ def cf_login(api, username, password, space, org):
 def push_app(app_name, **kwargs):
     # build the nozzle bin
     gopath=os.path.join(os.getcwd(), "loggregator")
-    pwd=os.path.join(gopath, "src/tools/reliability/cmd/nozzle")
+    cwd=os.path.join(gopath, "src/tools/reliability/cmd/nozzle")
     subprocess.Popen([
         "/usr/local/go/bin/go",
         "build",
-    ], env={
+    ], cwd=cwd, env={
         "GOPATH": gopath,
-        "PWD": pwd,
     }).wait()
 
     check_cf(
@@ -47,7 +47,7 @@ def push_app(app_name, **kwargs):
         "-c", "./nozzle",
         "-b", "binary_buildpack",
         "--no-start",
-        PWD=pwd,
+        PWD=cwd,
     )
 
     for k, v in kwargs.items():
