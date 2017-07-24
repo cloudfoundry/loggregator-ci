@@ -11,6 +11,7 @@ resources:
   type: git
   source:
     uri: https://github.com/cloudfoundry/scalable-syslog-release
+    disable_ci_skip: true
 - name: loggregator
   type: git
   source:
