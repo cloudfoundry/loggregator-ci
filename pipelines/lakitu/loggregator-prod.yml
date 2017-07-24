@@ -146,7 +146,7 @@ jobs:
         params:
           submodules: none
       - get: secrets-prod
-    - task: diff
+    - task: deploy
       tags: [ prod ]
       config:
         platform: linux
