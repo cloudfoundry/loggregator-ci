@@ -1,4 +1,7 @@
 resources:
+- name: 10m
+  type: time
+  source: {interval: 10m}
 - name: 15m
   type: time
   source: {interval: 15m}
@@ -267,3 +270,25 @@ jobs:
       SPACE: "development"
       USERNAME: {{pws-username}}
     timeout: 15m
+
+- name: firehose-reliability
+  public: false
+  serial: true
+  plan:
+  - get: loggregator
+  - get: loggregator-ci
+  - get: 10m
+    trigger: true
+  - task: run-firehose-reliability
+    file: loggregator-ci/tasks/firehose-reliability-test.yml
+    params:
+      APP_DOMAIN: "loggregator-firehose-reliability.cfapps.io"
+      APP_NAME: "loggregator-firehose-reliability"
+      CF_API: "api.run.pivotal.io"
+      DATADOG_API_KEY: {{datadog-loggregator-api-key}}
+      ORG: "cf-lamb"
+      SPACE: "development"
+      USERNAME: {{pws-username}}
+      PASSWORD: {{pws-password}}
+      CLIENT_ID: {{pws-firehose-reliability-client-id}}
+      CLIENT_SECRET: {{pws-firehose-reliability-client-secret}}
