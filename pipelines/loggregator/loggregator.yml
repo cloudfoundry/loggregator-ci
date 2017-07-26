@@ -1,8 +1,4 @@
 resources:
-- name: 15m
-  type: time
-  source: {interval: 15m}
-
 - name: cats
   type: git
   source:
@@ -102,8 +98,6 @@ jobs:
   serial: true
   public: true
   plan:
-  - get: 15m
-    trigger: true
   - get: loggregator
     resource: loggregator-develop
     trigger: true
