@@ -263,7 +263,8 @@ jobs:
           BBL_STATE_DIR: gcp/loggregator-elect-bbl
           SYSTEM_DOMAIN: loggregator-elect.cf-app.com
           VARS_STORE_FILE: gcp/loggregator-elect-bbl/deployment-vars.yml
-          OPS_FILES: "clients.yml use-4-azs-for-router.yml tcp-routing-gcp.yml enable-rlp.yml metron-health.yml"
+          VARS_FILES: "gcp/loggregator-elect-bbl/datadog-vars.yml gcp/loggregator-elect-bbl/turbulence-vars.yml"
+          OPS_FILES: "clients.yml use-4-azs-for-router.yml tcp-routing-gcp.yml enable-rlp.yml metron-health.yml turbulence-cf.yml"
       - task: deploy-scalable-syslog
         config:
           image_resource:
@@ -309,7 +310,9 @@ jobs:
                   --vars-store "$bbl_dir/scalablesyslog-vars.yml" \
                   --ops-file "$ss_dir/manifests/cf-deployment-ops.yml" \
                   --ops-file "$bbl_dir/ops-files/allow-insecure-syslog-drains.yml" \
+                  --ops-file "$bbl_dir/ops-files/turbulence-scalable-syslog.yml" \
                   --vars-file "$bbl_dir/deployment-vars.yml" \
+                  --vars-file "$bbl_dir/turbulence-vars.yml" \
                   -v "system_domain=loggregator-elect.cf-app.com" \
                   "$ss_dir/manifests/scalable-syslog.yml"
 
