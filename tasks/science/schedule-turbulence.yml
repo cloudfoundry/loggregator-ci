@@ -4,6 +4,7 @@ image_resource:
   source:
   - repository: loggregator/base
 inputs:
+- name: loggregator-ci
 - name: vars-store
 params:
   VARS_FILE_PATH:

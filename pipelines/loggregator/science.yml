@@ -480,7 +480,7 @@ jobs:
           rebase: true
       on_failure: *slack-failure-alert
 
-- name: cf-setup
+- name: setup
   serial: true
   serial_groups: ["loggregator-elect", "loggregator-latest"]
   plan:
