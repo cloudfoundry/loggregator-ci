@@ -537,16 +537,14 @@ jobs:
   plan:
     - aggregate:
       - get: pipeline-lock
-        passed: ["cf-setup"]
+        passed: ["setup"]
         trigger: true
       - get: release-latest
         resource: loggregator-latest
-        passed:
-        - cf-setup
+        passed: ["setup"]
       - get: release-elect
         resource: loggregator-release-elect
-        passed:
-        - cf-setup
+        passed: ["setup"]
       - get: loggregator-ci
     - do:
       - task: setup-event

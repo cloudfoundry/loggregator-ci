@@ -6,7 +6,7 @@ require 'openssl'
 
 class MissingRequiredEnvironmentVariable < StandardError; end
 
-class Config
+class TurbulenceConfig
   attr_accessor :vars_file_path, :base_url, :network_timeout, :network_delay,
     :network_loss, :network_schedule, :username, :password
 
@@ -119,7 +119,7 @@ def network_control_incident(config, deployment, group)
 end
 
 puts("Loading config")
-config = Config.new
+config = TurbulenceConfig.new
 client = TurbulenceClient.new(config)
 
 puts('Getting all scheduled incidents')
