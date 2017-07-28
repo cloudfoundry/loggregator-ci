@@ -62,6 +62,10 @@ class TurbulenceClient
     end
   end
 
+  def create_scheduled_incidents(incidents)
+    incidents.each { |i| create_scheduled_incident(i) }
+  end
+
   def create_scheduled_incident(incident)
     request_body = JSON.pretty_generate(incident)
     uri = URI("#{base_url}/api/v1/scheduled_incidents")
@@ -96,6 +100,24 @@ class TurbulenceClient
   end
 end
 
+def network_control_incident(config, deployment, group)
+  {
+    "Schedule" => config.network_schedule,
+    "Incident" => {
+      "Tasks" => [{
+        "Type" => "control-net",
+        "Timeout" => config.network_timeout,
+        "Delay" => config.network_delay,
+        "Loss" => config.network_loss,
+      }],
+      "Selector" => {
+        "Deployment" => {"Name" => deployment},
+        "Group" => {"Name" => group},
+      }
+    }
+  }
+end
+
 puts("Loading config")
 config = Config.new
 client = TurbulenceClient.new(config)
@@ -107,16 +129,11 @@ puts("Deleting #{scheduled_incidents.length} scheduled incidents")
 client.delete_scheduled_incidents(scheduled_incidents)
 
 puts("Creating control network scheduled incident")
-client.create_scheduled_incident({
-  "Schedule" => config.network_schedule,
-  "Incident" => {
-    "Tasks" => [{
-      "Type" => "control-net",
-      "Timeout" => config.network_timeout,
-      "Delay" => config.network_delay,
-      "Loss" => config.network_loss,
-    }],
-  }
-})
+client.create_scheduled_incidents([
+  network_control_incident(config, "cf", "doppler"),
+  network_control_incident(config, "cf", "log-api"),
+  network_control_incident(config, "cf", "diego-cell"),
+  network_control_incident(config, "scalablesyslog", "*"),
+])
 
 puts('Done.')
