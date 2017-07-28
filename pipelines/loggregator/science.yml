@@ -521,7 +521,9 @@ jobs:
           file: loggregator-ci/tasks/science/schedule-turbulence.yml
           params:
             TURBULENCE_API_URL: https://104.198.199.110:6868
-            VARS_FILE_PATH: "gcp/loggregator-latest-bbl/deployment-vars.yml"
+            VARS_FILE_PATH: "gcp/loggregator-elect-bbl/deployment-vars.yml"
+            TURBULENCE_NETWORK_SCHEDULE: "@every 10m"
+            TURBULENCE_NETWORK_TIMEOUT: 10m
         - task: setup-turbulence-loggregator-latest
           file: loggregator-ci/tasks/science/schedule-turbulence.yml
           params:
