@@ -518,12 +518,12 @@ jobs:
             ORG: cf-lamb
             SPACE: development
         - task: setup-turbulence-loggregator-elect
-          file: loggregator-ci/tasks/science/schedule-incidents.yml
+          file: loggregator-ci/tasks/science/schedule-turbulence.yml
           params:
             TURBULENCE_API_URL: https://104.198.199.110:6868
             VARS_FILE_PATH: "gcp/loggregator-latest-bbl/deployment-vars.yml"
         - task: setup-turbulence-loggregator-latest
-          file: loggregator-ci/tasks/science/schedule-incidents.yml
+          file: loggregator-ci/tasks/science/schedule-turbulence.yml
           params:
             TURBULENCE_API_URL: https://130.211.157.150:6868
             VARS_FILE_PATH: "gcp/loggregator-latest-bbl/deployment-vars.yml"
