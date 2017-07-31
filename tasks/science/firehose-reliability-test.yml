@@ -1,0 +1,10 @@
+platform: linux
+image_resource:
+  type: docker-image
+  source:
+  - repository: loggregator/base
+inputs:
+- name: loggregator
+- name: loggregator-ci
+run:
+  path: loggregator-ci/tasks/scripts/firehose-reliability-test.py
