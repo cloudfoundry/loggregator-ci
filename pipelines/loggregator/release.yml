@@ -188,7 +188,7 @@ jobs:
         S3_ACCESS_KEY: {{s3-access-key}}
         S3_SECRET_KEY: {{s3-secret-key}}
         SSH_KEY: {{loggregator-key}}
-        NEW_VERSION: 91
+        NEW_VERSION: 92
       inputs:
       - name: loggregator-develop
       - name: loggregator-master
