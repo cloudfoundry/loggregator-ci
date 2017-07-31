@@ -8,6 +8,7 @@ groups:
   - loggregator-elect-v2-deploy
   - setup
   - smoke-tests
+  - start-incidents
 - name: director-lifecycle
   jobs:
   - loggregator-latest-bbl-create
@@ -141,6 +142,13 @@ resources:
     source:
       start: 8:00 PM
       stop: 9:00 PM
+      location: America/Denver
+
+  - name: every-morning
+    type: time
+    source:
+      start: 8:00 AM
+      stop: 9:00 AM
       location: America/Denver
 
   - name: slack-alert
@@ -901,16 +909,6 @@ jobs:
             VARS_STORE_FILE: gcp/science/loggregator-latest-v2/deployment-vars.yml
             ORG: cf-lamb
             SPACE: development
-        - task: setup-turbulence-loggregator-elect
-          file: loggregator-ci/tasks/science/schedule-turbulence.yml
-          params:
-            TURBULENCE_API_URL: https://104.198.199.110:6868
-            VARS_FILE_PATH: "gcp/science/loggregator-elect/deployment-vars.yml"
-        - task: setup-turbulence-loggregator-latest
-          file: loggregator-ci/tasks/science/schedule-turbulence.yml
-          params:
-            TURBULENCE_API_URL: https://130.211.157.150:6868
-            VARS_FILE_PATH: "gcp/science/loggregator-latest/deployment-vars.yml"
         - task: setup-event
           file: loggregator-ci/tasks/science/setup-datadog-event.yml
           params:
@@ -1215,3 +1213,40 @@ jobs:
         put: pipeline-lock
         params:
           release: pipeline-lock
+
+- name: start-incidents
+  serial: true
+  serial_groups: ["locking"]
+  plan:
+    - get: pipeline-lock
+    - put: pipeline-lock
+      params:
+        claim: "pipeline"
+    - get: every-morning
+      trigger: true
+    - aggregate:
+      - get: vars-store
+        resource: deployments-loggregator-with-changes
+      - get: release-elect
+        resource: loggregator-release-elect
+        passed: ["setup"]
+      - get: release-latest
+        resource: loggregator-latest
+        passed: ["setup"]
+      - get: loggregator-ci
+    - aggregate:
+      - task: start-incidents-loggregator-elect
+        file: loggregator-ci/tasks/science/schedule-turbulence.yml
+        params:
+          TURBULENCE_API_URL: https://104.198.199.110:6868
+          VARS_FILE_PATH: "gcp/science/loggregator-elect/deployment-vars.yml"
+      - task: start-incidents-loggregator-latest
+        file: loggregator-ci/tasks/science/schedule-turbulence.yml
+        params:
+          TURBULENCE_API_URL: https://130.211.157.150:6868
+          VARS_FILE_PATH: "gcp/science/loggregator-latest/deployment-vars.yml"
+  ensure:
+    put: pipeline-lock
+    params:
+      release: pipeline-lock
+  on_failure: *slack-failure-alert

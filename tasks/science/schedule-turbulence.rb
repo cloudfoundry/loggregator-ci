@@ -57,6 +57,8 @@ class TurbulenceClient
     req.content_type = 'application/json'
     resp = do_request(req)
 
+    puts("Creating incident: #{request_body}\n\n")
+
     if !resp.kind_of?(Net::HTTPSuccess)
       puts("Failed to create incident: #{resp.inspect}")
       puts(resp.body)
