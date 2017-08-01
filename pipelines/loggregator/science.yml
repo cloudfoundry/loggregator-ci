@@ -1275,6 +1275,7 @@ jobs:
           USERNAME: admin
           CLIENT_ID: {{science-firehose-reliability-client-id}}
           CLIENT_SECRET: {{science-firehose-reliability-client-secret}}
+          SKIP_CERT_VERIFY: true
     # - task: loggregator-release-elect
     #   file: loggregator-ci/tasks/firehose-reliability-test.yml
     #   params:

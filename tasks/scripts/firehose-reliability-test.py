@@ -19,15 +19,20 @@ def check_cf(*args, **env):
         raise subprocess.CalledProcessError
 
 
-def cf_login(api, username, password, space, org):
-    check_cf(
+def cf_login(api, username, password, space, org, skip_cert_very):
+    args = [
         "login",
         "-a", api,
         "-u", username,
         "-p", password,
         "-s", space,
         "-o", org,
-    )
+    ]
+
+    if skip_cert_verify == "true":
+        args.append("--skip-ssl-validation")
+
+    check_cf(*args)
 
 
 def push_app(app_name, **kwargs):
@@ -99,6 +104,7 @@ def main():
         cf_password,
         os.environ['SPACE'],
         os.environ['ORG'],
+        os.environ['SKIP_CERT_VERIFY'],
     )
     uaa_endpoint, log_endpoint = endpoints()
     ensure_app_pushed(
