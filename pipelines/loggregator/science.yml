@@ -1222,6 +1222,16 @@ jobs:
 - name: firehose-reliability
   plan:
   - aggregate:
+    - get: release-elect
+      resource: loggregator-release-elect
+      passed: ["setup"]
+      params:
+        submodules: none
+    - get: release-latest
+      resource: loggregator-latest
+      passed: ["setup"]
+      params:
+        submodules: none
     - get: loggregator
       resource: loggregator-release-elect
     - get: vars-store
@@ -1229,45 +1239,44 @@ jobs:
     - get: loggregator-ci
     - get: 10m
       trigger: true
-  - aggregate:
-    - do:
-      - task: get-cf-creds
-        config:
-        file: loggregator-ci/tasks/get-cf-admin-credentials.yml
-        params:
-          VARS_STORE_FILE: gcp/science/loggregator-latest/deployment-vars.yml
-      - task: loggregator-latest
-        file: loggregator-ci/tasks/science/firehose-reliability-test.yml
-        params:
-          APP_DOMAIN: "loggregator-firehose-reliability.loggregator-latest.cf-app.com"
-          APP_NAME: "loggregator-firehose-reliability"
-          CF_API: "api.loggregator-latest.cf-app.com"
-          DATADOG_API_KEY: {{datadog-loggregator-api-key}}
-          ORG: cf-lamb
-          SPACE: development
-          USERNAME: admin
-          CLIENT_ID: {{science-firehose-reliability-client-id}}
-          CLIENT_SECRET: {{science-firehose-reliability-client-secret}}
-          SKIP_CERT_VERIFY: true
-    - do:
-      - task: get-cf-creds
-        config:
-        file: loggregator-ci/tasks/get-cf-admin-credentials.yml
-        params:
-          VARS_STORE_FILE: gcp/science/loggregator-elect/deployment-vars.yml
-      - task: loggregator-elect
-        file: loggregator-ci/tasks/science/firehose-reliability-test.yml
-        params:
-          APP_DOMAIN: "loggregator-firehose-reliability.loggregator-elect.cf-app.com"
-          APP_NAME: "loggregator-firehose-reliability"
-          CF_API: "api.loggregator-elect.cf-app.com"
-          DATADOG_API_KEY: {{datadog-loggregator-api-key}}
-          ORG: cf-lamb
-          SPACE: development
-          USERNAME: admin
-          CLIENT_ID: {{science-firehose-reliability-client-id}}
-          CLIENT_SECRET: {{science-firehose-reliability-client-secret}}
-          SKIP_CERT_VERIFY: true
+  - task: get-cf-creds
+    config:
+    file: loggregator-ci/tasks/get-cf-admin-credentials.yml
+    params:
+      VARS_STORE_FILE: gcp/science/loggregator-latest/deployment-vars.yml
+  - task: loggregator-latest
+    file: loggregator-ci/tasks/science/firehose-reliability-test.yml
+    params:
+      APP_DOMAIN: "loggregator-firehose-reliability.loggregator-latest.cf-app.com"
+      APP_NAME: "loggregator-firehose-reliability"
+      CF_API: "api.loggregator-latest.cf-app.com"
+      DATADOG_API_KEY: {{datadog-loggregator-api-key}}
+      ORG: cf-lamb
+      SPACE: development
+      USERNAME: admin
+      CLIENT_ID: {{science-firehose-reliability-client-id}}
+      CLIENT_SECRET: {{science-firehose-reliability-client-secret}}
+      SKIP_CERT_VERIFY: true
+    timeout: 10m
+  - task: get-cf-creds
+    config:
+    file: loggregator-ci/tasks/get-cf-admin-credentials.yml
+    params:
+      VARS_STORE_FILE: gcp/science/loggregator-elect/deployment-vars.yml
+  - task: loggregator-elect
+    file: loggregator-ci/tasks/science/firehose-reliability-test.yml
+    params:
+      APP_DOMAIN: "loggregator-firehose-reliability.loggregator-elect.cf-app.com"
+      APP_NAME: "loggregator-firehose-reliability"
+      CF_API: "api.loggregator-elect.cf-app.com"
+      DATADOG_API_KEY: {{datadog-loggregator-api-key}}
+      ORG: cf-lamb
+      SPACE: development
+      USERNAME: admin
+      CLIENT_ID: {{science-firehose-reliability-client-id}}
+      CLIENT_SECRET: {{science-firehose-reliability-client-secret}}
+      SKIP_CERT_VERIFY: true
+    timeout: 10m
 
 - name: start-incidents
   serial: true
