@@ -45,7 +45,7 @@ resources:
     access_token: {{access-token}}
     drafts: true
 
-- name: cf-release
+- name: cf-release-develop
   type: git
   source:
     uri: git@github.com:cloudfoundry/cf-release
@@ -295,6 +295,7 @@ jobs:
       resource: loggregator-final-release-master
       passed: ["loggregator-create-final-release"]
     - get: cf-release
+      resource: cf-release-develop
     - task: bump-submodule
       config:
         image_resource:
@@ -344,7 +345,7 @@ jobs:
 
               rsync -ca cf-release/ cf-release-bump/
 
-    - put: cf-release
+    - put: cf-release-develop
       params:
         rebase: true
         repository: cf-release-bump
