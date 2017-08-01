@@ -1260,7 +1260,7 @@ jobs:
                 vars_file_path = load_or_raise('VARS_STORE_FILE')
                 password = `bosh int vars-store/#{vars_file_path} --path=/cf_admin_password`.chomp
 
-                File.open('cf-credentials/password') do |f|
+                File.open('cf-credentials/password', 'w') do |f|
                   f.write(password)
                 end
       - task: loggregator-latest

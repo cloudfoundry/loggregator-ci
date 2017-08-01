@@ -92,7 +92,7 @@ def get_cf_password():
         return os.environ['PASSWORD']
 
 def main():
-    cf_password = get_cf_passwod()
+    cf_password = get_cf_password()
     cf_login(
         os.environ['CF_API'],
         os.environ['USERNAME'],
