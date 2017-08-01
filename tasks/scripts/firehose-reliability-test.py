@@ -19,7 +19,7 @@ def check_cf(*args, **env):
         raise subprocess.CalledProcessError
 
 
-def cf_login(api, username, password, space, org, skip_cert_very):
+def cf_login(api, username, password, space, org, skip_cert_verify):
     args = [
         "login",
         "-a", api,
