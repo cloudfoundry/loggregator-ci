@@ -84,12 +84,19 @@ def endpoints():
     info = json.load(info)
     return info["token_endpoint"], info["doppler_logging_endpoint"]
 
+def get_cf_password():
+    try:
+        file = open("cf-credentials/password", "r")
+        return file.read()
+    except:
+        return os.environ['PASSWORD']
 
 def main():
+    cf_password = get_cf_passwod()
     cf_login(
         os.environ['CF_API'],
         os.environ['USERNAME'],
-        os.environ['PASSWORD'],
+        cf_password,
         os.environ['SPACE'],
         os.environ['ORG'],
     )

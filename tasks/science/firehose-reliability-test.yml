@@ -6,5 +6,6 @@ image_resource:
 inputs:
 - name: loggregator
 - name: loggregator-ci
+- name: cf-credentials
 run:
   path: loggregator-ci/tasks/scripts/firehose-reliability-test.py

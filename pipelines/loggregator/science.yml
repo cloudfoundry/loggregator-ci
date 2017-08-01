@@ -9,6 +9,7 @@ groups:
   - setup
   - smoke-tests
   - start-incidents
+  - firehose-reliability
 - name: director-lifecycle
   jobs:
   - loggregator-latest-bbl-create
@@ -132,6 +133,10 @@ resources:
       branch: master
       pool: release-elect-regression
       private_key: {{cf-loggregator-oauth-bot-key}}
+
+  - name: 10m
+    type: time
+    source: {interval: 10m}
 
   - name: 5m
     type: time
@@ -1213,6 +1218,75 @@ jobs:
         put: pipeline-lock
         params:
           release: pipeline-lock
+
+- name: firehose-reliability
+  plan:
+  - aggregate:
+    - get: loggregator
+      resource: loggregator-release-elect
+    - get: vars-store
+      resource: deployments-loggregator
+    - get: loggregator-ci
+    - get: 10m
+      trigger: true
+  - aggregate:
+    - do:
+      - task: get-cf-creds
+        config:
+          platform: linux
+          inputs:
+            - name: vars-store
+          outputs:
+            - name: cf-credentials
+          image_resource:
+            type: docker-image
+            source:
+              repository: loggregator/base
+          params:
+            VARS_STORE_FILE: gcp/science/loggregator-latest/deployment-vars.yml
+          run:
+            path: ruby
+            args:
+              - -e
+              - |
+                #!/usr/bin/env ruby
+                def load_or_raise(name)
+                  value = ENV[name]
+                  if value.nil?
+                    raise MissingRequiredEnvironmentVariable.new(name)
+                  end
+                  value
+                end
+                vars_file_path = load_or_raise('VARS_STORE_FILE')
+                password = `bosh int vars-store/#{vars_file_path} --path=/cf_admin_password`.chomp
+
+                File.open('cf-credentials/password') do |f|
+                  f.write(password)
+                end
+      - task: loggregator-latest
+        file: loggregator-ci/tasks/science/firehose-reliability-test.yml
+        params:
+          APP_DOMAIN: "loggregator-firehose-reliability.loggregator-latest.cf-app.com"
+          APP_NAME: "loggregator-firehose-reliability"
+          CF_API: "api.loggregator-latest.cf-app.com"
+          DATADOG_API_KEY: {{datadog-loggregator-api-key}}
+          ORG: system
+          SPACE: blackbox-testing
+          USERNAME: admin
+          CLIENT_ID: {{science-firehose-reliability-client-id}}
+          CLIENT_SECRET: {{science-firehose-reliability-client-secret}}
+    # - task: loggregator-release-elect
+    #   file: loggregator-ci/tasks/firehose-reliability-test.yml
+    #   params:
+    #     APP_DOMAIN: "loggregator-firehose-reliability.loggregator-elect.cf-app.com"
+    #     APP_NAME: "loggregator-firehose-reliability"
+    #     CF_API: "api.loggregator-elect.cf-app.com"
+    #     DATADOG_API_KEY: {{datadog-loggregator-api-key}}
+    #     ORG: system
+    #     SPACE: blackbox-testing
+    #     USERNAME: admin
+    #     CLIENT_ID: {{science-firehose-reliability-client-id}}
+    #     CLIENT_SECRET: {{science-firehose-reliability-client-secret}}
 
 - name: start-incidents
   serial: true

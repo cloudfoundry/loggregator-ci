@@ -1,7 +1,5 @@
 #!/bin/bash
 
-set -e
-
 function set_globals {
     env=$1
     pipeline=$2
