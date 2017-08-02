@@ -1220,8 +1220,13 @@ jobs:
           release: pipeline-lock
 
 - name: firehose-reliability
+  serial_groups: ["locking"]
   plan:
   - aggregate:
+    - get: pipeline-lock
+    - put: pipeline-lock
+      params:
+        claim: "pipeline"
     - get: release-elect
       resource: loggregator-release-elect
       passed: ["setup"]
