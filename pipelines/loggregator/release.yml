@@ -182,7 +182,7 @@ jobs:
       image_resource:
         type: docker-image
         source:
-        - repository: loggregator/base
+          repository: loggregator/base
       platform: linux
       params:
         S3_ACCESS_KEY: {{s3-access-key}}
@@ -301,7 +301,7 @@ jobs:
         image_resource:
           type: docker-image
           source:
-          - repository: loggregator/bosh10
+            repository: loggregator/bosh10
         platform: linux
         inputs:
         - name: loggregator-master
@@ -361,7 +361,7 @@ jobs:
       image_resource:
         type: docker-image
         source:
-        - repository: loggregator/base
+          repository: loggregator/base
       platform: linux
       params:
         S3_ACCESS_KEY: {{s3-access-key-id}}

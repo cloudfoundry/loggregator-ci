@@ -30,7 +30,7 @@ jobs:
       image_resource:
         type: docker-image
         source:
-        - repository: loggregator/base
+          repository: loggregator/base
       platform: linux
       inputs:
       - name: bosh-hm-forwarder-release
