@@ -16,30 +16,11 @@ resources:
   source:
     repository: cloudfoundry-incubator/consul-release
 
-- name: cf-release
-  type: git
-  source:
-    uri: https://github.com/cloudfoundry/cf-release
-    branch: release-candidate
-
 - name: cf-release-develop
   type: git
   source:
     uri: https://github.com/cloudfoundry/cf-release
     branch: develop
-
-- name: diego-release
-  type: git
-  source:
-    uri: https://github.com/cloudfoundry/diego-release
-    branch: master
-
-- name: diego-github-releases
-  type: github-release
-  source:
-    user: cloudfoundry
-    repository: diego-release
-    access_token: {{access-token}}
 
 - name: deployments-loggregator
   type: git
@@ -258,127 +239,6 @@ jobs:
     file: cf-deployment-concourse-tasks/bosh-cleanup/task.yml
     params:
       BBL_STATE_DIR: gcp/bbl
-
-- name: cf-release-deploy
-  serial: true
-  serial_groups:
-  - cf-release
-  plan:
-  - aggregate:
-    - get: loggregator
-      resource: loggregator-develop
-      trigger: true
-      passed:
-      - run-tests
-      - run-windows-tests
-    - get: cf-release
-      trigger: false
-    - get: diego-github-releases
-      trigger: false
-    - get: diego-release
-      trigger: false
-    - get: deployments-loggregator
-      trigger: false
-
-  - task: cf-and-diego-deploy
-    privileged: true
-    config:
-      platform: linux
-      image_resource:
-        type: docker-image
-        source:
-          repository: loggregator/bosh10
-      inputs:
-      - name: loggregator
-      - name: cf-release
-      - name: diego-release
-      - name: diego-github-releases
-      - name: deployments-loggregator
-      outputs:
-      - name: cf-manifest
-      params:
-      run:
-        path: bash
-        args:
-        - -c
-        - |
-          #!/bin/bash
-          set -ex
-
-          workspace=$(pwd)
-
-          password=$(cat deployments-loggregator/gcp/loggregator-lite/creds.yml |
-            grep admin_password |
-            awk '{print $2}')
-          bosh -u admin -p "$password" target 10.100.0.6 lite
-          bosh login admin "$password"
-
-          pushd cf-release
-            rm -r src/loggregator
-            ln -s $workspace/loggregator src/
-            bosh --parallel 10 sync blobs
-
-            bosh -n create release --name cf --force
-            bosh -n upload release --rebase
-            ./scripts/generate-bosh-lite-dev-manifest $workspace/deployments-loggregator/gcp/loggregator-lite/runner.yml
-            bosh -n deploy
-          popd
-
-          for release in $(find diego-github-releases -name '*.tgz')
-          do
-            bosh -n upload release $release
-          done
-
-          pushd diego-release
-            ./scripts/generate-bosh-lite-manifests -r
-            bosh -n deployment bosh-lite/deployments/diego.yml
-            bosh -n deploy
-          popd
-
-- name: cf-release-cats
-  serial: true
-  serial_groups:
-  - cf-release
-  plan:
-  - aggregate:
-    - get: loggregator-develop
-      trigger: true
-      passed:
-      - cf-release-deploy
-    - get: deployments-loggregator
-      trigger: false
-
-  - task: run-cats
-    privileged: true
-    config:
-      platform: linux
-      image_resource:
-        type: docker-image
-        source:
-          repository: loggregator/bosh10
-      inputs:
-      - name: deployments-loggregator
-      params:
-      run:
-        path: bash
-        args:
-        - -c
-        - |
-          #!/bin/bash
-          set -ex
-
-          workspace=$(pwd)
-
-          password=$(cat deployments-loggregator/gcp/loggregator-lite/creds.yml |
-            grep admin_password |
-            awk '{print $2}')
-          bosh -u admin -p "$password" target 10.100.0.6 lite
-          bosh login admin "$password"
-
-          bosh download manifest cf-warden ./cf.yml
-
-          bosh -d ./cf.yml run errand acceptance_tests
-
 
 - name: loggregator-deploy
   serial: true
