@@ -1,10 +1,9 @@
 resources:
-- name: datadog-firehose-nozzle-release
+- name: datadog-firehose-nozzle-release-repo
   type: git
   source:
-    uri: git@github.com:datadog/datadog-firehose-nozzle-release.git
+    uri: https://github.com/DataDog/datadog-firehose-nozzle-release
     branch: master
-    private_key: {{datadog-firehose-nozzle-release-key}}
 
 - name: deployments-loggregator
   type: git
@@ -13,85 +12,20 @@ resources:
     branch: master
     private_key: {{deployments-loggregator-key}}
 
-- name: gcp-stemcell
-  type: bosh-io-stemcell
+- name: datadog-firehose-nozzle-release
+  type: bosh-io-release
   source:
-    name: bosh-google-kvm-ubuntu-trusty-go_agent
+    repository: DataDog/datadog-firehose-nozzle-release
+    version: 63
 
 jobs:
-- name: tests
-  public: true
-  serial: true
-  plan:
-  - get: datadog-firehose-nozzle-release
-    trigger: true
-  - task: run-unit-tests
-    config:
-      image_resource:
-        type: docker-image
-        source:
-          repository: loggregator/base
-      platform: linux
-      inputs:
-      - name: datadog-firehose-nozzle-release
-      run:
-        path: bash
-        args:
-          - -c
-          - |
-            #!/bin/bash -e
-
-            set -x
-
-            cd datadog-firehose-nozzle-release/src/datadog-firehose-nozzle/
-
-            # set up GOPATH and fetch dependencies
-            export GOPATH=$(pwd)
-            export PATH=$PATH:$GOPATH/bin
-
-            go version
-            go get -d -v -t ./...
-            go get -u github.com/golang/lint/golint
-
-            cd src/github.com/DataDog/datadog-firehose-nozzle/
-            bin/test
-
 - name: deploy
   serial: true
   plan:
   - aggregate:
-    - get: gcp-stemcell
-      trigger: false
-    - get: datadog-firehose-nozzle-release
-      passed:
-      - tests
-      trigger: true
     - get: deployments-loggregator
-      trigger: false
-  - task: create-release
-    config:
-      image_resource:
-        type: docker-image
-        source:
-          repository: loggregator/base
-      platform: linux
-      inputs:
-      - name: datadog-firehose-nozzle-release
-      outputs:
-      - name: datadog-release
-      run:
-        path: bash
-        args:
-          - -c
-          - |
-            #!/bin/bash
-
-            set -ex
-
-            cd datadog-firehose-nozzle-release
-
-            bosh -n create-release --force --tarball ../datadog-release/release.tgz
-
+    - get: datadog-firehose-nozzle-release
+    - get: datadog-firehose-nozzle-release-repo
   - task: deploy
     config:
       image_resource:
@@ -100,11 +34,11 @@ jobs:
           repository: relintdockerhubpushbot/cf-deployment-concourse-tasks
       platform: linux
       inputs:
-      - name: datadog-release
       - name: deployments-loggregator
       - name: datadog-firehose-nozzle-release
+      - name: datadog-firehose-nozzle-release-repo
       params:
-        MANIFEST_FILE: datadog-firehose-nozzle-release/templates/datadog-bosh2.yml
+        MANIFEST_FILE: datadog-firehose-nozzle-release-repo/templates/datadog-bosh2.yml
         MANIFEST_VARS: deployments-loggregator/gcp/coconut/datadog-vars.yml
         DEPLOYMENT_NAME: datadog
       run:
@@ -125,5 +59,7 @@ jobs:
               export BOSH_ENVIRONMENT=`bbl director-address`
             popd
 
-            bosh -n upload-release datadog-release/*.tgz --rebase
-            bosh -n -d ${DEPLOYMENT_NAME} deploy ${MANIFEST_FILE} -l ${MANIFEST_VARS}
+            bosh -n upload-release datadog-firehose-nozzle-release/*.tgz
+            bosh -n -d ${DEPLOYMENT_NAME} deploy ${MANIFEST_FILE} \
+              -o deployments-loggregator/gcp/bbl/ops-files/datadog/metric-prefix.yml \
+              -l ${MANIFEST_VARS}
