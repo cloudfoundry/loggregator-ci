@@ -1282,6 +1282,11 @@ jobs:
       CLIENT_SECRET: {{science-firehose-reliability-client-secret}}
       SKIP_CERT_VERIFY: true
     timeout: 10m
+  ensure:
+    put: pipeline-lock
+    params:
+      release: pipeline-lock
+  on_failure: *slack-failure-alert
 
 - name: start-incidents
   serial: true
