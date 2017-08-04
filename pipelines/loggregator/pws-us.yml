@@ -147,7 +147,7 @@ jobs:
   plan:
   - get: loggregator-ci
   - get: scalable-syslog-release
-  - get: 1h
+  - get: 10m
     trigger: true
   - task: v2-drain
     file: loggregator-ci/tasks/scalable-syslog-smoke-test.yml
@@ -170,7 +170,7 @@ jobs:
   plan:
   - get: loggregator-ci
   - get: scalable-syslog-release
-  - get: 1h
+  - get: 10m
     trigger: true
   - task: v2-drain
     file: loggregator-ci/tasks/scalable-syslog-smoke-test.yml
