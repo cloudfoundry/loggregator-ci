@@ -16,7 +16,7 @@ run:
   - |
     #/usr/bin/env ruby
 
-    require_relative 'loggregator-ci/tasks/scripts/datadog/client.rb'
+    require_relative "#{Dir.pwd}/loggregator-ci/tasks/scripts/datadog/client.rb"
 
     settings = JSON.parse(File.read('deployment-settings/settings.json'))
 
