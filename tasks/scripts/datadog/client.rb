@@ -45,9 +45,7 @@ module DataDog
     attr_accessor :api_key
 
     def post_request(url, body)
-      uri = URI(url)
-
-      request = Net::HTTP::Post.new(uri.request_uri)
+      request = Net::HTTP::Post.new(URI(url))
       request.body = JSON.dump(body)
       request.content_type = 'application/json'
 
