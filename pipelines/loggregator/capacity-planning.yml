@@ -147,7 +147,7 @@ jobs:
             #!/bin/bash
             set -ex
 
-            cp cf-deployment/operations/experimental/enable-loggregator-v2-diego-cell.yml ops-files/
+            cp cf-deployment/operations/experimental/enable-loggregator-v2-diego.yml ops-files/
             cp cf-deployment/operations/workarounds/use-4-azs-for-router.yml ops-files/
             cp bbl-state/gcp/loggregator-capacity-planning/ops-files/*.yml ops-files/
 
@@ -171,7 +171,7 @@ jobs:
         BBL_STATE_DIR: gcp/loggregator-capacity-planning
         SYSTEM_DOMAIN: loggregator-capacity-planning.cf-app.com
         VARS_STORE_FILE: gcp/loggregator-capacity-planning/deployment-vars.yml
-        OPS_FILES: "clients.yml use-4-azs-for-router.yml capacity-planning-config.yml enable-loggregator-v2-diego-cell.yml instance-types.yml"
+        OPS_FILES: "clients.yml use-4-azs-for-router.yml capacity-planning-config.yml enable-loggregator-v2-diego.yml instance-types.yml"
     - put: deployments-loggregator-with-changes
       params:
         repository: updated-vars-store
