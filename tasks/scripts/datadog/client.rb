@@ -1,7 +1,8 @@
 require 'net/http'
+require 'json'
 
 # Usage:
-#   require_relative loggregator-ci/tasks/scripts/datadog/client.rb'
+#   require_relative 'loggregator-ci/tasks/scripts/datadog/client.rb'
 #
 #   client = DataDog::Client.new('api-key')
 #

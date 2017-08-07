@@ -123,22 +123,84 @@ jobs:
       file: cf-deployment-concourse-tasks/bosh-upload-stemcell-from-cf-deployment/task.yml
       params:
         BBL_STATE_DIR: gcp/loggregator-capacity-planning
+    - task: build-settings
+      config:
+        platform: linux
+        image_resource:
+          type: docker-image
+          source:
+            repository: relintdockerhubpushbot/cf-deployment-concourse-tasks
+            tag: v2.2.0
+        outputs:
+          - name: deployment-settings
+        params:
+          API_VERSION: v2
+          CLIENT_ID: capacity_planning_authenticator
+          DIEGO_CELL_INSTANCE_COUNT: 2
+          DOPPLER_INSTANCE_COUNT: 1
+          EVENT_COUNTER_COUNT: 2
+          INSTANCES_PER_APP: 2
+          LOGS_PER_SECOND: 125
+          LOG_API_INSTANCE_COUNT: 1
+          LOG_BYTES: 1000
+          METRICS_PER_SECOND: 500
+          METRIC_EMITTER_COUNT: 2
+          NUMBER_OF_APPS: 4
+          ORG: capacity-planning
+          ROUTER_COUNT: 4
+          SPACE: capacity-planning
+          SYSTEM_DOMAIN: loggregator-capacity-planning.cf-app.com
+        run:
+          path: ruby
+          args:
+          - "-e"
+          - |
+            #!/usr/bin/env ruby
+
+            require 'json'
+
+            setting_names = %w{
+              API_VERSION
+              CLIENT_ID
+              DIEGO_CELL_INSTANCE_COUNT
+              DOPPLER_INSTANCE_COUNT
+              EVENT_COUNTER_COUNT
+              INSTANCES_PER_APP
+              LOGS_PER_SECOND
+              LOG_API_INSTANCE_COUNT
+              LOG_BYTES
+              METRICS_PER_SECOND
+              METRIC_EMITTER_COUNT
+              NUMBER_OF_APPS
+              ORG
+              ROUTER_COUNT
+              SPACE
+              SYSTEM_DOMAIN
+            }
+
+            settings = ENV.select { |k, _| setting_names.include?(k) }
+            settings.each do |k, v|
+              if v.to_i != 0
+                settings[k] = v.to_i
+              end
+            end
+
+            File.open('deployment-settings/settings.json', 'w') do |f|
+              f.write(JSON.pretty_generate(settings))
+            end
     - task: copy-ops-files
       config:
         platform: linux
         image_resource:
           type: docker-image
-          source: { repository: ubuntu }
+          source:
+            repository: relintdockerhubpushbot/cf-deployment-concourse-tasks
         inputs:
         - name: bbl-state
         - name: cf-deployment
+        - name: deployment-settings
         outputs:
         - name: ops-files
-        params:
-          DOPPLER_INSTANCE_COUNT: 1
-          LOG_API_INSTANCE_COUNT: 1
-          DIEGO_CELL_INSTANCE_COUNT: 2
-          ROUTER_COUNT: 4
         run:
           path: /bin/bash
           args:
@@ -146,6 +208,13 @@ jobs:
           - |
             #!/bin/bash
             set -ex
+
+            SETTINGS_FILE="$PWD/deployment-settings/settings.json"
+
+            DOPPLER_INSTANCE_COUNT=$(cat $SETTINGS_FILE | jq .DOPPLER_INSTANCE_COUNT --raw-output)
+            LOG_API_INSTANCE_COUNT=$(cat $SETTINGS_FILE | jq .LOG_API_INSTANCE_COUNT --raw-output)
+            DIEGO_CELL_INSTANCE_COUNT=$(cat $SETTINGS_FILE | jq .DIEGO_CELL_INSTANCE_COUNT --raw-output)
+            ROUTER_COUNT=$(cat $SETTINGS_FILE | jq .ROUTER_COUNT --raw-output)
 
             cp cf-deployment/operations/experimental/enable-loggregator-v2-diego.yml ops-files/
             cp cf-deployment/operations/workarounds/use-4-azs-for-router.yml ops-files/
@@ -188,15 +257,9 @@ jobs:
         - name: bbl-state
         - name: loggregator-capacity-planning-release
         - name: updated-vars-store
+        - name: deployment-settings
         outputs:
         - name: updated-capacity-planning-vars-store
-        params:
-          SYSTEM_DOMAIN: loggregator-capacity-planning.cf-app.com
-          CLIENT_ID: capacity_planning_authenticator
-          API_VERSION: v2
-          METRICS_PER_SECOND: 500
-          METRIC_EMITTER_COUNT: 2
-          EVENT_COUNTER_COUNT: 2
         run:
           path: /bin/bash
           args:
@@ -204,6 +267,15 @@ jobs:
           - |
             #!/bin/bash
             set -ex
+
+            SETTINGS_FILE="$PWD/deployment-settings/settings.json"
+
+            API_VERSION=$(cat $SETTINGS_FILE | jq .API_VERSION --raw-output)
+            CLIENT_ID=$(cat $SETTINGS_FILE | jq .CLIENT_ID --raw-output)
+            EVENT_COUNTER_COUNT=$(cat $SETTINGS_FILE | jq .EVENT_COUNTER_COUNT --raw-output)
+            METRICS_PER_SECOND=$(cat $SETTINGS_FILE | jq .METRICS_PER_SECOND --raw-output)
+            METRIC_EMITTER_COUNT=$(cat $SETTINGS_FILE | jq .METRIC_EMITTER_COUNT --raw-output)
+            SYSTEM_DOMAIN=$(cat $SETTINGS_FILE | jq .SYSTEM_DOMAIN --raw-output)
 
             BBL_DIR=$PWD/updated-vars-store/gcp/loggregator-capacity-planning
 
@@ -279,15 +351,9 @@ jobs:
         inputs:
           - name: vars-store
           - name: loggregator-capacity-planning-release
+          - name: deployment-settings
         params:
           VARS_STORE_FILE: gcp/loggregator-capacity-planning/deployment-vars.yml
-          ORG: capacity-planning
-          SPACE: capacity-planning
-          SYSTEM_DOMAIN: loggregator-capacity-planning.cf-app.com
-          LOGS_PER_SECOND: 125
-          LOG_BYTES: 1000
-          INSTANCES_PER_APP: 2
-          NUMBER_OF_APPS: 4
           DATADOG_API_KEY: {{datadog-dev-api-key}}
         run:
           path: bash
@@ -296,6 +362,17 @@ jobs:
           - |
             #!/bin/bash
             set -ex
+
+            SETTINGS_FILE="$PWD/deployment-settings/settings.json"
+
+            INSTANCES_PER_APP=$(cat $SETTINGS_FILE | jq .INSTANCES_PER_APP --raw-output)
+            LOGS_PER_SECOND=$(cat $SETTINGS_FILE | jq .LOGS_PER_SECOND --raw-output)
+            LOG_BYTES=$(cat $SETTINGS_FILE | jq .LOG_BYTES --raw-output)
+            NUMBER_OF_APPS=$(cat $SETTINGS_FILE | jq .NUMBER_OF_APPS --raw-output)
+            ORG=$(cat $SETTINGS_FILE | jq .ORG --raw-output)
+            SPACE=$(cat $SETTINGS_FILE | jq .SPACE --raw-output)
+            SYSTEM_DOMAIN=$(cat $SETTINGS_FILE | jq .SYSTEM_DOMAIN --raw-output)
+
             CF_PASSWORD=$(bosh int vars-store/$VARS_STORE_FILE --path=/cf_admin_password)
             CF_USERNAME=admin
             CLIENT_ID="capacity_planning_authenticator"

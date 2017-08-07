@@ -5,39 +5,27 @@ image_resource:
     repository: relintdockerhubpushbot/cf-deployment-concourse-tasks
 inputs:
 - name: bbl-state
+- name: deployment-settings
+- name: loggregator-ci
 params:
   DATADOG_API_KEY:
 run:
-  path: bash
+  path: ruby
   args:
-  - -c
+  - -2
   - |
-    #/bin/bash
-    set -ex
+    #/usr/bin/env ruby
 
-    pushd bbl-state/gcp/loggregator-capacity-planning
-      export BOSH_CLIENT=`bbl director-username`
-      export BOSH_CLIENT_SECRET=`bbl director-password`
-      export BOSH_CA_CERT=`bbl director-ca-cert`
-      export BOSH_ENVIRONMENT=`bbl director-address`
-    popd
+    require_relative 'loggregator-ci/tasks/scripts/datadog/client.rb'
 
-    DOPPLER_COUNT=$(bosh -d cf vms | grep doppler | wc -l)
-    TC_COUNT=$(bosh -d cf vms | grep log-api | wc -l)
-    DIEGO_CELL_COUNT=$(bosh -d cf vms | grep diego-cell | wc -l)
-    ROUTER_COUNT=$(bosh -d cf vms | grep router | wc -l)
+    settings = JSON.parse(File.read('deployment-settings/settings.json'))
 
-    cat <<EOF >> /tmp/request-body.json
-    {
-      "title": "Capacity Planning Scale",
-      "text": "Dopplers: $DOPPLER_COUNT, TCs: $TC_COUNT, Diego Cells: $DIEGO_CELL_COUNT, Routers: $ROUTER_COUNT",
-      "tags": [
-        "dopplers:$DOPPLER_COUNT",
-        "trafficcontrollers:$TC_COUNT",
-        "diego_cells:$DIEGO_CELL_COUNT",
-        "routers:$ROUTER_COUNT"
-      ]
-    }
-    EOF
+    title = 'Capacity Planning Scale'
+    text = %Q{Capacity Planning environment has been configured with the following:
+    ```
+    #{JSON.pretty_generate(settings)}
+    ```}
+    tags = settings.each_with_object({}) { |(k, v), o| o[k.downcase] = v }
 
-    curl "https://app.datadoghq.com/api/v1/events?api_key=${DATADOG_API_KEY}" -X POST -H "Content-type: application/json" -d "@/tmp/request-body.json"
+    client = DataDog::Client.new(ENV['DATADOG_API_KEY'])
+    client.create_event(title, text, tags)
