@@ -23,7 +23,7 @@ run:
     title = 'Capacity Planning Scale'
     text = %Q{Capacity Planning environment has been configured with the following:
 
-    #{JSON.pretty_generate(settings).split('\n').join('\n    ')}
+        #{JSON.pretty_generate(settings).split('\n').join('\n    ')}
     }
     tags = settings.each_with_object({}) { |(k, v), o| o[k.downcase] = v }
 
