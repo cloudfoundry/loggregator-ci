@@ -34,7 +34,7 @@ run:
     client = DataDog::Client.new(ENV['DATADOG_API_KEY'])
     resp = client.create_event(title, text, tags)
 
-    if !resp.kind_of(Net::HTTPAccepted)
+    if !resp.kind_of?(Net::HTTPAccepted)
       puts "Failed to create event: #{resp.inspect}"
       puts resp.body
       raise
