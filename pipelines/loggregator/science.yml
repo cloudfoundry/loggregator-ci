@@ -497,7 +497,7 @@ jobs:
               cp cf-deployment/operations/workarounds/use-4-azs-for-router.yml ops-files/
               cp cf-deployment/operations/tcp-routing-gcp.yml ops-files/
               cp cf-deployment/operations/experimental/enable-rlp.yml ops-files/
-              cp cf-deployment/operations/experimental/enable-loggregator-v2-diego-cell.yml ops-files/
+              cp cf-deployment/operations/experimental/enable-loggregator-v2-diego.yml ops-files/
               cp bbl-state/gcp/science/loggregator-elect-v2/ops-files/*.yml ops-files/
 
       - task: cf-deploy
@@ -506,7 +506,7 @@ jobs:
           BBL_STATE_DIR: gcp/science/loggregator-elect-v2
           SYSTEM_DOMAIN: loggregator-elect-v2.cf-app.com
           VARS_STORE_FILE: gcp/science/loggregator-elect-v2/deployment-vars.yml
-          OPS_FILES: "clients.yml use-4-azs-for-router.yml tcp-routing-gcp.yml enable-rlp.yml metron-health.yml enable-loggregator-v2-diego-cell.yml"
+          OPS_FILES: "clients.yml use-4-azs-for-router.yml tcp-routing-gcp.yml enable-rlp.yml metron-health.yml enable-loggregator-v2-diego.yml"
       - task: deploy-scalable-syslog
         config:
           image_resource:
@@ -770,7 +770,7 @@ jobs:
               cp cf-deployment/operations/workarounds/use-4-azs-for-router.yml ops-files/
               cp cf-deployment/operations/tcp-routing-gcp.yml ops-files/
               cp cf-deployment/operations/experimental/enable-rlp.yml ops-files/
-              cp cf-deployment/operations/experimental/enable-loggregator-v2-diego-cell.yml ops-files/
+              cp cf-deployment/operations/experimental/enable-loggregator-v2-diego.yml ops-files/
               cp bbl-state/gcp/science/loggregator-latest-v2/ops-files/*.yml ops-files/
 
               version=$(cat release/version)
@@ -791,7 +791,7 @@ jobs:
           BBL_STATE_DIR: gcp/science/loggregator-latest-v2
           SYSTEM_DOMAIN: loggregator-latest-v2.cf-app.com
           VARS_STORE_FILE: gcp/science/loggregator-latest-v2/deployment-vars.yml
-          OPS_FILES: "clients.yml use-4-azs-for-router.yml loggregator-version.yml tcp-routing-gcp.yml enable-rlp.yml metron-health.yml enable-loggregator-v2-diego-cell.yml"
+          OPS_FILES: "clients.yml use-4-azs-for-router.yml loggregator-version.yml tcp-routing-gcp.yml enable-rlp.yml metron-health.yml enable-loggregator-v2-diego.yml"
       - task: deploy-scalable-syslog
         config:
           image_resource:
