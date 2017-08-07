@@ -47,9 +47,9 @@ module DataDog
     def post_request(url, body)
       uri = URI(url)
 
-      req = Net::HTTP::Post.new(uri.request_uri)
-      req.body = JSON.dump(body)
-      req.content_type = 'application/json'
+      request = Net::HTTP::Post.new(uri.request_uri)
+      request.body = JSON.dump(body)
+      request.content_type = 'application/json'
 
       do_request(request)
     end
