@@ -390,6 +390,10 @@ jobs:
             pushd loggregator-capacity-planning-release/src/code.cloudfoundry.org/log_emitter
               go build
 
+              for app in $(cf apps | grep log_emitter | awk '{print $1}'); do
+                cf delete $app -r -f
+              done
+
               for i in $(seq $NUMBER_OF_APPS); do
                 cf push "log_emitter-$i" \
                   -b binary_buildpack \
