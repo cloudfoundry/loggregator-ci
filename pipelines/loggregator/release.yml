@@ -421,7 +421,7 @@ jobs:
             EOF
 
               # create final release and commit artifcats
-              bosh -n create-release --final \
+              bosh -n create-release --sha2 --final \
                 --tarball ../github-release/release.tgz \
                 --version $new_version
               git add .
@@ -524,7 +524,7 @@ jobs:
               secret_access_key: $S3_SECRET_KEY
           EOF
 
-            bosh -n create-release --final \
+            bosh -n create-release --sha2 --final \
               --tarball ../github-release/release.tgz \
               --version "$new_version"
             git config user.email "cf-loggregator@pivotal.io"
@@ -609,7 +609,7 @@ jobs:
               secret_access_key: $S3_SECRET_KEY
           EOF
 
-            bosh -n create-release --final \
+            bosh -n create-release --sha2 --final \
               --tarball ../github-release/release.tgz \
               --version "$new_version"
             git config user.email "cf-loggregator@pivotal.io"
