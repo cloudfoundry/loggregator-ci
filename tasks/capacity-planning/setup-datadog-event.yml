@@ -24,7 +24,8 @@ run:
     text = %Q{%%% \n
     Capacity Planning environment has been configured with the following:
 
-        #{JSON.pretty_generate(settings).split('\n').join('\n    ')}
+    #{settings.map { |k, v| "#{k}: *#{v}*}.join('\n')}
+
     \n %%%}
     tags = settings.each_with_object({}) { |(k, v), o| o[k.downcase] = v }
 
