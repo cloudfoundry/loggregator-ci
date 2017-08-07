@@ -312,6 +312,7 @@ jobs:
 
 - name: start-pipeline
   serial: true
+  serial_groups: ["locking"]
   plan:
     - get: daily
       trigger: true
