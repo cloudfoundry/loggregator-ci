@@ -27,5 +27,17 @@ run:
     ```}
     tags = settings.each_with_object({}) { |(k, v), o| o[k.downcase] = v }
 
+    puts "Title: #{title}"
+    puts "Text:  #{text}"
+    puts "Tags:  #{tags.inspect}"
+
     client = DataDog::Client.new(ENV['DATADOG_API_KEY'])
-    client.create_event(title, text, tags)
+    resp = client.create_event(title, text, tags)
+
+    if !resp.kind_of(Net::HTTPSuccess)
+      puts "Failed to create event: #{resp.inspect}"
+      puts resp.body
+      raise
+    end
+
+    puts 'Done.'
