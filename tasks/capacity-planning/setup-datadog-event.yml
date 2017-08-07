@@ -12,7 +12,7 @@ params:
 run:
   path: ruby
   args:
-  - -2
+  - -e
   - |
     #/usr/bin/env ruby
 
