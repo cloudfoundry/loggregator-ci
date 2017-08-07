@@ -21,12 +21,10 @@ run:
     settings = JSON.parse(File.read('deployment-settings/settings.json'))
 
     title = 'Capacity Planning Scale'
-    text = %Q{%%% \n
-    Capacity Planning environment has been configured with the following:
+    text = %Q{Capacity Planning environment has been configured with the following:
 
-    #{settings.map { |k, v| "#{k}: *#{v}*"}.join('\n')}
-
-    \n %%%}
+    #{settings}
+    }
 
     tags = settings.each_with_object({}) { |(k, v), o| o[k.downcase] = v }
 
