@@ -43,7 +43,7 @@ jobs:
 
 - name: bump-release-submodule
   serial: true
-  public: true
+  public: false
   plan:
   - aggregate:
     - get: bosh-hm-forwarder-release
