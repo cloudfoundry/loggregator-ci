@@ -8,6 +8,7 @@ resources:
 
 jobs:
 - name: tests
+  public: true
   plan:
   - get: go-loggregator
     trigger: true
