@@ -52,7 +52,7 @@ def push_app(app_name, instance_count, **kwargs):
         "-c", "./nozzle",
         "-b", "binary_buildpack",
         "-i", instance_count,
-        "-m" "256M",
+        "-m", "256M",
         "--no-start",
         PWD=cwd,
     )
