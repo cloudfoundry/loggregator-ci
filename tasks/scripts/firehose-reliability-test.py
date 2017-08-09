@@ -35,7 +35,7 @@ def cf_login(api, username, password, space, org, skip_cert_verify):
     check_cf(*args)
 
 
-def push_app(app_name, **kwargs):
+def push_app(app_name, instance_count, **kwargs):
     # build the nozzle bin
     gopath=os.path.join(os.getcwd(), "loggregator")
     cwd=os.path.join(gopath, "src/tools/reliability/cmd/nozzle")
@@ -51,6 +51,7 @@ def push_app(app_name, **kwargs):
         app_name,
         "-c", "./nozzle",
         "-b", "binary_buildpack",
+        "-i", instance_count,
         "--no-start",
         PWD=cwd,
     )
@@ -61,9 +62,9 @@ def push_app(app_name, **kwargs):
     check_cf("start", app_name)
 
 
-def ensure_app_pushed(app_name, **kwargs):
+def ensure_app_pushed(app_name, instance_count, **kwargs):
     if run_cf("app", app_name) != 0:
-        push_app(app_name, **kwargs)
+        push_app(app_name, instance_count, **kwargs)
 
 
 def trigger_test(app_domain, cycles, delay, timeout):
@@ -109,6 +110,7 @@ def main():
     uaa_endpoint, log_endpoint = endpoints()
     ensure_app_pushed(
         os.environ['APP_NAME'],
+        os.environ['INSTANCE_COUNT'],
         UAA_ADDR=uaa_endpoint,
         CLIENT_ID=os.environ['CLIENT_ID'],
         CLIENT_SECRET=os.environ['CLIENT_SECRET'],
