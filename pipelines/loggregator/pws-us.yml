@@ -293,3 +293,4 @@ jobs:
       CLIENT_ID: {{pws-firehose-reliability-client-id}}
       CLIENT_SECRET: {{pws-firehose-reliability-client-secret}}
       WORKER_INSTANCE_COUNT: 14
+      APP_WS_PORT: 4443

@@ -9,5 +9,6 @@ inputs:
 params:
   SKIP_CERT_VERIFY: false
   WORKER_INSTANCE_COUNT: 1
+  APP_WS_PORT: 443
 run:
   path: loggregator-ci/tasks/scripts/firehose-reliability-test.py
