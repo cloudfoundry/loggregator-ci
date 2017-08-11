@@ -15,8 +15,9 @@ def run_cf(*args, **env):
 
 
 def check_cf(*args, **env):
-    if run_cf(*args, **env) != 0:
-        raise subprocess.CalledProcessError
+    status = run_cf(*args, **env)
+    if status != 0:
+        raise subprocess.CalledProcessError(status, args)
 
 
 def cf_login(api, username, password, space, org, skip_cert_verify):
