@@ -92,7 +92,7 @@ def push_server(app_name):
     check_cf("start", app_name)
 
 def is_app_failed(output):
-    return output.find("crashed") >= 0 or output.find("stopped") >= 0
+    return output.find("crashed") >= 0 or output.find("stopped") >= 0 or output.find("no running instances") >= 0
 
 def ensure_worker_pushed(app_name, instance_count, **kwargs):
     status, output = run_cf("app", app_name)
