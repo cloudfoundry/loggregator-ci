@@ -7,15 +7,18 @@ import json
 
 def run_cf(*args, **env):
     env.update({"CF_HOME": os.getcwd()})
-    return subprocess.Popen(
+    p = subprocess.Popen(
         ["/usr/bin/cf"] + list(args),
         env=env,
         cwd=env.get("PWD"),
-    ).wait()
+        stdout=subprocess.PIPE,
+    )
 
+    return (p.wait(), p.stdout.read())
 
 def check_cf(*args, **env):
-    status = run_cf(*args, **env)
+    status, output = run_cf(*args, **env)
+    print(output)
     if status != 0:
         raise subprocess.CalledProcessError(status, args)
 
@@ -88,12 +91,17 @@ def push_server(app_name):
 
     check_cf("start", app_name)
 
+def is_app_failed(output):
+    return output.find("crashed") >= 0 or output.find("stopped") >= 0
+
 def ensure_worker_pushed(app_name, instance_count, **kwargs):
-    if run_cf("app", app_name) != 0:
+    status, output = run_cf("app", app_name)
+    if status != 0 or is_app_failed(output):
         push_worker(app_name, instance_count, **kwargs)
 
 def ensure_server_pushed(app_name):
-    if run_cf("app", app_name) != 0:
+    status, output = run_cf("app", app_name)
+    if status != 0 or is_app_failed(output):
         push_server(app_name)
 
 def trigger_test(app_domain, cycles, delay, timeout):
