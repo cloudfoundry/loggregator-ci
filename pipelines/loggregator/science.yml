@@ -1263,6 +1263,7 @@ jobs:
       CLIENT_ID: {{science-firehose-reliability-client-id}}
       CLIENT_SECRET: {{science-firehose-reliability-client-secret}}
       SKIP_CERT_VERIFY: true
+      WORKER_INSTANCE_COUNT: 2
     timeout: 10m
   - task: get-cf-creds
     config:
@@ -1282,6 +1283,7 @@ jobs:
       CLIENT_ID: {{science-firehose-reliability-client-id}}
       CLIENT_SECRET: {{science-firehose-reliability-client-secret}}
       SKIP_CERT_VERIFY: true
+      WORKER_INSTANCE_COUNT: 2
     timeout: 10m
   ensure:
     put: pipeline-lock
