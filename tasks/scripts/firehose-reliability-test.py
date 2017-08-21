@@ -42,7 +42,7 @@ def cf_login(api, username, password, space, org, skip_cert_verify):
 def push_worker(app_name, instance_count, **kwargs):
     # build the worker bin
     gopath=os.path.join(os.getcwd(), "loggregator")
-    cwd=os.path.join(gopath, "src/tools/reliability/cmd/worker")
+    cwd=os.path.join(gopath, "src/tools/reliability/worker")
     subprocess.Popen([
         "/usr/local/go/bin/go",
         "build",
@@ -71,7 +71,7 @@ def push_worker(app_name, instance_count, **kwargs):
 def push_server(app_name):
     # build the worker bin
     gopath=os.path.join(os.getcwd(), "loggregator")
-    cwd=os.path.join(gopath, "src/tools/reliability/cmd/server")
+    cwd=os.path.join(gopath, "src/tools/reliability/server")
     subprocess.Popen([
         "/usr/local/go/bin/go",
         "build",
