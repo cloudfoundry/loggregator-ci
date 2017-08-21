@@ -155,6 +155,7 @@ def main():
         DATADOG_API_KEY=os.environ['DATADOG_API_KEY'],
         LOG_ENDPOINT=log_endpoint,
         HOSTNAME=os.environ['APP_DOMAIN'],
+        SKIP_CERT_VERIFY=os.environ['SKIP_CERT_VERIFY'],
         CONTROL_SERVER_ADDR='wss://'+os.environ['APP_DOMAIN']+':'+ os.environ['APP_WS_PORT']+'/workers',
     )
 
