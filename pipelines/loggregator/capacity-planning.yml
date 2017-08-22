@@ -233,6 +233,13 @@ jobs:
             - type: replace
               path: /instance_groups/name=diego-cell/instances
               value: $DIEGO_CELL_INSTANCE_COUNT
+            - type: replace
+              path: /releases/name=loggregator
+              value:
+                name: loggregator
+                url: https://bosh.io/d/github.com/cloudfoundry/loggregator?v=70
+                version: "70"
+                sha1: 7b6c65893c0bb46ac7b164803f1cc13b4293eb70
             EOT
     - task: cf-deploy
       file: cf-deployment-concourse-tasks/bosh-deploy/task.yml
@@ -240,7 +247,7 @@ jobs:
         BBL_STATE_DIR: gcp/loggregator-capacity-planning
         SYSTEM_DOMAIN: loggregator-capacity-planning.cf-app.com
         VARS_STORE_FILE: gcp/loggregator-capacity-planning/deployment-vars.yml
-        OPS_FILES: "clients.yml use-4-azs-for-router.yml capacity-planning-config.yml enable-loggregator-v2-diego.yml instance-types.yml"
+        OPS_FILES: "clients.yml use-4-azs-for-router.yml capacity-planning-config.yml instance-types.yml"
     - put: deployments-loggregator-with-changes
       params:
         repository: updated-vars-store
