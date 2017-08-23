@@ -30,7 +30,7 @@ end
 
 # Ensure all environment settings are given. This will raise an error if the
 # key is not found.
-settings_names.each { |name| settings.fetch(name) }
+setting_names.each { |name| settings.fetch(name) }
 
 File.open('deployment-settings/settings.json', 'w') do |f|
   f.write(JSON.pretty_generate(settings))
