@@ -23,4 +23,4 @@ params:
   SPACE:
   SYSTEM_DOMAIN:
 run:
-  path: loggregator-ci/tasks/science/schedule-turbulence.rb
+  path: loggregator-ci/tasks/capacity-planning/build-settings.rb
