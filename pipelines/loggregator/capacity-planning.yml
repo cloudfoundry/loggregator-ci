@@ -124,70 +124,24 @@ jobs:
       params:
         BBL_STATE_DIR: gcp/loggregator-capacity-planning
     - task: build-settings
-      config:
-        platform: linux
-        image_resource:
-          type: docker-image
-          source:
-            repository: relintdockerhubpushbot/cf-deployment-concourse-tasks
-            tag: v2.2.0
-        outputs:
-          - name: deployment-settings
-        params:
-          API_VERSION: v2
-          CLIENT_ID: capacity_planning_authenticator
-          DIEGO_CELL_INSTANCE_COUNT: 2
-          DOPPLER_INSTANCE_COUNT: 1
-          EVENT_COUNTER_COUNT: 2
-          INSTANCES_PER_APP: 2
-          LOGS_PER_SECOND: 125
-          LOG_API_INSTANCE_COUNT: 1
-          LOG_BYTES: 1000
-          METRICS_PER_SECOND: 500
-          METRIC_EMITTER_COUNT: 2
-          NUMBER_OF_APPS: 4
-          ORG: capacity-planning
-          ROUTER_COUNT: 4
-          SPACE: capacity-planning
-          SYSTEM_DOMAIN: loggregator-capacity-planning.cf-app.com
-        run:
-          path: ruby
-          args:
-          - "-e"
-          - |
-            #!/usr/bin/env ruby
-
-            require 'json'
-
-            setting_names = %w{
-              API_VERSION
-              CLIENT_ID
-              DIEGO_CELL_INSTANCE_COUNT
-              DOPPLER_INSTANCE_COUNT
-              EVENT_COUNTER_COUNT
-              INSTANCES_PER_APP
-              LOGS_PER_SECOND
-              LOG_API_INSTANCE_COUNT
-              LOG_BYTES
-              METRICS_PER_SECOND
-              METRIC_EMITTER_COUNT
-              NUMBER_OF_APPS
-              ORG
-              ROUTER_COUNT
-              SPACE
-              SYSTEM_DOMAIN
-            }
-
-            settings = ENV.select { |k, _| setting_names.include?(k) }
-            settings.each do |k, v|
-              if v.to_i != 0
-                settings[k] = v.to_i
-              end
-            end
-
-            File.open('deployment-settings/settings.json', 'w') do |f|
-              f.write(JSON.pretty_generate(settings))
-            end
+      file: loggregator-ci/tasks/capacity-planning/build-settings.yml
+      params:
+        API_VERSION: v1
+        CLIENT_ID: capacity_planning_authenticator
+        DIEGO_CELL_INSTANCE_COUNT: 2
+        DOPPLER_INSTANCE_COUNT: 1
+        EVENT_COUNTER_COUNT: 2
+        INSTANCES_PER_APP: 2
+        LOGS_PER_SECOND: 125
+        LOG_API_INSTANCE_COUNT: 1
+        LOG_BYTES: 1000
+        METRICS_PER_SECOND: 500
+        METRIC_EMITTER_COUNT: 2
+        NUMBER_OF_APPS: 4
+        ORG: capacity-planning
+        ROUTER_COUNT: 4
+        SPACE: capacity-planning
+        SYSTEM_DOMAIN: loggregator-capacity-planning.cf-app.com
     - task: copy-ops-files
       config:
         platform: linux

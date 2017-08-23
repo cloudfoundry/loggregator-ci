@@ -1,0 +1,26 @@
+platform: linux
+image_resource:
+  type: docker-image
+  source:
+    repository: relintdockerhubpushbot/cf-deployment-concourse-tasks
+outputs:
+- name: deployment-settings
+params:
+  API_VERSION:
+  CLIENT_ID:
+  DIEGO_CELL_INSTANCE_COUNT:
+  DOPPLER_INSTANCE_COUNT:
+  EVENT_COUNTER_COUNT:
+  INSTANCES_PER_APP:
+  LOGS_PER_SECOND:
+  LOG_API_INSTANCE_COUNT:
+  LOG_BYTES:
+  METRICS_PER_SECOND:
+  METRIC_EMITTER_COUNT:
+  NUMBER_OF_APPS:
+  ORG:
+  ROUTER_COUNT:
+  SPACE:
+  SYSTEM_DOMAIN:
+run:
+  path: loggregator-ci/tasks/science/schedule-turbulence.rb
