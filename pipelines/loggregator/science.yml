@@ -104,7 +104,7 @@ resources:
     type: git
     source:
       uri: https://github.com/cloudfoundry/cf-deployment
-      branch: develop
+      branch: master
 
   - name: cf-deployment-concourse-tasks
     type: git
@@ -1315,12 +1315,12 @@ jobs:
       - task: start-incidents-loggregator-elect
         file: loggregator-ci/tasks/science/schedule-turbulence.yml
         params:
-          TURBULENCE_API_URL: https://104.198.199.110:6868
+          TURBULENCE_API_URL: https://130.211.192.204:6868
           VARS_FILE_PATH: "gcp/science/loggregator-elect/deployment-vars.yml"
       - task: start-incidents-loggregator-latest
         file: loggregator-ci/tasks/science/schedule-turbulence.yml
         params:
-          TURBULENCE_API_URL: https://130.211.157.150:6868
+          TURBULENCE_API_URL: https://35.192.15.233:6868
           VARS_FILE_PATH: "gcp/science/loggregator-latest/deployment-vars.yml"
   ensure:
     put: pipeline-lock
