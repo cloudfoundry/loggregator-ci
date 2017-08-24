@@ -109,7 +109,7 @@ class Deployer
   end
 
   def commit!
-    if !git_clean
+    if !git_clean?
       dir = 'updated-vars-store'
 
       exec(bosh_env, ['git', 'config', 'user.email', 'cf-loggregator@pivotal.io'], dir)
