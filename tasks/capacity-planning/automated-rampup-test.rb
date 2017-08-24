@@ -3,6 +3,7 @@
 require 'json'
 require 'yaml'
 require 'ostruct'
+require "#{Dir.pwd}/loggregator-ci/tasks/scripts/datadog/client.rb"
 
 class Settings
   def self.from_file(path)
@@ -97,6 +98,7 @@ class CapacityPlanningReleaseDeployer
     cf_login!
     delete_log_emitters!
     push_log_emitters!
+    create_datadog_event!
   end
 
   def commit!
@@ -160,7 +162,7 @@ class CapacityPlanningReleaseDeployer
 
   def cf_password
     dir = 'updated-vars-store/gcp/loggregator-capacity-planning'
-    cmd = ['bosh', 'int', 'deployment-vars', '--path', '/cf_admin_password']
+    cmd = ['bosh', 'int', 'deployment-vars.yml', '--path', '/cf_admin_password']
 
     @cf_password ||= exec(bosh_env, cmd, dir)
   end
@@ -272,6 +274,30 @@ class CapacityPlanningReleaseDeployer
     end
 
     threads.map { |t| t.join }
+  end
+
+  def create_datadog_event!
+    Logger.step("Creating datadog event")
+    title = 'Capacity Planning Scale'
+    text = %Q{Capacity Planning environment has been configured with the following:
+
+    #{JSON.pretty_generate(settings.to_h)}
+    }
+
+    tags = settings.to_h
+
+    puts "Title: #{title}"
+    puts "Text:  #{text}"
+    puts "Tags:  #{tags.inspect}"
+
+    client = DataDog::Client.new(datadog_api_key)
+    resp = client.create_event(title, text, tags)
+
+    if !resp.kind_of?(Net::HTTPAccepted)
+      puts "Failed to create event: #{resp.inspect}"
+      puts resp.body
+      raise
+    end
   end
 
   def git_clean?
