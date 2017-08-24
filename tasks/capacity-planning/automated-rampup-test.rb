@@ -355,7 +355,7 @@ begin
   settings = Settings.from_file('deployment-settings/settings.json')
   deployer = Deployer.new
 
-  Logger.heading("Starting automated rampup test. #{settings.steps} steps for #{settings.test_execution_miutes} each.")
+  Logger.heading("Starting automated rampup test. #{settings.settings.steps} steps for #{settings.settings.test_execution_miutes} each.")
 
   (1..settings.steps).each do |step|
     step_settings = settings.for(step)
@@ -366,7 +366,7 @@ begin
     # TODO: Create Datadog Event
 
     Logger.heading("Deploy for step #{step} complete. Waiting #{settings.test_execution_minutes} minutes")
-    sleep(60 * settings.test_execution_minutes)
+    sleep(60 * settings.settings.test_execution_minutes)
   end
 rescue => e
   Logger.fatal(e.message)
