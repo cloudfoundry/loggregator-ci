@@ -334,6 +334,7 @@ Step: #{settings.step} of #{settings.steps}
 Start RPS: #{settings.start_rps}
 End RPS: #{settings.end_rps}
 Current RPS: #{settings.requests_per_second}
+Test Duration: #{settings.test_execution_minutes}
 
 #{JSON.pretty_generate(settings.to_h)}
     }
