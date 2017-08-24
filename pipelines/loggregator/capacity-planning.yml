@@ -217,6 +217,10 @@ jobs:
         SYSTEM_DOMAIN: loggregator-capacity-planning.cf-app.com
     - task: automated-rampup-test
       file: loggregator-ci/tasks/capacity-planning/automated-rampup-test.yml
+    - put: deployments-loggregator-with-changes
+      params:
+        repository: updated-capacity-planning-vars-store
+        rebase: true
 
 - name: datadog-nozzle-deploy
   serial: true

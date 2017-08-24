@@ -259,7 +259,7 @@ class Deployer
 
       flags = [
         "--logs-per-second=#{settings.logs_per_second}",
-        "--log-bytes=#{settings.log_bytes}",
+        "--log-bytes=#{settings.log_size}",
         "--datadog-api-key=#{datadog_api_key}",
         "--client-id=capacity_planning_authenticator",
         "--client-secret=#{client_secret}",
