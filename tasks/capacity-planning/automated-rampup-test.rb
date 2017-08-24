@@ -356,7 +356,7 @@ class Logger
   end
 end
 
-if $PROGRAM_NAME == file
+if $PROGRAM_NAME == __FILE__
   begin
     Logger.heading("Loading settings from file")
     settings = Settings.from_file('deployment-settings/settings.json')
