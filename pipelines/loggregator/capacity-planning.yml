@@ -140,6 +140,9 @@ jobs:
         ROUTER_COUNT: 4
         SPACE: capacity-planning
         SYSTEM_DOMAIN: loggregator-capacity-planning.cf-app.com
+        START_RPS: 800
+        END_RPS: 1600
+        STEPS: 8
         TEST_EXECUTION_MINUTES: 15
     - task: copy-ops-files
       config:
