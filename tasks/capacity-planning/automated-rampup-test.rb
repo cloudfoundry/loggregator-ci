@@ -192,7 +192,7 @@ class Deployer
 
   def create_release!
     Logger.step('Creating release')
-    cmd = ['bosh', 'create-release']
+    cmd = ['bosh', 'create-release', '--force']
     exec(bosh_env, cmd, 'loggregator-capacity-planning-release')
   end
 
