@@ -73,12 +73,12 @@ class Settings
   attr_accessor :settings
 
   def calculate_logs_per_second(step)
-    lps = rps(step) / settings.metric_emitter_count
+    lps = rps(step) / settings.log_emitter_count / settings.log_emitter_instance_count
     lps.floor
   end
 
   def calculate_metrics_per_second(step)
-    mps = rps(step) / settings.log_emitter_count / settings.log_emitter_instance_count
+    mps = rps(step) / settings.metric_emitter_count
     mps.floor
   end
 
