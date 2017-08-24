@@ -32,6 +32,9 @@ end
 # key is not found.
 setting_names.each { |name| settings.fetch(name) }
 
+puts 'Writing "deployment-settings/settings.json"'
 File.open('deployment-settings/settings.json', 'w') do |f|
   f.write(JSON.pretty_generate(settings))
 end
+
+puts 'Done.'
