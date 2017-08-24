@@ -22,8 +22,6 @@ class Settings
       settings[k.to_s.downcase] = v
     end
 
-    validate!
-
     Logger.step("Settings: #{JSON.pretty_generate(settings.to_h)}")
   end
 
@@ -36,10 +34,6 @@ class Settings
 
     copy
   end
-
-  private
-
-  attr_accessor :settings
 
   def validate!
     required = [
@@ -74,13 +68,17 @@ class Settings
     end
   end
 
+  private
+
+  attr_accessor :settings
+
   def calculate_logs_per_second(step)
-    lps = rps(step) / 2 / settings.metric_emitter_count
+    lps = rps(step) / settings.metric_emitter_count
     lps.floor
   end
 
   def calculate_metrics_per_second(step)
-    mps = rps(step) / 2 / settings.log_emitter_count / settings.log_emitter_instance_count
+    mps = rps(step) / settings.log_emitter_count / settings.log_emitter_instance_count
     mps.floor
   end
 
@@ -373,6 +371,7 @@ if $PROGRAM_NAME == __FILE__
   begin
     Logger.heading("Loading settings from file")
     settings = Settings.from_file('deployment-settings/settings.json')
+    settings.validate!
     deployer = Deployer.new
 
     Logger.heading("Starting automated rampup test. #{settings.steps} steps for #{settings.test_execution_minutes} each.")
