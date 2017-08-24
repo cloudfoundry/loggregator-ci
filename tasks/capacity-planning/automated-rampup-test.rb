@@ -383,7 +383,7 @@ if $PROGRAM_NAME == __FILE__
     settings.validate!
     deployer = Deployer.new
 
-    Logger.heading("Starting automated rampup test. #{settings.steps} steps for #{settings.test_execution_minutes} each.")
+    Logger.heading("Starting automated rampup test. #{settings.steps} steps for #{settings.test_execution_minutes} minutes each.")
 
     (1..settings.steps).each do |step|
       step_settings = settings.for(step)
