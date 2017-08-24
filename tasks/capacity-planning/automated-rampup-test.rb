@@ -386,10 +386,10 @@ if $PROGRAM_NAME == __FILE__
     Logger.heading("Starting automated rampup test. #{settings.steps} steps for #{settings.test_execution_minutes} each.")
 
     (1..settings.steps).each do |step|
-      step_settings = settings.for(step, new_release: step==1)
+      step_settings = settings.for(step)
 
       Logger.heading("Starting deploy for step #{step}. #{step_settings.requests_per_second} requests per second.")
-      deployer.deploy!(step_settings)
+      deployer.deploy!(step_settings, new_release: step==1)
 
       # TODO: Create Datadog Event
 
