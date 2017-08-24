@@ -253,6 +253,9 @@ class Deployer
   def push_log_emitters!
     dir = 'loggregator-capacity-planning-release/src/code.cloudfoundry.org/log_emitter'
 
+    Logger.step("Building log emitter")
+    exec(bosh_env, ['go', 'build'], dir)
+
     threads = []
     (1..settings.log_emitter_count).each do |i|
       Logger.step("Deploying log emitter #{i}")
