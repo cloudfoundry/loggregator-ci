@@ -20,6 +20,7 @@ setting_names = %w{
   START_RPS
   STEPS
   SYSTEM_DOMAIN
+  TEST_EXECUTION_MINUTES
 }
 
 settings = ENV.select { |k, _| setting_names.include?(k) }
