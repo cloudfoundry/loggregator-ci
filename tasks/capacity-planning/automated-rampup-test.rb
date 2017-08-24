@@ -360,7 +360,7 @@ begin
   settings = Settings.from_file('deployment-settings/settings.json')
   deployer = Deployer.new
 
-  Logger.heading("Starting automated rampup test. #{settings.steps} steps for #{settings.test_execution_miutes} each.")
+  Logger.heading("Starting automated rampup test. #{settings.steps} steps for #{settings.test_execution_minutes} each.")
 
   (1..settings.steps).each do |step|
     step_settings = settings.for(step)
