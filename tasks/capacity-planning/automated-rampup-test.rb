@@ -275,11 +275,12 @@ class Deployer
         '-i', settings.log_emitter_instance_count.to_s,
         '-m', '64M',
         '-k', '128M',
-        '-u', 'none'
+        '-u', 'none',
+        '-p', dir,
       ]
 
       threads << Thread.new do
-        exec(bosh_env, cmd, dir)
+        exec(bosh_env, cmd)
       end
     end
 
@@ -314,11 +315,21 @@ class Deployer
     exec(bosh_env, ['git', 'status', '--porcelain'], 'updated-vars-store') == ""
   end
 
-  def exec(env, cmd, dir)
+  def exec(env, cmd, dir=nil)
     output = ""
     process = nil
 
-    Dir.chdir(dir) do
+    if dir
+      Dir.chdir(dir) do
+        IO.popen(env, cmd, err: [:child, :out]) do |io|
+          io.each_line do |l|
+            output << l
+            puts l
+          end
+        end
+        process = $?
+      end
+    else
       IO.popen(env, cmd, err: [:child, :out]) do |io|
         io.each_line do |l|
           output << l
