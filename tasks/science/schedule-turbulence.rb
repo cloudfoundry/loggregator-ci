@@ -18,6 +18,8 @@ class TurbulenceConfig
     self.network_delay = load_or_default('TURBULENCE_NETWORK_DELAY', '10ms')
     self.network_loss = load_or_default('TURBULENCE_NETWORK_LOSS', '5%')
 
+    self.firewall_timeout = load_or_default('TURBULENCE_FIREWALL_TIMEOUT', '60m')
+
     self.username = 'turbulence'
     self.password = `bosh int vars-store/#{vars_file_path} --path=/turbulence_api_password`.chomp
   end
@@ -100,16 +102,39 @@ def network_control_incident(config, deployment, group)
   }
 end
 
+def firewall_incident(config, deployment, group)
+  {
+    "Tasks" => [{
+      "Type" => "firewall",
+      "Timeout" => config.firewall_timeout,
+    }],
+    "Selector" => {
+      "Deployment" => {"Name" => deployment},
+      "Group" => {"Name" => group},
+    }
+  }
+end
+
 puts("Loading config")
 config = TurbulenceConfig.new
 client = TurbulenceClient.new(config)
 
-puts("Creating control network incidents")
-client.create_incidents([
-  network_control_incident(config, "cf", "doppler"),
-  network_control_incident(config, "cf", "log-api"),
-  network_control_incident(config, "cf", "diego-cell"),
-  network_control_incident(config, "scalablesyslog", "*"),
-])
+if rand(100) % 2 == 0
+  puts("Creating control network incidents")
+  client.create_incidents([
+    network_control_incident(config, "cf", "doppler"),
+    network_control_incident(config, "cf", "log-api"),
+    network_control_incident(config, "cf", "diego-cell"),
+    network_control_incident(config, "scalablesyslog", "*"),
+  ])
+else
+  puts("Creating firewall incidents")
+  client.create_incidents([
+    firewall_incident(config, "cf", "doppler"),
+    firewall_incident(config, "cf", "log-api"),
+    firewall_incident(config, "cf", "diego-cell"),
+    firewall_incident(config, "scalablesyslog", "*"),
+  ])
+end
 
 puts('Done.')
