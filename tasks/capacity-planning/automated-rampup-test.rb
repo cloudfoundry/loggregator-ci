@@ -18,6 +18,8 @@ class Settings
     end
 
     validate!
+
+    Logger.step("Settings: #{JSON.pretty_generate(settings.to_h)}")
   end
 
   def for(step)
