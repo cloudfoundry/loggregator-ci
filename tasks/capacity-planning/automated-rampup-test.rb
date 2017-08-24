@@ -341,7 +341,7 @@ class Logger
     end
 
     def step(msg)
-      puts "\e[34m#{msg}\e[0m"
+      puts "\e[33m#{msg}\e[0m"
     end
 
     def fatal(msg)
