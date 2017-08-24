@@ -7,7 +7,7 @@ require 'forwardable'
 require "#{Dir.pwd}/loggregator-ci/tasks/scripts/datadog/client.rb"
 
 class Settings
-  extends Forwardable
+  extend Forwardable
 
   def_delegators :settings, :steps, :test_execution_minutes
 
