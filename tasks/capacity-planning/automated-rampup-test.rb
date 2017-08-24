@@ -31,6 +31,7 @@ class Settings
     copy.requests_per_second = rps(step)
     copy.logs_per_second = calculate_logs_per_second(step)
     copy.metrics_per_second = calculate_metrics_per_second(step)
+    copy.step = step
 
     copy
   end
@@ -329,7 +330,12 @@ class Deployer
     title = 'Capacity Planning Scale'
     text = %Q{Capacity Planning environment has been configured with the following:
 
-    #{JSON.pretty_generate(settings.to_h)}
+Step: #{settings.step} of #{settings.steps}
+Start RPS: #{settings.start_rps}
+End RPS: #{settings.end_rps}
+Current RPS: #{settings.requests_per_second}
+
+#{JSON.pretty_generate(settings.to_h)}
     }
 
     tags = settings.to_h
