@@ -269,7 +269,7 @@ class Deployer
         'cf', 'push', "log_emitter-#{i}",
         '-b', 'binary_buildpack',
         '-c', "./log_emiter #{flags.join(' ')}",
-        '-i', settings.log_emitter_instance_count,
+        '-i', settings.log_emitter_instance_count.to_s,
         '-m', '64M',
         '-k', '128M',
         '-u', 'none'
@@ -356,27 +356,29 @@ class Logger
   end
 end
 
-begin
-  Logger.heading("Loading settings from file")
-  settings = Settings.from_file('deployment-settings/settings.json')
-  deployer = Deployer.new
+if $PROGRAM_NAME == file
+  begin
+    Logger.heading("Loading settings from file")
+    settings = Settings.from_file('deployment-settings/settings.json')
+    deployer = Deployer.new
 
-  Logger.heading("Starting automated rampup test. #{settings.steps} steps for #{settings.test_execution_minutes} each.")
+    Logger.heading("Starting automated rampup test. #{settings.steps} steps for #{settings.test_execution_minutes} each.")
 
-  (1..settings.steps).each do |step|
-    step_settings = settings.for(step)
+    (1..settings.steps).each do |step|
+      step_settings = settings.for(step)
 
-    Logger.heading("Starting deploy for step #{step}. #{step_settings.rps} requests per second.")
-    deployer.deploy!(step_settings)
+      Logger.heading("Starting deploy for step #{step}. #{step_settings.rps} requests per second.")
+      deployer.deploy!(step_settings)
 
-    # TODO: Create Datadog Event
+      # TODO: Create Datadog Event
 
-    Logger.heading("Deploy for step #{step} complete. Waiting #{settings.test_execution_minutes} minutes")
-    sleep(60 * settings.test_execution_minutes)
+      Logger.heading("Deploy for step #{step} complete. Waiting #{settings.test_execution_minutes} minutes")
+      sleep(60 * settings.test_execution_minutes)
+    end
+  rescue => e
+    Logger.fatal(e.message)
+    Logger.fatal(e.backtrace)
+
+    abort("failed")
   end
-rescue => e
-  Logger.fatal(e.message)
-  Logger.fatal(e.backtrace)
-
-  abort("failed")
 end
