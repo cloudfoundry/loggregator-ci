@@ -115,11 +115,21 @@ def firewall_incident(config, deployment, group)
   }
 end
 
+# An incident is triggered at an interval with a consistent period (e.g., 2
+# hours). Therefore, if we intend to round-robin across incidents, then we
+# need to be able to convert the hour into a sequence.
+#
+# Example:
+# Hours: 1, 3, 5, 7 -> 0, 1, 2, 3, 4
+def normalize_hour(hr, period)
+  hr / period
+end
+
 puts("Loading config")
 config = TurbulenceConfig.new
 client = TurbulenceClient.new(config)
 
-if rand(100) % 2 == 0
+if normalize_hour(Time.new.hour, 2) % 2 == 0
   puts("Creating control network incidents")
   client.create_incidents([
     network_control_incident(config, "cf", "doppler"),

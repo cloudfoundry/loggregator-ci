@@ -142,18 +142,15 @@ resources:
     type: time
     source: {interval: 5m}
 
+  - name: 2h
+    type: time
+    source: {interval: 2h}
+
   - name: daily
     type: time
     source:
       start: 8:00 PM
       stop: 9:00 PM
-      location: America/Denver
-
-  - name: every-morning
-    type: time
-    source:
-      start: 8:00 AM
-      stop: 9:00 AM
       location: America/Denver
 
   - name: slack-alert
@@ -1299,7 +1296,7 @@ jobs:
     - put: pipeline-lock
       params:
         claim: "pipeline"
-    - get: every-morning
+    - get: 2h
       trigger: true
     - aggregate:
       - get: vars-store
