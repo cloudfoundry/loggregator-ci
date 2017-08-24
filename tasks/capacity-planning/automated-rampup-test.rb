@@ -138,7 +138,7 @@ class Deployer
     {
       'type' => 'replace',
       'path' => '/instance_groups/name=metric_emitter/instances?',
-      'value' => settings.event_emitter_count
+      'value' => settings.metric_emitter_count
     },
     {
       'type' => 'replace',
@@ -341,7 +341,7 @@ class Logger
     end
 
     def step(msg)
-      puts "\e[3m#{msg}\e[0m"
+      puts "\e[34m#{msg}\e[0m"
     end
 
     def fatal(msg)
