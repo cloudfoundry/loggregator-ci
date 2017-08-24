@@ -276,11 +276,10 @@ class Deployer
         '-m', '64M',
         '-k', '128M',
         '-u', 'none',
-        '-p', dir,
       ]
 
       threads << Thread.new do
-        exec(bosh_env, cmd)
+        exec(bosh_env, cmd, dir)
       end
     end
 
