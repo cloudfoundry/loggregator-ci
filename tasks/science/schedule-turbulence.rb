@@ -8,7 +8,7 @@ class MissingRequiredEnvironmentVariable < StandardError; end
 
 class TurbulenceConfig
   attr_accessor :vars_file_path, :base_url, :network_timeout, :network_delay,
-    :network_loss, :username, :password
+    :network_loss, :firewall_timeout, :username, :password
 
   def initialize
     self.vars_file_path = load_or_raise('VARS_FILE_PATH')
