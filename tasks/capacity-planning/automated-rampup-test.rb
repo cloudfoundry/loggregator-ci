@@ -91,7 +91,41 @@ class Settings
   end
 end
 
+module Executor
+  def exec(env, cmd, dir=nil, silent: false)
+    output = ""
+    process = nil
+
+    popen = lambda do
+      IO.popen(env, cmd, err: [:child, :out]) do |io|
+        io.each_line do |l|
+          output << l
+
+          if !silent
+            puts l
+          end
+        end
+      end
+      process = $?
+    end
+
+    if dir
+      Dir.chdir(dir) { popen.call }
+    else
+      popen.call
+    end
+
+    if !process.success?
+      raise "Failed to execute command: #{cmd.join(' ')}"
+    end
+
+    output.chomp
+  end
+end
+
 class Deployer
+  include Executor
+
   def deploy!(settings)
     self.settings = settings
 
@@ -118,7 +152,7 @@ class Deployer
       puts 'No changes to commit'
     end
 
-    exec(bosh_env, ['rsync', '-a', 'updated-vars-store/', 'updated-capacity-planning-vars-store'], Dir.pwd)
+    exec(bosh_env, ['rsync', '-a', 'updated-vars-store/', 'updated-capacity-planning-vars-store'])
   end
 
 
@@ -155,21 +189,22 @@ class Deployer
   def client_secret
     dir = 'updated-vars-store/gcp/loggregator-capacity-planning'
     cmd = ['bosh', 'int', 'deployment-vars.yml', '--path', '/capacity_planning_authenticator_secret']
-    @client_secret ||= exec(bosh_env, cmd, dir)
+
+    @client_secret ||= exec(bosh_env, cmd, dir, silent: true)
   end
 
   def datadog_api_key
     dir = 'updated-vars-store/gcp/loggregator-capacity-planning'
     cmd = ['bosh', 'int', 'datadog-vars.yml', '--path', '/datadog_key']
 
-    @datadog_api_key ||= exec(bosh_env, cmd, dir)
+    @datadog_api_key ||= exec(bosh_env, cmd, dir, silent: true)
   end
 
   def cf_password
     dir = 'updated-vars-store/gcp/loggregator-capacity-planning'
     cmd = ['bosh', 'int', 'deployment-vars.yml', '--path', '/cf_admin_password']
 
-    @cf_password ||= exec(bosh_env, cmd, dir)
+    @cf_password ||= exec(bosh_env, cmd, dir, silent: true)
   end
 
   def bosh_env
@@ -180,10 +215,10 @@ class Deployer
     dir = 'updated-vars-store/gcp/loggregator-capacity-planning'
 
     director_creds = {
-      'BOSH_CLIENT' => exec(ENV.to_h, ['bbl', 'director-username'], dir),
-      'BOSH_CLIENT_SECRET' => exec(ENV.to_h, ['bbl', 'director-password'], dir),
-      'BOSH_CA_CERT' => exec(ENV.to_h, ['bbl', 'director-ca-cert'], dir),
-      'BOSH_ENVIRONMENT' => exec(ENV.to_h, ['bbl', 'director-address'], dir),
+      'BOSH_CLIENT' => exec(ENV.to_h, ['bbl', 'director-username'], dir, silent: true),
+      'BOSH_CLIENT_SECRET' => exec(ENV.to_h, ['bbl', 'director-password'], dir, silent: true),
+      'BOSH_CA_CERT' => exec(ENV.to_h, ['bbl', 'director-ca-cert'], dir, silent: true),
+      'BOSH_ENVIRONMENT' => exec(ENV.to_h, ['bbl', 'director-address'], dir, silent: true),
       'GOPATH' => "#{Dir.pwd}/loggregator-capacity-planning-release"
     }
 
@@ -231,17 +266,17 @@ class Deployer
       '--skip-ssl-validation'
     ]
 
-    exec(bosh_env, cmd, Dir.pwd)
+    exec(bosh_env, cmd)
   end
 
   def delete_log_emitters!
     Logger.step('Removing existing log emitters')
-    apps = exec(bosh_env, ['cf', 'apps'], Dir.pwd).scan(/(log_emitter-\d*)/).flatten
+    apps = exec(bosh_env, ['cf', 'apps']).scan(/(log_emitter-\d*)/).flatten
 
     threads = []
     apps.each do |name|
       threads << Thread.new do
-        exec(bosh_env, ['cf', 'delete', name, '-f', '-r'], Dir.pwd)
+        exec(bosh_env, ['cf', 'delete', name, '-f', '-r'])
       end
     end
 
@@ -310,37 +345,6 @@ class Deployer
 
   def git_clean?
     exec(bosh_env, ['git', 'status', '--porcelain'], 'updated-vars-store') == ""
-  end
-
-  def exec(env, cmd, dir=nil)
-    output = ""
-    process = nil
-
-    if dir
-      Dir.chdir(dir) do
-        IO.popen(env, cmd, err: [:child, :out]) do |io|
-          io.each_line do |l|
-            output << l
-            puts l
-          end
-        end
-        process = $?
-      end
-    else
-      IO.popen(env, cmd, err: [:child, :out]) do |io|
-        io.each_line do |l|
-          output << l
-          puts l
-        end
-      end
-      process = $?
-    end
-
-    if !process.success?
-      raise "Failed to execute command: #{cmd.join(' ')}"
-    end
-
-    output.chomp
   end
 end
 
