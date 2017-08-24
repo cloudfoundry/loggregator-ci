@@ -5,19 +5,20 @@ require 'json'
 setting_names = %w{
   API_VERSION
   CLIENT_ID
-  DIEGO_CELL_INSTANCE_COUNT
-  DOPPLER_INSTANCE_COUNT
+  DIEGO_CELL_COUNT
+  DOPPLER_COUNT
+  END_RPS
   EVENT_COUNTER_COUNT
-  INSTANCES_PER_APP
-  LOGS_PER_SECOND
-  LOG_API_INSTANCE_COUNT
-  LOG_BYTES
-  METRICS_PER_SECOND
+  LOG_API_COUNT
+  LOG_EMITTER_COUNT
+  LOG_EMITTER_INSTANCE_COUNT
+  LOG_SIZE
   METRIC_EMITTER_COUNT
-  NUMBER_OF_APPS
   ORG
   ROUTER_COUNT
   SPACE
+  START_RPS
+  STEPS
   SYSTEM_DOMAIN
 }
 
@@ -32,6 +33,9 @@ end
 # key is not found.
 setting_names.each { |name| settings.fetch(name) }
 
+puts 'Writing "deployment-settings/settings.json"'
 File.open('deployment-settings/settings.json', 'w') do |f|
   f.write(JSON.pretty_generate(settings))
 end
+
+puts 'Done.'
