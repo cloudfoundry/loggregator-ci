@@ -83,7 +83,8 @@ class Settings
   end
 
   def rps(step)
-    settings.start_rps + ((step - 1) * step_size)
+    rps = settings.start_rps + ((step - 1) * step_size)
+    rps.floor
   end
 
   def step_size
