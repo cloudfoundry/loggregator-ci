@@ -268,7 +268,7 @@ class Deployer
       cmd = [
         'cf', 'push', "log_emitter-#{i}",
         '-b', 'binary_buildpack',
-        '-c', "./log_emiter #{flags.join(' ')}",
+        '-c', "\"./log_emiter #{flags.join(' ')}\"",
         '-i', settings.log_emitter_instance_count.to_s,
         '-m', '64M',
         '-k', '128M',
