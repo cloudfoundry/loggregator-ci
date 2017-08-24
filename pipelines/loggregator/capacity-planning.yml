@@ -133,7 +133,7 @@ jobs:
         EVENT_COUNTER_COUNT: 2
         LOG_API_COUNT: 1
         LOG_EMITTER_COUNT: 2
-        LOG_EMITTER_INSTANCES_COUNT: 2
+        LOG_EMITTER_INSTANCE_COUNT: 2
         LOG_SIZE: 1000
         METRIC_EMITTER_COUNT: 2
         ORG: capacity-planning

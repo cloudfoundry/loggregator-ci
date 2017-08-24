@@ -100,7 +100,7 @@ class Deployer
     build_ops_file!
     create_release!
     upload_release!
-    deploy!
+    bosh_deploy!
     commit!
     cf_login!
     delete_log_emitters!
@@ -204,7 +204,7 @@ class Deployer
     exec(bosh_env, cmd, 'loggregator-capacity-planning-release')
   end
 
-  def deploy!
+  def bosh_deploy!
     Logger.step('Deploying loggregator capacity planning release')
     bbl_dir = "#{Dir.pwd}/updated-vars-store/gcp/loggregator-capacity-planning"
     cmd = [
