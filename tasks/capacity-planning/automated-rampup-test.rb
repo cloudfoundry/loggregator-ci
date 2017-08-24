@@ -86,7 +86,7 @@ class Settings
   end
 end
 
-class CapacityPlanningReleaseDeployer
+class Deployer
   def deploy!(settings)
     self.settings = settings
 
@@ -369,4 +369,6 @@ begin
 rescue => e
   Logger.fatal(e.message)
   Logger.fatal(e.backtrace)
+
+  abort("failed")
 end
