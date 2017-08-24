@@ -316,15 +316,16 @@ class Deployer
     process = nil
 
     Dir.chdir(dir) do
-      process = IO.popen(env, cmd, err: [:child, :out]) do |io|
+      IO.popen(env, cmd, err: [:child, :out]) do |io|
         io.each_line do |l|
           output << l
           puts l
         end
       end
+      process = $?
     end
 
-    if !!process || process.exitstatus != 0
+    if !process.success?
       raise "Failed to execute command: #{cmd.join(' ')}"
     end
 
