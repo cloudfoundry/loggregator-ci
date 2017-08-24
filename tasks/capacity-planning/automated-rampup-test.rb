@@ -261,17 +261,17 @@ class Deployer
       Logger.step("Deploying log emitter #{i}")
 
       flags = [
-        "--logs-per-second=#{settings.logs_per_second}",
-        "--log-bytes=#{settings.log_size}",
-        "--datadog-api-key=#{datadog_api_key}",
-        "--client-id=capacity_planning_authenticator",
-        "--client-secret=#{client_secret}",
+        "--logs-per-second='#{settings.logs_per_second}'",
+        "--log-bytes='#{settings.log_size}'",
+        "--datadog-api-key='#{datadog_api_key}'",
+        "--client-id='capacity_planning_authenticator'",
+        "--client-secret='#{client_secret}'",
       ]
 
       cmd = [
         'cf', 'push', "log_emitter-#{i}",
         '-b', 'binary_buildpack',
-        '-c', "\"./log_emitter #{flags.join(' ')}\"",
+        '-c', "./log_emitter",
         '-i', settings.log_emitter_instance_count.to_s,
         '-m', '64M',
         '-k', '128M',
