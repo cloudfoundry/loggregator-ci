@@ -379,7 +379,7 @@ if $PROGRAM_NAME == __FILE__
     (1..settings.steps).each do |step|
       step_settings = settings.for(step)
 
-      Logger.heading("Starting deploy for step #{step}. #{step_settings.rps} requests per second.")
+      Logger.heading("Starting deploy for step #{step}. #{step_settings.requests_per_second} requests per second.")
       deployer.deploy!(step_settings)
 
       # TODO: Create Datadog Event
