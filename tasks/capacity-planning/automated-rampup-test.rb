@@ -234,13 +234,13 @@ class Deployer
   def create_release!
     Logger.step('Creating release')
     cmd = ['bosh', 'create-release', '--force']
-    exec(bosh_env, cmd, 'loggregator-capacity-planning-release')
+    exec(bosh_env, cmd, 'loggregator-capacity-planning-release', silent: true)
   end
 
   def upload_release!
     Logger.step('Uploading release')
     cmd = ['bosh', 'upload-release', '--rebase']
-    exec(bosh_env, cmd, 'loggregator-capacity-planning-release')
+    exec(bosh_env, cmd, 'loggregator-capacity-planning-release', silent: true)
   end
 
   def bosh_deploy!
@@ -272,7 +272,7 @@ class Deployer
       '--skip-ssl-validation'
     ]
 
-    exec(bosh_env, cmd)
+    exec(bosh_env, cmd, silent: true)
   end
 
   def delete_log_emitters!
