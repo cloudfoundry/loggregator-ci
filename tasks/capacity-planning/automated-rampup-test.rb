@@ -127,16 +127,20 @@ end
 class Deployer
   include Executor
 
-  def deploy!(settings)
+  def deploy!(settings, new_release: false)
     self.settings = settings
 
+
+    if new_release
+      create_release!
+      upload_release!
+      cf_login!
+      delete_log_emitters!
+    end
+
     build_ops_file!
-    create_release!
-    upload_release!
     bosh_deploy!
     commit!
-    cf_login!
-    delete_log_emitters!
     push_log_emitters!
     create_datadog_event!
   end
@@ -382,7 +386,7 @@ if $PROGRAM_NAME == __FILE__
     Logger.heading("Starting automated rampup test. #{settings.steps} steps for #{settings.test_execution_minutes} each.")
 
     (1..settings.steps).each do |step|
-      step_settings = settings.for(step)
+      step_settings = settings.for(step, new_release: step==1)
 
       Logger.heading("Starting deploy for step #{step}. #{step_settings.requests_per_second} requests per second.")
       deployer.deploy!(step_settings)
