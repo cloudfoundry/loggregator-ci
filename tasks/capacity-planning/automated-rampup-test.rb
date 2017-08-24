@@ -311,7 +311,7 @@ class Deployer
     exec(bosh_env, ['git', 'status', '--porcelain'], 'updated-vars-store') == ""
   end
 
-  def exec(cmd, dir, env)
+  def exec(env, cmd, dir)
     output = ""
     process = nil
 
