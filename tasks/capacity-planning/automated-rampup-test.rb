@@ -316,7 +316,7 @@ class Deployer
     process = nil
 
     Dir.chdir(dir) do
-      process = IO.popen(env, cmd, dir) do |io|
+      process = IO.popen(env, cmd, err: [:child, :out]) do |io|
         io.each_line do |l|
           output << l
           puts l
