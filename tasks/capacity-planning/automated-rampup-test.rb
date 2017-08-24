@@ -251,7 +251,7 @@ class Deployer
   end
 
   def push_log_emitters!
-    dir = 'loggregator-capacity-planning-release/src/code.cloudfoundry.org/log_emitter'
+    dir = "#{Dir.pwd}/loggregator-capacity-planning-release/src/code.cloudfoundry.org/log_emitter"
 
     Logger.step("Building log emitter")
     exec(bosh_env, ['go', 'build'], dir)
