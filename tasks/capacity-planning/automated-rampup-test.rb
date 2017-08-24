@@ -151,7 +151,7 @@ class Deployer
       'value' => settings.metrics_per_second
     }]
 
-    File.open('/tmp/overrides.yml', ops.to_yaml)
+    File.open('/tmp/overrides.yml', 'w') { |f| f.write(ops.to_yaml) }
   end
 
   def client_secret
