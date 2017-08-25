@@ -1,0 +1,283 @@
+groups:
+- name: main
+  jobs:
+  - cf-deploy
+  - cf-destroy
+- name: director-lifecycle
+  jobs:
+  - bbl-create
+  - bbl-destroy
+
+resources:
+- name: cf-deployment-concourse-tasks
+  type: git
+  source:
+    uri: https://github.com/cloudfoundry/cf-deployment-concourse-tasks
+    branch: v4.5
+
+- name: cf-deployment
+  type: git
+  source:
+    uri: https://github.com/cloudfoundry/cf-deployment
+    branch: master
+
+- name: loggregator
+  type: git
+  source:
+    uri: https://github.com/cloudfoundry/loggregator
+    branch: release-elect
+
+- name: statsd-injector-release
+  type: git
+  source:
+    uri: https://github.com/cloudfoundry/statsd-injector-release
+    branch: master
+
+- name: scalable-syslog-release
+  type: git
+  source:
+    uri: https://github.com/cloudfoundry/scalable-syslog-release
+    branch: release-elect
+
+- name: deployments-loggregator
+  type: git
+  source:
+    uri: git@github.com:cloudfoundry/deployments-loggregator.git
+    branch: master
+    private_key: {{deployments-loggregator-key}}
+
+- name: weekday-before-work
+  type: time
+  source:
+    start: 7:00 AM
+    stop: 8:00 AM
+    location: America/Denver
+    days: [Monday, Tuesday, Wednesday, Thursday, Friday]
+
+- name: weekday-after-work
+  type: time
+  source:
+    start: 6:00 PM
+    stop: 7:00 PM
+    location: America/Denver
+    days: [Monday, Tuesday, Wednesday, Thursday, Friday]
+
+jobs:
+- name: bbl-create
+  public: false
+  plan:
+  - get: cf-deployment-concourse-tasks
+    trigger: false
+  - get: bbl-state
+    resource: deployments-loggregator
+    trigger: false
+  - get: ops-files
+    resource: deployments-loggregator
+    trigger: false
+  - task: bbl-up
+    file: cf-deployment-concourse-tasks/bbl-up/task.yml
+    params:
+      BBL_GCP_SERVICE_ACCOUNT_KEY: service-account.key.json
+      BBL_GCP_PROJECT_ID: cff-loggregator
+      BBL_GCP_ZONE: us-central1-a
+      BBL_GCP_REGION: us-central1
+      BBL_STATE_DIR: gcp/playground
+      BBL_IAAS: gcp
+      BBL_LB_CERT: {{coconut_director_cert}}
+      BBL_LB_KEY: {{coconut_director_key}}
+      BBL_ENV_NAME: playground
+      LB_DOMAIN: playground.loggr.cf-app.com
+  - put: deployments-loggregator
+    params:
+      repository: updated-bbl-state
+      rebase: true
+
+- name: bbl-destroy
+  public: false
+  plan:
+  - get: cf-deployment-concourse-tasks
+    trigger: false
+  - get: bbl-state
+    resource: deployments-loggregator
+    trigger: false
+  - task: bbl-destroy
+    file: cf-deployment-concourse-tasks/bbl-destroy/task.yml
+    params:
+      BBL_STATE_DIR: gcp/playground
+  - put: deployments-loggregator
+    params:
+      repository: updated-bbl-state
+      rebase: true
+
+- name: cf-deploy
+  public: false
+  serial_groups: ["deployment"]
+  plan:
+  - get: weekday-before-work
+    trigger: true
+  - aggregate:
+    - get: bbl-state
+      resource: deployments-loggregator
+    - get: cf-deployment
+    - get: cf-deployment-concourse-tasks
+    - get: vars-store
+      resource: deployments-loggregator
+    - get: vars-files
+      resource: deployments-loggregator
+    - get: loggregator
+    - get: scalable-syslog-release
+    - get: statsd-injector-release
+  - task: upload-stemcell
+    file: cf-deployment-concourse-tasks/bosh-upload-stemcell-from-cf-deployment/task.yml
+    params:
+      BBL_STATE_DIR: gcp/playground
+  - task: upload-releases
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source:
+          repository: relintdockerhubpushbot/cf-deployment-concourse-tasks
+      inputs:
+      - name: bbl-state
+      - name: loggregator
+      - name: statsd-injector-release
+      - name: scalable-syslog-release
+      run:
+        path: /bin/bash
+        args:
+        - "-c"
+        - |
+          #!/bin/bash
+
+          set -ex
+
+          pushd bbl-state/gcp/playground
+            export BOSH_CLIENT=`bbl director-username`
+            export BOSH_CLIENT_SECRET=`bbl director-password`
+            export BOSH_CA_CERT=`bbl director-ca-cert`
+            export BOSH_ENVIRONMENT=`bbl director-address`
+          popd
+
+          releases="loggregator scalable-syslog-release statsd-injector-release"
+          for rel in $releases; do
+            pushd $rel
+              bosh create-release
+              bosh upload-release --rebase
+            popd
+          done
+  - task: copy-ops-files
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source:
+          repository: relintdockerhubpushbot/cf-deployment-concourse-tasks
+      inputs:
+      - name: bbl-state
+      - name: cf-deployment
+      outputs:
+      - name: ops-files
+      run:
+        path: /bin/bash
+        args:
+        - "-c"
+        - |
+          #!/bin/bash
+
+          cp cf-deployment/operations/scale-to-one-az.yml ops-files/
+          cp cf-deployment/operations/experimental/enable-loggregator-v2-diego.yml ops-files/
+          cp cf-deployment/operations/experimental/enable-rlp.yml ops-files/
+          cp cf-deployment/operations/experimental/disable-etcd.yml ops-files/
+          cp cf-deployment/operations/workarounds/use-4-azs-for-router.yml ops-files/
+          cp bbl-state/gcp/playground/ops-files/*.yml ops-files/
+  - task: cf-deploy
+    file: cf-deployment-concourse-tasks/bosh-deploy/task.yml
+    params:
+      BBL_STATE_DIR: gcp/playground
+      SYSTEM_DOMAIN: playground.loggr.cf-app.com
+      VARS_STORE_FILE: gcp/playground/deployment-vars.yml
+      OPS_FILES: "scale-to-one-az.yml clients.yml use-4-azs-for-router.yml cf-versions.yml disable-etcd.yml"
+  - task: scalable-syslog-deploy
+    config:
+      image_resource:
+        type: docker-image
+        source:
+          repository: relintdockerhubpushbot/cf-deployment-concourse-tasks
+      platform: linux
+      inputs:
+      - name: scalable-syslog-release
+      - name: updated-vars-store
+      outputs:
+      - name: updated-deployments-loggregator
+      params:
+        BBL_STATE_DIR: gcp/playground
+      run:
+        path: bash
+        args:
+          - -c
+          - |
+            #!/bin/bash
+            set -eux
+
+            ss_dir="$PWD/scalable-syslog-release"
+            bbl_dir="updated-vars-store/$BBL_STATE_DIR"
+
+            pushd updated-vars-store/gcp/playground
+              export BOSH_CLIENT=`bbl director-username`
+              export BOSH_CLIENT_SECRET=`bbl director-password`
+              export BOSH_CA_CERT=`bbl director-ca-cert`
+              export BOSH_ENVIRONMENT=`bbl director-address`
+            popd
+
+
+            bosh -n -d scalablesyslog deploy \
+              --vars-store "$bbl_dir/scalablesyslog-vars.yml" \
+              --ops-file "$ss_dir/manifests/cf-deployment-ops.yml" \
+              --ops-file "$bbl_dir/ops-files/allow-insecure-syslog-drains.yml" \
+              --vars-file "$bbl_dir/deployment-vars.yml" \
+              -v "system_domain=playground.loggr.cf-app.com" \
+              "$ss_dir/manifests/scalable-syslog.yml"
+
+            pushd updated-vars-store
+              git config user.email "cf-loggregator@pivotal.io"
+              git config user.name "Loggregator CI"
+              git add . --all
+              git commit -m "Updated scalable syslog deployment vars
+
+              [ci-skip]" || true
+            popd
+
+            rsync -ac updated-vars-store/ updated-deployments-loggregator
+  - task: bosh-cleanup
+    file: cf-deployment-concourse-tasks/bosh-cleanup/task.yml
+    params:
+      BBL_STATE_DIR: gcp/playground
+  - put: deployments-loggregator
+    params:
+      repository: updated-deployments-loggregator
+      rebase: true
+
+- name: cf-destroy
+  serial_groups: ["deployment"]
+  public: false
+  plan:
+  - get: weekday-after-work
+    trigger: true
+  - aggregate:
+    - get: bbl-state
+      resource: deployments-loggregator
+    - get: cf-deployment-concourse-tasks
+  - aggregate:
+    - task: cf-deployment-destroy
+      file: cf-deployment-concourse-tasks/bosh-delete-deployment/task.yml
+      params:
+        BBL_STATE_DIR: gcp/playground
+        DEPLOYMENT_NAME: cf
+    - task: scalable-syslog-destroy
+      file: cf-deployment-concourse-tasks/bosh-delete-deployment/task.yml
+      params:
+        BBL_STATE_DIR: gcp/playground
+        DEPLOYMENT_NAME: scalablesyslog
+
+

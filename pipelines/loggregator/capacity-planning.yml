@@ -116,8 +116,6 @@ jobs:
       - get: cf-deployment-concourse-tasks
       - get: vars-store
         resource: deployments-loggregator
-      - get: vars-files
-        resource: deployments-loggregator
       - get: loggregator-capacity-planning-release
     - task: upload-stemcell
       file: cf-deployment-concourse-tasks/bosh-upload-stemcell-from-cf-deployment/task.yml
