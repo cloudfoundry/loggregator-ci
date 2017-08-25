@@ -62,6 +62,11 @@ resources:
     location: America/Denver
     days: [Monday, Tuesday, Wednesday, Thursday, Friday]
 
+- name: slack-alert
+  type: slack-notification
+  source:
+    url: {{slack-bot-url}}
+
 jobs:
 - name: bbl-create
   public: false
@@ -257,6 +262,12 @@ jobs:
     params:
       repository: updated-deployments-loggregator
       rebase: true
+  on_failure: &slack-failure-alert
+    put: slack-alert
+    params:
+      text: |
+        The `$BUILD_PIPELINE_NAME/$BUILD_JOB_NAME` job has failed. Please resolve any issues. Check it out at:
+        $ATC_EXTERNAL_URL/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME
 
 - name: cf-destroy
   serial_groups: ["deployment"]
@@ -279,5 +290,11 @@ jobs:
       params:
         BBL_STATE_DIR: gcp/playground
         DEPLOYMENT_NAME: scalablesyslog
+  on_failure: &slack-failure-alert
+    put: slack-alert
+    params:
+      text: |
+        The `$BUILD_PIPELINE_NAME/$BUILD_JOB_NAME` job has failed. Please resolve any issues. Check it out at:
+        $ATC_EXTERNAL_URL/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME
 
 
