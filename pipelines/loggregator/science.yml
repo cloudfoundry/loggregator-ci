@@ -421,6 +421,7 @@ jobs:
                   --ops-file "$ss_dir/manifests/cf-deployment-ops.yml" \
                   --ops-file "$bbl_dir/ops-files/allow-insecure-syslog-drains.yml" \
                   --ops-file "$bbl_dir/ops-files/turbulence-scalable-syslog.yml" \
+                  --ops-file "$bbl_dir/ops-files/multi-az-ss.yml" \
                   --vars-file "$bbl_dir/deployment-vars.yml" \
                   --vars-file "$bbl_dir/turbulence-vars.yml" \
                   -v "system_domain=loggregator-elect.cf-app.com" \
@@ -550,6 +551,7 @@ jobs:
                   --vars-store "$bbl_dir/scalablesyslog-vars.yml" \
                   --ops-file "$ss_dir/manifests/cf-deployment-ops.yml" \
                   --ops-file "$bbl_dir/ops-files/allow-insecure-syslog-drains.yml" \
+                  --ops-file "$bbl_dir/ops-files/multi-az-ss.yml" \
                   --vars-file "$bbl_dir/deployment-vars.yml" \
                   -v "system_domain=loggregator-elect-v2.cf-app.com" \
                   "$ss_dir/manifests/scalable-syslog.yml"
