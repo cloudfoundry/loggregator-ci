@@ -477,7 +477,7 @@ jobs:
             #!/bin/bash
             set -eux
 
-            pushd deployments-loggregator/gcp/coocnut-bbl
+            pushd deployments-loggregator/gcp/cocnut-bbl
               export BOSH_CLIENT=`bbl director-username`
               export BOSH_CLIENT_SECRET=`bbl director-password`
               export BOSH_CA_CERT=`bbl director-ca-cert`
