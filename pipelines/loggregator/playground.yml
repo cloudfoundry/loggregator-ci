@@ -202,7 +202,7 @@ jobs:
       BBL_STATE_DIR: gcp/playground
       SYSTEM_DOMAIN: playground.loggr.cf-app.com
       VARS_STORE_FILE: gcp/playground/deployment-vars.yml
-      OPS_FILES: "scale-to-one-az.yml clients.yml use-4-azs-for-router.yml cf-versions.yml disable-etcd.yml"
+      OPS_FILES: "scale-to-one-az.yml clients.yml use-4-azs-for-router.yml cf-versions.yml disable-etcd.yml enable-rlp.yml"
   - task: scalable-syslog-deploy
     config:
       image_resource:

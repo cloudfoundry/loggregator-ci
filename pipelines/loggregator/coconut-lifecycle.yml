@@ -3,7 +3,7 @@ resources:
   type: git
   source:
     uri: https://github.com/cloudfoundry/cf-deployment-concourse-tasks
-    branch: v3.1
+    branch: v4.5
 
 - name: deployments-loggregator
   type: git
@@ -20,12 +20,16 @@ resources:
   source: *deployments_loggregator
 
 jobs:
-- name: bbl-create
+- name: coconut-create
   public: false
   plan:
   - get: cf-deployment-concourse-tasks
     trigger: false
   - get: bbl-state
+    resource: deployments-loggregator
+    trigger: false
+  # this is not used but is required as an input by the concourse task.yml
+  - get: ops-files
     resource: deployments-loggregator
     trigger: false
   - task: bbl-up
@@ -35,18 +39,18 @@ jobs:
       BBL_GCP_PROJECT_ID: cff-loggregator
       BBL_GCP_ZONE: us-central1-a
       BBL_GCP_REGION: us-central1
-      BBL_STATE_DIR: gcp/bbl
+      BBL_STATE_DIR: gcp/coconut-bbl
       BBL_IAAS: gcp
       BBL_LB_CERT: {{coconut_director_cert}}
       BBL_LB_KEY: {{coconut_director_key}}
-      BBL_ENV_NAME: bbl
+      BBL_ENV_NAME: coconut-bbl
       LB_DOMAIN: coconut.cf-app.com
   - put: deployments-loggregator-with-changes
     params:
       repository: updated-bbl-state
       rebase: true
 
-- name: bbl-destroy
+- name: coconut-destroy
   public: false
   plan:
   - get: cf-deployment-concourse-tasks
@@ -57,7 +61,7 @@ jobs:
   - task: bbl-destroy
     file: cf-deployment-concourse-tasks/bbl-destroy/task.yml
     params:
-      BBL_STATE_DIR: gcp/bbl
+      BBL_STATE_DIR: gcp/coconut-bbl
   - put: deployments-loggregator-with-changes
     params:
       repository: updated-bbl-state

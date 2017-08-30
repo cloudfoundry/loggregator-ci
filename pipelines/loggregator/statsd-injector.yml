@@ -161,10 +161,10 @@ jobs:
             #!/bin/bash
             set -e
 
-            bbl_dir="$PWD/deployments-loggregator/gcp/bbl"
+            bbl_dir="$PWD/deployments-loggregator/gcp/coconut-bbl"
             statsd_dir="$PWD/statsd-injector-release"
 
-            pushd deployments-loggregator/gcp/bbl
+            pushd deployments-loggregator/gcp/coconut-bbl
               export BOSH_CLIENT=`bbl director-username`
               export BOSH_CLIENT_SECRET=`bbl director-password`
               export BOSH_CA_CERT=`bbl director-ca-cert`

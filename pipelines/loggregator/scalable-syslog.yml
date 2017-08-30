@@ -183,7 +183,7 @@ jobs:
           - |
             #!/bin/bash
             set -eux
-            pushd deployments-loggregator/gcp/bbl
+            pushd deployments-loggregator/gcp/coconut-bbl
               export BOSH_CLIENT=`bbl director-username`
               export BOSH_CLIENT_SECRET=`bbl director-password`
               export BOSH_CA_CERT=`bbl director-ca-cert`
@@ -220,7 +220,7 @@ jobs:
             #!/bin/bash
             set -eux
 
-            pushd deployments-loggregator/gcp/bbl
+            pushd deployments-loggregator/gcp/coconut-bbl
               export BOSH_CLIENT=`bbl director-username`
               export BOSH_CLIENT_SECRET=`bbl director-password`
               export BOSH_CA_CERT=`bbl director-ca-cert`
@@ -293,7 +293,7 @@ jobs:
           - |
             #!/bin/bash
             set -eux
-            pushd deployments-loggregator/gcp/bbl
+            pushd deployments-loggregator/gcp/coconut-bbl
               export BOSH_CLIENT=`bbl director-username`
               export BOSH_CLIENT_SECRET=`bbl director-password`
               export BOSH_CA_CERT=`bbl director-ca-cert`
@@ -330,7 +330,7 @@ jobs:
             #!/bin/bash
             set -eux
 
-            pushd deployments-loggregator/gcp/bbl
+            pushd deployments-loggregator/gcp/coconut-bbl
               export BOSH_CLIENT=`bbl director-username`
               export BOSH_CLIENT_SECRET=`bbl director-password`
               export BOSH_CA_CERT=`bbl director-ca-cert`
@@ -339,7 +339,7 @@ jobs:
 
             ss_dir="$PWD/scalable-syslog-release"
             deployment_dir="$PWD/deployments-loggregator/gcp/coconut"
-            bbl_dir="$PWD/deployments-loggregator/gcp/bbl"
+            bbl_dir="$PWD/deployments-loggregator/gcp/coconut-bbl"
 
             bosh -n -d cf-scalablesyslog deploy \
               --vars-store "$deployment_dir/cf-scalable-syslog-vars.yml" \

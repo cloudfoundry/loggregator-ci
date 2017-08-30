@@ -33,7 +33,7 @@ resources:
   type: git
   source:
     uri: https://github.com/cloudfoundry/cf-deployment-concourse-tasks
-    branch: v3.1
+    branch: v4.5
 
 # This is here because concourse has a bug in which putting to a git resource
 # creates a new version that can trigger jobs even if the commit has [ci skip]
@@ -201,7 +201,7 @@ jobs:
   - task: upload-stemcell
     file: cf-deployment-concourse-tasks/bosh-upload-stemcell-from-cf-deployment/task.yml
     params:
-      BBL_STATE_DIR: gcp/bbl
+      BBL_STATE_DIR: gcp/coconut-bbl
   - task: copy-ops-files
     config:
       platform: linux
@@ -221,16 +221,16 @@ jobs:
           cp cf-deployment/operations/workarounds/use-4-azs-for-router.yml ops-files/
           cp cf-deployment/operations/tcp-routing-gcp.yml ops-files/
           cp cf-deployment/operations/scale-to-one-az.yml ops-files/
-          cp bbl-state/gcp/bbl/ops-files/*.yml ops-files/
+          cp bbl-state/gcp/coconut-bbl/ops-files/*.yml ops-files/
 
   - task: cf-deploy
     file: cf-deployment-concourse-tasks/bosh-deploy-with-created-release/task.yml
     params:
-      BBL_STATE_DIR: gcp/bbl
+      BBL_STATE_DIR: gcp/coconut-bbl
       SYSTEM_DOMAIN: coconut.cf-app.com
-      VARS_STORE_FILE: gcp/bbl/deployment-vars.yml
+      VARS_STORE_FILE: gcp/coconut-bbl/deployment-vars.yml
       OPS_FILES: "clients.yml scale-to-one-az.yml use-4-azs-for-router.yml rlp.yml tcp-routing-gcp.yml datadog-agent.yml diego.yml "
-      VARS_FILES: "gcp/bbl/vars-files/router.yml"
+      VARS_FILES: "gcp/coconut-bbl/vars-files/router.yml"
   - put: deployments-loggregator-with-changes
     params:
       repository: updated-vars-store
@@ -238,7 +238,7 @@ jobs:
   - task: cleanup
     file: cf-deployment-concourse-tasks/bosh-cleanup/task.yml
     params:
-      BBL_STATE_DIR: gcp/bbl
+      BBL_STATE_DIR: gcp/coconut-bbl
 
 - name: loggregator-deploy
   serial: true
@@ -279,7 +279,7 @@ jobs:
             set -eux
             loggregator_dir="$PWD/loggregator"
 
-            pushd deployments-loggregator/gcp/bbl
+            pushd deployments-loggregator/gcp/coconut-bbl
               export BOSH_CLIENT=`bbl director-username`
               export BOSH_CLIENT_SECRET=`bbl director-password`
               export BOSH_CA_CERT=`bbl director-ca-cert`
@@ -324,7 +324,7 @@ jobs:
             loggregator_dir="$PWD/loggregator"
             deployment_dir="$PWD/deployments-loggregator/gcp/coconut"
 
-            pushd deployments-loggregator/gcp/bbl
+            pushd deployments-loggregator/gcp/coconut-bbl
               export BOSH_CLIENT=`bbl director-username`
               export BOSH_CLIENT_SECRET=`bbl director-password`
               export BOSH_CA_CERT=`bbl director-ca-cert`
@@ -428,7 +428,7 @@ jobs:
           echo "$CONFIG_DATA" > $CONFIG
 
           pushd deployments-loggregator-with-changes
-            export CF_PASSWORD_VARS=$(bosh interpolate gcp/bbl/deployment-vars.yml --path /cf_admin_password)
+            export CF_PASSWORD_VARS=$(bosh interpolate gcp/coconut-bbl/deployment-vars.yml --path /cf_admin_password)
             sed -i "s/CF_PASSWORD_FROM_VARS/$CF_PASSWORD_VARS/" $CONFIG
           popd
 
@@ -477,7 +477,7 @@ jobs:
             #!/bin/bash
             set -eux
 
-            pushd deployments-loggregator/gcp/bbl
+            pushd deployments-loggregator/gcp/coocnut-bbl
               export BOSH_CLIENT=`bbl director-username`
               export BOSH_CLIENT_SECRET=`bbl director-password`
               export BOSH_CA_CERT=`bbl director-ca-cert`
