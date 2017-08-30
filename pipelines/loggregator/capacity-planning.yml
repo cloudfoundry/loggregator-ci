@@ -29,7 +29,7 @@ resources:
   type: git
   source:
     uri: https://github.com/cloudfoundry/cf-deployment
-    branch: loggregator-capacity-test
+    branch: master
 
 # This is here because concourse has a bug in which putting to a git resource
 # creates a new version that can trigger jobs even if the commit has [ci skip]
@@ -124,7 +124,7 @@ jobs:
     - task: build-settings
       file: loggregator-ci/tasks/capacity-planning/build-settings.yml
       params:
-        API_VERSION: v1
+        API_VERSION: v2
         CLIENT_ID: capacity_planning_authenticator
         DIEGO_CELL_COUNT: 2
         DOPPLER_COUNT: 1
@@ -191,9 +191,8 @@ jobs:
               path: /releases/name=loggregator
               value:
                 name: loggregator
-                url: https://bosh.io/d/github.com/cloudfoundry/loggregator?v=70
-                version: "70"
-                sha1: 7b6c65893c0bb46ac7b164803f1cc13b4293eb70
+                url: https://bosh.io/d/github.com/cloudfoundry/loggregator
+                version: latest
             EOT
     - task: cf-deploy
       file: cf-deployment-concourse-tasks/bosh-deploy/task.yml
