@@ -33,10 +33,10 @@ resources:
     uri: https://github.com/cloudfoundry/statsd-injector-release
     branch: master
 
-- name: scalable-syslog-release
+- name: cf-syslog-drain-release
   type: git
   source:
-    uri: https://github.com/cloudfoundry/scalable-syslog-release
+    uri: https://github.com/cloudfoundry/cf-syslog-drain-release
     branch: release-elect
 
 - name: deployments-loggregator
@@ -130,7 +130,7 @@ jobs:
     - get: vars-files
       resource: deployments-loggregator
     - get: loggregator
-    - get: scalable-syslog-release
+    - get: cf-syslog-drain-release
     - get: statsd-injector-release
   - task: upload-stemcell
     file: cf-deployment-concourse-tasks/bosh-upload-stemcell-from-cf-deployment/task.yml
@@ -147,7 +147,7 @@ jobs:
       - name: bbl-state
       - name: loggregator
       - name: statsd-injector-release
-      - name: scalable-syslog-release
+      - name: cf-syslog-drain-release
       run:
         path: /bin/bash
         args:
@@ -164,7 +164,7 @@ jobs:
             export BOSH_ENVIRONMENT=`bbl director-address`
           popd
 
-          releases="loggregator scalable-syslog-release statsd-injector-release"
+          releases="loggregator cf-syslog-drain-release statsd-injector-release"
           for rel in $releases; do
             pushd $rel
               bosh create-release
@@ -203,7 +203,7 @@ jobs:
       SYSTEM_DOMAIN: playground.loggr.cf-app.com
       VARS_STORE_FILE: gcp/playground/deployment-vars.yml
       OPS_FILES: "scale-to-one-az.yml clients.yml use-4-azs-for-router.yml cf-versions.yml disable-etcd.yml enable-rlp.yml"
-  - task: scalable-syslog-deploy
+  - task: cf-syslog-drain-deploy
     config:
       image_resource:
         type: docker-image
@@ -211,7 +211,7 @@ jobs:
           repository: relintdockerhubpushbot/cf-deployment-concourse-tasks
       platform: linux
       inputs:
-      - name: scalable-syslog-release
+      - name: cf-syslog-drain-release
       - name: updated-vars-store
       outputs:
       - name: updated-deployments-loggregator
@@ -225,7 +225,7 @@ jobs:
             #!/bin/bash
             set -eux
 
-            ss_dir="$PWD/scalable-syslog-release"
+            ss_dir="$PWD/cf-syslog-drain-release"
             bbl_dir="updated-vars-store/$BBL_STATE_DIR"
 
             pushd updated-vars-store/gcp/playground
@@ -236,13 +236,13 @@ jobs:
             popd
 
 
-            bosh -n -d scalablesyslog deploy \
-              --vars-store "$bbl_dir/scalablesyslog-vars.yml" \
+            bosh -n -d cf-syslog-drain deploy \
+              --vars-store "$bbl_dir/cf-syslog-drain-vars.yml" \
               --ops-file "$ss_dir/manifests/cf-deployment-ops.yml" \
               --ops-file "$bbl_dir/ops-files/allow-insecure-syslog-drains.yml" \
               --vars-file "$bbl_dir/deployment-vars.yml" \
               -v "system_domain=playground.loggr.cf-app.com" \
-              "$ss_dir/manifests/scalable-syslog.yml"
+              "$ss_dir/manifests/cf-syslog-drain.yml"
 
             pushd updated-vars-store
               git config user.email "cf-loggregator@pivotal.io"
@@ -285,11 +285,11 @@ jobs:
       params:
         BBL_STATE_DIR: gcp/playground
         DEPLOYMENT_NAME: cf
-    - task: scalable-syslog-destroy
+    - task: cf-syslog-drain-destroy
       file: cf-deployment-concourse-tasks/bosh-delete-deployment/task.yml
       params:
         BBL_STATE_DIR: gcp/playground
-        DEPLOYMENT_NAME: scalablesyslog
+        DEPLOYMENT_NAME: cf-syslog-drain
   on_failure: &slack-failure-alert
     put: slack-alert
     params:
