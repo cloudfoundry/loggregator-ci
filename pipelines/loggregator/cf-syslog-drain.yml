@@ -1,18 +1,18 @@
 resources:
-- name: scalable-syslog-release
+- name: cf-syslog-drain-release
   type: git
   source:
-    uri: git@github.com:cloudfoundry/scalable-syslog-release
+    uri: git@github.com:cloudfoundry/cf-syslog-drain-release
     branch: develop
     private_key: {{cf-loggregator-oauth-bot-key}}
     ignore_paths:
     - .final_builds
     - releases
 
-- name: scalable-syslog-release-release-elect
+- name: cf-syslog-drain-release-release-elect
   type: git
   source:
-    uri: git@github.com:cloudfoundry/scalable-syslog-release
+    uri: git@github.com:cloudfoundry/cf-syslog-drain-release
     branch: release-elect
     private_key: {{cf-loggregator-oauth-bot-key}}
     ignore_paths:
@@ -57,7 +57,7 @@ jobs:
   public: true
   plan:
   - aggregate:
-    - get: scalable-syslog-release
+    - get: cf-syslog-drain-release
       trigger: false
     - get: scalable-syslog
       trigger: true
@@ -69,19 +69,32 @@ jobs:
           repository: loggregator/base
       platform: linux
       inputs:
-      - name: scalable-syslog-release
+      - name: cf-syslog-drain-release
       - name: scalable-syslog
       run:
         path: bash
         args:
         - -c
-        - {{scalable_syslog_tests}}
+        - |
+          #!/bin/bash
+
+          set -e -x
+
+          rm -rf cf-syslog-drain-release/src/code.cloudfoundry.org/scalable-syslog/{*,.git}
+          cp -r scalable-syslog/. cf-syslog-drain-release/src/code.cloudfoundry.org/scalable-syslog/
+
+          pushd cf-syslog-drain-release
+            export GOPATH="$PWD"
+            export PATH="$GOPATH/bin:$PATH"
+            go install github.com/onsi/ginkgo/ginkgo
+            go test ./src/code.cloudfoundry.org/scalable-syslog/... -race
+          popd
 
 - name: bump-release-submodule
   serial: true
   plan:
   - aggregate:
-    - get: scalable-syslog-release
+    - get: cf-syslog-drain-release
       trigger: false
     - get: scalable-syslog
       passed:
@@ -95,13 +108,13 @@ jobs:
         source:
           repository: loggregator/base
       inputs:
-      - name: scalable-syslog-release
+      - name: cf-syslog-drain-release
       - name: scalable-syslog
       outputs:
-      - name: updated-scalable-syslog-release
+      - name: updated-cf-syslog-drain-release
       params:
-        PARENT: scalable-syslog-release
-        OUTPUT: updated-scalable-syslog-release
+        PARENT: cf-syslog-drain-release
+        OUTPUT: updated-cf-syslog-drain-release
         CHILD: scalable-syslog
         CHILD_PATH: src/code.cloudfoundry.org/scalable-syslog
       run:
@@ -117,16 +130,28 @@ jobs:
         source:
           repository: loggregator/base
       inputs:
-      - name: updated-scalable-syslog-release
+      - name: updated-cf-syslog-drain-release
       outputs:
-      - name: synced-scalable-syslog-release
+      - name: synced-cf-syslog-drain-release
       params:
-        OUTPUT: synced-scalable-syslog-release
+        OUTPUT: synced-cf-syslog-drain-release
       run:
         path: bash
         args:
         - -c
-        - {{scalable_syslog_sync_package_specs}}
+        - |
+          #!/bin/bash
+
+          set -e -x
+
+          pushd updated-cf-syslog-drain-release
+            export GOPATH="$PWD"
+            export PATH="$GOPATH/bin:$PATH"
+
+            ./scripts/sync-package-specs
+          popd
+
+          cp -r updated-cf-syslog-drain-release/. $OUTPUT/
   - task: commit
     config:
       platform: linux
@@ -135,29 +160,29 @@ jobs:
         source:
           repository: loggregator/base
       inputs:
-      - name: synced-scalable-syslog-release
+      - name: synced-cf-syslog-drain-release
       outputs:
-      - name: bumped-scalable-syslog-release
+      - name: bumped-cf-syslog-drain-release
       params:
-        SOURCE: synced-scalable-syslog-release
+        SOURCE: synced-cf-syslog-drain-release
         PATHS: src/code.cloudfoundry.org/scalable-syslog packages/
         COMMIT_MESSAGE: "Bump scalable-syslog"
-        OUTPUT: bumped-scalable-syslog-release
+        OUTPUT: bumped-cf-syslog-drain-release
       run:
         path: bash
         args:
         - -c
         - {{commit}}
-  - put: scalable-syslog-release
+  - put: cf-syslog-drain-release
     params:
-      repository: bumped-scalable-syslog-release
+      repository: bumped-cf-syslog-drain-release
       rebase: true
 
-- name: scalable-syslog-deploy
+- name: cf-syslog-drain-standalone-deploy
   serial: true
   plan:
   - aggregate:
-    - get: scalable-syslog-release
+    - get: cf-syslog-drain-release
       passed:
       - bump-release-submodule
       trigger: true
@@ -165,7 +190,7 @@ jobs:
       trigger: false
     - get: consul-release
       trigger: false
-  - task: upload-scalable-syslog
+  - task: upload-cf-syslog-drain
     config:
       image_resource:
         type: docker-image
@@ -174,7 +199,7 @@ jobs:
       platform: linux
       inputs:
         - name: deployments-loggregator
-        - name: scalable-syslog-release
+        - name: cf-syslog-drain-release
         - name: consul-release
       run:
         path: bash
@@ -194,12 +219,11 @@ jobs:
               bosh upload-release $release
             done
 
-            pushd scalable-syslog-release
+            pushd cf-syslog-drain-release
                 bosh create-release
                 bosh upload-release --rebase
             popd
-
-  - task: deploy-scalable-syslog
+  - task: deploy-cf-syslog-drain
     config:
       image_resource:
         type: docker-image
@@ -208,7 +232,7 @@ jobs:
       platform: linux
       inputs:
       - name: deployments-loggregator
-      - name: scalable-syslog-release
+      - name: cf-syslog-drain-release
       outputs:
       - name: updated-deployments-loggregator
       params:
@@ -227,16 +251,16 @@ jobs:
               export BOSH_ENVIRONMENT=`bbl director-address`
             popd
 
-            ss_dir="$PWD/scalable-syslog-release"
-            deployment_dir="$PWD/deployments-loggregator/gcp/coconut"
+            ss_dir="$PWD/cf-syslog-drain-release"
+            deployment_dir="$PWD/deployments-loggregator/gcp/coconut-bbl"
 
-            bosh -n -d scalablesyslog deploy \
-              --vars-store "$deployment_dir/scalable-syslog-vars.yml" \
+            bosh -n -d cf-syslog-drain-standalone deploy \
+              --vars-store "$deployment_dir/cf-syslog-drain-standalone-vars.yml" \
               --ops-file "$ss_dir/manifests/fake-ops.yml" \
-              "$ss_dir/manifests/scalable-syslog.yml"
+              --ops-file "$deployment_dir/ops-files/cf-syslog-drain/standalone.yml" \
+              "$ss_dir/manifests/cf-syslog-drain.yml"
 
             rsync -ac deployments-loggregator/ updated-deployments-loggregator
-
   - task: commit
     config:
       platform: linux
@@ -250,8 +274,8 @@ jobs:
       - name: committed-deployments-loggregator
       params:
         SOURCE: updated-deployments-loggregator
-        PATHS: gcp/coconut/scalable-syslog-vars.yml
-        COMMIT_MESSAGE: "Update scalable-syslog vars store"
+        PATHS: gcp/coconut-bbl/cf-syslog-drain-standalone-vars.yml
+        COMMIT_MESSAGE: "Update cf-syslog-drain vars store"
         OUTPUT: committed-deployments-loggregator
       run:
         path: bash
@@ -263,11 +287,11 @@ jobs:
       repository: committed-deployments-loggregator
       rebase: true
 
-- name: cf-scalable-syslog-deploy
+- name: cf-syslog-drain-deploy
   serial: true
   plan:
   - aggregate:
-    - get: scalable-syslog-release
+    - get: cf-syslog-drain-release
       passed:
       - bump-release-submodule
       trigger: true
@@ -275,7 +299,7 @@ jobs:
       trigger: false
     - get: consul-release
       trigger: false
-  - task: upload-scalable-syslog
+  - task: upload-cf-syslog-drain
     config:
       image_resource:
         type: docker-image
@@ -284,7 +308,7 @@ jobs:
       platform: linux
       inputs:
         - name: deployments-loggregator
-        - name: scalable-syslog-release
+        - name: cf-syslog-drain-release
         - name: consul-release
       run:
         path: bash
@@ -304,12 +328,11 @@ jobs:
               bosh upload-release $release
             done
 
-            pushd scalable-syslog-release
+            pushd cf-syslog-drain-release
                 bosh create-release
                 bosh upload-release --rebase
             popd
-
-  - task: deploy-scalable-syslog
+  - task: deploy-cf-syslog-drain
     config:
       image_resource:
         type: docker-image
@@ -318,7 +341,7 @@ jobs:
       platform: linux
       inputs:
       - name: deployments-loggregator
-      - name: scalable-syslog-release
+      - name: cf-syslog-drain-release
       outputs:
       - name: updated-deployments-loggregator
       params:
@@ -337,20 +360,19 @@ jobs:
               export BOSH_ENVIRONMENT=`bbl director-address`
             popd
 
-            ss_dir="$PWD/scalable-syslog-release"
-            deployment_dir="$PWD/deployments-loggregator/gcp/coconut"
+            ss_dir="$PWD/cf-syslog-drain-release"
+            deployment_dir="$PWD/deployments-loggregator/gcp/coconut-bbl"
             bbl_dir="$PWD/deployments-loggregator/gcp/coconut-bbl"
 
-            bosh -n -d cf-scalablesyslog deploy \
-              --vars-store "$deployment_dir/cf-scalable-syslog-vars.yml" \
-              --ops-file "$bbl_dir/ops-files/scalable-syslog/coconut.yml" \
-              --ops-file "$bbl_dir/ops-files/scalable-syslog/datadog-agent.yml" \
+            bosh -n -d cf-syslog-drain deploy \
+              --vars-store "$deployment_dir/cf-syslog-drain-vars.yml" \
+              --ops-file "$bbl_dir/ops-files/cf-syslog-drain/coconut.yml" \
+              --ops-file "$bbl_dir/ops-files/cf-syslog-drain/datadog-agent.yml" \
               --vars-file "$bbl_dir/deployment-vars.yml" \
               -v "system_domain=coconut.cf-app.com" \
-              "$ss_dir/manifests/scalable-syslog.yml"
+              "$ss_dir/manifests/cf-syslog-drain.yml"
 
             rsync -ac deployments-loggregator/ updated-deployments-loggregator
-
   - task: commit
     config:
       platform: linux
@@ -364,8 +386,8 @@ jobs:
       - name: committed-deployments-loggregator
       params:
         SOURCE: updated-deployments-loggregator
-        PATHS: gcp/coconut/cf-scalable-syslog-vars.yml
-        COMMIT_MESSAGE: "Update cf-scalable-syslog vars store"
+        PATHS: gcp/coconut-bbl/cf-syslog-drain-vars.yml
+        COMMIT_MESSAGE: "Update cf-syslog-drain vars store"
         OUTPUT: committed-deployments-loggregator
       run:
         path: bash
@@ -382,12 +404,12 @@ jobs:
   plan:
   - aggregate:
     - get: develop
-      resource: scalable-syslog-release
+      resource: cf-syslog-drain-release
       trigger: true
-      passed: ["scalable-syslog-deploy", "cf-scalable-syslog-deploy"]
+      passed: ["cf-syslog-drain-deploy", "cf-syslog-drain-standalone-deploy"]
     - get: release-elect
-      resource: scalable-syslog-release-release-elect
+      resource: cf-syslog-drain-release-release-elect
     - get: loggregator-ci
-  - put: scalable-syslog-release-release-elect
+  - put: cf-syslog-drain-release-release-elect
     params:
       repository: develop
