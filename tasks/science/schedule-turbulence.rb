@@ -129,13 +129,15 @@ puts("Loading config")
 config = TurbulenceConfig.new
 client = TurbulenceClient.new(config)
 
+# TODO: These settings could come from a environmetn variable something like:
+#   cf:doppler cf:log-api cf:diego-cell cf-syslog-drain:*
 if normalize_hour(Time.new.hour, 2) % 2 == 0
   puts("Creating control network incidents")
   client.create_incidents([
     network_control_incident(config, "cf", "doppler"),
     network_control_incident(config, "cf", "log-api"),
     network_control_incident(config, "cf", "diego-cell"),
-    network_control_incident(config, "scalablesyslog", "*"),
+    network_control_incident(config, "cf-syslog-drain", "*"),
   ])
 else
   puts("Creating firewall incidents")
@@ -143,7 +145,7 @@ else
     firewall_incident(config, "cf", "doppler"),
     firewall_incident(config, "cf", "log-api"),
     firewall_incident(config, "cf", "diego-cell"),
-    firewall_incident(config, "scalablesyslog", "*"),
+    firewall_incident(config, "cf-syslog-drain", "*"),
   ])
 end
 
