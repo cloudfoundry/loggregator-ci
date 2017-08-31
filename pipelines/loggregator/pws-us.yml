@@ -23,10 +23,10 @@ resources:
   source:
     uri: https://github.com/cloudfoundry/loggregator
     branch: develop
-- name: scalable-syslog-release
+- name: cf-syslog-drain-release
   type: git
   source:
-    uri: https://github.com/cloudfoundry/scalable-syslog-release
+    uri: https://github.com/cloudfoundry/cf-syslog-drain-release
 
 jobs:
 - name: restage-logspinners
@@ -146,11 +146,11 @@ jobs:
   serial: true
   plan:
   - get: loggregator-ci
-  - get: scalable-syslog-release
+  - get: cf-syslog-drain-release
   - get: 10m
     trigger: true
   - task: v2-drain
-    file: loggregator-ci/tasks/scalable-syslog-smoke-test.yml
+    file: loggregator-ci/tasks/cf-syslog-drain-smoke-test.yml
     params:
       CF_ORG: cf-lamb
       CF_PASSWORD: {{pws-password}}
@@ -169,11 +169,11 @@ jobs:
   serial: true
   plan:
   - get: loggregator-ci
-  - get: scalable-syslog-release
+  - get: cf-syslog-drain-release
   - get: 10m
     trigger: true
   - task: v2-drain
-    file: loggregator-ci/tasks/scalable-syslog-smoke-test.yml
+    file: loggregator-ci/tasks/cf-syslog-drain-smoke-test.yml
     params:
       CF_ORG: cf-lamb
       CF_PASSWORD: {{pws-password}}
@@ -192,11 +192,11 @@ jobs:
   serial: true
   plan:
   - get: loggregator-ci
-  - get: scalable-syslog-release
+  - get: cf-syslog-drain-release
   - get: 10m
     trigger: true
   - task: v2-drain
-    file: loggregator-ci/tasks/scalable-syslog-smoke-test.yml
+    file: loggregator-ci/tasks/cf-syslog-drain-smoke-test.yml
     params:
       TEARDOWN: false
       CF_ORG: cf-lamb
@@ -216,11 +216,11 @@ jobs:
   serial: true
   plan:
   - get: loggregator-ci
-  - get: scalable-syslog-release
+  - get: cf-syslog-drain-release
   - get: 10m
     trigger: true
   - task: v2-drain-loggregator
-    file: loggregator-ci/tasks/scalable-syslog-smoke-test.yml
+    file: loggregator-ci/tasks/cf-syslog-drain-smoke-test.yml
     params:
       TEARDOWN: false
       CF_ORG: cf-lamb

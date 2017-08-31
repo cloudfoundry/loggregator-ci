@@ -985,7 +985,7 @@ jobs:
             VARS_STORE_FILE: gcp/science/release-elect/deployment-vars.yml
             VERSION_TAG: elect
       - task: http-drain
-        file: loggregator-ci/tasks/scalable-syslog-smoke-test-with-vars.yml
+        file: loggregator-ci/tasks/cf-syslog-drain-smoke-test-with-vars.yml
         params:
           CF_ORG: cf-lamb
           CF_SPACE: development
@@ -1000,7 +1000,7 @@ jobs:
           VARS_STORE_FILE: gcp/science/release-elect/deployment-vars.yml
         timeout: 15m
       - task: tcp-drain
-        file: loggregator-ci/tasks/scalable-syslog-smoke-test-with-vars.yml
+        file: loggregator-ci/tasks/cf-syslog-drain-smoke-test-with-vars.yml
         params:
           CF_ORG: cf-lamb
           CF_SPACE: development
@@ -1051,7 +1051,7 @@ jobs:
             VARS_STORE_FILE: gcp/science/latest/deployment-vars.yml
             VERSION_TAG: latest
       - task: http-drain
-        file: loggregator-ci/tasks/scalable-syslog-smoke-test-with-vars.yml
+        file: loggregator-ci/tasks/cf-syslog-drain-smoke-test-with-vars.yml
         params:
           CF_ORG: cf-lamb
           CF_SPACE: development
@@ -1065,7 +1065,7 @@ jobs:
           VARS_STORE_FILE: gcp/science/latest/deployment-vars.yml
         timeout: 15m
       - task: tcp-drain
-        file: loggregator-ci/tasks/scalable-syslog-smoke-test-with-vars.yml
+        file: loggregator-ci/tasks/cf-syslog-drain-smoke-test-with-vars.yml
         params:
           CF_ORG: cf-lamb
           CF_SPACE: development
@@ -1117,7 +1117,7 @@ jobs:
             VARS_STORE_FILE: gcp/science/release-elect-v2/deployment-vars.yml
             VERSION_TAG: elect
       - task: http-drain
-        file: loggregator-ci/tasks/scalable-syslog-smoke-test-with-vars.yml
+        file: loggregator-ci/tasks/cf-syslog-drain-smoke-test-with-vars.yml
         params:
           CF_ORG: cf-lamb
           CF_SPACE: development
@@ -1132,7 +1132,7 @@ jobs:
           VARS_STORE_FILE: gcp/science/release-elect-v2/deployment-vars.yml
         timeout: 15m
       - task: tcp-drain
-        file: loggregator-ci/tasks/scalable-syslog-smoke-test-with-vars.yml
+        file: loggregator-ci/tasks/cf-syslog-drain-smoke-test-with-vars.yml
         params:
           CF_ORG: cf-lamb
           CF_SPACE: development
@@ -1183,7 +1183,7 @@ jobs:
             VARS_STORE_FILE: gcp/science/latest-v2/deployment-vars.yml
             VERSION_TAG: latest
       - task: http-drain
-        file: loggregator-ci/tasks/scalable-syslog-smoke-test-with-vars.yml
+        file: loggregator-ci/tasks/cf-syslog-drain-smoke-test-with-vars.yml
         params:
           CF_ORG: cf-lamb
           CF_SPACE: development
@@ -1197,7 +1197,7 @@ jobs:
           VARS_STORE_FILE: gcp/science/latest-v2/deployment-vars.yml
         timeout: 15m
       - task: tcp-drain
-        file: loggregator-ci/tasks/scalable-syslog-smoke-test-with-vars.yml
+        file: loggregator-ci/tasks/cf-syslog-drain-smoke-test-with-vars.yml
         params:
           CF_ORG: cf-lamb
           CF_SPACE: development

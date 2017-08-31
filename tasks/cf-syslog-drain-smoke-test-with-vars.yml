@@ -4,11 +4,11 @@ image_resource:
   source:
     repository: loggregator/base
 inputs:
-- name: scalable-syslog-release
+- name: cf-syslog-drain-release
+- name: vars-store
 params:
   CF_SYSTEM_DOMAIN:
   CF_USERNAME:
-  CF_PASSWORD:
   CF_SPACE:
   CF_ORG:
   CYCLES: 10000
@@ -24,9 +24,11 @@ run:
   - |
     #!/bin/bash
 
-    set -e
+    set -ex
 
-    cd scalable-syslog-release
+    export CF_PASSWORD=$(bosh int vars-store/$VARS_STORE_FILE --path /cf_admin_password)
+
+    cd cf-syslog-drain-release
     export GOPATH=$PWD
     export PATH=$GOPATH/bin:$PATH
 

@@ -69,51 +69,51 @@ resources:
     branch: develop
     private_key: {{cf-loggregator-oauth-bot-key}}
 
-- name: scalable-syslog-release-develop
+- name: cf-syslog-drain-release-develop
   type: git
   source:
-    uri: git@github.com:cloudfoundry/scalable-syslog-release
+    uri: git@github.com:cloudfoundry/cf-syslog-drain-release
     branch: develop
     private_key: {{cf-loggregator-oauth-bot-key}}
     ignore_paths:
     - .final_builds
     - releases
 
-- name: scalable-syslog-release-final-develop
+- name: cf-syslog-drain-release-final-develop
   type: git
   source:
-    uri: git@github.com:cloudfoundry/scalable-syslog-release
+    uri: git@github.com:cloudfoundry/cf-syslog-drain-release
     branch: develop
     private_key: {{cf-loggregator-oauth-bot-key}}
     ignore_paths:
     - .final_builds
     - releases
 
-- name: scalable-syslog-release-master
+- name: cf-syslog-drain-release-master
   type: git
   source:
-    uri: git@github.com:cloudfoundry/scalable-syslog-release
+    uri: git@github.com:cloudfoundry/cf-syslog-drain-release
     branch: master
     private_key: {{cf-loggregator-oauth-bot-key}}
     ignore_paths:
     - .final_builds
     - releases
 
-- name: scalable-syslog-release-final-master
+- name: cf-syslog-drain-release-final-master
   type: git
   source:
-    uri: git@github.com:cloudfoundry/scalable-syslog-release
+    uri: git@github.com:cloudfoundry/cf-syslog-drain-release
     branch: master
     private_key: {{cf-loggregator-oauth-bot-key}}
     ignore_paths:
     - .final_builds
     - releases
 
-- name: scalable-syslog-release-github-release-drafts
+- name: cf-syslog-drain-release-github-release-drafts
   type: github-release
   source:
     user: cloudfoundry
-    repository: scalable-syslog-release
+    repository: cf-syslog-drain-release
     access_token: {{access-token}}
     drafts: true
 
@@ -460,12 +460,12 @@ jobs:
         rebase: true
         repository: cf-release-bump
 
-- name: scalable-syslog-create-final-release
+- name: cf-syslog-drain-create-final-release
   serial: true
   plan:
   - aggregate:
-    - get: scalable-syslog-release-develop
-    - get: scalable-syslog-release-master
+    - get: cf-syslog-drain-release-develop
+    - get: cf-syslog-drain-release-master
   - task: create-final-release
     config:
       image_resource:
@@ -479,8 +479,8 @@ jobs:
         SSH_KEY: {{cf-loggregator-oauth-bot-key}}
         NEW_VERSION: 11
       inputs:
-      - name: scalable-syslog-release-develop
-      - name: scalable-syslog-release-master
+      - name: cf-syslog-drain-release-develop
+      - name: cf-syslog-drain-release-master
       outputs:
       - name: github-release
       - name: create-final-release
@@ -512,7 +512,7 @@ jobs:
             ssh-add <(echo "$SSH_KEY")
 
             # build final release on master
-            pushd scalable-syslog-release-master
+            pushd cf-syslog-drain-release-master
               # this is needed to land commits on master since the commit for
               # master is checked out as a detatched head when the git
               # resource clones it down
@@ -524,7 +524,7 @@ jobs:
             blobstore:
               provider: s3
               options:
-                bucket_name: scalable-syslog-release-blobs
+                bucket_name: cf-syslog-drain-release-blobs
                 access_key_id: $S3_ACCESS_KEY
                 secret_access_key: $S3_SECRET_KEY
                 credentials_source: static
@@ -546,13 +546,13 @@ jobs:
             popd
 
             # merge final release artifacts with develop
-            pushd scalable-syslog-release-develop
+            pushd cf-syslog-drain-release-develop
               # this is needed to land commits on develop since the commit for
               # develop is checked out as a detatched head when the git
               # resource clones it down
               git checkout develop
 
-              git remote add -f master-repo ../scalable-syslog-release-master
+              git remote add -f master-repo ../cf-syslog-drain-release-master
               git pull
               git merge -v -m "Merge final release artifacts\
 
@@ -561,16 +561,16 @@ jobs:
             popd
 
             # copy repos into output
-            cp -r scalable-syslog-release-develop scalable-syslog-release-master create-final-release
-  - put: scalable-syslog-release-final-master
+            cp -r cf-syslog-drain-release-develop cf-syslog-drain-release-master create-final-release
+  - put: cf-syslog-drain-release-final-master
     params:
-      repository: create-final-release/scalable-syslog-release-master
+      repository: create-final-release/cf-syslog-drain-release-master
       rebase: false
-  - put: scalable-syslog-release-final-develop
+  - put: cf-syslog-drain-release-final-develop
     params:
-      repository: create-final-release/scalable-syslog-release-develop
+      repository: create-final-release/cf-syslog-drain-release-develop
       rebase: false
-  - put: scalable-syslog-release-github-release-drafts
+  - put: cf-syslog-drain-release-github-release-drafts
     params:
       name: github-release/name
       tag: github-release/tag

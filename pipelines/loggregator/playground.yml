@@ -248,7 +248,7 @@ jobs:
               git config user.email "cf-loggregator@pivotal.io"
               git config user.name "Loggregator CI"
               git add . --all
-              git commit -m "Updated scalable syslog deployment vars
+              git commit -m "Updated cf syslog drain deployment vars
 
               [ci-skip]" || true
             popd
