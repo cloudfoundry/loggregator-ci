@@ -4,8 +4,6 @@ groups:
   - start-pipeline
   - latest-deploy
   - release-elect-deploy
-  - latest-v2-deploy
-  - release-elect-v2-deploy
   - setup
   - smoke-tests
   - start-incidents
@@ -16,10 +14,6 @@ groups:
   - latest-bbl-destroy
   - release-elect-bbl-create
   - release-elect-bbl-destroy
-  - latest-v2-bbl-create
-  - latest-v2-bbl-destroy
-  - release-elect-v2-bbl-create
-  - release-elect-v2-bbl-destroy
 
 resource_types:
   - name: slack-notification
@@ -226,86 +220,6 @@ jobs:
       repository: updated-bbl-state
       rebase: true
 
-- name: release-elect-v2-bbl-create
-  plan:
-  - get: cf-deployment-concourse-tasks
-    resource: cf-deployment-concourse-tasks
-  - get: bbl-state
-    resource: deployments-loggregator
-  - get: ops-files
-    resource: deployments-loggregator
-  - task: bbl-up
-    file: cf-deployment-concourse-tasks/bbl-up/task.yml
-    params:
-      BBL_GCP_SERVICE_ACCOUNT_KEY: service-account.key.json
-      BBL_GCP_PROJECT_ID: cff-loggregator
-      BBL_GCP_ZONE: us-central1-a
-      BBL_GCP_REGION: us-central1
-      BBL_STATE_DIR: gcp/science/release-elect-v2
-      BBL_IAAS: gcp
-      BBL_LB_CERT: {{coconut_director_cert}}
-      BBL_LB_KEY: {{coconut_director_key}}
-      BBL_ENV_NAME: release-elect-v2-science
-      LB_DOMAIN: release-elect-v2.science.loggr.cf-app.com
-  - put: deployments-loggregator-with-changes
-    params:
-      repository: updated-bbl-state
-      rebase: true
-- name: release-elect-v2-bbl-destroy
-  plan:
-  - get: cf-deployment-concourse-tasks
-    resource: cf-deployment-concourse-tasks
-  - get: bbl-state
-    resource: deployments-loggregator
-  - task: bbl-destroy
-    file: cf-deployment-concourse-tasks/bbl-destroy/task.yml
-    params:
-      BBL_STATE_DIR: gcp/science/release-elect-v2
-  - put: deployments-loggregator-with-changes
-    params:
-      repository: updated-bbl-state
-      rebase: true
-
-- name: latest-v2-bbl-create
-  plan:
-  - get: cf-deployment-concourse-tasks
-    resource: cf-deployment-concourse-tasks
-  - get: bbl-state
-    resource: deployments-loggregator
-  - get: ops-files
-    resource: deployments-loggregator
-  - task: bbl-up
-    file: cf-deployment-concourse-tasks/bbl-up/task.yml
-    params:
-      BBL_GCP_SERVICE_ACCOUNT_KEY: service-account.key.json
-      BBL_GCP_PROJECT_ID: cff-loggregator
-      BBL_GCP_ZONE: us-central1-a
-      BBL_GCP_REGION: us-central1
-      BBL_STATE_DIR: gcp/science/latest-v2
-      BBL_IAAS: gcp
-      BBL_LB_CERT: {{coconut_director_cert}}
-      BBL_LB_KEY: {{coconut_director_key}}
-      BBL_ENV_NAME: latest-v2-science
-      LB_DOMAIN: latest-v2.science.loggr.cf-app.com
-  - put: deployments-loggregator-with-changes
-    params:
-      repository: updated-bbl-state
-      rebase: true
-- name: latest-v2-bbl-destroy
-  plan:
-  - get: cf-deployment-concourse-tasks
-    resource: cf-deployment-concourse-tasks
-  - get: bbl-state
-    resource: deployments-loggregator
-  - task: bbl-destroy
-    file: cf-deployment-concourse-tasks/bbl-destroy/task.yml
-    params:
-      BBL_STATE_DIR: gcp/science/latest-v2
-  - put: deployments-loggregator-with-changes
-    params:
-      repository: updated-bbl-state
-      rebase: true
-
 - name: start-pipeline
   serial: true
   serial_groups: ["locking"]
@@ -364,6 +278,7 @@ jobs:
               cp cf-deployment/operations/workarounds/use-4-azs-for-router.yml ops-files/
               cp cf-deployment/operations/tcp-routing-gcp.yml ops-files/
               cp cf-deployment/operations/experimental/enable-rlp.yml ops-files/
+              cp cf-deployment/operations/experimental/enable-loggregator-v2-diego.yml ops-files/
               cp bbl-state/gcp/science/release-elect/ops-files/*.yml ops-files/
 
       - task: cf-deploy
@@ -373,7 +288,7 @@ jobs:
           SYSTEM_DOMAIN: release-elect.science.loggr.cf-app.com
           VARS_STORE_FILE: gcp/science/release-elect/deployment-vars.yml
           VARS_FILES: "gcp/science/release-elect/datadog-vars.yml gcp/science/release-elect/turbulence-vars.yml"
-          OPS_FILES: "clients.yml use-4-azs-for-router.yml tcp-routing-gcp.yml enable-rlp.yml metron-health.yml turbulence-cf.yml"
+          OPS_FILES: "clients.yml use-4-azs-for-router.yml tcp-routing-gcp.yml enable-rlp.yml turbulence-cf.yml enable-loggregator-v2-diego.yml"
       - task: deploy-cf-syslog-drain
         config:
           image_resource:
@@ -447,135 +362,6 @@ jobs:
             The `science` pipeline has failed. Please resolve any issues and ensure the pipeline lock was released. Check it out at:
             $ATC_EXTERNAL_URL/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME
 
-- name: release-elect-v2-deploy
-  serial: true
-  serial_groups: ["release-elect-v2"]
-  plan:
-    - aggregate:
-      - get: pipeline-lock
-        passed: ["start-pipeline"]
-        trigger: true
-      - get: bbl-state
-        resource: deployments-loggregator
-      - get: cf-deployment
-      - get: cf-deployment-concourse-tasks
-        resource: cf-deployment-concourse-tasks
-      - get: release
-        resource: loggregator-release-elect
-      - get: vars-store
-        resource: deployments-loggregator
-      - get: vars-files
-        resource: deployments-loggregator
-      - get: consul-release
-      - get: cf-syslog-drain-release-elect
-    - do:
-      - task: upload-stemcell
-        file: cf-deployment-concourse-tasks/bosh-upload-stemcell-from-cf-deployment/task.yml
-        params:
-          BBL_STATE_DIR: gcp/science/release-elect-v2
-      - task: copy-ops-files
-        config:
-          platform: linux
-          image_resource:
-            type: docker-image
-            source: { repository: ubuntu }
-          inputs:
-          - name: bbl-state
-          - name: cf-deployment
-          outputs:
-          - name: ops-files
-          run:
-            path: /bin/bash
-            args:
-            - "-c"
-            - |
-              #!/bin/bash
-              set -ex
-
-              cp cf-deployment/operations/workarounds/use-4-azs-for-router.yml ops-files/
-              cp cf-deployment/operations/tcp-routing-gcp.yml ops-files/
-              cp cf-deployment/operations/experimental/enable-rlp.yml ops-files/
-              cp cf-deployment/operations/experimental/enable-loggregator-v2-diego.yml ops-files/
-              cp bbl-state/gcp/science/release-elect-v2/ops-files/*.yml ops-files/
-
-      - task: cf-deploy
-        file: cf-deployment-concourse-tasks/bosh-deploy-with-created-release/task.yml
-        params:
-          BBL_STATE_DIR: gcp/science/release-elect-v2
-          SYSTEM_DOMAIN: release-elect-v2.science.loggr.cf-app.com
-          VARS_STORE_FILE: gcp/science/release-elect-v2/deployment-vars.yml
-          OPS_FILES: "clients.yml use-4-azs-for-router.yml tcp-routing-gcp.yml enable-rlp.yml metron-health.yml enable-loggregator-v2-diego.yml"
-      - task: deploy-cf-syslog-drain
-        config:
-          image_resource:
-            type: docker-image
-            source:
-              repository: relintdockerhubpushbot/cf-deployment-concourse-tasks
-          platform: linux
-          inputs:
-          - name: cf-syslog-drain-release-elect
-          - name: consul-release
-          - name: updated-vars-store
-          outputs:
-          - name: updated-deployments-loggregator
-          params:
-          run:
-            path: bash
-            args:
-              - -c
-              - |
-                #!/bin/bash
-                set -eux
-
-                pushd updated-vars-store/gcp/science/release-elect-v2
-                  export BOSH_CLIENT=`bbl director-username`
-                  export BOSH_CLIENT_SECRET=`bbl director-password`
-                  export BOSH_CA_CERT=`bbl director-ca-cert`
-                  export BOSH_ENVIRONMENT=`bbl director-address`
-                popd
-
-                for release in $(find consul-release -name '*.tgz'); do
-                  bosh upload-release $release
-                done
-
-                pushd cf-syslog-drain-release-elect
-                  bosh create-release --force
-                  bosh upload-release --rebase
-                popd
-
-                ss_dir="$PWD/cf-syslog-drain-release-elect"
-                bbl_dir="updated-vars-store/gcp/science/release-elect-v2"
-
-                bosh -n -d cf-syslog-drain deploy \
-                  --vars-store "$bbl_dir/cf-syslog-drain-vars.yml" \
-                  --ops-file "$ss_dir/manifests/cf-deployment-ops.yml" \
-                  --ops-file "$bbl_dir/ops-files/allow-insecure-syslog-drains.yml" \
-                  --ops-file "$bbl_dir/ops-files/multi-az-ss.yml" \
-                  --vars-file "$bbl_dir/deployment-vars.yml" \
-                  -v "system_domain=release-elect-v2.science.loggr.cf-app.com" \
-                  "$ss_dir/manifests/cf-syslog-drain.yml"
-
-                pushd updated-vars-store
-                  git config user.email "cf-loggregator@pivotal.io"
-                  git config user.name "Loggregator CI"
-                  git add . --all
-                  git commit -m "Updated cf syslog drain deployment vars
-
-                  [ci-skip]" || true
-                popd
-
-                rsync -ac updated-vars-store/ updated-deployments-loggregator
-      - put: deployments-loggregator-with-changes
-        params:
-          repository: updated-deployments-loggregator
-          rebase: true
-      on_failure: &slack-failure-alert
-        put: slack-alert
-        params:
-          text: |
-            The `science` pipeline has failed. Please resolve any issues and ensure the pipeline lock was released. Check it out at:
-            $ATC_EXTERNAL_URL/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME
-
 - name: latest-deploy
   serial: true
   serial_groups: ["latest"]
@@ -625,6 +411,7 @@ jobs:
               cp cf-deployment/operations/workarounds/use-4-azs-for-router.yml ops-files/
               cp cf-deployment/operations/tcp-routing-gcp.yml ops-files/
               cp cf-deployment/operations/experimental/enable-rlp.yml ops-files/
+              cp cf-deployment/operations/experimental/enable-loggregator-v2-diego.yml ops-files/
               cp bbl-state/gcp/science/latest/ops-files/*.yml ops-files/
 
               version=$(cat release/version)
@@ -646,7 +433,7 @@ jobs:
           SYSTEM_DOMAIN: latest.science.loggr.cf-app.com
           VARS_STORE_FILE: gcp/science/latest/deployment-vars.yml
           VARS_FILES: "gcp/science/latest/datadog-vars.yml gcp/science/latest/turbulence-vars.yml"
-          OPS_FILES: "clients.yml use-4-azs-for-router.yml loggregator-version.yml tcp-routing-gcp.yml enable-rlp.yml metron-health.yml turbulence-cf.yml"
+          OPS_FILES: "clients.yml use-4-azs-for-router.yml loggregator-version.yml tcp-routing-gcp.yml enable-rlp.yml turbulence-cf.yml enable-loggregator-v2-diego.yml"
       - task: deploy-cf-syslog-drain
         config:
           image_resource:
@@ -719,156 +506,13 @@ jobs:
           rebase: true
       on_failure: *slack-failure-alert
 
-- name: latest-v2-deploy
-  serial: true
-  serial_groups: ["latest-v2"]
-  plan:
-    - aggregate:
-      - get: pipeline-lock
-        passed: ["start-pipeline"]
-        trigger: true
-      - get: bbl-state
-        resource: deployments-loggregator
-      - get: cf-deployment
-      - get: cf-deployment-concourse-tasks
-        resource: cf-deployment-concourse-tasks
-      - get: vars-store
-        resource: deployments-loggregator
-      - get: release
-        resource: loggregator-latest
-      - get: vars-files
-        resource: deployments-loggregator
-      - get: consul-release
-      - get: cf-syslog-drain-develop
-      - get: cf-syslog-drain-github-release
-    - do:
-      - task: upload-stemcell
-        file: cf-deployment-concourse-tasks/bosh-upload-stemcell-from-cf-deployment/task.yml
-        params:
-          BBL_STATE_DIR: gcp/science/latest-v2
-      - task: copy-ops-files
-        config:
-          platform: linux
-          image_resource:
-            type: docker-image
-            source: { repository: ubuntu }
-          inputs:
-          - name: bbl-state
-          - name: cf-deployment
-          - name: release
-          outputs:
-          - name: ops-files
-          run:
-            path: /bin/bash
-            args:
-            - "-c"
-            - |
-              #!/bin/bash
-              set -ex
-
-              cp cf-deployment/operations/workarounds/use-4-azs-for-router.yml ops-files/
-              cp cf-deployment/operations/tcp-routing-gcp.yml ops-files/
-              cp cf-deployment/operations/experimental/enable-rlp.yml ops-files/
-              cp cf-deployment/operations/experimental/enable-loggregator-v2-diego.yml ops-files/
-              cp bbl-state/gcp/science/latest-v2/ops-files/*.yml ops-files/
-
-              version=$(cat release/version)
-              sha=$(cat release/sha1)
-
-              cat <<EOT >> ops-files/loggregator-version.yml
-              - type: replace
-                path: /releases/name=loggregator
-                value:
-                  name: loggregator
-                  url: https://bosh.io/d/github.com/cloudfoundry/loggregator?v=$version
-                  version: "$version"
-                  sha1: "$sha"
-              EOT
-      - task: cf-deploy
-        file: cf-deployment-concourse-tasks/bosh-deploy/task.yml
-        params:
-          BBL_STATE_DIR: gcp/science/latest-v2
-          SYSTEM_DOMAIN: latest-v2.science.loggr.cf-app.com
-          VARS_STORE_FILE: gcp/science/latest-v2/deployment-vars.yml
-          OPS_FILES: "clients.yml use-4-azs-for-router.yml loggregator-version.yml tcp-routing-gcp.yml enable-rlp.yml metron-health.yml enable-loggregator-v2-diego.yml"
-      - task: deploy-cf-syslog-drain
-        config:
-          image_resource:
-            type: docker-image
-            source:
-              repository: relintdockerhubpushbot/cf-deployment-concourse-tasks
-          platform: linux
-          inputs:
-          - name: cf-syslog-drain-github-release
-          - name: cf-syslog-drain-develop
-          - name: consul-release
-          - name: updated-vars-store
-          outputs:
-          - name: updated-deployments-loggregator
-          params:
-          run:
-            path: bash
-            args:
-              - -c
-              - |
-                #!/bin/bash
-                set -eux
-
-                pushd updated-vars-store/gcp/science/latest-v2
-                  export BOSH_CLIENT=`bbl director-username`
-                  export BOSH_CLIENT_SECRET=`bbl director-password`
-                  export BOSH_CA_CERT=`bbl director-ca-cert`
-                  export BOSH_ENVIRONMENT=`bbl director-address`
-                popd
-
-                for release in $(find consul-release -name '*.tgz'); do
-                  bosh upload-release $release
-                done
-
-                pushd cf-syslog-drain-github-release
-                  bosh upload-release *.tgz
-                popd
-
-                pushd cf-syslog-drain-develop
-                  tag=$(cat ../cf-syslog-drain-github-release/tag)
-                  git checkout $tag
-                popd
-
-                ss_dir="$PWD/cf-syslog-drain-develop"
-                bbl_dir="updated-vars-store/gcp/science/latest-v2"
-
-                bosh -n -d cf-syslog-drain deploy \
-                  --vars-store "$bbl_dir/cf-syslog-drain-vars.yml" \
-                  --ops-file "$ss_dir/manifests/cf-deployment-ops.yml" \
-                  --ops-file "$bbl_dir/ops-files/allow-insecure-syslog-drains.yml" \
-                  --vars-file "$bbl_dir/deployment-vars.yml" \
-                  -v "system_domain=latest-v2.science.loggr.cf-app.com" \
-                  "$ss_dir/manifests/cf-syslog-drain.yml"
-
-                pushd updated-vars-store
-                  git config user.email "cf-loggregator@pivotal.io"
-                  git config user.name "Loggregator CI"
-                  git add . --all
-                  git commit -m "Updated cf syslog drain deployment vars
-
-                  [ci-skip]" || true
-                popd
-
-                rsync -ac updated-vars-store/ updated-deployments-loggregator
-      - put: deployments-loggregator-with-changes
-        params:
-          repository: updated-deployments-loggregator
-          rebase: true
-      on_failure: *slack-failure-alert
-
-
 - name: setup
   serial: true
-  serial_groups: ["release-elect", "latest", "release-elect-v2", "latest-v2"]
+  serial_groups: ["release-elect", "latest"]
   plan:
     - aggregate:
       - get: pipeline-lock
-        passed: ["latest-deploy", "release-elect-deploy", "latest-v2-deploy", "release-elect-v2-deploy"]
+        passed: ["latest-deploy", "release-elect-deploy"]
         trigger: true
       - get: vars-store
         resource: deployments-loggregator-with-changes
@@ -895,20 +539,6 @@ jobs:
           params:
             SYSTEM_DOMAIN: latest.science.loggr.cf-app.com
             VARS_STORE_FILE: gcp/science/latest/deployment-vars.yml
-            ORG: cf-lamb
-            SPACE: development
-        - task: setup-release-elect-v2
-          file: loggregator-ci/tasks/science/setup-cf.yml
-          params:
-            SYSTEM_DOMAIN: release-elect-v2.science.loggr.cf-app.com
-            VARS_STORE_FILE: gcp/science/release-elect-v2/deployment-vars.yml
-            ORG: cf-lamb
-            SPACE: development
-        - task: setup-latest-v2
-          file: loggregator-ci/tasks/science/setup-cf.yml
-          params:
-            SYSTEM_DOMAIN: latest-v2.science.loggr.cf-app.com
-            VARS_STORE_FILE: gcp/science/latest-v2/deployment-vars.yml
             ORG: cf-lamb
             SPACE: development
         - task: setup-event
@@ -1078,139 +708,7 @@ jobs:
           JOB_NAME: "syslog-teardown"
           VARS_STORE_FILE: gcp/science/latest/deployment-vars.yml
         timeout: 15m
-      - do:
-        - task: get-release-version
-          config:
-            platform: linux
-            image_resource:
-              type: docker-image
-              source:
-                repository: loggregator/base
-            inputs:
-              - name: release-elect
-            outputs:
-              - name: release-info
-            run:
-              path: bash
-              args:
-              - -c
-              - |
-                #/bin/bash
-                set -ex
-
-                cd release-elect
-                git rev-parse HEAD > ../release-info/version
-        - task: loggregator-elect
-          file: loggregator-ci/tasks/science/cf-logs-smoke-test.yml
-          params:
-            PREFIX: "regression."
-            CYCLES: 10000
-            DELAY: "2"
-            DELAY_UNIT: "us"
-            MESSAGE: "FIFTEEN-MINUTE"
-            APP_NAME: "floodspinner"
-            WAIT: 60
-            API_ENDPOINT: api.release-elect-v2.science.loggr.cf-app.com
-            USERNAME: admin
-            DATADOG_API_KEY: {{datadog-dev-api-key}}
-            SKIP_SSL_VALIDATION: true
-            VARS_STORE_FILE: gcp/science/release-elect-v2/deployment-vars.yml
-            VERSION_TAG: elect
-      - task: http-drain
-        file: loggregator-ci/tasks/cf-syslog-drain-smoke-test-with-vars.yml
-        params:
-          CF_ORG: cf-lamb
-          CF_SPACE: development
-          CF_APP_DOMAIN: release-elect-v2.science.loggr.cf-app.com
-          CF_SYSTEM_DOMAIN: release-elect-v2.science.loggr.cf-app.com
-          CF_USERNAME: admin
-          DATADOG_API_KEY: {{datadog-loggregator-api-key}}
-          DRAIN_VERSION: "2.0"
-          DRAIN_TYPE: "https"
-          JOB_NAME: "https-teardown"
-          TEARDOWN: false
-          VARS_STORE_FILE: gcp/science/release-elect-v2/deployment-vars.yml
-        timeout: 15m
-      - task: tcp-drain
-        file: loggregator-ci/tasks/cf-syslog-drain-smoke-test-with-vars.yml
-        params:
-          CF_ORG: cf-lamb
-          CF_SPACE: development
-          CF_APP_DOMAIN: tcp.release-elect-v2.science.loggr.cf-app.com
-          CF_SYSTEM_DOMAIN: release-elect-v2.science.loggr.cf-app.com
-          CF_USERNAME: admin
-          DATADOG_API_KEY: {{datadog-loggregator-api-key}}
-          DRAIN_VERSION: "2.0"
-          DRAIN_TYPE: "syslog"
-          JOB_NAME: "syslog-teardown"
-          VARS_STORE_FILE: gcp/science/release-elect-v2/deployment-vars.yml
-        timeout: 15m
-      - do:
-        - task: get-release-version
-          config:
-            platform: linux
-            image_resource:
-              type: docker-image
-              source:
-                repository: loggregator/base
-            inputs:
-              - name: release-latest
-            outputs:
-              - name: release-info
-            run:
-              path: bash
-              args:
-              - -c
-              - |
-                #/bin/bash
-                set -ex
-
-                cp release-latest/version release-info/version
-        - task: loggregator-latest
-          file: loggregator-ci/tasks/science/cf-logs-smoke-test.yml
-          params:
-            PREFIX: "regression."
-            CYCLES: 10000
-            DELAY: "2"
-            DELAY_UNIT: "us"
-            MESSAGE: "FIFTEEN-MINUTE"
-            APP_NAME: "floodspinner"
-            WAIT: 60
-            API_ENDPOINT: api.latest-v2.science.loggr.cf-app.com
-            USERNAME: admin
-            DATADOG_API_KEY: {{datadog-dev-api-key}}
-            SKIP_SSL_VALIDATION: true
-            VARS_STORE_FILE: gcp/science/latest-v2/deployment-vars.yml
-            VERSION_TAG: latest
-      - task: http-drain
-        file: loggregator-ci/tasks/cf-syslog-drain-smoke-test-with-vars.yml
-        params:
-          CF_ORG: cf-lamb
-          CF_SPACE: development
-          CF_APP_DOMAIN: latest-v2.science.loggr.cf-app.com
-          CF_SYSTEM_DOMAIN: latest-v2.science.loggr.cf-app.com
-          CF_USERNAME: admin
-          DATADOG_API_KEY: {{datadog-loggregator-api-key}}
-          DRAIN_VERSION: "2.0"
-          DRAIN_TYPE: "https"
-          JOB_NAME: "https-teardown"
-          VARS_STORE_FILE: gcp/science/latest-v2/deployment-vars.yml
-        timeout: 15m
-      - task: tcp-drain
-        file: loggregator-ci/tasks/cf-syslog-drain-smoke-test-with-vars.yml
-        params:
-          CF_ORG: cf-lamb
-          CF_SPACE: development
-          CF_APP_DOMAIN: tcp.latest-v2.science.loggr.cf-app.com
-          CF_SYSTEM_DOMAIN: latest-v2.science.loggr.cf-app.com
-          CF_USERNAME: admin
-          DATADOG_API_KEY: {{datadog-loggregator-api-key}}
-          DRAIN_VERSION: "2.0"
-          DRAIN_TYPE: "syslog"
-          JOB_NAME: "syslog-teardown"
-          VARS_STORE_FILE: gcp/science/latest-v2/deployment-vars.yml
-        timeout: 15m
-      timeout: 10m
+      timeout: 15m
       ensure:
         put: pipeline-lock
         params:
