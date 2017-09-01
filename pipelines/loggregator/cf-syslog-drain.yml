@@ -182,9 +182,11 @@ jobs:
   serial: true
   plan:
   - aggregate:
-    - get: cf-syslog-drain-release
+    - get: scalable-syslog
+      trigger: true
       passed:
       - bump-release-submodule
+    - get: cf-syslog-drain-release
       trigger: true
     - get: deployments-loggregator
       trigger: false
@@ -291,9 +293,11 @@ jobs:
   serial: true
   plan:
   - aggregate:
-    - get: cf-syslog-drain-release
+    - get: scalable-syslog
+      trigger: true
       passed:
       - bump-release-submodule
+    - get: cf-syslog-drain-release
       trigger: true
     - get: deployments-loggregator
       trigger: false
