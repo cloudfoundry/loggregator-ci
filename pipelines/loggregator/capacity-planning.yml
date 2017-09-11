@@ -38,17 +38,11 @@ resources:
   type: git
   source: *deployments_loggregator
 
-- name: gcp-stemcell
-  type: bosh-io-stemcell
-  source:
-    name: bosh-google-kvm-ubuntu-trusty-go_agent
-
 - name: datadog-firehose-nozzle-release
   type: git
   source: &datadog-firehose-nozzle-release
-    uri: git@github.com:cloudfoundry-incubator/datadog-firehose-nozzle-release.git
+    uri: https://github.com/datadog/datadog-firehose-nozzle-release.git
     branch: master
-    private_key: {{datadog-firehose-nozzle-release-key}}
 
 jobs:
 - name: bbl-create
@@ -225,34 +219,10 @@ jobs:
   serial: true
   plan:
   - aggregate:
-    - get: gcp-stemcell
-      trigger: false
     - get: datadog-firehose-nozzle-release
       trigger: false
     - get: deployments-loggregator
       trigger: false
-  - task: create-release
-    config:
-      image_resource:
-        type: docker-image
-        source:
-          repository: loggregator/base
-      platform: linux
-      inputs:
-      - name: datadog-firehose-nozzle-release
-      outputs:
-      - name: datadog-release
-      run:
-        path: bash
-        args:
-          - -c
-          - |
-            #!/bin/bash
-
-            set -ex
-
-            cd datadog-firehose-nozzle-release
-            bosh -n create-release --tarball ../datadog-release/release.tgz
   - task: deploy
     config:
       image_resource:
@@ -261,7 +231,6 @@ jobs:
           repository: relintdockerhubpushbot/cf-deployment-concourse-tasks
       platform: linux
       inputs:
-      - name: datadog-release
       - name: deployments-loggregator
       - name: datadog-firehose-nozzle-release
       params:
@@ -269,6 +238,7 @@ jobs:
         MANIFEST_VARS: deployments-loggregator/gcp/loggregator-capacity-planning/datadog-vars.yml
         DEPLOYMENT_NAME: datadog
         METRIC_PREFIX: capacity-planning.datadog.nozzle.
+        NOZZLE_VERSION: 63
       run:
         path: bash
         args:
@@ -287,7 +257,9 @@ jobs:
               export BOSH_ENVIRONMENT=`bbl director-address`
             popd
 
-            bosh -n upload-release datadog-release/*.tgz --rebase
+            pushd datadog-firehose-nozzel-release
+              bosh -n upload-release "releases/datadog-firehose-nozzle/datadog-firehose-nozzle-${NOZZLE_VERSION}.yml"
+            popd
             bosh -n -d ${DEPLOYMENT_NAME} deploy ${MANIFEST_FILE} -l ${MANIFEST_VARS} \
               -o deployments-loggregator/gcp/loggregator-capacity-planning/ops-files/datadog.yml
 
