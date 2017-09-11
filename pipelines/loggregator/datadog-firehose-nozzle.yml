@@ -1,0 +1,64 @@
+resources:
+- name: datadog-firehose-nozzle-release
+  type: git
+  source: &datadog-firehose-nozzle-release
+    uri: https://github.com/datadog/datadog-firehose-nozzle-release.git
+    branch: master
+
+- name: deployments-loggregator
+  type: git
+  source: &deployments_loggregator
+    uri: git@github.com:cloudfoundry/deployments-loggregator.git
+    branch: master
+    private_key: {{deployments-loggregator-key}}
+
+jobs:
+- name: deploy
+  serial: true
+  plan:
+  - aggregate:
+    - get: datadog-firehose-nozzle-release
+      trigger: false
+    - get: deployments-loggregator
+      trigger: false
+  - task: deploy
+    config:
+      image_resource:
+        type: docker-image
+        source:
+          repository: relintdockerhubpushbot/cf-deployment-concourse-tasks
+      platform: linux
+      inputs:
+      - name: datadog-firehose-nozzle-release
+      - name: deployments-loggregator
+      params:
+        MANIFEST_FILE: datadog-firehose-nozzle-release/templates/datadog-bosh2.yml
+        MANIFEST_VARS: deployments-loggregator/gcp/coconut-bbl/datadog-vars.yml
+        DEPLOYMENT_NAME: datadog
+        METRIC_PREFIX: coconut.datadog.nozzle.
+        NOZZLE_VERSION: 63
+      run:
+        path: bash
+        args:
+          - -c
+          - |
+            #!/bin/bash
+
+            set -e -x
+
+            source ~/.bashrc
+
+            pushd deployments-loggregator/gcp/coconut-bbl
+              export BOSH_CLIENT=`bbl director-username`
+              export BOSH_CLIENT_SECRET=`bbl director-password`
+              export BOSH_CA_CERT=`bbl director-ca-cert`
+              export BOSH_ENVIRONMENT=`bbl director-address`
+            popd
+
+            pushd datadog-firehose-nozzle-release
+              bosh -n upload-release "releases/datadog-firehose-nozzle/datadog-firehose-nozzle-${NOZZLE_VERSION}.yml"
+            popd
+
+            bosh -n -d ${DEPLOYMENT_NAME} deploy ${MANIFEST_FILE} -l ${MANIFEST_VARS} \
+              -o deployments-loggregator/gcp/coconut-bbl/ops-files/datadog.yml
+
