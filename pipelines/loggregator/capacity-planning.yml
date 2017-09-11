@@ -136,13 +136,16 @@ jobs:
         LOG_EMITTER_INSTANCE_COUNT: 2
         LOG_SIZE: 1000
         METRIC_EMITTER_COUNT: 2
+        END_RPS: 1600
         ORG: capacity-planning
         ROUTER_COUNT: 4
         SPACE: capacity-planning
-        SYSTEM_DOMAIN: loggregator-capacity-planning.cf-app.com
         START_RPS: 800
-        END_RPS: 1600
         STEPS: 8
+        SYSLOG_COUNTER_COUNT: 2
+        SYSLOG_SERVICE_NAME: syslog-counter
+        SYSLOG_SERVICE_URL: syslog-counter.loggregator-capacity-planning.cf-app.com
+        SYSTEM_DOMAIN: loggregator-capacity-planning.cf-app.com
         TEST_EXECUTION_MINUTES: 15
     - task: copy-ops-files
       config:

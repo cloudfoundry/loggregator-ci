@@ -53,6 +53,9 @@ class Settings
       :space,
       :start_rps,
       :steps,
+      :syslog_counter_count,
+      :syslog_service_name,
+      :syslog_service_url,
       :system_domain,
     ]
 
@@ -142,6 +145,8 @@ class Deployer
     build_ops_file!
     bosh_deploy!
     commit!
+    delete_services!
+    create_service!
     push_log_emitters!
     create_datadog_event!
   end
@@ -177,6 +182,11 @@ class Deployer
       'type' => 'replace',
       'path' => '/instance_groups/name=metric_emitter/instances?',
       'value' => settings.metric_emitter_count
+    },
+    {
+      'type' => 'replace',
+      'path' => '/instance_groups/name=syslog_counter/instances?',
+      'value' => settings.syslog_counter_count
     },
     {
       'type' => 'replace',
@@ -289,6 +299,20 @@ class Deployer
     threads.map { |t| t.join }
   end
 
+  def delete_services!
+    Logger.step("Deleting services")
+    exec(bosh_env, ['cf', 'delete-service', settings.syslog_service_name, '-f'])
+  end
+
+  def create_service!
+    Logger.step("Creating service")
+    cmd = [
+      'cf', 'create-user-provided-service', settings.syslog_service_name,
+      '-l', settings.syslog_service_url,
+    ]
+    exec(bosh_env, cmd)
+  end
+
   def push_log_emitters!
     dir = "#{Dir.pwd}/loggregator-capacity-planning-release/src/code.cloudfoundry.org/log_emitter"
 
@@ -307,7 +331,7 @@ class Deployer
         "--client-secret='#{client_secret}'",
       ]
 
-      cmd = [
+      push_cmd = [
         'cf', 'push', "log_emitter-#{i}",
         '-b', 'binary_buildpack',
         '-c', "./log_emitter #{flags.join(' ')}",
@@ -318,8 +342,13 @@ class Deployer
         '-p', dir,
       ]
 
+      bind_cmd = [
+        'cf', 'bind-service', "log_emitter-#{i}", settings.syslog_service_name
+      ]
+
       threads << Thread.new do
-        exec(bosh_env, cmd)
+        exec(bosh_env, push_cmd)
+        exec(bosh_env, bind_cmd)
       end
     end
 
