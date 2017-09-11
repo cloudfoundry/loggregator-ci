@@ -322,7 +322,7 @@ jobs:
             set -eux
 
             loggregator_dir="$PWD/loggregator"
-            deployment_dir="$PWD/deployments-loggregator/gcp/coconut"
+            deployment_dir="$PWD/deployments-loggregator/gcp/coconut-bbl"
 
             pushd deployments-loggregator/gcp/coconut-bbl
               export BOSH_CLIENT=`bbl director-username`
@@ -349,7 +349,7 @@ jobs:
       - name: committed-deployments-loggregator
       params:
         SOURCE: updated-deployments-loggregator
-        PATHS: gcp/coconut/loggregator-vars.yml
+        PATHS: gcp/coconut-bbl/loggregator-vars.yml
         COMMIT_MESSAGE: "Update loggregator vars store"
         OUTPUT: committed-deployments-loggregator
       run:
