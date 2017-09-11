@@ -150,7 +150,7 @@ jobs:
         STEPS: 8
         SYSLOG_COUNTER_COUNT: 2
         SYSLOG_SERVICE_NAME: syslog-counter
-        SYSLOG_SERVICE_URL: syslog-counter.loggregator-capacity-planning.cf-app.com
+        SYSLOG_SERVICE_URL: syslog://syslog-counter.service.cf.internal:8080
         SYSTEM_DOMAIN: loggregator-capacity-planning.cf-app.com
         TEST_EXECUTION_MINUTES: 15
     - task: copy-ops-files
