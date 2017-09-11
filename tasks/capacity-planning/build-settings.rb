@@ -3,6 +3,7 @@
 require 'json'
 
 setting_names = %w{
+  ADAPTER_COUNT
   API_VERSION
   CLIENT_ID
   DIEGO_CELL_COUNT

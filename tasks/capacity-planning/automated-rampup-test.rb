@@ -38,6 +38,7 @@ class Settings
 
   def validate!
     required = [
+      :adapter_count,
       :api_version,
       :client_id,
       :diego_cell_count,
