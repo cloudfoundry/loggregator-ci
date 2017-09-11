@@ -108,6 +108,7 @@ jobs:
   serial: true
   plan:
     - aggregate:
+      - get: cf-syslog-drain-release
       - get: loggregator-ci
       - get: bbl-state
         resource: deployments-loggregator
