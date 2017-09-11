@@ -205,7 +205,7 @@ jobs:
         S3_ACCESS_KEY: {{s3-access-key}}
         S3_SECRET_KEY: {{s3-secret-key}}
         SSH_KEY: {{loggregator-key}}
-        NEW_VERSION: 94
+        NEW_VERSION: 95
       inputs:
       - name: loggregator-develop
       - name: loggregator-master
@@ -497,7 +497,7 @@ jobs:
             tag_name="v$new_version"
 
             # write out github release files
-            echo "Scalable Syslog $new_version" > github-release/name
+            echo "CF Syslog Drain Release $new_version" > github-release/name
             echo $tag_name > github-release/tag
             echo "TBD" > github-release/body
 
