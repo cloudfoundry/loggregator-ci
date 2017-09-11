@@ -19,7 +19,7 @@ function loggregator_set_pipeline {
     echo setting pipeline for "$pipeline_name"
     fly -t loggregator set-pipeline -p "$pipeline_name" \
         -c "pipelines/loggregator/$pipeline_name.yml" \
-        -l ~/workspace/loggregator-credentials/shared-secrets.yml \
+        -l ~/workspace/deployments-loggregator/shared-secrets.yml \
         -l ~/workspace/loggregator-ci/scripts.yml
 }
 
