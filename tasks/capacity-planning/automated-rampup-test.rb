@@ -146,6 +146,7 @@ class Deployer
     build_ops_file!
     bosh_deploy!
     commit!
+    delete_log_emitters!
     delete_services!
     create_service!
     push_log_emitters!
