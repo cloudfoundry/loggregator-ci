@@ -809,12 +809,12 @@ jobs:
       - task: start-incidents-loggregator-elect
         file: loggregator-ci/tasks/science/schedule-turbulence.yml
         params:
-          TURBULENCE_API_URL: https://104.198.22.171:6868 # Public IP for `turbulence_api` job. Found in GCP console.
+          TURBULENCE_API_URL: https://35.192.156.252:6868 # Public IP for `turbulence_api` job. Found in GCP console.
           VARS_FILE_PATH: "gcp/science/release-elect/deployment-vars.yml"
       - task: start-incidents-loggregator-latest
         file: loggregator-ci/tasks/science/schedule-turbulence.yml
         params:
-          TURBULENCE_API_URL: https://35.192.156.252:6868 # Public IP for `turbulence_api` job. Found in GCP console.
+          TURBULENCE_API_URL: https://104.198.22.171:6868 # Public IP for `turbulence_api` job. Found in GCP console.
           VARS_FILE_PATH: "gcp/science/latest/deployment-vars.yml"
   ensure:
     put: pipeline-lock
