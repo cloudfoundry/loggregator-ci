@@ -293,6 +293,10 @@ jobs:
       params:
         repository: updated-capacity-planning-vars-store
         rebase: true
+    - task: cleanup
+      file: cf-deployment-concourse-tasks/bosh-cleanup/task.yml
+      params:
+        BBL_STATE_DIR: gcp/loggregator-capacity-planning
 
 - name: datadog-nozzle-deploy
   serial: true
