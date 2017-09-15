@@ -30,6 +30,8 @@ run:
     export GOPATH=$PWD
     export PATH=$GOPATH/bin:$PATH
 
+    go get ./...
+
     function teardown {
       set +e
       ./report.sh
