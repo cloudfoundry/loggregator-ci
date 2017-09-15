@@ -10,7 +10,7 @@ params:
   SPACE: development
 inputs:
 - name: vars-store
-- name: loggregator
+- name: loggregator-tools
 run:
   path: bash
   args:
@@ -39,6 +39,6 @@ run:
     cf target -s $SPACE
     cf create-shared-domain tcp.$SYSTEM_DOMAIN --router-group default-tcp || true
 
-    pushd loggregator/src/tools/logspinner
+    pushd loggregator-tools/logspinner
       cf push floodspinner
     popd
