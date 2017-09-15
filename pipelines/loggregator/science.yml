@@ -433,7 +433,7 @@ jobs:
           SYSTEM_DOMAIN: latest.science.loggr.cf-app.com
           VARS_STORE_FILE: gcp/science/latest/deployment-vars.yml
           VARS_FILES: "gcp/science/latest/datadog-vars.yml gcp/science/latest/turbulence-vars.yml"
-          OPS_FILES: "clients.yml use-4-azs-for-router.yml loggregator-version.yml tcp-routing-gcp.yml enable-rlp.yml turbulence-cf.yml enable-loggregator-v2-diego.yml multi-az-ss.yml"
+          OPS_FILES: "clients.yml use-4-azs-for-router.yml loggregator-version.yml tcp-routing-gcp.yml enable-rlp.yml turbulence-cf.yml enable-loggregator-v2-diego.yml"
       - task: deploy-cf-syslog-drain
         config:
           image_resource:
