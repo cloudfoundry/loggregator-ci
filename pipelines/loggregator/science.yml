@@ -526,6 +526,7 @@ jobs:
         passed: ["latest-deploy"]
         resource: loggregator-latest
       - get: loggregator-ci
+      - get: loggregator-tools
     - do:
       - aggregate:
         - task: setup-release-elect
