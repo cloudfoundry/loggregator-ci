@@ -32,7 +32,7 @@ run:
     export GOPATH=$PWD
     export PATH=$GOPATH/bin:$PATH
 
-    go get ./...
+    go get code.cloudfoundry.org/rfc5424
 
     function teardown {
       set +e
