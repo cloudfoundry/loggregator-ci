@@ -48,10 +48,10 @@ resources:
     source:
       repository: cloudfoundry/loggregator
 
-  - name: cf-syslog-drain-release
+  - name: loggregator-tools
     type: git
     source:
-      uri: https://github.com/cloudfoundry/cf-syslog-drain-release
+      uri: https://github.com/cloudfoundry-incubator/loggregator-tools
 
   - name: cf-syslog-drain-release-elect
     type: git
@@ -564,7 +564,7 @@ jobs:
       params:
         claim: "pipeline"
     - aggregate:
-      - get: cf-syslog-drain-release
+      - get: loggregator-tools
       - get: vars-store
         resource: deployments-loggregator-with-changes
       - get: release-elect

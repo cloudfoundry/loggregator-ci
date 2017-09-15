@@ -23,10 +23,10 @@ resources:
   source:
     uri: https://github.com/cloudfoundry/loggregator
     branch: develop
-- name: cf-syslog-drain-release
+- name: loggregator-tools
   type: git
   source:
-    uri: https://github.com/cloudfoundry/cf-syslog-drain-release
+    uri: https://github.com/cloudfoundry-incubator/loggregator-tools
 
 jobs:
 - name: restage-logspinners
@@ -146,7 +146,7 @@ jobs:
   serial: true
   plan:
   - get: loggregator-ci
-  - get: cf-syslog-drain-release
+  - get: loggregator-tools
   - get: 10m
     trigger: true
   - task: v2-drain
@@ -169,7 +169,7 @@ jobs:
   serial: true
   plan:
   - get: loggregator-ci
-  - get: cf-syslog-drain-release
+  - get: loggregator-tools
   - get: 10m
     trigger: true
   - task: v2-drain
@@ -192,7 +192,7 @@ jobs:
   serial: true
   plan:
   - get: loggregator-ci
-  - get: cf-syslog-drain-release
+  - get: loggregator-tools
   - get: 10m
     trigger: true
   - task: v2-drain
@@ -216,7 +216,7 @@ jobs:
   serial: true
   plan:
   - get: loggregator-ci
-  - get: cf-syslog-drain-release
+  - get: loggregator-tools
   - get: 10m
     trigger: true
   - task: v2-drain-loggregator

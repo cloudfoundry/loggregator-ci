@@ -4,7 +4,7 @@ image_resource:
   source:
     repository: loggregator/base
 inputs:
-- name: cf-syslog-drain-release
+- name: loggregator-tools
 params:
   CF_SYSTEM_DOMAIN:
   CF_USERNAME:
@@ -26,7 +26,7 @@ run:
 
     set -e
 
-    cd cf-syslog-drain-release
+    cd loggregator-tools
     export GOPATH=$PWD
     export PATH=$GOPATH/bin:$PATH
 
@@ -56,6 +56,6 @@ run:
       trap restart EXIT
     fi
 
-    cd src/code.cloudfoundry.org/scalable-syslog/tools/smokes
+    cd smoke_tests
     ./push.sh
     ./hammer.sh
