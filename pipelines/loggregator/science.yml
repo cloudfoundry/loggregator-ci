@@ -433,7 +433,7 @@ jobs:
           SYSTEM_DOMAIN: latest.science.loggr.cf-app.com
           VARS_STORE_FILE: gcp/science/latest/deployment-vars.yml
           VARS_FILES: "gcp/science/latest/datadog-vars.yml gcp/science/latest/turbulence-vars.yml"
-          OPS_FILES: "clients.yml use-4-azs-for-router.yml loggregator-version.yml tcp-routing-gcp.yml enable-rlp.yml turbulence-cf.yml enable-loggregator-v2-diego.yml"
+          OPS_FILES: "clients.yml use-4-azs-for-router.yml loggregator-version.yml tcp-routing-gcp.yml enable-rlp.yml turbulence-cf.yml enable-loggregator-v2-diego.yml multi-az-ss.yml"
       - task: deploy-cf-syslog-drain
         config:
           image_resource:
@@ -485,6 +485,7 @@ jobs:
                   --ops-file "$ss_dir/manifests/cf-deployment-ops.yml" \
                   --ops-file "$bbl_dir/ops-files/allow-insecure-syslog-drains.yml" \
                   --ops-file "$bbl_dir/ops-files/turbulence-scalable-syslog.yml" \
+                  --ops-file "$bbl_dir/ops-files/multi-az-ss.yml" \
                   --vars-file "$bbl_dir/deployment-vars.yml" \
                   --vars-file "$bbl_dir/turbulence-vars.yml" \
                   -v "system_domain=latest.science.loggr.cf-app.com" \
