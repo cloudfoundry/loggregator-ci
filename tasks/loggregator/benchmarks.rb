@@ -71,7 +71,6 @@ end
 cmd = [
   'bosh', '-d', 'loggregator-bench',
   'run-errand', 'loggregator-bench',
-  '--keep-alive'
 ]
 
 lines = []

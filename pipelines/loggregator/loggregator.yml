@@ -74,6 +74,12 @@ resources:
     branch: master
     private_key: {{cf-loggregator-oauth-bot-key}}
 
+- name: loggregator-bench-release
+  type: git
+  source:
+    uri: https://github.com/cloudfoundry-incubator/loggregator-bench-release
+    branch: master
+
 jobs:
 - name: run-tests
   serial: true
@@ -361,6 +367,90 @@ jobs:
     params:
       repository: committed-deployments-loggregator
       rebase: true
+
+- name: benchmarks
+  serial: true
+  plan:
+  - aggregate:
+    - get: loggregator-bench-release
+    - get: deployments-loggregator
+    - get: loggregator-ci
+    - get: loggregator-develop
+      trigger: true
+      passed:
+      - cf-deploy
+  - task: deploy-benchmarks
+    config:
+      image_resource:
+        type: docker-image
+        source:
+          repository: relintdockerhubpushbot/cf-deployment-concourse-tasks
+      platform: linux
+      inputs:
+      - name: deployments-loggregator
+      - name: loggregator-develop
+      - name: loggregator-bench-release
+      outputs:
+      - name: updated-deployments-loggregator
+      run:
+        path: bash
+        args:
+          - -c
+          - |
+            #!/bin/bash
+            set -eux
+
+            loggregator_dir="$PWD/loggregator"
+            deployment_dir="$PWD/deployments-loggregator/gcp/coconut-bbl"
+
+            pushd deployments-loggregator/gcp/coconut-bbl
+              export BOSH_CLIENT=`bbl director-username`
+              export BOSH_CLIENT_SECRET=`bbl director-password`
+              export BOSH_CA_CERT=`bbl director-ca-cert`
+              export BOSH_ENVIRONMENT=`bbl director-address`
+            popd
+
+            cp -R loggregator-develop loggregator-bench-release/src/loggregator-release
+
+            pushd loggregator-bench-release
+              bosh create-release --force
+              bosh upload-release --rebase
+
+              bosh -n -d loggregator-bench deploy \
+                --vars-store "$deployment_dir/loggregator-bench-vars.yml" \
+                "manifests/loggregator-bench.yml"
+            popd
+
+            rsync -ac deployments-loggregator/ updated-deployments-loggregator
+  - task: commit
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source:
+          repository: loggregator/base
+      inputs:
+      - name: updated-deployments-loggregator
+      outputs:
+      - name: committed-deployments-loggregator
+      params:
+        SOURCE: updated-deployments-loggregator
+        PATHS: gcp/coconut-bbl/loggregator-bench-vars.yml
+        COMMIT_MESSAGE: "Update loggregator-bench vars store"
+        OUTPUT: committed-deployments-loggregator
+      run:
+        path: bash
+        args:
+        - -c
+        - {{commit}}
+  - put: deployments-loggregator-with-changes
+    params:
+      repository: committed-deployments-loggregator
+      rebase: true
+  - task: run-benchmarks
+    file: loggregator-ci/tasks/loggregator/benchmarks.yml
+    params:
+      BBL_STATE_DIR: deployments-loggregator/gcp/coconut-bbl
 
 - name: cats
   serial: true

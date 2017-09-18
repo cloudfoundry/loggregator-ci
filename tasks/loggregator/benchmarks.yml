@@ -7,6 +7,6 @@ inputs:
 - name: deployments-loggregator
 - name: loggregator-ci
 params:
-  BBL_STATE_DIR: gcp/coconut-bbl
+  BBL_STATE_DIR: deployments-loggregator/gcp/coconut-bbl
 run:
   path: loggregator-ci/tasks/loggregator/benchmarks.rb
