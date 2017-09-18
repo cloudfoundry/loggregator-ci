@@ -14,13 +14,14 @@ def run_cf(*args, **env):
         stdout=subprocess.PIPE,
     )
 
-    return (p.wait(), p.stdout.read())
+    return p.wait(), p.stdout.read()
+
 
 def check_cf(*args, **env):
-    status, output = run_cf(*args, **env)
+    exit_code, output = run_cf(*args, **env)
     print(output)
-    if status != 0:
-        raise subprocess.CalledProcessError(status, args)
+    if exit_code != 0:
+        raise subprocess.CalledProcessError(exit_code, args)
 
 
 def cf_login(api, username, password, space, org, skip_cert_verify):
@@ -43,12 +44,14 @@ def push_worker(app_name, instance_count, **kwargs):
     # build the worker bin
     gopath=os.path.join(os.getcwd(), "loggregator")
     cwd=os.path.join(gopath, "src/tools/reliability/worker")
-    subprocess.Popen([
+    exit_code = subprocess.Popen([
         "/usr/local/go/bin/go",
         "build",
     ], cwd=cwd, env={
         "GOPATH": gopath,
     }).wait()
+    if exit_code != 0:
+        raise subprocess.CalledProcessError(exit_code, args)
 
     check_cf(
         "push",
@@ -68,16 +71,19 @@ def push_worker(app_name, instance_count, **kwargs):
 
     check_cf("start", app_name)
 
+
 def push_server(app_name):
     # build the worker bin
     gopath=os.path.join(os.getcwd(), "loggregator")
     cwd=os.path.join(gopath, "src/tools/reliability/server")
-    subprocess.Popen([
+    exit_code = subprocess.Popen([
         "/usr/local/go/bin/go",
         "build",
     ], cwd=cwd, env={
         "GOPATH": gopath,
     }).wait()
+    if exit_code != 0:
+        raise subprocess.CalledProcessError(exit_code, args)
 
     check_cf(
         "push",
@@ -91,17 +97,20 @@ def push_server(app_name):
 
     check_cf("start", app_name)
 
+
 def is_app_failed(output):
     return output.find("crashed") >= 0 or output.find("stopped") >= 0 or output.find("no running instances") >= 0
 
+
 def ensure_worker_pushed(app_name, instance_count, **kwargs):
-    status, output = run_cf("app", app_name)
-    if status != 0 or is_app_failed(output):
+    exit_code, output = run_cf("app", app_name)
+    if exit_code != 0 or is_app_failed(output):
         push_worker(app_name, instance_count, **kwargs)
 
+
 def ensure_server_pushed(app_name):
-    status, output = run_cf("app", app_name)
-    if status != 0 or is_app_failed(output):
+    exit_code, output = run_cf("app", app_name)
+    if exit_code != 0 or is_app_failed(output):
         push_server(app_name)
 
 def trigger_test(app_domain, cycles, delay, timeout):
@@ -110,7 +119,7 @@ def trigger_test(app_domain, cycles, delay, timeout):
         "delay": delay,
         "timeout": timeout,
     }
-    subprocess.call([
+    subprocess.check_call([
       "/usr/bin/curl",
       app_domain + "/tests",
       "-H", "Content-Type: application/json",
@@ -119,13 +128,17 @@ def trigger_test(app_domain, cycles, delay, timeout):
 
 
 def endpoints():
-    info = subprocess.Popen([
+    p = subprocess.Popen([
         "/usr/bin/cf",
         "curl",
         "/v2/info",
-    ], stdout=subprocess.PIPE, env={"CF_HOME": os.getcwd()}).stdout
-    info = json.load(info)
+    ], stdout=subprocess.PIPE, env={"CF_HOME": os.getcwd()})
+    exit_code = p.wait()
+    if exit_code != 0:
+        raise subprocess.CalledProcessError(exit_code, args)
+    info = json.load(p.stdout)
     return info["token_endpoint"], info["doppler_logging_endpoint"]
+
 
 def get_cf_password():
     try:
@@ -133,6 +146,7 @@ def get_cf_password():
         return file.read()
     except:
         return os.environ['PASSWORD']
+
 
 def main():
     cf_password = get_cf_password()
