@@ -110,7 +110,7 @@ metrics = results.flatten.each_with_object({}) do |obj, res|
   res.merge!(sub_hash)
 end
 
-client = DataDog::Client.new(datadog_api_key, debug: true)
+client = DataDog::Client.new(datadog_api_key)
 
 puts "Posting metrics to datadog: #{JSON.pretty_generate(metrics)}"
 resp = client.send_gauge_metrics(metrics, "")
@@ -118,3 +118,4 @@ if !resp.kind_of?(Net::HTTPSuccess)
   raise "Failed to post metrics to Datadog: status_code: #{resp.code}, body: #{resp.body}"
 end
 
+puts "Done."
