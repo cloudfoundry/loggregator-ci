@@ -96,14 +96,10 @@ lines.each do |l|
 end
 
 ignore = ["Name", "Measured", "Ord"]
-tags = {}
 metrics = results.flatten.flat_map do |obj|
   raw_name = underscore(obj["Name"])
   name_chunks = raw_name.split("_")
-  num_cores = name_chunks.last
-  base_name = "benchmark.#{name_chunks[1..-2].join("_")}"
-
-  tags["num_cores"] ||= num_cores
+  base_name = "benchmark.#{name_chunks[1..-1].join("_")}"
 
   obj.each_with_object([]) do |(key, value), results|
     if !ignore.include?(key)
@@ -117,7 +113,7 @@ end
 client = DataDog::Client.new(datadog_api_key, debug: true)
 
 puts "Posting metrics to datadog: #{JSON.pretty_generate(metrics)}"
-resp = client.send_gauge_metrics(metrics, "", tags)
+resp = client.send_gauge_metrics(metrics, "")
 if !resp.kind_of?(Net::HTTPSuccess)
   raise "Failed to post metrics to Datadog: status_code: #{resp.code}, body: #{resp.body}"
 end
