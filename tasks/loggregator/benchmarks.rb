@@ -100,7 +100,7 @@ puts results
 ignore = ["Name", "Measured", "Ord"]
 tags = {}
 metrics = results.flat_map do |obj|
-  raw_name = underscore(objs["Name"])
+  raw_name = underscore(obj["Name"])
   name_chunks = raw_name.split("_")
   num_cores = name_chunks.last
   base_name = "benchmark.#{name_chunks[1..-2].join("_")}"
