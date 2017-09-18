@@ -11,8 +11,6 @@ params:
   CF_PASSWORD:
   CF_SPACE:
   CF_ORG:
-  CYCLES: 10000
-  DELAY_US: 100
   DATADOG_API_KEY:
   DRAIN_VERSION:
   TEARDOWN: true
@@ -52,6 +50,15 @@ run:
       exit $exit_code
     }
 
+    function cleanup {
+      ./report.sh
+      if [ "$TEARDOWN" = "true" ]; then
+        ./teardown.sh
+      else
+        ./restart.sh
+      fi
+    }
+
     if [ "$TEARDOWN" = "true" ]; then
       trap teardown EXIT
     else
@@ -59,5 +66,23 @@ run:
     fi
 
     cd smoke_tests
+    echo "Flood Spinner"
+    export CYCLES=10000
+    export DELAY_US=2
     ./push.sh
     ./hammer.sh
+    cleanup
+
+    echo "Flow Spinner"
+    export CYCLES=1000
+    export DELAY_US=1000
+    ./push.sh
+    ./hammer.sh
+    cleanup
+
+    echo "Drip Spinner"
+    export CYCLES=1000
+    export DELAY_US=500000
+    ./push.sh
+    ./hammer.sh
+    # We'll let the trap report and teardown
