@@ -99,7 +99,7 @@ puts results
 
 ignore = ["Name", "Measured", "Ord"]
 tags = {}
-metrics = results.flat_map do |obj|
+metrics = results.flatten.flat_map do |obj|
   raw_name = underscore(obj["Name"])
   name_chunks = raw_name.split("_")
   num_cores = name_chunks.last
