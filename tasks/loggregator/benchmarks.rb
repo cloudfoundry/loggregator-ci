@@ -118,7 +118,11 @@ if !resp.kind_of?(Net::HTTPSuccess)
   raise "Failed to post metrics to Datadog: status_code: #{resp.code}, body: #{resp.body}"
 end
 
+exec(ENV, ['rsync', '-ac', 'loggregator-bench-results/', 'updated-loggregator-bench-results'])
 puts "Writing results to results repo"
 loggregator_sha = exec(ENV, ['git', 'rev-parse', 'HEAD'], 'loggregator-develop')
-File.open("loggregator-bench-results/#{loggregator_sha}.json", 'w') { |f| f.write(JSON.pretty_generate(metrics)) }
+File.open("updated-loggregator-bench-results/#{loggregator_sha}.json", 'w') do |f|
+  f.write(JSON.pretty_generate(metrics))
+end
+
 puts "Done."

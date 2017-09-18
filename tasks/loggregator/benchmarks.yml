@@ -7,8 +7,9 @@ inputs:
 - name: deployments-loggregator
 - name: loggregator-ci
 - name: loggregator-develop
-outputs:
 - name: loggregator-bench-results
+outputs:
+- name: updated-loggregator-bench-results
 params:
   BBL_STATE_DIR: deployments-loggregator/gcp/coconut-bbl
 run:

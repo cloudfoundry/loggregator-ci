@@ -80,6 +80,13 @@ resources:
     uri: https://github.com/cloudfoundry-incubator/loggregator-bench-release
     branch: master
 
+- name: loggregator-bench-results
+  type: git
+  source:
+    uri: git@github.com:cloudfoundry-incubator/loggregator-bench-results
+    branch: master
+    private_key: {{deployments-loggregator-key}}
+
 jobs:
 - name: run-tests
   serial: true
@@ -373,6 +380,7 @@ jobs:
   plan:
   - aggregate:
     - get: loggregator-bench-release
+    - get: loggregator-bench-results
     - get: deployments-loggregator
     - get: loggregator-ci
     - get: loggregator-develop
@@ -451,6 +459,10 @@ jobs:
     file: loggregator-ci/tasks/loggregator/benchmarks.yml
     params:
       BBL_STATE_DIR: deployments-loggregator/gcp/coconut-bbl
+  - put: loggregator-bench-results
+    params:
+      repository: updated-loggregator-bench-results
+      rebase: true
 
 - name: cats
   serial: true
