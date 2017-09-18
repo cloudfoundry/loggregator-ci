@@ -69,6 +69,7 @@ run:
     echo "Flood Spinner"
     export CYCLES=10000
     export DELAY_US=2
+    export WAIT=60
     ./push.sh
     ./hammer.sh
     cleanup
@@ -76,6 +77,7 @@ run:
     echo "Flow Spinner"
     export CYCLES=1000
     export DELAY_US=1000
+    export WAIT=60
     ./push.sh
     ./hammer.sh
     cleanup
@@ -83,6 +85,7 @@ run:
     echo "Drip Spinner"
     export CYCLES=1000
     export DELAY_US=500000
+    export WAIT=600
     ./push.sh
     ./hammer.sh
     # We'll let the trap report and teardown
