@@ -119,12 +119,14 @@ def trigger_test(app_domain, cycles, delay, timeout):
         "delay": delay,
         "timeout": timeout,
     }
-    subprocess.check_call([
+    args = [
       "/usr/bin/curl",
       app_domain + "/tests",
       "-H", "Content-Type: application/json",
       "-d", json.dumps(payload),
-    ])
+    ]
+    print "running test:", args
+    subprocess.check_call(args)
 
 
 def endpoints():
