@@ -21,7 +21,7 @@ module DataDog
       self.api_key = api_key
     end
 
-    def send_gauge_metrics(metircs, host, tags={})
+    def send_gauge_metrics(metrics, host, tags={})
 
       body = {
         series: build_gauge_metrics(metrics, host, tags),
