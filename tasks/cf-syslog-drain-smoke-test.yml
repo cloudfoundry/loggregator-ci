@@ -28,10 +28,6 @@ run:
     export GOPATH=$PWD
     export PATH=$GOPATH/bin:$PATH
 
-    if [ -z ${CF_PASSWORD} ]; then
-      export CF_PASSWORD=$(bosh int deployments-loggregator/$VARS_STORE_FILE --path /cf_admin_password)
-    fi
-
     go get code.cloudfoundry.org/rfc5424
 
     function teardown {
