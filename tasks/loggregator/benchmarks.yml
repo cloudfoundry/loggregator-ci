@@ -1,0 +1,12 @@
+platform: linux
+image_resource:
+  type: docker-image
+  source:
+    repository: relintdockerhubpushbot/cf-deployment-concourse-tasks
+inputs:
+- name: deployments-loggregator
+- name: loggregator-ci
+params:
+  BBL_STATE_DIR: gcp/coconut-bbl
+run:
+  path: loggregator-ci/tasks/loggregator/benchmarks.rb
