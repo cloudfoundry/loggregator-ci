@@ -5,6 +5,7 @@ image_resource:
     repository: loggregator/base
 inputs:
 - name: loggregator-tools
+- name: deployments-loggregator
 params:
   CF_SYSTEM_DOMAIN:
   CF_USERNAME:
@@ -24,13 +25,13 @@ run:
 
     set -e
 
-    cd loggregator-tools
-    export GOPATH=$PWD
-    export PATH=$GOPATH/bin:$PATH
-
     if [ -z ${CF_PASSWORD} ]; then
       export CF_PASSWORD=$(bosh int deployments-loggregator/$VARS_STORE_FILE --path /cf_admin_password)
     fi
+
+    cd loggregator-tools
+    export GOPATH=$PWD
+    export PATH=$GOPATH/bin:$PATH
 
     go get code.cloudfoundry.org/rfc5424
 
