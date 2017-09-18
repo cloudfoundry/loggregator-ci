@@ -22,7 +22,6 @@ module DataDog
     end
 
     def send_gauge_metrics(metrics, host, tags={})
-
       body = {
         series: build_gauge_metrics(metrics, host, tags),
       }

@@ -115,5 +115,10 @@ metrics = results.flatten.flat_map do |obj|
 end
 
 client = DataDog::Client.new(datadog_api_key)
+
 puts "Posting metrics to datadog: #{JSON.pretty_generate(metrics)}"
-client.send_gauge_metrics(metrics, "", tags)
+resp = client.send_gauge_metrics(metrics, "", tags)
+if !resp.kind_of?(Net::HTTPSuccess)
+  raise "Failed to post metrics to Datadog: status_code: #{resp.code}, body: #{resp.body}"
+end
+
