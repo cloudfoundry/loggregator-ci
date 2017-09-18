@@ -6,6 +6,9 @@ image_resource:
 inputs:
 - name: deployments-loggregator
 - name: loggregator-ci
+- name: loggregator
+outputs:
+- name: loggregator-bench-results
 params:
   BBL_STATE_DIR: deployments-loggregator/gcp/coconut-bbl
 run:

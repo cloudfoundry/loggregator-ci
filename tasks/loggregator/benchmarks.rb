@@ -118,4 +118,7 @@ if !resp.kind_of?(Net::HTTPSuccess)
   raise "Failed to post metrics to Datadog: status_code: #{resp.code}, body: #{resp.body}"
 end
 
+puts "Writing results to results repo"
+loggregator_sha = exec(ENV, ['git', 'rev-parse', 'HEAD'], 'loggregator')
+File.open("loggregator-bench-results/#{loggregator_sha}.json", 'w') { |f| f.write(JSON.pretty_generate(metrics)) }
 puts "Done."
