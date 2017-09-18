@@ -124,6 +124,7 @@ def trigger_test(app_domain, cycles, delay, timeout):
       app_domain + "/tests",
       "-H", "Content-Type: application/json",
       "-d", json.dumps(payload),
+      "--fail",
     ]
     print "running test:", args
     subprocess.check_call(args)
