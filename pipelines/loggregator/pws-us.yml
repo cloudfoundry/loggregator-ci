@@ -2,9 +2,9 @@ resources:
 - name: 10m
   type: time
   source: {interval: 10m}
-- name: 15m
+- name: 20m
   type: time
-  source: {interval: 15m}
+  source: {interval: 20m}
 - name: 1h
   type: time
   source: {interval: 1h}
@@ -53,7 +53,7 @@ jobs:
   serial_groups: ["restage"]
   plan:
   - get: loggregator-ci
-  - get: 15m
+  - get: 20m
     trigger: true
   - task: run-smoke-tests
     file: loggregator-ci/tasks/generic-smoke-test.yml
@@ -71,7 +71,7 @@ jobs:
       DELAY: "2"
       DELAY_UNIT: "us"
       MESSAGE: "FIFTEEN-MINUTE"
-    timeout: 15m
+    timeout: 20m
   - task: run-recent-logs-smoke-tests
     file: loggregator-ci/tasks/generic-recent-logs-smoke-test.yml
     params: &basic-smoke-details
@@ -83,11 +83,11 @@ jobs:
       PASSWORD: {{pws-password}}
       SPACE: "development"
       USERNAME: {{pws-username}}
-    timeout: 15m
+    timeout: 20m
   - task: container metrics
     file: loggregator-ci/tasks/container-metrics-smoke-test.yml
     params: *basic-smoke-details
-    timeout: 15m
+    timeout: 20m
 
 - name: dripspinner
   public: false
@@ -113,7 +113,7 @@ jobs:
       DELAY: "500"
       DELAY_UNIT: "ms"
       MESSAGE: "HOURLY"
-    timeout: 15m
+    timeout: 20m
 
 - name: flowspinner
   public: false
@@ -139,7 +139,7 @@ jobs:
       DELAY: "1"
       DELAY_UNIT: "ms"
       MESSAGE: "HOURLY"
-    timeout: 15m
+    timeout: 20m
 
 - name: https-syslog-drain
   public: false
@@ -147,7 +147,7 @@ jobs:
   plan:
   - get: loggregator-ci
   - get: loggregator-tools
-  - get: 10m
+  - get: 20m
     trigger: true
   - task: v2-drain
     file: loggregator-ci/tasks/cf-syslog-drain-smoke-test.yml
@@ -162,7 +162,7 @@ jobs:
       DRAIN_VERSION: "2.0"
       DRAIN_TYPE: "https"
       JOB_NAME: "https-teardown"
-    timeout: 15m
+    timeout: 20m
 
 - name: tcp-syslog-drain
   public: false
@@ -170,7 +170,7 @@ jobs:
   plan:
   - get: loggregator-ci
   - get: loggregator-tools
-  - get: 10m
+  - get: 20m
     trigger: true
   - task: v2-drain
     file: loggregator-ci/tasks/cf-syslog-drain-smoke-test.yml
@@ -185,7 +185,7 @@ jobs:
       DRAIN_VERSION: "2.0"
       DRAIN_TYPE: "syslog"
       JOB_NAME: "syslog-teardown"
-    timeout: 15m
+    timeout: 20m
 
 - name: https-syslog-drain-no-teardown
   public: false
@@ -193,7 +193,7 @@ jobs:
   plan:
   - get: loggregator-ci
   - get: loggregator-tools
-  - get: 10m
+  - get: 20m
     trigger: true
   - task: v2-drain
     file: loggregator-ci/tasks/cf-syslog-drain-smoke-test.yml
@@ -209,7 +209,7 @@ jobs:
       DRAIN_VERSION: "2.0"
       DRAIN_TYPE: "https"
       JOB_NAME: "https-no-teardown"
-    timeout: 15m
+    timeout: 20m
 
 - name: tcp-syslog-drain-no-teardown
   public: false
@@ -217,7 +217,7 @@ jobs:
   plan:
   - get: loggregator-ci
   - get: loggregator-tools
-  - get: 10m
+  - get: 20m
     trigger: true
   - task: v2-drain-loggregator
     file: loggregator-ci/tasks/cf-syslog-drain-smoke-test.yml
@@ -234,7 +234,7 @@ jobs:
       DRAIN_VERSION: "2.0"
       DRAIN_TYPE: "syslog"
       JOB_NAME: "syslog-no-teardown"
-    timeout: 15m
+    timeout: 20m
 
 - name: latency
   public: false
@@ -242,7 +242,7 @@ jobs:
   plan:
   - get: loggregator
   - get: loggregator-ci
-  - get: 15m
+  - get: 20m
     trigger: true
   - task: run-latency-tests
     file: loggregator-ci/tasks/latency-test.yml
@@ -255,7 +255,7 @@ jobs:
       PASSWORD: {{pws-password}}
       SPACE: "development"
       USERNAME: {{pws-username}}
-    timeout: 15m
+    timeout: 20m
 
 - name: firehose-reliability
   public: false

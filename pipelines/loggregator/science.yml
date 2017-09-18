@@ -630,7 +630,7 @@ jobs:
           JOB_NAME: "https-teardown"
           TEARDOWN: false
           VARS_STORE_FILE: gcp/science/release-elect/deployment-vars.yml
-        timeout: 15m
+        timeout: 20m
       - task: tcp-drain
         file: loggregator-ci/tasks/cf-syslog-drain-smoke-test-with-vars.yml
         params:
@@ -644,7 +644,7 @@ jobs:
           DRAIN_TYPE: "syslog"
           JOB_NAME: "syslog-teardown"
           VARS_STORE_FILE: gcp/science/release-elect/deployment-vars.yml
-        timeout: 15m
+        timeout: 20m
       - do:
         - task: get-release-version
           config:
@@ -695,7 +695,7 @@ jobs:
           DRAIN_TYPE: "https"
           JOB_NAME: "https-teardown"
           VARS_STORE_FILE: gcp/science/latest/deployment-vars.yml
-        timeout: 15m
+        timeout: 20m
       - task: tcp-drain
         file: loggregator-ci/tasks/cf-syslog-drain-smoke-test-with-vars.yml
         params:
@@ -709,8 +709,8 @@ jobs:
           DRAIN_TYPE: "syslog"
           JOB_NAME: "syslog-teardown"
           VARS_STORE_FILE: gcp/science/latest/deployment-vars.yml
-        timeout: 15m
-      timeout: 15m
+        timeout: 20m
+      timeout: 20m
       ensure:
         put: pipeline-lock
         params:
