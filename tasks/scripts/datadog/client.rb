@@ -17,14 +17,19 @@ module DataDog
   class Client
     API_URL = 'https://app.datadoghq.com/api/v1'.freeze
 
-    def initialize(api_key)
+    def initialize(api_key, debug: false)
       self.api_key = api_key
+      self.debug = debug
     end
 
     def send_gauge_metrics(metrics, host, tags={})
       body = {
         series: build_gauge_metrics(metrics, host, tags),
       }
+
+      if debug
+        puts "send_gauge_metrics body: #{JSON.dump(body)}"
+      end
 
       post_request("#{API_URL}/series?api_key=#{api_key}", body)
     end
@@ -41,7 +46,7 @@ module DataDog
 
     private
 
-    attr_accessor :api_key
+    attr_accessor :api_key, :debug
 
     def post_request(url, body)
       request = Net::HTTP::Post.new(URI(url))
@@ -52,13 +57,20 @@ module DataDog
     end
 
     def do_request(request)
-      Net::HTTP.start(
+      resp = Net::HTTP.start(
         request.uri.hostname,
         request.uri.port,
         use_ssl: request.uri.scheme == 'https'
       ) do |http|
         http.request(request)
       end
+
+      if debug
+        puts "Response status code: #{resp.code}"
+        puts "Response body: #{resp.body}"
+      end
+
+      resp
     end
 
     def convert_tags(tags={})
