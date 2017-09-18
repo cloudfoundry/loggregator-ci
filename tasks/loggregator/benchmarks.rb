@@ -108,7 +108,7 @@ metrics = results.flatten.each_with_object({}) do |obj, res|
     end
   end
 
-  res.merge(sub_hash)
+  res.merge!(sub_hash)
 end
 
 client = DataDog::Client.new(datadog_api_key, debug: true)
