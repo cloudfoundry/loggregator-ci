@@ -95,8 +95,6 @@ lines.each do |l|
   end
 end
 
-puts results
-
 ignore = ["Name", "Measured", "Ord"]
 tags = {}
 metrics = results.flatten.flat_map do |obj|
@@ -117,4 +115,5 @@ metrics = results.flatten.flat_map do |obj|
 end
 
 client = DataDog::Client.new(datadog_api_key)
+puts "Posting metrics to datadog: #{JSON.pretty_generate(metrics)}"
 client.send_gauge_metrics(metrics, "", tags)
