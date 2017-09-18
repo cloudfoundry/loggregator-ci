@@ -97,18 +97,18 @@ lines.each do |l|
 end
 
 ignore = ["Name", "Measured", "Ord"]
-metrics = results.flatten.flat_map do |obj|
+metrics = results.flatten.each_with_object({}) do |obj, res|
   raw_name = underscore(obj["Name"])
   name_chunks = raw_name.split("_")
   base_name = "benchmark.#{name_chunks[1..-1].join("_")}"
 
-  obj.each_with_object([]) do |(key, value), results|
+  sub_hash = obj.each_with_object({}) do |(key, value), results|
     if !ignore.include?(key)
-      results << {
-        "#{base_name}.#{underscore(key)}" => value
-      }
+      results["#{base_name}.#{underscore(key)}"] = value
     end
   end
+
+  res.merge(sub_hash)
 end
 
 client = DataDog::Client.new(datadog_api_key, debug: true)
