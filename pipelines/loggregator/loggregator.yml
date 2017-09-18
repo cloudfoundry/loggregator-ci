@@ -587,7 +587,7 @@ jobs:
     - get: develop
       resource: loggregator-develop
       trigger: true
-      passed: ["lats", "cats"]
+      passed: ["lats", "cats", "benchmarks"]
     - get: loggregator-ci
   - task: promote
     file: loggregator-ci/tasks/promote.yml

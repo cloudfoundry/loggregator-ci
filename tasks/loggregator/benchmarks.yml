@@ -6,7 +6,7 @@ image_resource:
 inputs:
 - name: deployments-loggregator
 - name: loggregator-ci
-- name: loggregator
+- name: loggregator-develop
 outputs:
 - name: loggregator-bench-results
 params:

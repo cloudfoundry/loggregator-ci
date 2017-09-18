@@ -119,6 +119,6 @@ if !resp.kind_of?(Net::HTTPSuccess)
 end
 
 puts "Writing results to results repo"
-loggregator_sha = exec(ENV, ['git', 'rev-parse', 'HEAD'], 'loggregator')
+loggregator_sha = exec(ENV, ['git', 'rev-parse', 'HEAD'], 'loggregator-develop')
 File.open("loggregator-bench-results/#{loggregator_sha}.json", 'w') { |f| f.write(JSON.pretty_generate(metrics)) }
 puts "Done."
