@@ -123,9 +123,9 @@ resources:
     type: time
     source: {interval: 10m}
 
-  - name: 5m
+  - name: 20m
     type: time
-    source: {interval: 5m}
+    source: {interval: 20m}
 
   - name: 2h
     type: time
@@ -575,7 +575,7 @@ jobs:
         resource: loggregator-latest
         passed: ["setup"]
       - get: loggregator-ci
-    - get: 5m
+    - get: 20m
       trigger: true
     - aggregate:
       - do:
