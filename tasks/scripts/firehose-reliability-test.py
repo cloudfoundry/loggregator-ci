@@ -101,18 +101,6 @@ def push_server(app_name):
 def is_app_failed(output):
     return output.find("crashed") >= 0 or output.find("stopped") >= 0 or output.find("no running instances") >= 0
 
-
-def ensure_worker_pushed(app_name, instance_count, **kwargs):
-    exit_code, output = run_cf("app", app_name)
-    if exit_code != 0 or is_app_failed(output):
-        push_worker(app_name, instance_count, **kwargs)
-
-
-def ensure_server_pushed(app_name):
-    exit_code, output = run_cf("app", app_name)
-    if exit_code != 0 or is_app_failed(output):
-        push_server(app_name)
-
 def trigger_test(app_domain, cycles, delay, timeout):
     payload = {
         "cycles": cycles,
@@ -162,8 +150,8 @@ def main():
         os.environ['SKIP_CERT_VERIFY'],
     )
     uaa_endpoint, log_endpoint = endpoints()
-    ensure_server_pushed(os.environ['APP_NAME'])
-    ensure_worker_pushed(
+    push_server(os.environ['APP_NAME'])
+    push_worker(
         os.environ['APP_NAME'] + '-worker',
         os.environ['WORKER_INSTANCE_COUNT'],
         UAA_ADDR=uaa_endpoint,
