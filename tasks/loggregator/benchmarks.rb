@@ -119,7 +119,7 @@ if !resp.kind_of?(Net::HTTPSuccess)
 end
 
 output_dir = 'updated-loggregator-bench-results'
-exec(ENV, ['rsync', '-ac', 'loggregator-bench-results/', ouptut_dir])
+exec(ENV, ['rsync', '-ac', 'loggregator-bench-results/', output_dir])
 puts "Writing results to results repo"
 loggregator_sha = exec(ENV, ['git', 'rev-parse', 'HEAD'], 'loggregator-develop')
 File.open("updated-loggregator-bench-results/#{loggregator_sha}.json", 'w') do |f|
