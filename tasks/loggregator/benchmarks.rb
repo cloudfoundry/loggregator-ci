@@ -118,11 +118,18 @@ if !resp.kind_of?(Net::HTTPSuccess)
   raise "Failed to post metrics to Datadog: status_code: #{resp.code}, body: #{resp.body}"
 end
 
-exec(ENV, ['rsync', '-ac', 'loggregator-bench-results/', 'updated-loggregator-bench-results'])
+output_dir = 'updated-loggregator-bench-results'
+exec(ENV, ['rsync', '-ac', 'loggregator-bench-results/', ouptut_dir])
 puts "Writing results to results repo"
 loggregator_sha = exec(ENV, ['git', 'rev-parse', 'HEAD'], 'loggregator-develop')
 File.open("updated-loggregator-bench-results/#{loggregator_sha}.json", 'w') do |f|
   f.write(JSON.pretty_generate(metrics))
 end
+
+
+exec(bosh_env, ['git', 'config', 'user.email', 'cf-loggregator@pivotal.io'], output_dir)
+exec(bosh_env, ['git', 'config', 'user.name', 'Loggregator CI'], output_dir)
+exec(bosh_env, ['git', 'add', '.'], output_dir)
+exec(bosh_env, ['git', 'commit', '-m', 'Add benchmark result'], output_dir)
 
 puts "Done."
