@@ -164,7 +164,7 @@ jobs:
       DRAIN_VERSION: "2.0"
       DRAIN_TYPE: "https"
       JOB_NAME: "https-teardown"
-    timeout: 15m
+    timeout: 20m
 
 - name: https-syslog-drain-no-teardown
   public: false
@@ -188,7 +188,7 @@ jobs:
       DRAIN_VERSION: "2.0"
       DRAIN_TYPE: "https"
       JOB_NAME: "https-no-teardown"
-    timeout: 15m
+    timeout: 20m
 
 - name: latency
   public: false
