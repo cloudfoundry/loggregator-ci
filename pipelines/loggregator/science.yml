@@ -785,7 +785,6 @@ jobs:
     put: pipeline-lock
     params:
       release: pipeline-lock
-  on_failure: *slack-failure-alert
 
 - name: start-incidents
   serial: true
