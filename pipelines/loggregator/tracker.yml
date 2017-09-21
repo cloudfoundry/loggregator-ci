@@ -34,11 +34,11 @@ jobs:
     file: loggregator-ci/tasks/restage-apps.yml
     params:
       APP_NAMES: "trkr-floodspinner trkr-dripspinner trkr-flowspinner"
-      CF_API: "api.aws.trackerred.com"
-      ORG: "loggregator"
-      PASSWORD: {{trkr-password}}
-      SPACE: "development"
+      CF_API: "api.gcp.trackerred.com"
+      ORG: "system"
+      SPACE: "loggregator-sli"
       USERNAME: {{trkr-username}}
+      PASSWORD: {{trkr-password}}
 
 - name: floodspinner
   public: false
@@ -57,25 +57,25 @@ jobs:
       APP_NAME: "trkr-floodspinner"
       WAIT: 60
       MESSAGE: "FIFTEEN-MINUTE"
+      DATADOG_API_KEY: {{datadog-loggregator-api-key}}
+      APP_DOMAIN: "trkr-floodspinner.gcp.trkr.io"
+      CF_API: "api.gcp.trackerred.com"
+      ORG: "system"
+      SPACE: "loggregator-sli"
       USERNAME: {{trkr-username}}
       PASSWORD: {{trkr-password}}
-      DATADOG_API_KEY: {{datadog-loggregator-api-key}}
-      CF_API: "api.aws.trackerred.com"
-      APP_DOMAIN: "trkr-floodspinner.aws.trkr.io"
-      ORG: "loggregator"
-      SPACE: "development"
     timeout: 15m
   - task: run-recent-logs-smoke-tests
     file: loggregator-ci/tasks/generic-recent-logs-smoke-test.yml
     params: &basic-smoke-details
       APP_NAME: "trkr-floodspinner"
-      CF_API: "api.aws.trackerred.com"
       DATADOG_API_KEY: {{datadog-loggregator-api-key}}
-      LOGGREGATOR_ADDR: "wss://doppler.aws.trackerred.com:4443"
-      ORG: "loggregator"
-      PASSWORD: {{trkr-password}}
-      SPACE: "development"
+      LOGGREGATOR_ADDR: "wss://doppler.gcp.trackerred.com:443"
+      CF_API: "api.gcp.trackerred.com"
+      ORG: "system"
+      SPACE: "loggregator-sli"
       USERNAME: {{trkr-username}}
+      PASSWORD: {{trkr-password}}
     timeout: 15m
   - task: container metrics
     file: loggregator-ci/tasks/container-metrics-smoke-test.yml
@@ -99,13 +99,13 @@ jobs:
       APP_NAME: "trkr-dripspinner"
       WAIT: 600
       MESSAGE: "HOURLY"
+      DATADOG_API_KEY: {{datadog-loggregator-api-key}}
+      APP_DOMAIN: "trkr-dripspinner.gcp.trkr.io"
+      CF_API: "api.gcp.trackerred.com"
+      ORG: "system"
+      SPACE: "loggregator-sli"
       USERNAME: {{trkr-username}}
       PASSWORD: {{trkr-password}}
-      DATADOG_API_KEY: {{datadog-loggregator-api-key}}
-      CF_API: "api.aws.trackerred.com"
-      APP_DOMAIN: "trkr-dripspinner.aws.trkr.io"
-      ORG: "loggregator"
-      SPACE: "development"
     timeout: 15m
 
 - name: flowspinner
@@ -125,13 +125,13 @@ jobs:
       APP_NAME: "trkr-flowspinner"
       WAIT: 60
       MESSAGE: "HOURLY"
+      DATADOG_API_KEY: {{datadog-loggregator-api-key}}
+      APP_DOMAIN: "trkr-flowspinner.gcp.trkr.io"
+      CF_API: "api.gcp.trackerred.com"
+      ORG: "system"
+      SPACE: "loggregator-sli"
       USERNAME: {{trkr-username}}
       PASSWORD: {{trkr-password}}
-      DATADOG_API_KEY: {{datadog-loggregator-api-key}}
-      CF_API: "api.aws.trackerred.com"
-      APP_DOMAIN: "trkr-flowspinner.aws.trkr.io"
-      ORG: "loggregator"
-      SPACE: "development"
     timeout: 15m
 
 - name: latency
@@ -145,12 +145,12 @@ jobs:
   - task: run-latency-tests
     file: loggregator-ci/tasks/latency-test.yml
     params:
-      APP_DOMAIN: "loggregator-latency.aws.trkr.io"
+      APP_DOMAIN: "loggregator-latency.gcp.trkr.io"
       APP_NAME: "loggregator-latency"
-      CF_API: "api.aws.trackerred.com"
       DATADOG_API_KEY: {{datadog-loggregator-api-key}}
-      ORG: "loggregator"
-      SPACE: "development"
+      CF_API: "api.gcp.trackerred.com"
+      ORG: "system"
+      SPACE: "loggregator-sli"
       USERNAME: {{trkr-username}}
       PASSWORD: {{trkr-password}}
     timeout: 15m
