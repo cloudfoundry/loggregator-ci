@@ -1,3 +1,35 @@
+groups:
+- name: all
+  jobs:
+  - loggregator-tests
+  - loggregator-diff-cert-generation-scripts
+  - cf-syslog-drain-tests
+  - loggregator-deploy
+  - cf-syslog-drain-bump-submodule
+  - cf-deploy
+  - lats
+  - cats
+  - loggregator-benchmarks
+  - loggregator-promotion
+  - cf-syslog-drain-promotion
+- name: loggregator
+  jobs:
+  - loggregator-tests
+  - loggregator-diff-cert-generation-scripts
+  - loggregator-deploy
+  - cf-deploy
+  - lats
+  - cats
+  - loggregator-benchmarks
+  - loggregator-promotion
+- name: cf-syslog-drain
+  jobs:
+  - cf-syslog-drain-tests
+  - cf-syslog-drain-bump-submodule
+  - cf-deploy
+  - cats
+  - cf-syslog-drain-promotion
+
 resources:
 - name: cats-concourse-task
   type: git
@@ -97,105 +129,125 @@ resources:
     branch: master
     private_key: {{cf-loggregator-oauth-bot-key}}
 
+- name: cf-syslog-drain-release
+  type: git
+  source:
+    uri: git@github.com:cloudfoundry/cf-syslog-drain-release
+    branch: develop
+    private_key: {{cf-loggregator-oauth-bot-key}}
+    ignore_paths:
+    - .final_builds
+    - releases
+
+- name: cf-syslog-drain-release-release-elect
+  type: git
+  source:
+    uri: git@github.com:cloudfoundry/cf-syslog-drain-release
+    branch: release-elect
+    private_key: {{cf-loggregator-oauth-bot-key}}
+    ignore_paths:
+    - .final_builds
+    - releases
+
+- name: scalable-syslog
+  type: git
+  source:
+    uri: git@github.com:cloudfoundry/scalable-syslog
+    private_key: {{cf-loggregator-oauth-bot-key}}
+
 jobs:
-- name: run-tests
+- name: loggregator-tests
   serial: true
   public: true
   plan:
   - get: loggregator
     resource: loggregator-develop
     trigger: true
-  - task: run-tests
-    timeout: 10m
-    config:
-      platform: linux
-      image_resource:
-        type: docker-image
-        source:
-          repository: loggregator/base
-      inputs:
-      - name: loggregator
-      run:
-        path: bash
-        args:
-        - -c
-        - |
-          #!/bin/bash
-          set -ex
+  - aggregate:
+    - task: run-tests
+      timeout: 10m
+      config:
+        platform: linux
+        image_resource:
+          type: docker-image
+          source:
+            repository: loggregator/base
+        inputs:
+        - name: loggregator
+        run:
+          path: bash
+          args:
+          - -c
+          - |
+            #!/bin/bash
+            set -ex
 
-          cd loggregator
+            cd loggregator
 
-          export GOPATH=`pwd`
-          export TERM=xterm
+            export GOPATH=`pwd`
+            export TERM=xterm
 
-          go version
-          go install github.com/onsi/ginkgo/ginkgo
+            go version
+            go install github.com/onsi/ginkgo/ginkgo
 
-          scripts/test
+            scripts/test
+    - do:
+      - task: build-windows-test-binary
+        config:
+          platform: linux
+          image_resource:
+            type: docker-image
+            source:
+              repository: loggregator/base
+          inputs:
+          - name: loggregator
+          outputs:
+          - name: binaries
+          - name: test-binaries
+          run:
+            path: bash
+            args:
+            - -c
+            - |
+              #!/bin/bash
+              set -ex
 
-- name: run-windows-tests
-  public: true
-  serial: true
-  plan:
-  - get: loggregator
-    resource: loggregator-develop
-    trigger: true
-  - task: build-windows-test-binary
-    config:
-      platform: linux
-      image_resource:
-        type: docker-image
-        source:
-          repository: loggregator/base
-      inputs:
-      - name: loggregator
-      outputs:
-      - name: binaries
-      - name: test-binaries
-      run:
-        path: bash
-        args:
-        - -c
-        - |
-          #!/bin/bash
-          set -ex
+              cd loggregator
+              export GOPATH=$PWD
+              export GOOS=windows
+              function munge {
+                echo $1 | tr '/' '_'
+              }
+              for pkg in $(go list code.cloudfoundry.org/loggregator/metron/...); do
+                go test -c -o ../test-binaries/$(munge $pkg)_test.exe $pkg
+              done
+              go build -o ../binaries/metron.exe code.cloudfoundry.org/loggregator/metron
+      - task: run-windows-tests
+        config:
+          platform: windows
+          inputs:
+          - name: binaries
+          - name: test-binaries
+          run:
+            path: powershell
+            args:
+            - "-command"
+            - |
+              trap {
+                write-error $_
+                exit 1
+              }
 
-          cd loggregator
-          export GOPATH=$PWD
-          export GOOS=windows
-          function munge {
-            echo $1 | tr '/' '_'
-          }
-          for pkg in $(go list code.cloudfoundry.org/loggregator/metron/...); do
-            go test -c -o ../test-binaries/$(munge $pkg)_test.exe $pkg
-          done
-          go build -o ../binaries/metron.exe code.cloudfoundry.org/loggregator/metron
-  - task: run-windows-tests
-    config:
-      platform: windows
-      inputs:
-      - name: binaries
-      - name: test-binaries
-      run:
-        path: powershell
-        args:
-        - "-command"
-        - |
-          trap {
-            write-error $_
-            exit 1
-          }
+              $env:SKIP_BUILD = "true"
+              $env:METRON_BUILD_PATH = "binaries\metron.exe"
 
-          $env:SKIP_BUILD = "true"
-          $env:METRON_BUILD_PATH = "binaries\metron.exe"
-
-          # Run all test binaries
-          Get-ChildItem -Filter test-binaries\*.exe | ForEach {
-            &$_.Fullname /s
-            if ($LastExitCode -ne 0) {
-              throw "test failed"
-            }
-          }
+              # Run all test binaries
+              Get-ChildItem -Filter test-binaries\*.exe | ForEach {
+                &$_.Fullname /s
+                if ($LastExitCode -ne 0) {
+                  throw "test failed"
+                }
+              }
 
 - name: cf-deploy
   serial: true
@@ -210,12 +262,12 @@ jobs:
       trigger: true
     - get: cf-deployment-concourse-tasks
       trigger: false
-    - get: release
-      resource: loggregator-develop
+    - get: loggregator-develop
       trigger: true
-      passed:
-      - run-tests
-      - run-windows-tests
+      passed: ["loggregator-tests"]
+    - get: cf-syslog-drain-release
+      trigger: true
+      passed: ["cf-syslog-drain-bump-submodule"]
     - get: vars-store
       resource: deployments-loggregator
       trigger: false
@@ -225,6 +277,40 @@ jobs:
     file: cf-deployment-concourse-tasks/bosh-upload-stemcell-from-cf-deployment/task.yml
     params:
       BBL_STATE_DIR: gcp/coconut-bbl
+  - task: upload-releases
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source:
+          repository: relintdockerhubpushbot/cf-deployment-concourse-tasks
+      inputs:
+      - name: bbl-state
+      - name: loggregator-develop
+      - name: cf-syslog-drain-release
+      run:
+        path: /bin/bash
+        args:
+        - "-c"
+        - |
+          #!/bin/bash
+
+          set -ex
+
+          pushd bbl-state/gcp/coconut-bbl
+            export BOSH_CLIENT=`bbl director-username`
+            export BOSH_CLIENT_SECRET=`bbl director-password`
+            export BOSH_CA_CERT=`bbl director-ca-cert`
+            export BOSH_ENVIRONMENT=`bbl director-address`
+          popd
+
+          releases="loggregator-develop cf-syslog-drain-release"
+          for rel in $releases; do
+            pushd $rel
+              bosh create-release
+              bosh upload-release --rebase
+            popd
+          done
   - task: copy-ops-files
     config:
       platform: linux
@@ -244,15 +330,28 @@ jobs:
           cp cf-deployment/operations/workarounds/use-4-azs-for-router.yml ops-files/
           cp cf-deployment/operations/tcp-routing-gcp.yml ops-files/
           cp cf-deployment/operations/scale-to-one-az.yml ops-files/
+          cp cf-deployment/operations/bypass-cc-bridge.yml ops-files/
           cp bbl-state/gcp/coconut-bbl/ops-files/*.yml ops-files/
 
+          cat <<EOT >> ops-files/dev-versions.yml
+          - type: replace
+            path: /releases/name=loggregator
+            value:
+              name: loggregator
+              version: latest
+          - type: replace
+            path: /releases/name=cf-syslog-drain
+            value:
+              name: cf-syslog-drain
+              version: latest
+          EOT
   - task: cf-deploy
-    file: cf-deployment-concourse-tasks/bosh-deploy-with-created-release/task.yml
+    file: cf-deployment-concourse-tasks/bosh-deploy/task.yml
     params:
       BBL_STATE_DIR: gcp/coconut-bbl
       SYSTEM_DOMAIN: coconut.cf-app.com
       VARS_STORE_FILE: gcp/coconut-bbl/deployment-vars.yml
-      OPS_FILES: "clients.yml scale-to-one-az.yml use-4-azs-for-router.yml tcp-routing-gcp.yml datadog-agent.yml diego.yml "
+      OPS_FILES: "clients.yml scale-to-one-az.yml use-4-azs-for-router.yml tcp-routing-gcp.yml datadog-agent.yml diego.yml bypass-cc-bridge.yml dev-versions.yml"
       VARS_FILES: "gcp/coconut-bbl/vars-files/router.yml"
   - put: deployments-loggregator-with-changes
     params:
@@ -276,8 +375,7 @@ jobs:
     - get: loggregator
       resource: loggregator-develop
       passed:
-      - run-tests
-      - run-windows-tests
+      - loggregator-tests
       trigger: true
     - get: deployments-loggregator
       trigger: false
@@ -385,7 +483,7 @@ jobs:
       repository: committed-deployments-loggregator
       rebase: true
 
-- name: benchmarks
+- name: loggregator-benchmarks
   serial: true
   plan:
   - aggregate:
@@ -484,6 +582,11 @@ jobs:
       - get: integration-config
       - get: cf-acceptance-tests
       - get: loggregator-develop
+        trigger: true
+        passed: ["cf-deploy"]
+      - get: cf-syslog-drain-release
+        passed: ["cf-deploy"]
+        trigger: true
     - task: run-cats
       file: cats-concourse-task/task.yml
       params:
@@ -528,8 +631,7 @@ jobs:
 
             bosh -d loggregator run-errand loggregator-acceptance-tests --keep-alive
 
-
-- name: promotion
+- name: loggregator-promotion
   serial: true
   plan:
   - aggregate:
@@ -539,7 +641,7 @@ jobs:
     - get: develop
       resource: loggregator-develop
       trigger: true
-      passed: ["lats", "cats", "benchmarks"]
+      passed: ["lats", "cats", "loggregator-benchmarks"]
     - get: loggregator-ci
   - task: promote
     file: loggregator-ci/tasks/promote.yml
@@ -548,7 +650,7 @@ jobs:
       repository: promote-develop
       rebase: false
 
-- name: diff-cert-generation-scripts
+- name: loggregator-diff-cert-generation-scripts
   plan:
   - get: loggregator
     resource: loggregator-develop
@@ -576,3 +678,144 @@ jobs:
             echo diffing loggregator cert generation
             diff --unified loggregator/scripts/generate-loggregator-certs \
                            cf-release/scripts/generate-loggregator-certs
+
+- name: cf-syslog-drain-tests
+  serial: true
+  public: true
+  plan:
+  - aggregate:
+    - get: cf-syslog-drain-release
+      trigger: false
+    - get: scalable-syslog
+      trigger: true
+  - task: run-tests
+    config:
+      image_resource:
+        type: docker-image
+        source:
+          repository: loggregator/base
+      platform: linux
+      inputs:
+      - name: cf-syslog-drain-release
+      - name: scalable-syslog
+      run:
+        path: bash
+        args:
+        - -c
+        - |
+          #!/bin/bash
+
+          set -e -x
+
+          rm -rf cf-syslog-drain-release/src/code.cloudfoundry.org/scalable-syslog/{*,.git}
+          cp -r scalable-syslog/. cf-syslog-drain-release/src/code.cloudfoundry.org/scalable-syslog/
+
+          pushd cf-syslog-drain-release
+            export GOPATH="$PWD"
+            export PATH="$GOPATH/bin:$PATH"
+            go install github.com/onsi/ginkgo/ginkgo
+            go test ./src/code.cloudfoundry.org/scalable-syslog/... -race
+          popd
+
+- name: cf-syslog-drain-bump-submodule
+  serial: true
+  plan:
+  - aggregate:
+    - get: cf-syslog-drain-release
+      trigger: false
+    - get: scalable-syslog
+      passed:
+      - cf-syslog-drain-tests
+      trigger: true
+  - task: update-submodule
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source:
+          repository: loggregator/base
+      inputs:
+      - name: cf-syslog-drain-release
+      - name: scalable-syslog
+      outputs:
+      - name: updated-cf-syslog-drain-release
+      params:
+        PARENT: cf-syslog-drain-release
+        OUTPUT: updated-cf-syslog-drain-release
+        CHILD: scalable-syslog
+        CHILD_PATH: src/code.cloudfoundry.org/scalable-syslog
+      run:
+        path: bash
+        args:
+        - -c
+        - {{update_submodule}}
+  - task: sync-package-spec
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source:
+          repository: loggregator/base
+      inputs:
+      - name: updated-cf-syslog-drain-release
+      outputs:
+      - name: synced-cf-syslog-drain-release
+      params:
+        OUTPUT: synced-cf-syslog-drain-release
+      run:
+        path: bash
+        args:
+        - -c
+        - |
+          #!/bin/bash
+
+          set -e -x
+
+          pushd updated-cf-syslog-drain-release
+            export GOPATH="$PWD"
+            export PATH="$GOPATH/bin:$PATH"
+
+            ./scripts/sync-package-specs
+          popd
+
+          cp -r updated-cf-syslog-drain-release/. $OUTPUT/
+  - task: commit
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source:
+          repository: loggregator/base
+      inputs:
+      - name: synced-cf-syslog-drain-release
+      outputs:
+      - name: bumped-cf-syslog-drain-release
+      params:
+        SOURCE: synced-cf-syslog-drain-release
+        PATHS: src/code.cloudfoundry.org/scalable-syslog packages/
+        COMMIT_MESSAGE: "Bump scalable-syslog"
+        OUTPUT: bumped-cf-syslog-drain-release
+      run:
+        path: bash
+        args:
+        - -c
+        - {{commit}}
+  - put: cf-syslog-drain-release
+    params:
+      repository: bumped-cf-syslog-drain-release
+      rebase: true
+
+- name: cf-syslog-drain-promotion
+  serial: true
+  plan:
+  - aggregate:
+    - get: develop
+      resource: cf-syslog-drain-release
+      trigger: true
+      passed: ["cats"]
+    - get: release-elect
+      resource: cf-syslog-drain-release-release-elect
+    - get: loggregator-ci
+  - put: cf-syslog-drain-release-release-elect
+    params:
+      repository: develop
