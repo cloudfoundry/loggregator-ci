@@ -1,9 +1,15 @@
 resources:
-- name: cats
+- name: cats-concourse-task
   type: git
   source:
-    uri: https://github.com/cloudfoundry/cf-acceptance-tests
     branch: master
+    uri: https://github.com/cloudfoundry/cats-concourse-task.git
+
+- name: cf-acceptance-tests
+  type: git
+  source:
+    branch: master
+    uri: https://github.com/cloudfoundry/cf-acceptance-tests.git
 
 - name: cf-deployment
   type: git
@@ -39,6 +45,10 @@ resources:
 # creates a new version that can trigger jobs even if the commit has [ci skip]
 # present.
 - name: deployments-loggregator-with-changes
+  type: git
+  source: *deployments_loggregator
+
+- name: integration-config
   type: git
   source: *deployments_loggregator
 
@@ -469,85 +479,15 @@ jobs:
   serial_groups:
   - bosh-cf-cats
   plan:
-  - aggregate:
-    - get: cats
-      trigger: true
-    - get: loggregator-develop
-      trigger: true
-      passed:
-      - cf-deploy
-    - get: deployments-loggregator-with-changes
-      trigger: false
-
-  - task: run-cats
-    config:
-      platform: linux
-      image_resource:
-        type: docker-image
-        source:
-          repository: loggregator/base
-      inputs:
-      - name: cats
-      - name: deployments-loggregator-with-changes
+    - aggregate:
+      - get: cats-concourse-task
+      - get: integration-config
+      - get: cf-acceptance-tests
+      - get: loggregator-develop
+    - task: run-cats
+      file: cats-concourse-task/task.yml
       params:
-        NODES: 1
-        CONFIG_DATA: |
-          {
-            "api": "api.coconut.cf-app.com",
-            "admin_user": "admin",
-            "admin_password": "CF_PASSWORD_FROM_VARS",
-            "apps_domain": "coconut.cf-app.com",
-            "skip_ssl_validation": true,
-            "default_timeout": 120,
-            "use_http": true,
-            "backend": "diego",
-            "include_apps": true,
-            "include_backend_compatibility": false,
-            "include_detect": false,
-            "include_docker": false,
-            "include_ssh": false,
-            "include_internet_dependent": true,
-            "include_privileged_container_support": false,
-            "include_route_services": false,
-            "include_routing": true,
-            "include_security_groups": false,
-            "include_container_networking": true,
-            "include_services": false,
-            "include_sso": true,
-            "include_zipkin": false,
-            "include_tasks": false,
-            "include_v3": false
-          }
-      run:
-        path: bash
-        args:
-        - -c
-        - |
-          #!/bin/bash
-          set -ex
-
-          export CONFIG="$PWD/config.json"
-          echo "$CONFIG_DATA" > $CONFIG
-
-          pushd deployments-loggregator-with-changes
-            export CF_PASSWORD_VARS=$(bosh interpolate gcp/coconut-bbl/deployment-vars.yml --path /cf_admin_password)
-            sed -i "s/CF_PASSWORD_FROM_VARS/$CF_PASSWORD_VARS/" $CONFIG
-          popd
-
-
-          export GOPATH="$PWD/tests"
-
-          CATS_PATH=$GOPATH/src/github.com/cloudfoundry/cf-acceptance-tests
-          mkdir -p $(dirname $CATS_PATH)
-          cp -r $PWD/cats $CATS_PATH
-          cd $CATS_PATH
-
-          ./bin/test \
-          -keepGoing \
-          -randomizeAllSpecs \
-          -skipPackage=helpers \
-          -slowSpecThreshold=120 \
-          -nodes="${NODES}"
+        CONFIG_FILE_PATH: gcp/coconut-bbl/cats-config.json
 
 - name: lats
   serial: true
