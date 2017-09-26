@@ -3,6 +3,7 @@ groups:
   jobs:
   - loggregator-tests
   - loggregator-diff-cert-generation-scripts
+  - loggregator-test-bosh-templates
   - cf-syslog-drain-tests
   - loggregator-deploy
   - cf-syslog-drain-bump-submodule
@@ -16,6 +17,7 @@ groups:
   jobs:
   - loggregator-tests
   - loggregator-diff-cert-generation-scripts
+  - loggregator-test-bosh-templates
   - loggregator-deploy
   - cf-deploy
   - lats
@@ -649,6 +651,31 @@ jobs:
     params:
       repository: promote-develop
       rebase: false
+
+- name: loggregator-test-bosh-templates
+  plan:
+  - get: loggregator
+    resource: loggregator-develop
+    trigger: true
+  - task: run-specs
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source:
+          repository: ruby
+      inputs:
+      - name: loggregator
+      run:
+        path: bash
+        args:
+          - -c
+          - |
+            #!/bin/bash
+            set -e
+            cd loggregator
+            bundle install
+            rspec
 
 - name: loggregator-diff-cert-generation-scripts
   plan:
