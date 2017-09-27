@@ -1,0 +1,16 @@
+platform: linux
+image_resource:
+  type: docker-image
+  source:
+    repository: loggregator/blackbox
+inputs:
+- name: loggregator-ci
+params:
+  DATADOG_API_KEY:
+  CF_API:
+  APP_NAME:
+  CYCLES: 10000
+  DELAY: 20
+  DELAY_UNIT: ms
+run:
+  path: loggregator-ci/tasks/blackbox/app.sh
