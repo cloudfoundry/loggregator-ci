@@ -57,7 +57,7 @@ jobs:
       APP_NAME: "trkr-floodspinner"
       WAIT: 60
       MESSAGE: "FIFTEEN-MINUTE"
-      DATADOG_API_KEY: ((datadog-loggregator-api-key)) ((datadog-tracker-api-key))
+      DATADOG_API_KEY: ((datadog-loggregator-api-key)) ((datadog-cloudops-eu-api-key))
       APP_DOMAIN: "trkr-floodspinner.gcp.trkr.io"
       CF_API: "api.gcp.trackerred.com"
       ORG: "system"
@@ -69,7 +69,7 @@ jobs:
     file: loggregator-ci/tasks/generic-recent-logs-smoke-test.yml
     params: &basic-smoke-details
       APP_NAME: "trkr-floodspinner"
-      DATADOG_API_KEY: ((datadog-loggregator-api-key)) ((datadog-tracker-api-key))
+      DATADOG_API_KEY: ((datadog-loggregator-api-key)) ((datadog-cloudops-eu-api-key))
       LOGGREGATOR_ADDR: "wss://doppler.gcp.trackerred.com:443"
       CF_API: "api.gcp.trackerred.com"
       ORG: "system"
@@ -99,7 +99,7 @@ jobs:
       APP_NAME: "trkr-dripspinner"
       WAIT: 600
       MESSAGE: "HOURLY"
-      DATADOG_API_KEY: ((datadog-loggregator-api-key)) ((datadog-tracker-api-key))
+      DATADOG_API_KEY: ((datadog-loggregator-api-key)) ((datadog-cloudops-eu-api-key))
       APP_DOMAIN: "trkr-dripspinner.gcp.trkr.io"
       CF_API: "api.gcp.trackerred.com"
       ORG: "system"
@@ -125,7 +125,7 @@ jobs:
       APP_NAME: "trkr-flowspinner"
       WAIT: 60
       MESSAGE: "HOURLY"
-      DATADOG_API_KEY: ((datadog-loggregator-api-key)) ((datadog-tracker-api-key))
+      DATADOG_API_KEY: ((datadog-loggregator-api-key)) ((datadog-cloudops-eu-api-key))
       APP_DOMAIN: "trkr-flowspinner.gcp.trkr.io"
       CF_API: "api.gcp.trackerred.com"
       ORG: "system"
@@ -147,7 +147,7 @@ jobs:
     params:
       APP_DOMAIN: "loggregator-latency.gcp.trkr.io"
       APP_NAME: "loggregator-latency"
-      DATADOG_API_KEY: ((datadog-loggregator-api-key)) ((datadog-tracker-api-key))
+      DATADOG_API_KEY: ((datadog-loggregator-api-key)) ((datadog-cloudops-eu-api-key))
       CF_API: "api.gcp.trackerred.com"
       ORG: "system"
       SPACE: "loggregator-sli"
