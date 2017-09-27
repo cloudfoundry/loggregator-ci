@@ -56,7 +56,7 @@ jobs:
   - get: 20m
     trigger: true
   - task: run-smoke-tests
-    file: loggregator-ci/tasks/generic-smoke-test.yml
+    file: loggregator-ci/tasks/blackbox/app.yml
     params:
       CF_API: "api.run.pivotal.io"
       APP_DOMAIN: "floodspinner.cfapps.io"
@@ -98,7 +98,7 @@ jobs:
   - get: 1h
     trigger: true
   - task: run-smoke-tests
-    file: loggregator-ci/tasks/generic-smoke-test.yml
+    file: loggregator-ci/tasks/blackbox/app.yml
     params:
       CF_API: "api.run.pivotal.io"
       APP_DOMAIN: "dripspinner.cfapps.io"
@@ -124,7 +124,7 @@ jobs:
   - get: 1h
     trigger: true
   - task: run-smoke-tests
-    file: loggregator-ci/tasks/generic-smoke-test.yml
+    file: loggregator-ci/tasks/blackbox/app.yml
     params:
       CF_API: "api.run.pivotal.io"
       APP_DOMAIN: "flowspinner.cfapps.io"

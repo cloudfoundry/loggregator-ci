@@ -49,7 +49,7 @@ jobs:
   - get: 15m
     trigger: true
   - task: run-smoke-tests
-    file: loggregator-ci/tasks/generic-smoke-test.yml
+    file: loggregator-ci/tasks/blackbox/app.yml
     params:
       CYCLES: 10000
       DELAY: "2"
@@ -91,7 +91,7 @@ jobs:
   - get: 1h
     trigger: true
   - task: run-smoke-tests
-    file: loggregator-ci/tasks/generic-smoke-test.yml
+    file: loggregator-ci/tasks/blackbox/app.yml
     params:
       CYCLES: 1000
       DELAY: "500"
@@ -117,7 +117,7 @@ jobs:
   - get: 1h
     trigger: true
   - task: run-smoke-tests
-    file: loggregator-ci/tasks/generic-smoke-test.yml
+    file: loggregator-ci/tasks/blackbox/app.yml
     params:
       CYCLES: 1000
       DELAY: "1"
