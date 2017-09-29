@@ -176,7 +176,6 @@ jobs:
             DIEGO_CELL_COUNT=$(cat $SETTINGS_FILE | jq .DIEGO_CELL_COUNT --raw-output)
             ROUTER_COUNT=$(cat $SETTINGS_FILE | jq .ROUTER_COUNT --raw-output)
 
-            cp cf-deployment/operations/experimental/enable-loggregator-v2-diego.yml ops-files/
             cp bbl-state/gcp/loggregator-capacity-planning/ops-files/*.yml ops-files/
 
             cat <<EOT >> ops-files/capacity-planning-config.yml

@@ -186,8 +186,6 @@ jobs:
           #!/bin/bash
 
           cp cf-deployment/operations/scale-to-one-az.yml ops-files/
-          cp cf-deployment/operations/experimental/enable-loggregator-v2-diego.yml ops-files/
-          cp cf-deployment/operations/experimental/enable-rlp.yml ops-files/
           cp cf-deployment/operations/experimental/disable-etcd.yml ops-files/
           cp bbl-state/gcp/playground/ops-files/*.yml ops-files/
   - task: cf-deploy
@@ -196,7 +194,7 @@ jobs:
       BBL_STATE_DIR: gcp/playground
       SYSTEM_DOMAIN: playground.loggr.cf-app.com
       VARS_STORE_FILE: gcp/playground/deployment-vars.yml
-      OPS_FILES: "scale-to-one-az.yml clients.yml cf-versions.yml disable-etcd.yml enable-rlp.yml"
+      OPS_FILES: "scale-to-one-az.yml clients.yml cf-versions.yml disable-etcd.yml"
   - task: cf-syslog-drain-deploy
     config:
       image_resource:
