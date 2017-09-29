@@ -275,7 +275,6 @@ jobs:
               #!/bin/bash
               set -ex
 
-              cp cf-deployment/operations/tcp-routing-gcp.yml ops-files/
               cp bbl-state/gcp/science/release-elect/ops-files/*.yml ops-files/
 
       - task: cf-deploy
@@ -285,7 +284,7 @@ jobs:
           SYSTEM_DOMAIN: release-elect.science.loggr.cf-app.com
           VARS_STORE_FILE: gcp/science/release-elect/deployment-vars.yml
           VARS_FILES: "gcp/science/release-elect/datadog-vars.yml gcp/science/release-elect/turbulence-vars.yml"
-          OPS_FILES: "clients.yml tcp-routing-gcp.yml turbulence-cf.yml"
+          OPS_FILES: "clients.yml turbulence-cf.yml"
       - task: deploy-cf-syslog-drain
         config:
           image_resource:
@@ -405,7 +404,6 @@ jobs:
               #!/bin/bash
               set -ex
 
-              cp cf-deployment/operations/tcp-routing-gcp.yml ops-files/
               cp bbl-state/gcp/science/latest/ops-files/*.yml ops-files/
 
               version=$(cat release/version)
@@ -427,7 +425,7 @@ jobs:
           SYSTEM_DOMAIN: latest.science.loggr.cf-app.com
           VARS_STORE_FILE: gcp/science/latest/deployment-vars.yml
           VARS_FILES: "gcp/science/latest/datadog-vars.yml gcp/science/latest/turbulence-vars.yml"
-          OPS_FILES: "clients.yml loggregator-version.yml tcp-routing-gcp.yml turbulence-cf.yml"
+          OPS_FILES: "clients.yml loggregator-version.yml turbulence-cf.yml"
       - task: deploy-cf-syslog-drain
         config:
           image_resource:
