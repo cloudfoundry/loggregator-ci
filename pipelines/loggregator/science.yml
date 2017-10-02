@@ -376,11 +376,11 @@ jobs:
 
               cp bbl-state/gcp/science/latest/ops-files/*.yml ops-files/
 
-              loggregator_version=$(cat loggregator-github-release/version)
-              loggregator_sha=$(cat loggregator-github-release/sha1)
+              loggregator_version=$(cat loggregator-latest/version)
+              loggregator_sha=$(cat loggregator-latest/sha1)
 
-              cf_syslog_drain_version=$(cat cf-syslog-drain-github-release/version)
-              cf_syslog_drain_sha=$(cat cf-syslog-drain-github-release/sha1)
+              cf_syslog_drain_version=$(cat cf-syslog-drain-latest/version)
+              cf_syslog_drain_sha=$(cat cf-syslog-drain-latest/sha1)
 
               cat <<EOT >> ops-files/loggregator-version.yml
               - type: replace
