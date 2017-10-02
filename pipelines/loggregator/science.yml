@@ -243,19 +243,54 @@ jobs:
         resource: deployments-loggregator
       - get: cf-deployment
       - get: cf-deployment-concourse-tasks
-      - get: release
+      - get: loggregator
         resource: loggregator-release-elect
       - get: vars-store
         resource: deployments-loggregator
       - get: vars-files
         resource: deployments-loggregator
       - get: consul-release
-      - get: cf-syslog-drain-release-elect
+      - get: cf-syslog-drain
+        resource: cf-syslog-drain-release-elect
     - do:
       - task: upload-stemcell
         file: cf-deployment-concourse-tasks/bosh-upload-stemcell-from-cf-deployment/task.yml
         params:
           BBL_STATE_DIR: gcp/science/release-elect
+      - task: upload-releases
+        config:
+          platform: linux
+          image_resource:
+            type: docker-image
+            source:
+              repository: relintdockerhubpushbot/cf-deployment-concourse-tasks
+          inputs:
+          - name: bbl-state
+          - name: loggregator
+          - name: cf-syslog-drain
+          run:
+            path: /bin/bash
+            args:
+            - "-c"
+            - |
+              #!/bin/bash
+
+              set -ex
+
+              pushd bbl-state/gcp/playground
+                export BOSH_CLIENT=`bbl director-username`
+                export BOSH_CLIENT_SECRET=`bbl director-password`
+                export BOSH_CA_CERT=`bbl director-ca-cert`
+                export BOSH_ENVIRONMENT=`bbl director-address`
+              popd
+
+              releases="loggregator cf-syslog-drain"
+              for rel in $releases; do
+                pushd $rel
+                  bosh create-release
+                  bosh upload-release --rebase
+                popd
+              done
       - task: copy-ops-files
         config:
           platform: linux
@@ -276,80 +311,17 @@ jobs:
               set -ex
 
               cp bbl-state/gcp/science/release-elect/ops-files/*.yml ops-files/
-
       - task: cf-deploy
-        file: cf-deployment-concourse-tasks/bosh-deploy-with-created-release/task.yml
+        file: cf-deployment-concourse-tasks/bosh-deploy/task.yml
         params:
           BBL_STATE_DIR: gcp/science/release-elect
           SYSTEM_DOMAIN: release-elect.science.loggr.cf-app.com
           VARS_STORE_FILE: gcp/science/release-elect/deployment-vars.yml
           VARS_FILES: "gcp/science/release-elect/datadog-vars.yml gcp/science/release-elect/turbulence-vars.yml"
-          OPS_FILES: "clients.yml turbulence-cf.yml"
-      - task: deploy-cf-syslog-drain
-        config:
-          image_resource:
-            type: docker-image
-            source:
-              repository: relintdockerhubpushbot/cf-deployment-concourse-tasks
-          platform: linux
-          inputs:
-          - name: cf-syslog-drain-release-elect
-          - name: consul-release
-          - name: updated-vars-store
-          outputs:
-          - name: updated-deployments-loggregator
-          params:
-          run:
-            path: bash
-            args:
-              - -c
-              - |
-                #!/bin/bash
-                set -eux
-
-                pushd updated-vars-store/gcp/science/release-elect
-                  export BOSH_CLIENT=`bbl director-username`
-                  export BOSH_CLIENT_SECRET=`bbl director-password`
-                  export BOSH_CA_CERT=`bbl director-ca-cert`
-                  export BOSH_ENVIRONMENT=`bbl director-address`
-                popd
-
-                for release in $(find consul-release -name '*.tgz'); do
-                  bosh upload-release $release
-                done
-
-                pushd cf-syslog-drain-release-elect
-                  bosh create-release --force
-                  bosh upload-release --rebase
-                popd
-
-                ss_dir="$PWD/cf-syslog-drain-release-elect"
-                bbl_dir="updated-vars-store/gcp/science/release-elect"
-
-                bosh -n -d cf-syslog-drain deploy \
-                  --vars-store "$bbl_dir/cf-syslog-drain-vars.yml" \
-                  --ops-file "$ss_dir/manifests/cf-deployment-ops.yml" \
-                  --ops-file "$bbl_dir/ops-files/allow-insecure-syslog-drains.yml" \
-                  --ops-file "$bbl_dir/ops-files/turbulence-scalable-syslog.yml" \
-                  --ops-file "$bbl_dir/ops-files/multi-az-ss.yml" \
-                  --vars-file "$bbl_dir/deployment-vars.yml" \
-                  --vars-file "$bbl_dir/turbulence-vars.yml" \
-                  -v "system_domain=release-elect.science.loggr.cf-app.com" \
-                  "$ss_dir/manifests/cf-syslog-drain.yml"
-
-                pushd updated-vars-store
-                  git config user.email "cf-loggregator@pivotal.io"
-                  git config user.name "Loggregator CI"
-                  git add . --all
-                  git commit -m "Updated cf syslog drain deployment vars
-
-                  [ci-skip]" || true
-                popd
-
-                rsync -ac updated-vars-store/ updated-deployments-loggregator
+          OPS_FILES: "clients.yml turbulence-cf.yml turbulence-scalable-syslog.yml allow-insecure-syslog-drains.yml cf-versions.yml"
       - put: deployments-loggregator-with-changes
         params:
-          repository: updated-deployments-loggregator
+          repository: updated-vars-store
           rebase: true
       on_failure: &slack-failure-alert
         put: slack-alert
@@ -372,7 +344,7 @@ jobs:
       - get: cf-deployment-concourse-tasks
       - get: vars-store
         resource: deployments-loggregator
-      - get: release
+      - get: loggregator-github-release
         resource: loggregator-latest
       - get: vars-files
         resource: deployments-loggregator
@@ -393,7 +365,8 @@ jobs:
           inputs:
           - name: bbl-state
           - name: cf-deployment
-          - name: release
+          - name: loggregator-github-release
+          - name: cf-syslog-drain-github-release
           outputs:
           - name: ops-files
           run:
@@ -406,17 +379,27 @@ jobs:
 
               cp bbl-state/gcp/science/latest/ops-files/*.yml ops-files/
 
-              version=$(cat release/version)
-              sha=$(cat release/sha1)
+              loggregator_version=$(cat loggregator-github-release/version)
+              loggregator_sha=$(cat loggregator-github-release/sha1)
+
+              cf_syslog_drain_version=$(cat cf-syslog-drain-github-release/version)
+              cf_syslog_drain_sha=$(cat cf-syslog-drain-github-release/sha1)
 
               cat <<EOT >> ops-files/loggregator-version.yml
               - type: replace
                 path: /releases/name=loggregator
                 value:
                   name: loggregator
-                  url: https://bosh.io/d/github.com/cloudfoundry/loggregator?v=$version
-                  version: "$version"
-                  sha1: "$sha"
+                  url: https://bosh.io/d/github.com/cloudfoundry/loggregator?v=$loggregator_version
+                  version: "$loggregator_version"
+                  sha1: "$loggregator_sha"
+              - type: replace
+                path: /releases/name=cf-syslog-drain
+                value:
+                  name: cf-syslog-drain
+                  url: https://bosh.io/d/github.com/cloudfoundry/cf-syslog-drain-release?v=$cf_syslog_drain_version
+                  version: "$cf_syslog_drain_version"
+                  sha1: "$cf_syslog_drain_sha"
               EOT
       - task: cf-deploy
         file: cf-deployment-concourse-tasks/bosh-deploy/task.yml
@@ -425,77 +408,10 @@ jobs:
           SYSTEM_DOMAIN: latest.science.loggr.cf-app.com
           VARS_STORE_FILE: gcp/science/latest/deployment-vars.yml
           VARS_FILES: "gcp/science/latest/datadog-vars.yml gcp/science/latest/turbulence-vars.yml"
-          OPS_FILES: "clients.yml loggregator-version.yml turbulence-cf.yml"
-      - task: deploy-cf-syslog-drain
-        config:
-          image_resource:
-            type: docker-image
-            source:
-              repository: relintdockerhubpushbot/cf-deployment-concourse-tasks
-          platform: linux
-          inputs:
-          - name: cf-syslog-drain-github-release
-          - name: cf-syslog-drain-develop
-          - name: consul-release
-          - name: updated-vars-store
-          outputs:
-          - name: updated-deployments-loggregator
-          params:
-          run:
-            path: bash
-            args:
-              - -c
-              - |
-                #!/bin/bash
-                set -eux
-
-                pushd updated-vars-store/gcp/science/latest
-                  export BOSH_CLIENT=`bbl director-username`
-                  export BOSH_CLIENT_SECRET=`bbl director-password`
-                  export BOSH_CA_CERT=`bbl director-ca-cert`
-                  export BOSH_ENVIRONMENT=`bbl director-address`
-                popd
-
-                for release in $(find consul-release -name '*.tgz'); do
-                  bosh upload-release $release
-                done
-
-                pushd cf-syslog-drain-github-release
-                  bosh upload-release *.tgz
-                popd
-
-                pushd cf-syslog-drain-develop
-                  tag=$(cat ../cf-syslog-drain-github-release/tag)
-                  git checkout $tag
-                popd
-
-                ss_dir="$PWD/cf-syslog-drain-develop"
-                bbl_dir="updated-vars-store/gcp/science/latest"
-
-                bosh -n -d cf-syslog-drain deploy \
-                  --vars-store "$bbl_dir/cf-syslog-drain-vars.yml" \
-                  --ops-file "$ss_dir/manifests/cf-deployment-ops.yml" \
-                  --ops-file "$bbl_dir/ops-files/allow-insecure-syslog-drains.yml" \
-                  --ops-file "$bbl_dir/ops-files/turbulence-scalable-syslog.yml" \
-                  --ops-file "$bbl_dir/ops-files/multi-az-ss.yml" \
-                  --vars-file "$bbl_dir/deployment-vars.yml" \
-                  --vars-file "$bbl_dir/turbulence-vars.yml" \
-                  -v "system_domain=latest.science.loggr.cf-app.com" \
-                  "$ss_dir/manifests/cf-syslog-drain.yml"
-
-                pushd updated-vars-store
-                  git config user.email "cf-loggregator@pivotal.io"
-                  git config user.name "Loggregator CI"
-                  git add . --all
-                  git commit -m "Updated cf syslog drain deployment vars
-
-                  [ci-skip]" || true
-                popd
-
-                rsync -ac updated-vars-store/ updated-deployments-loggregator
+          OPS_FILES: "clients.yml loggregator-version.yml turbulence-scalable-syslog.yml allow-insecure-syslog-drains.yml turbulence-cf.yml"
       - put: deployments-loggregator-with-changes
         params:
-          repository: updated-deployments-loggregator
+          repository: updated-vars-store
           rebase: true
       on_failure: *slack-failure-alert
 
