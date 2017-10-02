@@ -31,11 +31,6 @@ resources:
     uri: https://github.com/cloudfoundry/cf-deployment
     branch: master
 
-- name: cf-syslog-drain-release
-  type: git
-  source:
-    uri: https://github.com/cloudfoundry/cf-syslog-drain-release
-    branch: master
 # This is here because concourse has a bug in which putting to a git resource
 # creates a new version that can trigger jobs even if the commit has [ci skip]
 # present.
@@ -108,7 +103,6 @@ jobs:
   serial: true
   plan:
     - aggregate:
-      - get: cf-syslog-drain-release
       - get: loggregator-ci
       - get: bbl-state
         resource: deployments-loggregator
@@ -172,6 +166,9 @@ jobs:
             SETTINGS_FILE="$PWD/deployment-settings/settings.json"
 
             DOPPLER_COUNT=$(cat $SETTINGS_FILE | jq .DOPPLER_COUNT --raw-output)
+            # Note: We will use ADAPTER_COUNT once it can be split out from
+            # Doppler.
+            ADAPTER_COUNT=$(cat $SETTINGS_FILE | jq .ADAPTER_COUNT --raw-output)
             LOG_API_COUNT=$(cat $SETTINGS_FILE | jq .LOG_API_COUNT --raw-output)
             DIEGO_CELL_COUNT=$(cat $SETTINGS_FILE | jq .DIEGO_CELL_COUNT --raw-output)
             ROUTER_COUNT=$(cat $SETTINGS_FILE | jq .ROUTER_COUNT --raw-output)
@@ -197,6 +194,12 @@ jobs:
                 name: loggregator
                 url: https://bosh.io/d/github.com/cloudfoundry/loggregator
                 version: latest
+            - type: replace
+              path: /releases/name=cf-syslog-drain
+              value:
+                name: cf-syslog-drain
+                url: https://bosh.io/d/github.com/cloudfoundry/cf-syslog-drain-release
+                version: latest
             EOT
     - task: cf-deploy
       file: cf-deployment-concourse-tasks/bosh-deploy/task.yml
@@ -208,75 +211,6 @@ jobs:
     - put: deployments-loggregator-with-changes
       params:
         repository: updated-vars-store
-        rebase: true
-    - task: deploy-cf-syslog-drain
-      config:
-        image_resource:
-          type: docker-image
-          source:
-            repository: relintdockerhubpushbot/cf-deployment-concourse-tasks
-        platform: linux
-        inputs:
-        - name: cf-syslog-drain-release
-        - name: deployment-settings
-        - name: updated-vars-store
-        outputs:
-        - name: updated-deployments-loggregator
-        run:
-          path: bash
-          args:
-            - -c
-            - |
-              #!/bin/bash
-              set -eux
-
-              SETTINGS_FILE="$PWD/deployment-settings/settings.json"
-              SYSTEM_DOMAIN=$(cat $SETTINGS_FILE | jq .SYSTEM_DOMAIN --raw-output)
-              ADAPTER_COUNT=$(cat $SETTINGS_FILE | jq .ADAPTER_COUNT --raw-output)
-
-              pushd updated-vars-store/gcp/loggregator-capacity-planning
-                export BOSH_CLIENT=`bbl director-username`
-                export BOSH_CLIENT_SECRET=`bbl director-password`
-                export BOSH_CA_CERT=`bbl director-ca-cert`
-                export BOSH_ENVIRONMENT=`bbl director-address`
-              popd
-
-              pushd cf-syslog-drain-release
-                bosh upload-release
-              popd
-
-              ss_dir="$PWD/cf-syslog-drain-release"
-              bbl_dir="updated-vars-store/gcp/loggregator-capacity-planning"
-
-              cat <<EOT >> /tmp/adapter-count.yml
-              - type: replace
-                path: /instance_groups/name=adapter/instances
-                value: $ADAPTER_COUNT
-              EOT
-
-              bosh -n -d cf-syslog-drain deploy \
-                --vars-store "$bbl_dir/cf-syslog-drain-vars.yml" \
-                --ops-file "$ss_dir/manifests/cf-deployment-ops.yml" \
-                --ops-file "$bbl_dir/ops-files/allow-insecure-syslog-drains.yml" \
-                --ops-file "$bbl_dir/ops-files/multi-az-ss.yml" \
-                --ops-file "/tmp/adapter-count.yml" \
-                --vars-file "$bbl_dir/deployment-vars.yml" \
-                -v "system_domain=$SYSTEM_DOMAIN" \
-                "$ss_dir/manifests/cf-syslog-drain.yml"
-
-              pushd updated-vars-store
-                git config user.email "cf-loggregator@pivotal.io"
-                git config user.name "Loggregator CI"
-                git add . --all
-                git commit -m "Updated cf syslog drain deployment vars
-
-                [ci-skip]" || true
-              popd
-
-              rsync -ac updated-vars-store/ updated-deployments-loggregator
-    - put: deployments-loggregator-with-changes
-      params:
-        repository: updated-deployments-loggregator
         rebase: true
     - task: create-org-and-space
       file: loggregator-ci/tasks/create-org-and-space.yml
