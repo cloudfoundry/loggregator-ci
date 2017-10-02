@@ -71,12 +71,10 @@ resources:
       - .final_builds
       - releases
 
-  - name: cf-syslog-drain-github-release
-    type: github-release
+  - name: cf-syslog-drain-latest
+    type: bosh-io-release
     source:
-      user: cloudfoundry
-      repository: cf-syslog-drain-release
-      access_token: {{access-token}}
+      repository: cloudfoundry/cf-syslog-drain-release
 
   - name: consul-release
     type: bosh-io-release
@@ -344,13 +342,12 @@ jobs:
       - get: cf-deployment-concourse-tasks
       - get: vars-store
         resource: deployments-loggregator
-      - get: loggregator-github-release
-        resource: loggregator-latest
+      - get: loggregator-latest
       - get: vars-files
         resource: deployments-loggregator
       - get: consul-release
       - get: cf-syslog-drain-develop
-      - get: cf-syslog-drain-github-release
+      - get: cf-syslog-drain-latest
     - do:
       - task: upload-stemcell
         file: cf-deployment-concourse-tasks/bosh-upload-stemcell-from-cf-deployment/task.yml
@@ -365,8 +362,8 @@ jobs:
           inputs:
           - name: bbl-state
           - name: cf-deployment
-          - name: loggregator-github-release
-          - name: cf-syslog-drain-github-release
+          - name: loggregator-latest
+          - name: cf-syslog-drain-latest
           outputs:
           - name: ops-files
           run:
