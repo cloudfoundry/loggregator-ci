@@ -137,7 +137,7 @@ if normalize_hour(Time.new.hour, 2) % 2 == 0
     network_control_incident(config, "cf", "doppler"),
     network_control_incident(config, "cf", "log-api"),
     network_control_incident(config, "cf", "diego-cell"),
-    network_control_incident(config, "cf-syslog-drain", "*"),
+    network_control_incident(config, "cf", "syslog-scheduler"),
   ])
 else
   puts("Creating firewall incidents")
@@ -145,7 +145,7 @@ else
     firewall_incident(config, "cf", "doppler"),
     firewall_incident(config, "cf", "log-api"),
     firewall_incident(config, "cf", "diego-cell"),
-    firewall_incident(config, "cf-syslog-drain", "*"),
+    firewall_incident(config, "cf", "syslog-scheduler"),
   ])
 end
 
