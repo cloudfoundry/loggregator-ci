@@ -194,58 +194,7 @@ jobs:
       BBL_STATE_DIR: gcp/playground
       SYSTEM_DOMAIN: playground.loggr.cf-app.com
       VARS_STORE_FILE: gcp/playground/deployment-vars.yml
-      OPS_FILES: "scale-to-one-az.yml clients.yml cf-versions.yml disable-etcd.yml"
-  - task: cf-syslog-drain-deploy
-    config:
-      image_resource:
-        type: docker-image
-        source:
-          repository: relintdockerhubpushbot/cf-deployment-concourse-tasks
-      platform: linux
-      inputs:
-      - name: cf-syslog-drain-release
-      - name: updated-vars-store
-      outputs:
-      - name: updated-deployments-loggregator
-      params:
-        BBL_STATE_DIR: gcp/playground
-      run:
-        path: bash
-        args:
-          - -c
-          - |
-            #!/bin/bash
-            set -eux
-
-            ss_dir="$PWD/cf-syslog-drain-release"
-            bbl_dir="updated-vars-store/$BBL_STATE_DIR"
-
-            pushd updated-vars-store/gcp/playground
-              export BOSH_CLIENT=`bbl director-username`
-              export BOSH_CLIENT_SECRET=`bbl director-password`
-              export BOSH_CA_CERT=`bbl director-ca-cert`
-              export BOSH_ENVIRONMENT=`bbl director-address`
-            popd
-
-
-            bosh -n -d cf-syslog-drain deploy \
-              --vars-store "$bbl_dir/cf-syslog-drain-vars.yml" \
-              --ops-file "$ss_dir/manifests/cf-deployment-ops.yml" \
-              --ops-file "$bbl_dir/ops-files/allow-insecure-syslog-drains.yml" \
-              --vars-file "$bbl_dir/deployment-vars.yml" \
-              -v "system_domain=playground.loggr.cf-app.com" \
-              "$ss_dir/manifests/cf-syslog-drain.yml"
-
-            pushd updated-vars-store
-              git config user.email "cf-loggregator@pivotal.io"
-              git config user.name "Loggregator CI"
-              git add . --all
-              git commit -m "Updated cf syslog drain deployment vars
-
-              [ci-skip]" || true
-            popd
-
-            rsync -ac updated-vars-store/ updated-deployments-loggregator
+      OPS_FILES: "scale-to-one-az.yml clients.yml cf-versions.yml disable-etcd.yml allow-insecure-syslog-drains.yml dev-versions.yml"
   - task: bosh-cleanup
     file: cf-deployment-concourse-tasks/bosh-cleanup/task.yml
     params:
