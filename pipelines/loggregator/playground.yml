@@ -194,14 +194,14 @@ jobs:
       BBL_STATE_DIR: gcp/playground
       SYSTEM_DOMAIN: playground.loggr.cf-app.com
       VARS_STORE_FILE: gcp/playground/deployment-vars.yml
-      OPS_FILES: "scale-to-one-az.yml clients.yml cf-versions.yml disable-etcd.yml allow-insecure-syslog-drains.yml dev-versions.yml"
+      OPS_FILES: "scale-to-one-az.yml clients.yml disable-etcd.yml allow-insecure-syslog-drains.yml cf-versions.yml"
   - task: bosh-cleanup
     file: cf-deployment-concourse-tasks/bosh-cleanup/task.yml
     params:
       BBL_STATE_DIR: gcp/playground
   - put: deployments-loggregator
     params:
-      repository: updated-deployments-loggregator
+      repository: updated-vars-store
       rebase: true
 
 - name: cf-destroy
