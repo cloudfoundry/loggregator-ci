@@ -62,8 +62,8 @@ jobs:
       BBL_GCP_REGION: us-central1
       BBL_STATE_DIR: gcp/loggregator-capacity-planning
       BBL_IAAS: gcp
-      BBL_LB_CERT: {{coconut_director_cert}}
-      BBL_LB_KEY: {{coconut_director_key}}
+      BBL_LB_CERT: {{coconut_bbl_lb_cert}}
+      BBL_LB_KEY: {{coconut_bbl_lb_key}}
       BBL_ENV_NAME: loggregator-capacity-planning
       LB_DOMAIN: loggregator-capacity-planning.cf-app.com
   - put: deployments-loggregator-with-changes

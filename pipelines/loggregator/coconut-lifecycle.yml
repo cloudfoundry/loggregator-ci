@@ -41,8 +41,8 @@ jobs:
       BBL_GCP_REGION: us-central1
       BBL_STATE_DIR: gcp/coconut-bbl
       BBL_IAAS: gcp
-      BBL_LB_CERT: {{coconut_director_cert}}
-      BBL_LB_KEY: {{coconut_director_key}}
+      BBL_LB_CERT: {{coconut_bbl_lb_cert}}
+      BBL_LB_KEY: {{coconut_bbl_lb_key}}
       BBL_ENV_NAME: coconut-bbl
       LB_DOMAIN: coconut.cf-app.com
   - put: deployments-loggregator-with-changes

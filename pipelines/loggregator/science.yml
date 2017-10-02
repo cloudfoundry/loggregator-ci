@@ -160,8 +160,8 @@ jobs:
       BBL_GCP_REGION: us-central1
       BBL_STATE_DIR: gcp/science/release-elect
       BBL_IAAS: gcp
-      BBL_LB_CERT: {{coconut_director_cert}}
-      BBL_LB_KEY: {{coconut_director_key}}
+      BBL_LB_CERT: {{coconut_bbl_lb_cert}}
+      BBL_LB_KEY: {{coconut_bbl_lb_key}}
       BBL_ENV_NAME: release-elect-science
       LB_DOMAIN: release-elect.science.loggr.cf-app.com
   - put: deployments-loggregator-with-changes
@@ -198,8 +198,8 @@ jobs:
       BBL_GCP_REGION: us-central1
       BBL_STATE_DIR: gcp/science/latest
       BBL_IAAS: gcp
-      BBL_LB_CERT: {{coconut_director_cert}}
-      BBL_LB_KEY: {{coconut_director_key}}
+      BBL_LB_CERT: {{coconut_bbl_lb_cert}}
+      BBL_LB_KEY: {{coconut_bbl_lb_key}}
       BBL_ENV_NAME: latest-science
       LB_DOMAIN: latest.science.loggr.cf-app.com
   - put: deployments-loggregator-with-changes
