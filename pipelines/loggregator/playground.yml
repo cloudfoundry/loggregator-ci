@@ -186,7 +186,6 @@ jobs:
           #!/bin/bash
 
           cp cf-deployment/operations/scale-to-one-az.yml ops-files/
-          cp cf-deployment/operations/experimental/disable-etcd.yml ops-files/
           cp bbl-state/gcp/playground/ops-files/*.yml ops-files/
   - task: cf-deploy
     file: cf-deployment-concourse-tasks/bosh-deploy/task.yml
@@ -194,7 +193,7 @@ jobs:
       BBL_STATE_DIR: gcp/playground
       SYSTEM_DOMAIN: playground.loggr.cf-app.com
       VARS_STORE_FILE: gcp/playground/deployment-vars.yml
-      OPS_FILES: "scale-to-one-az.yml clients.yml disable-etcd.yml allow-insecure-syslog-drains.yml cf-versions.yml"
+      OPS_FILES: "scale-to-one-az.yml clients.yml allow-insecure-syslog-drains.yml cf-versions.yml"
   - task: bosh-cleanup
     file: cf-deployment-concourse-tasks/bosh-cleanup/task.yml
     params:
