@@ -4,8 +4,20 @@ image_resource:
   source:
     repository: loggregator/base
 inputs:
-  - name: release-info
-  - name: vars-store
+- name: release-info
+- name: vars-store
+params:
+  PREFIX:
+  CYCLES:
+  DELAY:
+  DELAY_UNIT:
+  MESSAGE:
+  APP_NAME:
+  WAIT:
+  API_ENDPOINT:
+  USERNAME:
+  DATADOG_API_KEY:
+  VARS_STORE_FILE:
 run:
   path: bash
   args:
@@ -51,7 +63,7 @@ run:
               \"points\":[[${currenttime}, ${msg_count}]],
               \"type\":\"gauge\",
               \"host\":\"${cf_api}\",
-              \"tags\":[\"${APP_NAME}\", \"loggregator_version:${version}\", \"release_version:${VERSION_TAG}\"]}
+              \"tags\":[\"${APP_NAME}\", \"loggregator_version:${version}\"]}
             ]
         }" \
     'https://app.datadoghq.com/api/v1/series?api_key='$DATADOG_API_KEY
@@ -62,7 +74,7 @@ run:
               \"points\":[[${currenttime}, $DELAY]],
               \"type\":\"gauge\",
               \"host\":\"${cf_api}\",
-              \"tags\":[\"${APP_NAME}\", \"loggregator_version:${version}\", \"release_version:${VERSION_TAG}\"]}
+              \"tags\":[\"${APP_NAME}\", \"loggregator_version:${version}\"]}
             ]
         }" \
     'https://app.datadoghq.com/api/v1/series?api_key='$DATADOG_API_KEY
@@ -73,7 +85,7 @@ run:
               \"points\":[[${currenttime}, ${CYCLES}]],
               \"type\":\"gauge\",
               \"host\":\"${cf_api}\",
-              \"tags\":[\"${APP_NAME}\", \"loggregator_version:${version}\", \"release_version:${VERSION_TAG}\"]}
+              \"tags\":[\"${APP_NAME}\", \"loggregator_version:${version}\"]}
             ]
         }" \
     'https://app.datadoghq.com/api/v1/series?api_key='$DATADOG_API_KEY
