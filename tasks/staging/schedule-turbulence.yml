@@ -14,4 +14,4 @@ params:
   TURBULENCE_NETWORK_LOSS: "5%"
   TURBULENCE_FIREWALL_TIMEOUT: "60m"
 run:
-  path: loggregator-ci/tasks/science/schedule-turbulence.rb
+  path: loggregator-ci/tasks/staging/schedule-turbulence.rb
