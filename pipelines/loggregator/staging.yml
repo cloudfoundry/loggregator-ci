@@ -57,10 +57,10 @@ resources:
   source:
     interval: 10m
 
-- name: 20m
+- name: 30m
   type: time
   source:
-    interval: 20m
+    interval: 30m
 
 - name: 2h
   type: time
@@ -209,7 +209,7 @@ jobs:
       resource: loggregator-release-elect
       passed: ["cf-deploy"]
     - get: loggregator-ci
-    - get: 20m
+    - get: 30m
       trigger: true
   - task: get-release-version
     config:
@@ -337,7 +337,7 @@ jobs:
     - task: start-incidents
       file: loggregator-ci/tasks/staging/schedule-turbulence.yml
       params:
-        TURBULENCE_API_URL: https://35.192.156.252:6868 # Public IP for `turbulence_api` job. Found in GCP console.
+        TURBULENCE_API_URL: https://35.202.83.46:6868 # Public IP for `turbulence_api` job. Found in GCP console.
         VARS_FILE_PATH: "gcp/staging/deployment-vars.yml"
 
 - name: bbl-create
