@@ -305,7 +305,7 @@ jobs:
     params:
       VARS_STORE_FILE: gcp/staging/deployment-vars.yml
   - task: loggregator-elect
-    file: loggregator-ci/staging/firehose-reliability-test.yml
+    file: loggregator-ci/tasks/staging/firehose-reliability-test.yml
     params:
       APP_DOMAIN: "loggregator-firehose-reliability.staging.loggr.cf-app.com"
       APP_NAME: "loggregator-firehose-reliability"
