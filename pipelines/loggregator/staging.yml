@@ -52,10 +52,10 @@ resources:
   source:
     uri: https://github.com/cloudfoundry/loggregator-ci
 
-- name: 10m
+- name: 2m
   type: time
   source:
-    interval: 10m
+    interval: 2m
 
 - name: 30m
   type: time
@@ -297,7 +297,7 @@ jobs:
     - get: vars-store
       resource: deployments-loggregator
     - get: loggregator-ci
-    - get: 10m
+    - get: 2m
       trigger: true
   - task: get-cf-creds
     config:
@@ -318,7 +318,7 @@ jobs:
       CLIENT_SECRET: {{staging-firehose-reliability-client-secret}}
       SKIP_CERT_VERIFY: true
       WORKER_INSTANCE_COUNT: 2
-    timeout: 10m
+    timeout: 2m
 
 - name: start-incidents
   serial: true
