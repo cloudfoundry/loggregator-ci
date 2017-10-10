@@ -88,7 +88,10 @@ resources:
 jobs:
 - name: cf-deploy
   serial: true
-  serial_groups: ["cf-deploy"]
+  serial_groups:
+  - cf-deploy-blackbox-tests
+  - cf-deploy-start-incidents
+  - cf-deploy-firehose-reliability
   plan:
   - aggregate:
     - get: daily
@@ -200,7 +203,8 @@ jobs:
 
 - name: blackbox-tests
   serial: true
-  serial_groups: ["cf-deploy"]
+  serial_groups:
+  - cf-deploy-blackbox-tests
   plan:
   - aggregate:
     - get: deployments-loggregator-with-changes
@@ -284,7 +288,8 @@ jobs:
     timeout: 20m
 
 - name: firehose-reliability
-  serial_groups: ["cf-deploy"]
+  serial_groups:
+  - cf-deploy-firehose-reliability
   plan:
   - aggregate:
     - get: release-elect
@@ -322,7 +327,8 @@ jobs:
 
 - name: start-incidents
   serial: true
-  serial_groups: ["cf-deploy"]
+  serial_groups:
+  - cf-deploy-start-incidents
   plan:
   - get: 2h
     trigger: true
