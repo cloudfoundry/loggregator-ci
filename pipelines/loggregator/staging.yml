@@ -170,17 +170,54 @@ jobs:
           set -ex
 
           cp bbl-state/gcp/staging/ops-files/*.yml ops-files/
+  - task: create-turbulence-vars
+    input_mapping:
+      bbl-state: deployments-loggregator
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source:
+          repository: relintdockerhubpushbot/cf-deployment-concourse-tasks
+      inputs:
+      - name: bbl-state
+      - name: cf-deployment
+      outputs:
+      - name: vars-files
+      params:
+        DATADOG_API_KEY: {{datadog-dev-api-key}}
+        DATADOG_APP_KEY: {{datadog-dev-app-key}}
+      run:
+        path: /bin/bash
+        args:
+        - "-c"
+        - |
+          #!/bin/bash
+          set -ex
+
+          cd bbl-state/gcp/staging
+
+          cat <<EOF > ../../../vars-files/turbulence.yml
+
+          director_client: $(bbl director-username)
+          director_client_secret: $(bbl director-password)
+          director_ip: $(bbl director-address | grep -o '[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}')
+          director_ssl: "$(bbl director-ca-cert | awk '{printf "%s\\n", $0}')"
+          turbulence_api_ip: 10.0.31.200
+          datadog_api_key: $DATADOG_API_KEY
+          datadog_app_key: $DATADOG_APP_KEY
+
+          EOF
   - task: cf-deploy
     input_mapping:
       bbl-state: deployments-loggregator
-      vars-files: deployments-loggregator
       vars-store: deployments-loggregator
     file: cf-deployment-concourse-tasks/bosh-deploy/task.yml
     params:
       BBL_STATE_DIR: gcp/staging
       SYSTEM_DOMAIN: staging.loggr.cf-app.com
       VARS_STORE_FILE: gcp/staging/deployment-vars.yml
-      VARS_FILES: "gcp/staging/turbulence-vars.yml"
+      VARS_FILES: "turbulence.yml"
       OPS_FILES: "clients.yml turbulence.yml allow-insecure-syslog-drains.yml cf-versions.yml"
   - put: deployments-loggregator-with-changes
     params:
