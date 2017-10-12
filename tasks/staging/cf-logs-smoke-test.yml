@@ -48,11 +48,13 @@ run:
     app_domain=$(cf curl /v2/apps/$app_guid/stats | jq -r .\"0\".stats.uris[0])
 
     # curl my logspinner
-    id=$(curl "$app_domain?cycles=$CYCLES&delay=$DELAY$DELAY_UNIT&text=$MESSAGE")| awk '$5 == "id" {print $6}' | sed 's/,$//'
+    id=$(curl "$app_domain?cycles=$CYCLES&delay=$DELAY$DELAY_UNIT&text=$MESSAGE" | \
+      awk '$5 == "id" {print $6}' | \
+      sed 's/,$//')
 
     sleep $WAIT # wait for a bit
 
-    msg_count=$(cat output.txt | grep -c $id)
+    msg_count=$(cat output.txt | grep -c "$id")
 
     echo $msg_count
 
