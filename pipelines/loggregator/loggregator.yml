@@ -356,6 +356,7 @@ jobs:
     file: cf-deployment-concourse-tasks/set-feature-flags/task.yml
     params:
       SYSTEM_DOMAIN: coconut.cf-app.com
+      VARS_STORE_FILE: gcp/coconut-bbl/deployment-vars.yml
   - put: deployments-loggregator-with-changes
     params:
       repository: updated-vars-store
@@ -364,7 +365,6 @@ jobs:
     file: cf-deployment-concourse-tasks/bosh-cleanup/task.yml
     params:
       BBL_STATE_DIR: gcp/coconut-bbl
-      VARS_STORE_FILE: gcp/coconut-bbl/deployment-vars.yml
 
 - name: loggregator-deploy
   serial: true
