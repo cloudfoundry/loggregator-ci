@@ -352,6 +352,10 @@ jobs:
       VARS_STORE_FILE: gcp/coconut-bbl/deployment-vars.yml
       OPS_FILES: "clients.yml scale-to-one-az.yml datadog-agent.yml diego.yml dev-versions.yml"
       VARS_FILES: "gcp/coconut-bbl/vars-files/router.yml"
+  - task: enable-feature-flags
+    file: cf-deployments-concourse-tasks/set-feature-flags/task.yml
+    params:
+      SYSTEM_DOMAIN: coconut.cf-app.com
   - put: deployments-loggregator-with-changes
     params:
       repository: updated-vars-store
