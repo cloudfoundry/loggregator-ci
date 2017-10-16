@@ -3,6 +3,7 @@
 require 'net/http'
 require 'json'
 require 'openssl'
+require 'resolv-replace'
 
 class MissingRequiredEnvironmentVariable < StandardError; end
 
