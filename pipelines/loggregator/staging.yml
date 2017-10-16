@@ -390,7 +390,7 @@ jobs:
     - task: start-incidents
       file: loggregator-ci/tasks/staging/schedule-turbulence.yml
       params:
-        TURBULENCE_API_URL: https://35.193.62.242:6868 # Public IP for `turbulence_api` job. Found in GCP console.
+        TURBULENCE_API_URL: https://35.193.175.97:6868 # Public IP for `turbulence_api` job. Found in GCP console.
         VARS_FILE_PATH: "gcp/staging/deployment-vars.yml"
 
 - name: bbl-create
