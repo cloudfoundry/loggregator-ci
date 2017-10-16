@@ -131,7 +131,7 @@ client = TurbulenceClient.new(config)
 
 # TODO: These settings could come from a environmetn variable something like:
 #   cf:doppler cf:log-api cf:diego-cell cf-syslog-drain:*
-if normalize_hour(Time.new.hour, 2) % 2 == 0
+# if normalize_hour(Time.new.hour, 2) % 2 == 0
   puts("Creating control network incidents")
   client.create_incidents([
     network_control_incident(config, "cf", "doppler"),
@@ -139,14 +139,14 @@ if normalize_hour(Time.new.hour, 2) % 2 == 0
     network_control_incident(config, "cf", "diego-cell"),
     network_control_incident(config, "cf", "syslog-scheduler"),
   ])
-else
-  puts("Creating firewall incidents")
-  client.create_incidents([
-    firewall_incident(config, "cf", "doppler"),
-    firewall_incident(config, "cf", "log-api"),
-    firewall_incident(config, "cf", "diego-cell"),
-    firewall_incident(config, "cf", "syslog-scheduler"),
-  ])
-end
+# else
+#   puts("Creating firewall incidents")
+#   client.create_incidents([
+#     firewall_incident(config, "cf", "doppler"),
+#     firewall_incident(config, "cf", "log-api"),
+#     firewall_incident(config, "cf", "diego-cell"),
+#     firewall_incident(config, "cf", "syslog-scheduler"),
+#   ])
+# end
 
 puts('Done.')
