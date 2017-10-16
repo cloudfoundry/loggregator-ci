@@ -15,12 +15,12 @@ resources:
     paths:
     - docker-images/base
 
-- name: golang-1.8-tarball
+- name: golang-1.9-tarball
   type: s3
   source:
     endpoint: storage.googleapis.com
     bucket: golang
-    regexp: 'go(1\.8(\.\d+)?)\.linux-amd64\.tar.gz'
+    regexp: 'go(1\.9(\.\d+)?)\.linux-amd64\.tar.gz'
 
 - name: bosh10-image-dockerfile
   type: git
@@ -37,12 +37,27 @@ resources:
     username: {{docker-hub-username}}
     password: {{docker-hub-password}}
 
+- name: blackbox-image-dockerfile
+  type: git
+  source:
+    uri: https://github.com/cloudfoundry/loggregator-ci
+    branch: master
+    paths:
+    - docker-images/blackbox
+
+- name: blackbox-image
+  type: docker-image
+  source:
+    repository: loggregator/blackbox
+    username: {{docker-hub-username}}
+    password: {{docker-hub-password}}
+
 jobs:
 - name: build-base-image
   public: true
   plan:
   - aggregate:
-    - get: golang-1.8-tarball
+    - get: golang-1.9-tarball
       trigger: true
     - get: image-dockerfile
       resource: base-image-dockerfile
@@ -80,5 +95,15 @@ jobs:
     - put: bosh10-image
       params:
         build: bosh10-image-dockerfile/docker-images/bosh10
+        tag_as_latest: true
+        cache_tag: latest
+
+- name: blackbox
+  plan:
+    - get: blackbox-image-dockerfile
+      trigger: true
+    - put: blackbox-image
+      params:
+        build: blackbox-image-dockerfile/docker-images/blackbox
         tag_as_latest: true
         cache_tag: latest
