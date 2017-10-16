@@ -47,6 +47,12 @@ resources:
     uri: https://github.com/cloudfoundry/cf-deployment
     branch: master
 
+- name: cf-deployment-develop
+  type: git
+  source:
+    uri: https://github.com/cloudfoundry/cf-deployment
+    branch: develop
+
 - name: loggregator-ci
   type: git
   source:
@@ -99,6 +105,7 @@ jobs:
     - get: deployments-loggregator
     - get: loggregator-ci
     - get: cf-deployment
+    - get: cf-deployment-develop
     - get: cf-deployment-concourse-tasks
     - get: loggregator
       resource: loggregator-release-elect
@@ -158,7 +165,7 @@ jobs:
           repository: ubuntu
       inputs:
       - name: bbl-state
-      - name: cf-deployment
+      - name: cf-deployment-develop # TODO: once non-collocated-cf-syslog-drain.yml is in master this can be removed
       outputs:
       - name: ops-files
       run:
@@ -170,6 +177,7 @@ jobs:
           set -ex
 
           cp bbl-state/gcp/staging/ops-files/*.yml ops-files/
+          cp cf-deployment-develop/operations/non-collocated-cf-syslog-drain.yml ops-files/
   - task: create-turbulence-vars
     input_mapping:
       bbl-state: deployments-loggregator
@@ -218,7 +226,7 @@ jobs:
       SYSTEM_DOMAIN: staging.loggr.cf-app.com
       VARS_STORE_FILE: gcp/staging/deployment-vars.yml
       VARS_FILES: "turbulence.yml"
-      OPS_FILES: "clients.yml turbulence.yml allow-insecure-syslog-drains.yml cf-versions.yml"
+      OPS_FILES: "clients.yml turbulence.yml allow-insecure-syslog-drains.yml cf-versions.yml non-collocated-cf-syslog-drain.yml"
   - put: deployments-loggregator-with-changes
     params:
       repository: updated-vars-store
