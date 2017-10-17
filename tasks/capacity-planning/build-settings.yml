@@ -8,6 +8,8 @@ inputs:
 outputs:
 - name: deployment-settings
 params:
+  ADAPTER_COUNT:
+  ADAPTER_COLLOCATED: false
   API_VERSION:
   CLIENT_ID:
   DIEGO_CELL_COUNT:
@@ -24,6 +26,9 @@ params:
   SPACE:
   START_RPS:
   STEPS:
+  SYSLOG_COUNTER_COUNT:
+  SYSLOG_SERVICE_NAME:
+  SYSLOG_SERVICE_URL:
   SYSTEM_DOMAIN:
   TEST_EXECUTION_MINUTES:
 run:
