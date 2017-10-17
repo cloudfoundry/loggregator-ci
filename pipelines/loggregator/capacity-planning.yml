@@ -31,6 +31,12 @@ resources:
     uri: https://github.com/cloudfoundry/cf-deployment
     branch: master
 
+- name: cf-deployment-develop
+  type: git
+  source:
+    uri: https://github.com/cloudfoundry/cf-deployment
+    branch: develop
+
 # This is here because concourse has a bug in which putting to a git resource
 # creates a new version that can trigger jobs even if the commit has [ci skip]
 # present.
@@ -107,6 +113,7 @@ jobs:
       - get: bbl-state
         resource: deployments-loggregator
       - get: cf-deployment
+      - get: cf-deployment-develop
       - get: cf-deployment-concourse-tasks
       - get: vars-store
         resource: deployments-loggregator
@@ -151,7 +158,7 @@ jobs:
             repository: relintdockerhubpushbot/cf-deployment-concourse-tasks
         inputs:
         - name: bbl-state
-        - name: cf-deployment
+        - name: cf-deployment-develop
         - name: deployment-settings
         outputs:
         - name: ops-files
@@ -166,13 +173,12 @@ jobs:
             SETTINGS_FILE="$PWD/deployment-settings/settings.json"
 
             DOPPLER_COUNT=$(cat $SETTINGS_FILE | jq .DOPPLER_COUNT --raw-output)
-            # Note: We will use ADAPTER_COUNT once it can be split out from
-            # Doppler.
             ADAPTER_COUNT=$(cat $SETTINGS_FILE | jq .ADAPTER_COUNT --raw-output)
             LOG_API_COUNT=$(cat $SETTINGS_FILE | jq .LOG_API_COUNT --raw-output)
             DIEGO_CELL_COUNT=$(cat $SETTINGS_FILE | jq .DIEGO_CELL_COUNT --raw-output)
             ROUTER_COUNT=$(cat $SETTINGS_FILE | jq .ROUTER_COUNT --raw-output)
 
+            cp cf-deployment-develop/operations/non-collocated-cf-syslog-drain.yml ops-files/
             cp bbl-state/gcp/loggregator-capacity-planning/ops-files/*.yml ops-files/
 
             cat <<EOT >> ops-files/capacity-planning-config.yml
@@ -188,6 +194,9 @@ jobs:
             - type: replace
               path: /instance_groups/name=diego-cell/instances
               value: $DIEGO_CELL_COUNT
+            - type: replace
+              path: /instance_groups/name=adapter/instances
+              value: $ADAPTER_COUNT
             - type: replace
               path: /releases/name=loggregator
               value:
@@ -207,7 +216,7 @@ jobs:
         BBL_STATE_DIR: gcp/loggregator-capacity-planning
         SYSTEM_DOMAIN: loggregator-capacity-planning.cf-app.com
         VARS_STORE_FILE: gcp/loggregator-capacity-planning/deployment-vars.yml
-        OPS_FILES: "clients.yml capacity-planning-config.yml instance-types.yml"
+        OPS_FILES: "clients.yml non-collocated-cf-syslog-drain.yml instance-types.yml capacity-planning-config.yml"
     - put: deployments-loggregator-with-changes
       params:
         repository: updated-vars-store
