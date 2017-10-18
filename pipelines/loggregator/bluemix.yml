@@ -18,7 +18,7 @@ resources:
 - name: loggregator
   type: git
   source:
-    uri: https://github.com/cloudfoundry/loggregator
+    uri: https://github.com/cloudfoundry/loggregator-release
     branch: develop
 
 jobs:
