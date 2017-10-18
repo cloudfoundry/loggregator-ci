@@ -182,6 +182,17 @@ jobs:
 
             cp bbl-state/gcp/staging/ops-files/*.yml ops-files/
             cp cf-deployment-develop/operations/non-collocated-cf-syslog-drain.yml ops-files/
+
+            cat <<EOT >> ops-files/export-links.yml
+            - type: replace
+              path: /instance_groups/name=log-api/jobs/name=loggregator_trafficcontroller/provides?
+              value:
+                trafficcontroller: {as: trafficcontroller, shared: true}
+            - type: replace
+              path: /instance_groups/name=log-api/jobs/name=reverse_log_proxy/provides?
+              value:
+                reverse_log_proxy: {as: reverse_log_proxy, shared: true}
+            EOT
     - task: create-turbulence-vars
       input_mapping:
         bbl-state: deployments-loggregator
@@ -230,7 +241,7 @@ jobs:
       SYSTEM_DOMAIN: staging.loggr.cf-app.com
       VARS_STORE_FILE: gcp/staging/deployment-vars.yml
       VARS_FILES: "turbulence.yml"
-      OPS_FILES: "clients.yml turbulence.yml allow-insecure-syslog-drains.yml cf-versions.yml non-collocated-cf-syslog-drain.yml"
+      OPS_FILES: "clients.yml turbulence.yml allow-insecure-syslog-drains.yml cf-versions.yml non-collocated-cf-syslog-drain.yml export-links.yml"
   - task: deploy-ouroboros
     input_mapping:
       bbl-state: deployments-loggregator
