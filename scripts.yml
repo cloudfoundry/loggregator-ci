@@ -32,22 +32,6 @@ noaa_unit_tests: |
 
   bin/test
 
-loggregatorlib_unit_tests: |
-  #!/bin/bash -ex
-
-  export GOPATH=$PWD/loggregator
-  export PATH=$PATH:$GOPATH/bin
-
-  TARGET=$GOPATH/src/github.com/cloudfoundry/loggregatorlib
-  rm -rf $TARGET
-  mkdir $TARGET
-  cp -r loggregatorlib/. $TARGET
-
-  go install github.com/coreos/etcd
-
-  cd $TARGET
-  bin/test
-
 bump_submodule: |
   #!/bin/bash -e
 
