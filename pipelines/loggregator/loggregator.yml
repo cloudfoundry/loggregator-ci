@@ -712,11 +712,8 @@ jobs:
   serial: true
   public: true
   plan:
-  - aggregate:
-    - get: cf-syslog-drain-release
-      trigger: false
-    - get: scalable-syslog
-      trigger: true
+  - get: scalable-syslog
+    trigger: true
   - task: run-tests
     config:
       image_resource:
@@ -725,7 +722,6 @@ jobs:
           repository: loggregator/base
       platform: linux
       inputs:
-      - name: cf-syslog-drain-release
       - name: scalable-syslog
       run:
         path: bash
@@ -734,16 +730,18 @@ jobs:
         - |
           #!/bin/bash
 
-          set -e -x
+          set -ex
 
-          rm -rf cf-syslog-drain-release/src/code.cloudfoundry.org/scalable-syslog/{*,.git}
-          cp -r scalable-syslog/. cf-syslog-drain-release/src/code.cloudfoundry.org/scalable-syslog/
+          mkdir -p workspace/src/code.cloudfoundry.org/scalable-syslog
+          cp -r scalable-syslog/. workspace/src/code.cloudfoundry.org/scalable-syslog/
 
-          pushd cf-syslog-drain-release
+          pushd workspace
             export GOPATH="$PWD"
             export PATH="$GOPATH/bin:$PATH"
-            go install github.com/onsi/ginkgo/ginkgo
-            go test ./src/code.cloudfoundry.org/scalable-syslog/... -race
+            pushd src/code.cloudfoundry.org/scalable-syslog
+              go get -t ./...
+              go test ./... -race
+            popd
           popd
 
 - name: cf-syslog-drain-bump-submodule
@@ -808,6 +806,29 @@ jobs:
           popd
 
           cp -r updated-cf-syslog-drain-release/. $OUTPUT/
+  - task: run-tests-with-fixed-deps
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source:
+          repository: loggregator/base
+      inputs:
+      - name: synced-cf-syslog-drain-release
+      run:
+        path: bash
+        args:
+        - -c
+        - |
+          #!/bin/bash
+
+          set -ex
+
+          pushd synced-cf-syslog-drain-release
+            export GOPATH="$PWD"
+            export PATH="$GOPATH/bin:$PATH"
+            go test -race code.cloudfoundry.org/scalable-syslog/...
+          popd
   - task: commit
     config:
       platform: linux
