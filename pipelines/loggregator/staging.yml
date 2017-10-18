@@ -32,6 +32,11 @@ resources:
   source:
     uri: https://github.com/cloudfoundry-incubator/loggregator-tools
 
+- name: ouroboros
+  type: git
+  source:
+    uri: https://github.com/cloudfoundry-incubator/ouroboros-release
+
 - name: cf-syslog-drain-release-elect
   type: git
   source:
@@ -82,14 +87,10 @@ resources:
 
 - name: deployments-loggregator
   type: git
-  source: &deployments_loggregator
+  source:
     uri: git@github.com:cloudfoundry/deployments-loggregator.git
     branch: master
     private_key: {{deployments-loggregator-key}}
-
-- name: deployments-loggregator-with-changes
-  type: git
-  source: *deployments_loggregator
 
 jobs:
 - name: cf-deploy
@@ -109,113 +110,116 @@ jobs:
     - get: cf-deployment-concourse-tasks
     - get: loggregator
       resource: loggregator-release-elect
+    - get: ouroboros
     - get: cf-syslog-drain
       resource: cf-syslog-drain-release-elect
     - get: loggregator-tools
-  - task: upload-stemcell
-    input_mapping:
-      bbl-state: deployments-loggregator
-    file: cf-deployment-concourse-tasks/bosh-upload-stemcell-from-cf-deployment/task.yml
-    params:
-      BBL_STATE_DIR: gcp/staging
-  - task: upload-releases
-    input_mapping:
-      bbl-state: deployments-loggregator
-    config:
-      platform: linux
-      image_resource:
-        type: docker-image
-        source:
-          repository: relintdockerhubpushbot/cf-deployment-concourse-tasks
-      inputs:
-      - name: bbl-state
-      - name: loggregator
-      - name: cf-syslog-drain
-      run:
-        path: /bin/bash
-        args:
-        - "-c"
-        - |
-          #!/bin/bash
-
-          set -ex
-
-          pushd bbl-state/gcp/staging
-            export BOSH_CLIENT=`bbl director-username`
-            export BOSH_CLIENT_SECRET=`bbl director-password`
-            export BOSH_CA_CERT=`bbl director-ca-cert`
-            export BOSH_ENVIRONMENT=`bbl director-address`
-          popd
-
-          releases="loggregator cf-syslog-drain"
-          for rel in $releases; do
-            pushd $rel
-              bosh create-release
-              bosh upload-release --rebase
-            popd
-          done
-  - task: copy-ops-files
-    input_mapping:
-      bbl-state: deployments-loggregator
-    config:
-      platform: linux
-      image_resource:
-        type: docker-image
-        source:
-          repository: ubuntu
-      inputs:
-      - name: bbl-state
-      - name: cf-deployment-develop # TODO: once non-collocated-cf-syslog-drain.yml is in master this can be removed
-      outputs:
-      - name: ops-files
-      run:
-        path: /bin/bash
-        args:
-        - "-c"
-        - |
-          #!/bin/bash
-          set -ex
-
-          cp bbl-state/gcp/staging/ops-files/*.yml ops-files/
-          cp cf-deployment-develop/operations/non-collocated-cf-syslog-drain.yml ops-files/
-  - task: create-turbulence-vars
-    input_mapping:
-      bbl-state: deployments-loggregator
-    config:
-      platform: linux
-      image_resource:
-        type: docker-image
-        source:
-          repository: relintdockerhubpushbot/cf-deployment-concourse-tasks
-      inputs:
-      - name: bbl-state
-      - name: cf-deployment
-      outputs:
-      - name: vars-files
+  - aggregate:
+    - task: upload-stemcell
+      input_mapping:
+        bbl-state: deployments-loggregator
+      file: cf-deployment-concourse-tasks/bosh-upload-stemcell-from-cf-deployment/task.yml
       params:
-        DATADOG_API_KEY: {{datadog-dev-api-key}}
-        DATADOG_APP_KEY: {{datadog-dev-app-key}}
-      run:
-        path: /bin/bash
-        args:
-        - "-c"
-        - |
-          #!/bin/bash
-          set -ex
+        BBL_STATE_DIR: gcp/staging
+    - task: upload-releases
+      input_mapping:
+        bbl-state: deployments-loggregator
+      config:
+        platform: linux
+        image_resource:
+          type: docker-image
+          source:
+            repository: relintdockerhubpushbot/cf-deployment-concourse-tasks
+        inputs:
+        - name: bbl-state
+        - name: loggregator
+        - name: cf-syslog-drain
+        - name: ouroboros
+        run:
+          path: /bin/bash
+          args:
+          - "-c"
+          - |
+            #!/bin/bash
 
-          cd bbl-state/gcp/staging
+            set -ex
 
-          cat <<EOF > ../../../vars-files/turbulence.yml
+            pushd bbl-state/gcp/staging
+              export BOSH_CLIENT=`bbl director-username`
+              export BOSH_CLIENT_SECRET=`bbl director-password`
+              export BOSH_CA_CERT=`bbl director-ca-cert`
+              export BOSH_ENVIRONMENT=`bbl director-address`
+            popd
 
-          director_client: $(bbl director-username)
-          director_client_secret: $(bbl director-password)
-          director_ip: $(bbl director-address | grep -o '[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}')
-          director_ssl: "$(bbl director-ca-cert | awk '{printf "%s\\n", $0}')"
-          turbulence_api_ip: 10.0.31.200
-          datadog_api_key: $DATADOG_API_KEY
-          datadog_app_key: $DATADOG_APP_KEY
+            releases="loggregator cf-syslog-drain ouroboros"
+            for rel in $releases; do
+              pushd $rel
+                bosh create-release
+                bosh upload-release --rebase
+              popd
+            done
+    - task: copy-ops-files
+      input_mapping:
+        bbl-state: deployments-loggregator
+      config:
+        platform: linux
+        image_resource:
+          type: docker-image
+          source:
+            repository: ubuntu
+        inputs:
+        - name: bbl-state
+        - name: cf-deployment-develop # TODO: once non-collocated-cf-syslog-drain.yml is in master this can be removed
+        outputs:
+        - name: ops-files
+        run:
+          path: /bin/bash
+          args:
+          - "-c"
+          - |
+            #!/bin/bash
+            set -ex
 
-          EOF
+            cp bbl-state/gcp/staging/ops-files/*.yml ops-files/
+            cp cf-deployment-develop/operations/non-collocated-cf-syslog-drain.yml ops-files/
+    - task: create-turbulence-vars
+      input_mapping:
+        bbl-state: deployments-loggregator
+      config:
+        platform: linux
+        image_resource:
+          type: docker-image
+          source:
+            repository: relintdockerhubpushbot/cf-deployment-concourse-tasks
+        inputs:
+        - name: bbl-state
+        - name: cf-deployment
+        outputs:
+        - name: vars-files
+        params:
+          DATADOG_API_KEY: {{datadog-dev-api-key}}
+          DATADOG_APP_KEY: {{datadog-dev-app-key}}
+        run:
+          path: /bin/bash
+          args:
+          - "-c"
+          - |
+            #!/bin/bash
+            set -ex
+
+            cd bbl-state/gcp/staging
+
+            cat <<EOF > ../../../vars-files/turbulence.yml
+
+            director_client: $(bbl director-username)
+            director_client_secret: $(bbl director-password)
+            director_ip: $(bbl director-address | grep -o '[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}')
+            director_ssl: "$(bbl director-ca-cert | awk '{printf "%s\\n", $0}')"
+            turbulence_api_ip: 10.0.31.200
+            datadog_api_key: $DATADOG_API_KEY
+            datadog_app_key: $DATADOG_APP_KEY
+
+            EOF
   - task: cf-deploy
     input_mapping:
       bbl-state: deployments-loggregator
@@ -227,9 +231,49 @@ jobs:
       VARS_STORE_FILE: gcp/staging/deployment-vars.yml
       VARS_FILES: "turbulence.yml"
       OPS_FILES: "clients.yml turbulence.yml allow-insecure-syslog-drains.yml cf-versions.yml non-collocated-cf-syslog-drain.yml"
-  - put: deployments-loggregator-with-changes
+  - task: deploy-ouroboros
+    input_mapping:
+      bbl-state: deployments-loggregator
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source:
+          repository: relintdockerhubpushbot/cf-deployment-concourse-tasks
+      inputs:
+      - name: bbl-state
+      - name: ouroboros
+      - name: updated-vars-store
+      outputs:
+      - name: final-vars-store
+      run:
+        path: /bin/bash
+        args:
+        - "-c"
+        - |
+          #!/bin/bash
+          set -ex
+
+          STATE_DIR=$PWD/bbl-state/gcp/staging
+
+          pushd $STATE_DIR
+            export BOSH_CLIENT=`bbl director-username`
+            export BOSH_CLIENT_SECRET=`bbl director-password`
+            export BOSH_CA_CERT=`bbl director-ca-cert`
+            export BOSH_ENVIRONMENT=`bbl director-address`
+          popd
+
+          pushd ouroboros
+            bosh -d ouroboros -n deploy templates/ouroboros-template.yml \
+              -o templates/no-ouroboros-ops.yml \
+              -l $STATE_DIR/deployment-vars.yml \
+              --vars-store updated-vars-store/gcp/staging/ouroboros-vars.yml
+          popd
+
+          rsync -ac updated-vars-store/ final-vars-store
+  - put: deployments-loggregator
     params:
-      repository: updated-vars-store
+      repository: final-vars-store
       rebase: true
   - aggregate:
     - task: setup-cf
@@ -252,7 +296,7 @@ jobs:
   - cf-deploy-blackbox-tests
   plan:
   - aggregate:
-    - get: deployments-loggregator-with-changes
+    - get: deployments-loggregator
     - get: loggregator-tools
     - get: release-elect
       resource: loggregator-release-elect
@@ -286,7 +330,7 @@ jobs:
       - task: cf-logs
         file: loggregator-ci/tasks/staging/cf-logs-smoke-test.yml
         input_mapping:
-          vars-store: deployments-loggregator-with-changes
+          vars-store: deployments-loggregator
         params:
           PREFIX: "staging."
           CYCLES: 10000
@@ -302,7 +346,7 @@ jobs:
     - task: http-drain
       file: loggregator-ci/tasks/cf-syslog-drain-smoke-test-with-vars.yml
       input_mapping:
-        vars-store: deployments-loggregator-with-changes
+        vars-store: deployments-loggregator
       params:
         CF_ORG: cf-lamb
         CF_SPACE: development
@@ -319,7 +363,7 @@ jobs:
     - task: tcp-drain
       file: loggregator-ci/tasks/cf-syslog-drain-smoke-test-with-vars.yml
       input_mapping:
-        vars-store: deployments-loggregator-with-changes
+        vars-store: deployments-loggregator
       params:
         CF_ORG: cf-lamb
         CF_SPACE: development
@@ -381,7 +425,7 @@ jobs:
     trigger: true
   - aggregate:
     - get: vars-store
-      resource: deployments-loggregator-with-changes
+      resource: deployments-loggregator
     - get: release-elect
       resource: loggregator-release-elect
       passed: ["cf-deploy"]
@@ -413,7 +457,7 @@ jobs:
       BBL_LB_KEY: {{coconut_bbl_lb_key}}
       BBL_ENV_NAME: staging
       LB_DOMAIN: staging.loggr.cf-app.com
-  - put: deployments-loggregator-with-changes
+  - put: deployments-loggregator
     params:
       repository: updated-bbl-state
       rebase: true
@@ -431,7 +475,7 @@ jobs:
     file: cf-deployment-concourse-tasks/bbl-destroy/task.yml
     params:
       BBL_STATE_DIR: gcp/staging
-  - put: deployments-loggregator-with-changes
+  - put: deployments-loggregator
     params:
       repository: updated-bbl-state
       rebase: true
