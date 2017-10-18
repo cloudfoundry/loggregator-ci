@@ -5,6 +5,9 @@ resources:
 - name: 20m
   type: time
   source: {interval: 20m}
+- name: 30m
+  type: time
+  source: {interval: 30m}
 - name: 1h
   type: time
   source: {interval: 1h}
@@ -162,7 +165,7 @@ jobs:
       DRAIN_VERSION: "2.0"
       DRAIN_TYPE: "https"
       JOB_NAME: "https-teardown"
-    timeout: 20m
+    timeout: 30m
 
 - name: tcp-syslog-drain
   public: false
@@ -209,7 +212,7 @@ jobs:
       DRAIN_VERSION: "2.0"
       DRAIN_TYPE: "https"
       JOB_NAME: "https-no-teardown"
-    timeout: 20m
+    timeout: 30m
 
 - name: tcp-syslog-drain-no-teardown
   public: false
