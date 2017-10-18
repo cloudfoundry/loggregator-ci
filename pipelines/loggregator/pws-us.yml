@@ -150,7 +150,7 @@ jobs:
   plan:
   - get: loggregator-ci
   - get: loggregator-tools
-  - get: 20m
+  - get: 30m
     trigger: true
   - task: v2-drain
     file: loggregator-ci/tasks/cf-syslog-drain-smoke-test.yml
@@ -196,7 +196,7 @@ jobs:
   plan:
   - get: loggregator-ci
   - get: loggregator-tools
-  - get: 20m
+  - get: 30m
     trigger: true
   - task: v2-drain
     file: loggregator-ci/tasks/cf-syslog-drain-smoke-test.yml
