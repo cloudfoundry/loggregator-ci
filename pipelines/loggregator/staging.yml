@@ -20,7 +20,7 @@ resources:
 - name: loggregator-release-elect
   type: git
   source:
-    uri: git@github.com:cloudfoundry/loggregator.git
+    uri: git@github.com:cloudfoundry/loggregator-release.git
     branch: release-elect
     private_key: {{loggregator-key}}
     ignore_paths:

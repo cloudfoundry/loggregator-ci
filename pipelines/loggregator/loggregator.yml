@@ -94,7 +94,7 @@ resources:
 - name: loggregator-develop
   type: git
   source: &loggregator_develop
-    uri: git@github.com:cloudfoundry/loggregator.git
+    uri: git@github.com:cloudfoundry/loggregator-release.git
     branch: develop
     private_key: {{loggregator-key}}
     ignore_paths:
@@ -104,7 +104,7 @@ resources:
 - name: loggregator-release-elect
   type: git
   source:
-    uri: git@github.com:cloudfoundry/loggregator.git
+    uri: git@github.com:cloudfoundry/loggregator-release.git
     branch: release-elect
     private_key: {{loggregator-key}}
     ignore_paths:

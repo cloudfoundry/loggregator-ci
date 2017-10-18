@@ -2,7 +2,7 @@ resources:
 - name: loggregator-develop
   type: git
   source: &loggregator_develop
-    uri: git@github.com:cloudfoundry/loggregator.git
+    uri: git@github.com:cloudfoundry/loggregator-release.git
     branch: develop
     private_key: {{loggregator-key}}
 

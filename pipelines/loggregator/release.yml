@@ -2,7 +2,7 @@ resources:
 - name: loggregator-develop
   type: git
   source: &loggregator_develop
-    uri: git@github.com:cloudfoundry/loggregator.git
+    uri: git@github.com:cloudfoundry/loggregator-release.git
     branch: develop
     private_key: {{loggregator-key}}
     ignore_paths:
@@ -13,21 +13,21 @@ resources:
   type: git
   source:
     disable_ci_skip: true
-    uri: git@github.com:cloudfoundry/loggregator.git
+    uri: git@github.com:cloudfoundry/loggregator-release.git
     branch: master
     private_key: {{loggregator-key}}
 
 - name: loggregator-backport
   type: git
   source:
-    uri: git@github.com:cloudfoundry/loggregator.git
+    uri: git@github.com:cloudfoundry/loggregator-release.git
     branch: &backport-branch back-ports/1.10
     private_key: {{loggregator-key}}
 
 - name: loggregator-final-release-develop
   type: git
   source:
-    uri: git@github.com:cloudfoundry/loggregator.git
+    uri: git@github.com:cloudfoundry/loggregator-release.git
     branch: develop
     private_key: {{loggregator-key}}
     ignore_paths:
@@ -37,7 +37,7 @@ resources:
 - name: loggregator-final-release-master
   type: git
   source:
-    uri: git@github.com:cloudfoundry/loggregator.git
+    uri: git@github.com:cloudfoundry/loggregator-release.git
     branch: master
     private_key: {{loggregator-key}}
     ignore_paths:
@@ -47,7 +47,7 @@ resources:
 - name: loggregator-final-release-backport
   type: git
   source:
-    uri: git@github.com:cloudfoundry/loggregator.git
+    uri: git@github.com:cloudfoundry/loggregator-release.git
     branch: *backport-branch
     private_key: {{loggregator-key}}
     ignore_paths:
