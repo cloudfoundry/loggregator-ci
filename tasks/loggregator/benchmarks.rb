@@ -1,6 +1,7 @@
 #!/usr/bin/env ruby
 
 require 'json'
+require 'dir'
 require "#{Dir.pwd}/loggregator-ci/tasks/scripts/datadog/client.rb"
 
 def underscore(camel_cased_word)
@@ -68,9 +69,21 @@ def bosh_env
   @bosh_env = ENV.to_h.merge(director_creds)
 end
 
+# This method changes the current working directory and is expected to only be
+# called on failure.
+def print_logs(dir)
+  Dir.chdir(dir)
+  `tar xzvf *.tgz`
+  puts `cat benchmarks/*.log`
+end
+
+log_dir = Dir.mktmpdir("logs")
 cmd = [
   'bosh', '-d', 'loggregator-bench',
   'run-errand', 'loggregator-bench',
+  '--keep-alive',
+  '--download-logs',
+  '--logs-dir', log_dir,
 ]
 
 lines = []
@@ -84,6 +97,7 @@ end
 
 process = $?
 if !process.success?
+  print_logs(log_dir)
   raise "Failed to execute command: #{cmd.join(' ')}"
 end
 
