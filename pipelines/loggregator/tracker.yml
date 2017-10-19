@@ -20,6 +20,10 @@ resources:
   source:
     uri: https://github.com/cloudfoundry/loggregator-release
     branch: develop
+- name: loggregator-tools
+  type: git
+  source:
+    uri: https://github.com/cloudfoundry-incubator/loggregator-tools
 
 jobs:
 - name: restage-logspinners
@@ -30,6 +34,7 @@ jobs:
   - get: daily
     trigger: true
   - get: loggregator-ci
+  - get: loggregator-tools
   - task: restage-logspinner
     file: loggregator-ci/tasks/restage-apps.yml
     params:
