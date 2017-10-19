@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby
 
 require 'json'
-require 'dir'
+require 'tmpdir'
 require "#{Dir.pwd}/loggregator-ci/tasks/scripts/datadog/client.rb"
 
 def underscore(camel_cased_word)
