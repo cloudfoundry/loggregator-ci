@@ -174,7 +174,7 @@ jobs:
   plan:
   - get: loggregator-ci
   - get: loggregator-tools
-  - get: 20m
+  - get: 30m
     trigger: true
   - task: v2-drain
     file: loggregator-ci/tasks/cf-syslog-drain-smoke-test.yml
@@ -189,7 +189,7 @@ jobs:
       DRAIN_VERSION: "2.0"
       DRAIN_TYPE: "syslog"
       JOB_NAME: "syslog-teardown"
-    timeout: 20m
+    timeout: 30m
 
 - name: https-syslog-drain-no-teardown
   public: false
