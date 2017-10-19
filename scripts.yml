@@ -105,20 +105,6 @@ bump_submodule: |
   ssh-keyscan github.com >> ~/.ssh/known_hosts
   cp -r $WORKSPACE/$PARENT/. $WORKSPACE/$OUTPUT
   bump_submodule $WORKSPACE/$OUTPUT $SUBMODULE_PATH $WORKSPACE/$SUBMODULE master
-statsd_units: |
-  #!/bin/bash
-
-  set -e -x
-
-  rm -rf statsd-injector-release/src/github.com/cloudfoundry/statsd-injector/{*,.git}
-  cp -r statsd-injector/. statsd-injector-release/src/github.com/cloudfoundry/statsd-injector/
-
-  pushd statsd-injector-release
-    export GOPATH="$PWD"
-    export PATH="$GOPATH/bin:$PATH"
-    go install github.com/onsi/ginkgo/ginkgo
-    ginkgo -r -race -randomizeAllSpecs ./src/github.com/cloudfoundry/statsd-injector
-  popd
 bosh_hm_forwarder_units: |
   #!/bin/bash
 

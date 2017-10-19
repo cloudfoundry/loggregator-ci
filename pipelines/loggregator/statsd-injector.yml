@@ -33,10 +33,8 @@ jobs:
   serial: true
   public: true
   plan:
-  - aggregate:
-    - get: statsd-injector-release
-    - get: statsd-injector
-      trigger: true
+  - get: statsd-injector
+    trigger: true
   - task: run-units
     config:
       image_resource:
@@ -45,13 +43,28 @@ jobs:
           repository: loggregator/base
       platform: linux
       inputs:
-      - name: statsd-injector-release
       - name: statsd-injector
       run:
         path: bash
         args:
         - -c
-        - {{statsd_units}}
+        - |
+          #!/bin/bash
+
+          set -ex
+
+          mkdir -p workspace/src/github.com/cloudfoundry/statsd-injector
+          cp -r statsd-injector/. workspace/src/github.com/cloudfoundry/statsd-injector/
+
+          pushd workspace
+            export GOPATH="$PWD"
+            export PATH="$GOPATH/bin:$PATH"
+
+            pushd src/github.com/cloudfoundry/statsd-injector
+              go get -t ./...
+              go test -race ./...
+            popd
+          popd
 
 - name: bump-release-submodule
   serial: true
@@ -104,6 +117,29 @@ jobs:
         args:
         - -c
         - {{update_package_specs}}
+  - task: run-tests-with-fixed-deps
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source:
+          repository: loggregator/base
+      inputs:
+        - name: synced-statsd-injector-release
+      run:
+        path: bash
+        args:
+        - -c
+        - |
+          #!/bin/bash
+
+          set -ex
+
+          pushd synced-statsd-injector-release
+            export GOPATH="$PWD"
+            export PATH="$GOPATH/bin:$PATH"
+            go test -race github.com/cloudfoundry/statsd-injector/...
+          popd
   - task: commit
     config:
       platform: linux
