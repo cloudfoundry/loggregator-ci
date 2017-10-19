@@ -2,6 +2,8 @@ groups:
 - name: all
   jobs:
   - loggregator-tests
+  - loggregator-bump-submodule
+  - loggregator-release-tests
   - loggregator-diff-cert-generation-scripts
   - loggregator-test-bosh-templates
   - loggregator-deploy
@@ -21,6 +23,8 @@ groups:
 - name: loggregator
   jobs:
   - loggregator-tests
+  - loggregator-bump-submodule
+  - loggregator-release-tests
   - loggregator-diff-cert-generation-scripts
   - loggregator-test-bosh-templates
   - loggregator-deploy
@@ -103,9 +107,9 @@ resources:
   source:
     repository: cloudfoundry-incubator/etcd-release
 
-- name: loggregator-develop
+- name: loggregator-release
   type: git
-  source: &loggregator_develop
+  source:
     uri: git@github.com:cloudfoundry/loggregator-release.git
     branch: develop
     private_key: {{loggregator-key}}
@@ -113,12 +117,29 @@ resources:
     - .final_builds
     - releases
 
+- name: loggregator-src
+  type: git
+  source:
+    uri: git@github.com:cloudfoundry/loggregator.git
+    branch: master
+    private_key: {{loggregator-key}}
+
 - name: loggregator-release-elect
   type: git
   source:
     uri: git@github.com:cloudfoundry/loggregator-release.git
     branch: release-elect
     private_key: {{loggregator-key}}
+    ignore_paths:
+    - .final_builds
+    - releases
+
+- name: loggregator-release-updated
+  type: git
+  source:
+    uri: git@github.com:cloudfoundry/loggregator-release
+    branch: master
+    private_key: {{cf-loggregator-oauth-bot-key}}
     ignore_paths:
     - .final_builds
     - releases
@@ -200,8 +221,7 @@ jobs:
   serial: true
   public: true
   plan:
-  - get: loggregator
-    resource: loggregator-develop
+  - get: loggregator-src
     trigger: true
   - aggregate:
     - task: run-tests
@@ -213,7 +233,7 @@ jobs:
           source:
             repository: loggregator/base
         inputs:
-        - name: loggregator
+        - name: loggregator-src
         run:
           path: bash
           args:
@@ -222,15 +242,20 @@ jobs:
             #!/bin/bash
             set -ex
 
-            cd loggregator
+            cd loggregator-src
+            mkdir -p workspace/src/code.cloudfoundry.org/loggregator
+            cp -r loggregator-src/. workspace/src/code.cloudfoundry.org/loggregator/
 
-            export GOPATH=`pwd`
-            export TERM=xterm
+            pushd workspace
+              export GOPATH="$PWD"
+              export PATH="$GOPATH/bin:$PATH"
 
-            go version
-            go install github.com/onsi/ginkgo/ginkgo
+              pushd src/code.cloudfoundry.org/loggregator
+                go get -t ./...
+                go test -race `go list ./... | grep -v lats`
+              popd
+            popd
 
-            scripts/test
     - do:
       - task: build-windows-test-binary
         config:
@@ -240,7 +265,7 @@ jobs:
             source:
               repository: loggregator/base
           inputs:
-          - name: loggregator
+          - name: loggregator-src
           outputs:
           - name: binaries
           - name: test-binaries
@@ -252,16 +277,27 @@ jobs:
               #!/bin/bash
               set -ex
 
-              cd loggregator
-              export GOPATH=$PWD
-              export GOOS=windows
+              cd loggregator-src
+              mkdir -p workspace/src/code.cloudfoundry.org/loggregator
+              cp -r loggregator-src/. workspace/src/code.cloudfoundry.org/loggregator/
+
               function munge {
                 echo $1 | tr '/' '_'
               }
-              for pkg in $(go list code.cloudfoundry.org/loggregator/metron/...); do
-                go test -c -o ../test-binaries/$(munge $pkg)_test.exe $pkg
-              done
-              go build -o ../binaries/metron.exe code.cloudfoundry.org/loggregator/metron
+
+              pushd workspace
+                export GOOS=windows
+                export GOPATH="$PWD"
+                export PATH="$GOPATH/bin:$PATH"
+
+                pushd src/code.cloudfoundry.org/loggregator
+                  for pkg in $(go list ./metron/...); do
+                    go test -c -o ../test-binaries/$(munge $pkg)_test.exe $pkg
+                  done
+                  go build -o ../binaries/metron.exe code.cloudfoundry.org/loggregator/metron
+                popd
+              popd
+
       - task: run-windows-tests
         config:
           platform: windows
@@ -289,6 +325,179 @@ jobs:
                 }
               }
 
+- name: loggregator-bump-submodule
+  serial: true
+  plan:
+  - aggregate:
+    - get: loggregator-release
+      trigger: false
+    - get: loggregator-src
+      passed:
+      - loggregator-tests
+      trigger: true
+  - task: update-submodule
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source:
+          repository: loggregator/base
+      inputs:
+      - name: loggregator-release
+      - name: loggregator-src
+      outputs:
+      - name: bumped-loggregator-release
+      params:
+        PARENT: loggregator-release
+        OUTPUT: bumped-loggregator-release
+        CHILD: loggregator-src
+        CHILD_PATH: src/code.cloudfoundry.org/loggregator
+      run:
+        path: bash
+        args:
+        - -c
+        - {{update_submodule}}
+  - task: sync-package-spec
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source:
+          repository: loggregator/base
+      inputs:
+        - name: loggregator-release
+      outputs:
+        - name: synced-loggregator-release
+      params:
+        RELEASE: loggregator-release
+        OUTPUT: synced-loggregator-release
+      run:
+        path: bash
+        args:
+        - -c
+        - {{update_package_specs}}
+  - task: run-tests
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source:
+          repository: loggregator/base
+      inputs:
+        - name: synced-loggregator-release
+      run:
+        path: bash
+        args:
+        - -c
+        - |
+          #!/bin/bash
+
+          set -ex
+
+          pushd synced-loggregator-release
+            export GOPATH="$PWD"
+            export PATH="$GOPATH/bin:$PATH"
+            go test -race `go list ./... | grep -v lats`
+          popd
+  - task: commit
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source:
+          repository: loggregator/base
+      inputs:
+        - name: synced-loggregator-release
+      outputs:
+      - name: loggregator-release-updated
+      params:
+        SOURCE: synced-loggregator-release
+        PATHS: src/code.cloudfoundry.org/loggregator
+        COMMIT_MESSAGE: "Bump loggregator"
+        OUTPUT: committed-loggregator-release
+      run:
+        path: bash
+        args:
+        - -c
+        - {{commit}}
+  - put: loggregator-release-updated
+    params:
+      repository: committed-loggregator-release
+      rebase: false
+
+- name: loggregator-release-tests
+  serial: true
+  plan:
+  - get: loggregator-release
+    trigger: true
+  - task: sync-package-spec
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source:
+          repository: loggregator/base
+      inputs:
+      - name: loggregator-release
+      outputs:
+      - name: synced-loggregator-release
+      params:
+        RELEASE: loggregator-release
+        OUTPUT: synced-loggregator-release
+      run:
+        path: bash
+        args:
+        - -c
+        - {{update_package_specs}}
+  - task: run-tests
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source:
+          repository: loggregator/base
+      inputs:
+      - name: synced-loggregator-release
+      run:
+        path: bash
+        args:
+        - -c
+        - |
+          #!/bin/bash
+
+          set -ex
+
+          pushd synced-loggregator-release
+            export GOPATH="$PWD"
+            export PATH="$GOPATH/bin:$PATH"
+            go test -race `go list ./... | grep -v lats`
+          popd
+  - task: commit
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source:
+          repository: loggregator/base
+      inputs:
+      - name: synced-loggregator-release
+      outputs:
+      - name: loggregator-release-updated
+      params:
+        SOURCE: synced-loggregator-release
+        PATHS: src/code.cloudfoundry.org/loggregator
+        COMMIT_MESSAGE: "Updated loggregator-release"
+        OUTPUT: committed-loggregator-release
+      run:
+        path: bash
+        args:
+        - -c
+        - {{commit}}
+  - put: loggregator-release-updated
+    params:
+      repository: committed-loggregator-release
+      rebase: false
+
 - name: cf-deploy
   serial: true
   serial_groups:
@@ -302,12 +511,14 @@ jobs:
       trigger: true
     - get: cf-deployment-concourse-tasks
       trigger: false
-    - get: loggregator-develop
+    - get: loggregator-release
       trigger: true
-      passed: ["loggregator-tests"]
+      passed:
+      - loggregator-bump-submodule
     - get: cf-syslog-drain-release
       trigger: true
-      passed: ["cf-syslog-drain-bump-submodule"]
+      passed:
+      - cf-syslog-drain-bump-submodule
     - get: vars-store
       resource: deployments-loggregator
       trigger: false
@@ -326,7 +537,7 @@ jobs:
           repository: relintdockerhubpushbot/cf-deployment-concourse-tasks
       inputs:
       - name: bbl-state
-      - name: loggregator-develop
+      - name: loggregator-release
       - name: cf-syslog-drain-release
       run:
         path: /bin/bash
@@ -344,7 +555,7 @@ jobs:
             export BOSH_ENVIRONMENT=`bbl director-address`
           popd
 
-          releases="loggregator-develop cf-syslog-drain-release"
+          releases="loggregator-release cf-syslog-drain-release"
           for rel in $releases; do
             pushd $rel
               bosh create-release
@@ -414,10 +625,10 @@ jobs:
       trigger: false
     - get: etcd-release
       trigger: false
-    - get: loggregator
-      resource: loggregator-develop
+    - get: loggregator-release
       passed:
-      - loggregator-tests
+      - loggregator-bump-submodule
+      - loggregator-release-tests
       trigger: true
     - get: deployments-loggregator
       trigger: false
@@ -440,7 +651,7 @@ jobs:
           - |
             #!/bin/bash
             set -eux
-            loggregator_dir="$PWD/loggregator"
+            loggregator_dir="$PWD/loggregator-release"
 
             pushd deployments-loggregator/gcp/coconut-bbl
               export BOSH_CLIENT=`bbl director-username`
@@ -464,7 +675,7 @@ jobs:
                 bosh create-release --name=loggregator --force
                 bosh upload-release --rebase
             popd
-  - task: deploy-loggregator
+  - task: deploy
     config:
       image_resource:
         type: docker-image
@@ -473,7 +684,7 @@ jobs:
       platform: linux
       inputs:
       - name: deployments-loggregator
-      - name: loggregator
+      - name: loggregator-release
       outputs:
       - name: updated-deployments-loggregator
       run:
@@ -484,7 +695,7 @@ jobs:
             #!/bin/bash
             set -eux
 
-            loggregator_dir="$PWD/loggregator"
+            loggregator_dir="$PWD/loggregator-release"
             deployment_dir="$PWD/deployments-loggregator/gcp/coconut-bbl"
 
             pushd deployments-loggregator/gcp/coconut-bbl
@@ -533,7 +744,7 @@ jobs:
     - get: loggregator-bench-results
     - get: deployments-loggregator
     - get: loggregator-ci
-    - get: loggregator-develop
+    - get: loggregator-release
       trigger: true
       passed:
       - cf-deploy
@@ -546,7 +757,7 @@ jobs:
       platform: linux
       inputs:
       - name: deployments-loggregator
-      - name: loggregator-develop
+      - name: loggregator-release
       - name: loggregator-bench-release
       outputs:
       - name: updated-deployments-loggregator
@@ -568,7 +779,7 @@ jobs:
               export BOSH_ENVIRONMENT=`bbl director-address`
             popd
 
-            cp -R loggregator-develop loggregator-bench-release/src/loggregator-release
+            cp -R loggregator-release loggregator-bench-release/src/loggregator-release
 
             pushd loggregator-bench-release
               bosh create-release --force
@@ -623,7 +834,7 @@ jobs:
       - get: cats-concourse-task
       - get: integration-config
       - get: cf-acceptance-tests
-      - get: loggregator-develop
+      - get: loggregator-release
         trigger: true
         passed: ["cf-deploy"]
       - get: cf-syslog-drain-release
@@ -641,7 +852,7 @@ jobs:
   plan:
   - aggregate:
     - get: loggregator
-      resource: loggregator-develop
+      resource: loggregator-release
       passed:
       - loggregator-deploy
       trigger: true
@@ -681,7 +892,7 @@ jobs:
       resource: loggregator-release-elect
       trigger: false
     - get: develop
-      resource: loggregator-develop
+      resource: loggregator-release
       trigger: true
       passed: ["lats", "cats", "loggregator-benchmarks"]
     - get: loggregator-ci
@@ -695,7 +906,7 @@ jobs:
 - name: loggregator-test-bosh-templates
   plan:
   - get: loggregator
-    resource: loggregator-develop
+    resource: loggregator-release
     trigger: true
   - task: run-specs
     config:
@@ -720,7 +931,7 @@ jobs:
 - name: loggregator-diff-cert-generation-scripts
   plan:
   - get: loggregator
-    resource: loggregator-develop
+    resource: loggregator-release
     trigger: true
   - get: cf-release
     resource: cf-release-develop
