@@ -39,6 +39,6 @@ run:
     cf target -s $SPACE
     cf create-shared-domain tcp.$SYSTEM_DOMAIN --router-group default-tcp || true
 
-    pushd loggregator-tools/logspinner
+    pushd loggregator-tools/jsonspinner
       cf push floodspinner
     popd
