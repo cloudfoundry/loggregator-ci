@@ -4,15 +4,20 @@ groups:
   - loggregator-tests
   - loggregator-diff-cert-generation-scripts
   - loggregator-test-bosh-templates
-  - cf-syslog-drain-tests
   - loggregator-deploy
-  - cf-syslog-drain-bump-submodule
   - cf-deploy
   - lats
   - cats
   - loggregator-benchmarks
   - loggregator-promotion
+  - cf-syslog-drain-tests
+  - cf-syslog-drain-bump-submodule
   - cf-syslog-drain-promotion
+  - statsd-injector-tests
+  - statsd-injector-bump-submodule
+  - statsd-injector-release-tests
+  - statsd-injector-deploy
+  - statsd-injector-diff-cert-generation-scripts
 - name: loggregator
   jobs:
   - loggregator-tests
@@ -31,6 +36,13 @@ groups:
   - cf-deploy
   - cats
   - cf-syslog-drain-promotion
+- name: statsd-injector
+  jobs:
+  - statsd-injector-tests
+  - statsd-injector-bump-submodule
+  - statsd-injector-release-tests
+  - statsd-injector-deploy
+  - statsd-injector-diff-cert-generation-scripts
 
 resources:
 - name: cats-concourse-task
@@ -156,6 +168,32 @@ resources:
   source:
     uri: git@github.com:cloudfoundry/scalable-syslog
     private_key: {{cf-loggregator-oauth-bot-key}}
+
+- name: statsd-injector
+  type: git
+  source:
+    uri: git@github.com:cloudfoundry/statsd-injector
+    private_key: {{cf-loggregator-oauth-bot-key}}
+
+- name: statsd-injector-release
+  type: git
+  source:
+    uri: git@github.com:cloudfoundry/statsd-injector-release
+    branch: master
+    private_key: {{cf-loggregator-oauth-bot-key}}
+    ignore_paths:
+    - .final_builds
+    - releases
+
+- name: statsd-injector-release-updated
+  type: git
+  source:
+    uri: git@github.com:cloudfoundry/statsd-injector-release
+    branch: master
+    private_key: {{cf-loggregator-oauth-bot-key}}
+    ignore_paths:
+    - .final_builds
+    - releases
 
 jobs:
 - name: loggregator-tests
@@ -806,7 +844,7 @@ jobs:
           popd
 
           cp -r updated-cf-syslog-drain-release/. $OUTPUT/
-  - task: run-tests-with-fixed-deps
+  - task: run-tests
     config:
       platform: linux
       image_resource:
@@ -869,3 +907,309 @@ jobs:
   - put: cf-syslog-drain-release-release-elect
     params:
       repository: develop
+
+- name: statsd-injector-tests
+  serial: true
+  public: true
+  plan:
+  - get: statsd-injector
+    trigger: true
+  - task: run-units
+    config:
+      image_resource:
+        type: docker-image
+        source:
+          repository: loggregator/base
+      platform: linux
+      inputs:
+      - name: statsd-injector
+      run:
+        path: bash
+        args:
+        - -c
+        - |
+          #!/bin/bash
+
+          set -ex
+
+          mkdir -p workspace/src/github.com/cloudfoundry/statsd-injector
+          cp -r statsd-injector/. workspace/src/github.com/cloudfoundry/statsd-injector/
+
+          pushd workspace
+            export GOPATH="$PWD"
+            export PATH="$GOPATH/bin:$PATH"
+
+            pushd src/github.com/cloudfoundry/statsd-injector
+              go get -t ./...
+              go test -race ./...
+            popd
+          popd
+
+- name: statsd-injector-bump-submodule
+  serial: true
+  plan:
+  - aggregate:
+    - get: statsd-injector-release
+      trigger: false
+    - get: statsd-injector
+      passed:
+      - statsd-injector-tests
+      trigger: true
+  - task: update-submodule
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source:
+          repository: loggregator/base
+      inputs:
+      - name: statsd-injector-release
+      - name: statsd-injector
+      outputs:
+      - name: bumped-statsd-injector-release
+      params:
+        PARENT: statsd-injector-release
+        OUTPUT: bumped-statsd-injector-release
+        CHILD: statsd-injector
+        CHILD_PATH: src/github.com/cloudfoundry/statsd-injector
+      run:
+        path: bash
+        args:
+        - -c
+        - {{update_submodule}}
+  - task: sync-package-spec
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source:
+          repository: loggregator/base
+      inputs:
+        - name: statsd-injector-release
+      outputs:
+        - name: synced-statsd-injector-release
+      params:
+        RELEASE: statsd-injector-release
+        OUTPUT: synced-statsd-injector-release
+      run:
+        path: bash
+        args:
+        - -c
+        - {{update_package_specs}}
+  - task: run-tests
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source:
+          repository: loggregator/base
+      inputs:
+        - name: synced-statsd-injector-release
+      run:
+        path: bash
+        args:
+        - -c
+        - |
+          #!/bin/bash
+
+          set -ex
+
+          pushd synced-statsd-injector-release
+            export GOPATH="$PWD"
+            export PATH="$GOPATH/bin:$PATH"
+            go test -race github.com/cloudfoundry/statsd-injector/...
+          popd
+  - task: commit
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source:
+          repository: loggregator/base
+      inputs:
+        - name: synced-statsd-injector-release
+      outputs:
+      - name: committed-statsd-injector-release
+      params:
+        SOURCE: synced-statsd-injector-release
+        PATHS: src/github.com/cloudfoundry/statsd-injector
+        COMMIT_MESSAGE: "Bump statsd-injector"
+        OUTPUT: committed-statsd-injector-release
+      run:
+        path: bash
+        args:
+        - -c
+        - {{commit}}
+  - put: statsd-injector-release-updated
+    params:
+      repository: committed-statsd-injector-release
+      rebase: false
+
+- name: statsd-injector-release-tests
+  serial: true
+  plan:
+  - get: statsd-injector-release
+    trigger: true
+  - task: sync-package-spec
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source:
+          repository: loggregator/base
+      inputs:
+      - name: statsd-injector-release
+      outputs:
+      - name: synced-statsd-injector-release
+      params:
+        RELEASE: statsd-injector-release
+        OUTPUT: synced-statsd-injector-release
+      run:
+        path: bash
+        args:
+        - -c
+        - {{update_package_specs}}
+  - task: run-tests
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source:
+          repository: loggregator/base
+      inputs:
+      - name: synced-statsd-injector-release
+      run:
+        path: bash
+        args:
+        - -c
+        - |
+          #!/bin/bash
+
+          set -ex
+
+          pushd synced-statsd-injector-release
+            export GOPATH="$PWD"
+            export PATH="$GOPATH/bin:$PATH"
+            go test -race github.com/cloudfoundry/statsd-injector/...
+          popd
+  - task: commit
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source:
+          repository: loggregator/base
+      inputs:
+      - name: synced-statsd-injector-release
+      outputs:
+      - name: committed-statsd-injector-release
+      params:
+        SOURCE: synced-statsd-injector-release
+        PATHS: src/github.com/cloudfoundry/statsd-injector
+        COMMIT_MESSAGE: "Updated statsd-injector-release"
+        OUTPUT: committed-statsd-injector-release
+      run:
+        path: bash
+        args:
+        - -c
+        - {{commit}}
+  - put: statsd-injector-release-updated
+    params:
+      repository: committed-statsd-injector-release
+      rebase: false
+
+- name: statsd-injector-deploy
+  serial: true
+  public: false
+  plan:
+  - aggregate:
+    - get: statsd-injector-release-updated
+      trigger: true
+      passed:
+      - statsd-injector-bump-submodule
+      - statsd-injector-release-tests
+    - get: deployments-loggregator
+      trigger: false
+  - task: deploy
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source:
+          repository: relintdockerhubpushbot/cf-deployment-concourse-tasks
+      inputs:
+      - name: statsd-injector-release-updated
+      - name: deployments-loggregator
+      outputs:
+      - name: updated-deployments-loggregator
+      run:
+        path: bash
+        args:
+          - -c
+          - |
+            #!/bin/bash
+            set -e
+
+            bbl_dir="$PWD/deployments-loggregator/gcp/coconut-bbl"
+            statsd_dir="$PWD/statsd-injector-release-updated"
+
+            pushd deployments-loggregator/gcp/coconut-bbl
+              export BOSH_CLIENT=`bbl director-username`
+              export BOSH_CLIENT_SECRET=`bbl director-password`
+              export BOSH_CA_CERT=`bbl director-ca-cert`
+              export BOSH_ENVIRONMENT=`bbl director-address`
+            popd
+
+            pushd "$statsd_dir"
+              bosh create-release
+              bosh upload-release --rebase
+
+              bosh -n -d statsd-injector deploy \
+                --vars-store "$bbl_dir/statsd-injector-vars.yml" \
+                --vars-file "$bbl_dir/deployment-vars.yml" \
+                "$statsd_dir/manifests/statsd-injector.yml"
+            popd
+
+            set +e
+            pushd deployments-loggregator
+              git config user.email "cf-loggregator@pivotal.io"
+              git config user.name "Loggregator CI"
+              git add . --all
+              git commit -m "Updated statsd-injector deployment vars
+
+              [ci-skip]"
+            popd
+
+            rsync -ac deployments-loggregator/ updated-deployments-loggregator
+  - put: deployments-loggregator
+    params:
+      repository: updated-deployments-loggregator
+      rebase: true
+
+- name: statsd-injector-diff-cert-generation-scripts
+  plan:
+  - get: statsd-injector-release
+    trigger: true
+  - get: cf-release
+    resource: cf-release-develop
+    trigger: true
+  - task: diff
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source:
+          repository: loggregator/base
+      inputs:
+      - name: statsd-injector-release
+      - name: cf-release
+      run:
+        path: bash
+        args:
+          - -c
+          - |
+            #!/bin/bash
+            set -e
+            echo diffing statsd-injector cert generation
+            diff --unified statsd-injector-release/scripts/generate-certs \
+                           cf-release/scripts/generate-statsd-injector-certs
