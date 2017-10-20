@@ -134,16 +134,6 @@ resources:
     - .final_builds
     - releases
 
-- name: loggregator-release-updated
-  type: git
-  source:
-    uri: git@github.com:cloudfoundry/loggregator-release
-    branch: develop
-    private_key: {{cf-loggregator-oauth-bot-key}}
-    ignore_paths:
-    - .final_builds
-    - releases
-
 - name: loggregator-ci
   type: git
   source:
@@ -420,7 +410,7 @@ jobs:
         args:
         - -c
         - {{commit}}
-  - put: loggregator-release-updated
+  - put: loggregator-release
     params:
       repository: committed-loggregator-release
       rebase: false
@@ -620,7 +610,7 @@ jobs:
         - name: deployments-loggregator
         - name: consul-release
         - name: etcd-release
-        - name: loggregator
+        - name: loggregator-release
       run:
         path: bash
         args:
