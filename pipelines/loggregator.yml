@@ -138,7 +138,7 @@ resources:
   type: git
   source:
     uri: git@github.com:cloudfoundry/loggregator-release
-    branch: master
+    branch: develop
     private_key: {{cf-loggregator-oauth-bot-key}}
     ignore_paths:
     - .final_builds
