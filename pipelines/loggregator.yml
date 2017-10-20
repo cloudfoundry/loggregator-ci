@@ -321,8 +321,8 @@ jobs:
     - get: loggregator-release
       trigger: false
     - get: loggregator-src
-      passed:
-      - loggregator-tests
+      # passed:
+      # - loggregator-tests
       trigger: true
   - task: update-submodule
     config:
@@ -354,7 +354,7 @@ jobs:
         source:
           repository: loggregator/base
       inputs:
-        - name: loggregator-release
+        - name: bumped-loggregator-release
       outputs:
         - name: synced-loggregator-release
       params:
@@ -399,7 +399,7 @@ jobs:
       inputs:
         - name: synced-loggregator-release
       outputs:
-      - name: committed-loggregator-release
+        - name: committed-loggregator-release
       params:
         SOURCE: synced-loggregator-release
         PATHS: "src/code.cloudfoundry.org/loggregator packages"
