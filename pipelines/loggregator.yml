@@ -242,7 +242,6 @@ jobs:
             #!/bin/bash
             set -ex
 
-            cd loggregator-src
             mkdir -p workspace/src/code.cloudfoundry.org/loggregator
             cp -r loggregator-src/. workspace/src/code.cloudfoundry.org/loggregator/
 
@@ -277,7 +276,6 @@ jobs:
               #!/bin/bash
               set -ex
 
-              cd loggregator-src
               mkdir -p workspace/src/code.cloudfoundry.org/loggregator
               cp -r loggregator-src/. workspace/src/code.cloudfoundry.org/loggregator/
 
@@ -291,6 +289,7 @@ jobs:
                 export PATH="$GOPATH/bin:$PATH"
 
                 pushd src/code.cloudfoundry.org/loggregator
+                  go get -t ./...
                   for pkg in $(go list ./metron/...); do
                     go test -c -o ../test-binaries/$(munge $pkg)_test.exe $pkg
                   done
@@ -397,7 +396,9 @@ jobs:
           pushd synced-loggregator-release
             export GOPATH="$PWD"
             export PATH="$GOPATH/bin:$PATH"
-            go test -race `go list ./... | grep -v lats`
+            pushd src/code.cloudfoundry.org/loggregator
+              go test -race `go list ./... | grep -v lats`
+            popd
           popd
   - task: commit
     config:
@@ -470,7 +471,9 @@ jobs:
           pushd synced-loggregator-release
             export GOPATH="$PWD"
             export PATH="$GOPATH/bin:$PATH"
-            go test -race `go list ./... | grep -v lats`
+            pushd src/code.cloudfoundry.org/loggregator
+              go test -race `go list ./... | grep -v lats`
+            popd
           popd
   - task: commit
     config:
