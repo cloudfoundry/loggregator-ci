@@ -413,7 +413,7 @@ jobs:
       params:
         SOURCE: synced-loggregator-release
         PATHS: "src/code.cloudfoundry.org/loggregator packages"
-        COMMIT_MESSAGE: "Bump loggregator"
+        COMMIT_MESSAGE: "Bump code.cloudfoundry.org/loggregator"
         OUTPUT: committed-loggregator-release
       run:
         path: bash
