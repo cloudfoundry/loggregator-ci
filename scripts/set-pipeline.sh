@@ -13,16 +13,15 @@ function validate {
 }
 
 function set_pipeline {
-    local pipeline_name="loggregator"
-    echo setting pipeline for "$pipeline_name"
-    fly -t loggregator set-pipeline -p "$pipeline_name" \
-        -c "pipelines/$pipeline_name.yml" \
+    echo setting pipeline for "$pipeline"
+    fly -t loggregator set-pipeline -p "$pipeline" \
+        -c "pipelines/$pipeline.yml" \
         -l ~/workspace/deployments-loggregator/shared-secrets.yml \
         -l ~/workspace/loggregator-ci/scripts.yml
 }
 
 function sync_fly {
-    fly -t "$pipeline" sync
+    fly -t loggregator sync
 }
 
 function set_pipelines {
