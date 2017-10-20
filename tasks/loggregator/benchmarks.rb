@@ -135,7 +135,7 @@ end
 output_dir = 'updated-loggregator-bench-results'
 exec(ENV, ['rsync', '-ac', 'loggregator-bench-results/', output_dir])
 puts "Writing results to results repo"
-loggregator_sha = exec(ENV, ['git', 'rev-parse', 'HEAD'], 'loggregator-develop')
+loggregator_sha = exec(ENV, ['git', 'rev-parse', 'HEAD'], 'loggregator-release')
 File.open("updated-loggregator-bench-results/#{loggregator_sha}.json", 'w') do |f|
   f.write(JSON.pretty_generate(metrics))
 end

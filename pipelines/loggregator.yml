@@ -358,7 +358,7 @@ jobs:
       outputs:
         - name: synced-loggregator-release
       params:
-        RELEASE: loggregator-release
+        RELEASE: bumped-loggregator-release
         OUTPUT: synced-loggregator-release
       run:
         path: bash
