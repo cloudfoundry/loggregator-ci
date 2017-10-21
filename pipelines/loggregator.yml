@@ -697,7 +697,7 @@ jobs:
             #!/bin/bash
             set -eux
 
-            loggregator_dir="$PWD/loggregator-release"
+            loggregator_dir="$PWD/loggregator-release-updated"
             deployment_dir="$PWD/deployments-loggregator/gcp/coconut-bbl"
 
             pushd deployments-loggregator/gcp/coconut-bbl
