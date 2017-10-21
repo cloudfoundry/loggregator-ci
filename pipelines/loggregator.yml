@@ -458,8 +458,6 @@ jobs:
           repository: loggregator/base
       inputs:
       - name: synced-loggregator-release
-      outputs:
-      - name: synced-loggregator-release
       run:
         path: bash
         args:
