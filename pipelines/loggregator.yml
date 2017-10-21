@@ -539,7 +539,7 @@ jobs:
           repository: relintdockerhubpushbot/cf-deployment-concourse-tasks
       inputs:
       - name: bbl-state
-      - name: loggregator-release
+      - name: loggregator-release-updated
       - name: cf-syslog-drain-release
       run:
         path: /bin/bash
@@ -557,7 +557,7 @@ jobs:
             export BOSH_ENVIRONMENT=`bbl director-address`
           popd
 
-          releases="loggregator-release cf-syslog-drain-release"
+          releases="loggregator-release-updated cf-syslog-drain-release"
           for rel in $releases; do
             pushd $rel
               bosh create-release
@@ -645,7 +645,7 @@ jobs:
         - name: deployments-loggregator
         - name: consul-release
         - name: etcd-release
-        - name: loggregator-release
+        - name: loggregator-release-updated
       run:
         path: bash
         args:
@@ -653,7 +653,7 @@ jobs:
           - |
             #!/bin/bash
             set -eux
-            loggregator_dir="$PWD/loggregator-release"
+            loggregator_dir="$PWD/loggregator-release-updated"
 
             pushd deployments-loggregator/gcp/coconut-bbl
               export BOSH_CLIENT=`bbl director-username`
@@ -852,8 +852,7 @@ jobs:
   - bosh-loggregator
   plan:
   - aggregate:
-    - get: loggregator
-      resource: loggregator-release-updated
+    - get: loggregator-release-updated
       passed:
       - loggregator-deploy
       trigger: true
