@@ -746,7 +746,8 @@ jobs:
     - get: loggregator-bench-results
     - get: deployments-loggregator
     - get: loggregator-ci
-    - get: loggregator-release-updated
+    - get: loggregator-release
+      resource: loggregator-release-updated
       trigger: true
       passed:
       - cf-deploy
@@ -759,7 +760,7 @@ jobs:
       platform: linux
       inputs:
       - name: deployments-loggregator
-      - name: loggregator-release-updated
+      - name: loggregator-release
       - name: loggregator-bench-release
       outputs:
       - name: updated-deployments-loggregator
