@@ -117,6 +117,16 @@ resources:
     - .final_builds
     - releases
 
+- name: loggregator-release-updated
+  type: git
+  source:
+    uri: git@github.com:cloudfoundry/loggregator-release.git
+    branch: develop
+    private_key: {{loggregator-key}}
+    ignore_paths:
+    - .final_builds
+    - releases
+
 - name: loggregator-src
   type: git
   source:
@@ -410,7 +420,7 @@ jobs:
         args:
         - -c
         - {{commit}}
-  - put: loggregator-release
+  - put: loggregator-release-updated
     params:
       repository: committed-loggregator-release
       rebase: false
@@ -448,6 +458,8 @@ jobs:
           repository: loggregator/base
       inputs:
       - name: synced-loggregator-release
+      outputs:
+      - name: synced-loggregator-release
       run:
         path: bash
         args:
@@ -463,6 +475,31 @@ jobs:
             export TERM=xterm
             ./scripts/test
           popd
+  - task: commit
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source:
+          repository: loggregator/base
+      inputs:
+        - name: synced-loggregator-release
+      outputs:
+        - name: committed-loggregator-release
+      params:
+        SOURCE: synced-loggregator-release
+        PATHS: "src/code.cloudfoundry.org/loggregator packages"
+        COMMIT_MESSAGE: "Sync package specs"
+        OUTPUT: committed-loggregator-release
+      run:
+        path: bash
+        args:
+        - -c
+        - {{commit}}
+  - put: loggregator-release-updated
+    params:
+      repository: committed-loggregator-release
+      rebase: false
 
 - name: cf-deploy
   serial: true
@@ -477,7 +514,7 @@ jobs:
       trigger: true
     - get: cf-deployment-concourse-tasks
       trigger: false
-    - get: loggregator-release
+    - get: loggregator-release-updated
       trigger: true
       passed:
       - loggregator-bump-submodule
@@ -592,7 +629,7 @@ jobs:
       trigger: false
     - get: etcd-release
       trigger: false
-    - get: loggregator-release
+    - get: loggregator-release-updated
       passed:
       - loggregator-bump-submodule
       - loggregator-release-tests
@@ -651,7 +688,7 @@ jobs:
       platform: linux
       inputs:
       - name: deployments-loggregator
-      - name: loggregator-release
+      - name: loggregator-release-updated
       outputs:
       - name: updated-deployments-loggregator
       run:
@@ -711,7 +748,7 @@ jobs:
     - get: loggregator-bench-results
     - get: deployments-loggregator
     - get: loggregator-ci
-    - get: loggregator-release
+    - get: loggregator-release-updated
       trigger: true
       passed:
       - cf-deploy
@@ -724,7 +761,7 @@ jobs:
       platform: linux
       inputs:
       - name: deployments-loggregator
-      - name: loggregator-release
+      - name: loggregator-release-updated
       - name: loggregator-bench-release
       outputs:
       - name: updated-deployments-loggregator
@@ -736,7 +773,6 @@ jobs:
             #!/bin/bash
             set -eux
 
-            loggregator_dir="$PWD/loggregator"
             deployment_dir="$PWD/deployments-loggregator/gcp/coconut-bbl"
 
             pushd deployments-loggregator/gcp/coconut-bbl
@@ -801,7 +837,7 @@ jobs:
       - get: cats-concourse-task
       - get: integration-config
       - get: cf-acceptance-tests
-      - get: loggregator-release
+      - get: loggregator-release-updated
         trigger: true
         passed: ["cf-deploy"]
       - get: cf-syslog-drain-release
@@ -819,7 +855,7 @@ jobs:
   plan:
   - aggregate:
     - get: loggregator
-      resource: loggregator-release
+      resource: loggregator-release-updated
       passed:
       - loggregator-deploy
       trigger: true
@@ -859,7 +895,7 @@ jobs:
       resource: loggregator-release-elect
       trigger: false
     - get: develop
-      resource: loggregator-release
+      resource: loggregator-release-updated
       trigger: true
       passed: ["lats", "cats", "loggregator-benchmarks"]
     - get: loggregator-ci
