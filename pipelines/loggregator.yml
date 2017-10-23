@@ -95,11 +95,6 @@ resources:
   type: git
   source: *deployments_loggregator
 
-- name: etcd-release
-  type: bosh-io-release
-  source:
-    repository: cloudfoundry-incubator/etcd-release
-
 - name: loggregator-release
   type: git
   source:
@@ -327,6 +322,8 @@ jobs:
     - get: loggregator-release
       trigger: false
     - get: loggregator-src
+      passed:
+      - loggregator-tests
       trigger: true
   - task: update-submodule
     config:
@@ -657,8 +654,6 @@ jobs:
   - aggregate:
     - get: consul-release
       trigger: false
-    - get: etcd-release
-      trigger: false
     - get: loggregator-release-updated
       passed:
       - loggregator-bump-submodule
@@ -674,41 +669,33 @@ jobs:
           repository: relintdockerhubpushbot/cf-deployment-concourse-tasks
       platform: linux
       inputs:
-        - name: deployments-loggregator
-        - name: consul-release
-        - name: etcd-release
-        - name: loggregator-release-updated
+      - name: deployments-loggregator
+      - name: consul-release
+      - name: loggregator-release-updated
       run:
         path: bash
         args:
-          - -c
-          - |
-            #!/bin/bash
-            set -eux
-            loggregator_dir="$PWD/loggregator-release-updated"
+        - -c
+        - |
+          #!/bin/bash
+          set -eux
+          loggregator_dir="$PWD/loggregator-release-updated"
 
-            pushd deployments-loggregator/gcp/coconut-bbl
-              export BOSH_CLIENT=`bbl director-username`
-              export BOSH_CLIENT_SECRET=`bbl director-password`
-              export BOSH_CA_CERT=`bbl director-ca-cert`
-              export BOSH_ENVIRONMENT=`bbl director-address`
-            popd
+          pushd deployments-loggregator/gcp/coconut-bbl
+            export BOSH_CLIENT=`bbl director-username`
+            export BOSH_CLIENT_SECRET=`bbl director-password`
+            export BOSH_CA_CERT=`bbl director-ca-cert`
+            export BOSH_ENVIRONMENT=`bbl director-address`
+          popd
 
-            for release in $(find consul-release -name '*.tgz')
-            do
-              bosh upload-release $release
-            done
+          for release in $(find consul-release -name '*.tgz'); do
+            bosh upload-release $release
+          done
 
-            for release in $(find etcd-release -name '*.tgz')
-            do
-              bosh upload-release $release
-            done
-
-
-            pushd $loggregator_dir
-                bosh create-release --name=loggregator --force
-                bosh upload-release --rebase
-            popd
+          pushd $loggregator_dir
+            bosh create-release --name=loggregator --force
+            bosh upload-release --rebase
+          popd
   - task: deploy
     config:
       image_resource:
