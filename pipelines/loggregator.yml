@@ -71,12 +71,6 @@ resources:
   source:
     repository: cloudfoundry-incubator/consul-release
 
-- name: cf-release-develop
-  type: git
-  source:
-    uri: https://github.com/cloudfoundry/cf-release
-    branch: develop
-
 - name: deployments-loggregator
   type: git
   source: &deployments_loggregator
