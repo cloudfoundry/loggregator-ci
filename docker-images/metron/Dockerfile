@@ -1,4 +1,4 @@
-FROM ubuntu:latest
+FROM alpine:latest
 
 ENV PATH="/srv/metron/bin:${PATH}"
 RUN mkdir -p /srv/metron/bin

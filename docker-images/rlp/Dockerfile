@@ -1,4 +1,4 @@
-FROM ubuntu:latest
+FROM alpine:latest
 
 ENV PATH="/srv/rlp/bin:${PATH}"
 RUN mkdir -p /srv/rlp/bin
