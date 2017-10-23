@@ -446,7 +446,7 @@ jobs:
   - put: loggregator-release-updated
     params:
       repository: committed-loggregator-release
-      rebase: false
+      rebase: true
 
 - name: loggregator-release-tests
   serial: true
@@ -1272,7 +1272,7 @@ jobs:
   - put: statsd-injector-release-updated
     params:
       repository: committed-statsd-injector-release
-      rebase: false
+      rebase: true
 
 - name: statsd-injector-release-tests
   serial: true
