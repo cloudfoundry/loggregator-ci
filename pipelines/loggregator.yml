@@ -259,7 +259,7 @@ jobs:
 
               pushd src/code.cloudfoundry.org/loggregator
                 go get -t -d ./...
-                go test -race `go list ./... | grep -v lats`
+                go test -race ./...
               popd
             popd
 
