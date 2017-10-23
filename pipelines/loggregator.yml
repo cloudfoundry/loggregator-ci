@@ -5,7 +5,6 @@ groups:
   - loggregator-bump-submodule
   - loggregator-release-tests
   - loggregator-diff-cert-generation-scripts
-  - loggregator-test-bosh-templates
   - loggregator-deploy
   - cf-deploy
   - lats
@@ -26,7 +25,6 @@ groups:
   - loggregator-bump-submodule
   - loggregator-release-tests
   - loggregator-diff-cert-generation-scripts
-  - loggregator-test-bosh-templates
   - loggregator-deploy
   - cf-deploy
   - lats
@@ -339,8 +337,6 @@ jobs:
     - get: loggregator-release
       trigger: false
     - get: loggregator-src
-      # passed:
-      # - loggregator-tests
       trigger: true
   - task: update-submodule
     config:
@@ -383,6 +379,25 @@ jobs:
         args:
         - -c
         - {{update_package_specs}}
+  - task: run-specs
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source:
+          repository: ruby
+      inputs:
+      - name: synced-loggregator-release
+      run:
+        path: bash
+        args:
+          - -c
+          - |
+            #!/bin/bash
+            set -e
+            cd synced-loggregator-release
+            bundle install
+            rspec
   - task: run-tests
     config:
       platform: linux
@@ -391,7 +406,7 @@ jobs:
         source:
           repository: loggregator/base
       inputs:
-        - name: synced-loggregator-release
+      - name: synced-loggregator-release
       run:
         path: bash
         args:
@@ -457,6 +472,25 @@ jobs:
         args:
         - -c
         - {{update_package_specs}}
+  - task: run-specs
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source:
+          repository: ruby
+      inputs:
+      - name: synced-loggregator-release
+      run:
+        path: bash
+        args:
+          - -c
+          - |
+            #!/bin/bash
+            set -e
+            cd synced-loggregator-release
+            bundle install
+            rspec
   - task: run-tests
     config:
       platform: linux
@@ -911,31 +945,6 @@ jobs:
     params:
       repository: promote-develop
       rebase: false
-
-- name: loggregator-test-bosh-templates
-  plan:
-  - get: loggregator
-    resource: loggregator-release
-    trigger: true
-  - task: run-specs
-    config:
-      platform: linux
-      image_resource:
-        type: docker-image
-        source:
-          repository: ruby
-      inputs:
-      - name: loggregator
-      run:
-        path: bash
-        args:
-          - -c
-          - |
-            #!/bin/bash
-            set -e
-            cd loggregator
-            bundle install
-            rspec
 
 - name: loggregator-diff-cert-generation-scripts
   plan:
