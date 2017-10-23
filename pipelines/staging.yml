@@ -158,41 +158,6 @@ jobs:
                 bosh upload-release --rebase
               popd
             done
-    - task: copy-ops-files
-      input_mapping:
-        bbl-state: deployments-loggregator
-      config:
-        platform: linux
-        image_resource:
-          type: docker-image
-          source:
-            repository: ubuntu
-        inputs:
-        - name: bbl-state
-        - name: cf-deployment-develop # TODO: once non-collocated-cf-syslog-drain.yml is in master this can be removed
-        outputs:
-        - name: ops-files
-        run:
-          path: /bin/bash
-          args:
-          - "-c"
-          - |
-            #!/bin/bash
-            set -ex
-
-            cp bbl-state/gcp/staging/ops-files/*.yml ops-files/
-            cp cf-deployment-develop/operations/non-collocated-cf-syslog-drain.yml ops-files/
-
-            cat <<EOT >> ops-files/export-links.yml
-            - type: replace
-              path: /instance_groups/name=log-api/jobs/name=loggregator_trafficcontroller/provides?
-              value:
-                trafficcontroller: {as: trafficcontroller, shared: true}
-            - type: replace
-              path: /instance_groups/name=log-api/jobs/name=reverse_log_proxy/provides?
-              value:
-                reverse_log_proxy: {as: reverse_log_proxy, shared: true}
-            EOT
     - task: create-turbulence-vars
       input_mapping:
         bbl-state: deployments-loggregator
@@ -231,6 +196,41 @@ jobs:
             datadog_app_key: $DATADOG_APP_KEY
 
             EOF
+    - task: copy-ops-files
+      input_mapping:
+        bbl-state: deployments-loggregator
+      config:
+        platform: linux
+        image_resource:
+          type: docker-image
+          source:
+            repository: ubuntu
+        inputs:
+        - name: bbl-state
+        - name: cf-deployment-develop # TODO: once non-collocated-cf-syslog-drain.yml is in master this can be removed
+        outputs:
+        - name: ops-files
+        run:
+          path: /bin/bash
+          args:
+          - "-c"
+          - |
+            #!/bin/bash
+            set -ex
+
+            cp bbl-state/gcp/staging/ops-files/*.yml ops-files/
+            cp cf-deployment-develop/operations/non-collocated-cf-syslog-drain.yml ops-files/
+
+            cat <<EOT >> ops-files/export-links.yml
+            - type: replace
+              path: /instance_groups/name=log-api/jobs/name=loggregator_trafficcontroller/provides?
+              value:
+                trafficcontroller: {as: trafficcontroller, shared: true}
+            - type: replace
+              path: /instance_groups/name=log-api/jobs/name=reverse_log_proxy/provides?
+              value:
+                reverse_log_proxy: {as: reverse_log_proxy, shared: true}
+            EOT
   - task: cf-deploy
     input_mapping:
       bbl-state: deployments-loggregator
@@ -241,7 +241,7 @@ jobs:
       SYSTEM_DOMAIN: staging.loggr.cf-app.com
       VARS_STORE_FILE: gcp/staging/deployment-vars.yml
       VARS_FILES: "turbulence.yml"
-      OPS_FILES: "clients.yml turbulence.yml allow-insecure-syslog-drains.yml cf-versions.yml non-collocated-cf-syslog-drain.yml export-links.yml"
+      OPS_FILES: "clients.yml turbulence.yml cf-versions.yml non-collocated-cf-syslog-drain.yml allow-insecure-syslog-drains.yml export-links.yml"
   - task: deploy-ouroboros
     input_mapping:
       bbl-state: deployments-loggregator
@@ -282,11 +282,17 @@ jobs:
           popd
 
           rsync -ac updated-vars-store/ final-vars-store
-  - put: deployments-loggregator
-    params:
-      repository: final-vars-store
-      rebase: true
   - aggregate:
+    - put: deployments-loggregator
+      params:
+        repository: final-vars-store
+        rebase: true
+    - task: bosh-cleanup
+      input_mapping:
+        bbl-state: deployments-loggregator
+      file: cf-deployment-concourse-tasks/bosh-cleanup/task.yml
+      params:
+        BBL_STATE_DIR: gcp/staging
     - task: setup-cf
       input_mapping:
         vars-store: deployments-loggregator
