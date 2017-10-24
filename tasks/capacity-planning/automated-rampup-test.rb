@@ -150,7 +150,7 @@ class Deployer
     bosh_deploy!
     commit!
     delete_services!
-    create_services!!
+    create_services!
     push_log_emitters!
     create_datadog_event!
   end
