@@ -316,7 +316,7 @@ class Deployer
   def create_services!
     Logger.step("Creating #{settings.syslog_drains_per_app} services")
 
-    (1..settings.syslog_drains_per_app).each do |c|
+    (1..settings.syslog_drain_count_per_app).each do |c|
       cmd = [
         'cf', 'create-user-provided-service', "#{settings.syslog_service_name}-#{c}",
         '-l', "#{settings.syslog_service_url}?drain-target-number=#{c}",
@@ -357,8 +357,7 @@ class Deployer
       threads << Thread.new do
         exec(bosh_env, push_cmd)
 
-
-        (1..settings.syslog_drains_per_app).each do |c|
+        (1..settings.syslog_drain_count_per_app).each do |c|
           bind_cmd = [
             'cf', 'bind-service', "log_emitter-#{i}", "#{settings.syslog_service_name}-#{c}"
           ]
