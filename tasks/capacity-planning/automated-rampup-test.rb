@@ -313,7 +313,7 @@ class Deployer
     end
   end
 
-  def create_services!!
+  def create_services!
     Logger.step("Creating services")
 
     (1..settings.syslog_drains_per_app).each do |c|
