@@ -363,6 +363,7 @@ class Deployer
             'cf', 'bind-service', "log_emitter-#{i}", "#{settings.syslog_service_name}-#{c}"
           ]
           exec(bosh_env, bind_cmd)
+        end
       end
     end
 
