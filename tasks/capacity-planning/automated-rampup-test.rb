@@ -97,6 +97,10 @@ class Settings
   def step_size
     (settings.end_rps - settings.start_rps) / ((settings.steps - 1) * 1.0)
   end
+
+  def syslog_drain_count_per_app
+    settings.syslog_drain_count_per_app.to_i
+  end
 end
 
 module Executor
