@@ -97,10 +97,6 @@ class Settings
   def step_size
     (settings.end_rps - settings.start_rps) / ((settings.steps - 1) * 1.0)
   end
-
-  def syslog_drain_count_per_app
-    settings.syslog_drain_count_per_app.to_i
-  end
 end
 
 module Executor
@@ -318,7 +314,7 @@ class Deployer
   end
 
   def create_services!
-    Logger.step("Creating services")
+    Logger.step("Creating #{settings.syslog_drains_per_app} services")
 
     (1..settings.syslog_drains_per_app).each do |c|
       cmd = [
