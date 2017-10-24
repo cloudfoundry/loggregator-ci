@@ -144,13 +144,12 @@ class Deployer
       cf_login!
       delete_log_emitters!
       delete_services!
+      create_services!
     end
 
     build_ops_file!
     bosh_deploy!
     commit!
-    delete_services!
-    create_services!
     push_log_emitters!
     create_datadog_event!
   end
