@@ -9,7 +9,7 @@ require "#{Dir.pwd}/loggregator-ci/tasks/scripts/datadog/client.rb"
 class Settings
   extend Forwardable
 
-  def_delegators :settings, :steps, :test_execution_minutes
+  def_delegators :settings, :steps, :test_execution_minutes, :syslog_drain_count_per_app
 
   def self.from_file(path)
     self.new(JSON.parse(File.read(path)))
@@ -56,6 +56,7 @@ class Settings
       :start_rps,
       :steps,
       :syslog_counter_count,
+      :syslog_drain_count_per_app,
       :syslog_service_name,
       :syslog_service_url,
       :system_domain,
@@ -142,14 +143,14 @@ class Deployer
       upload_release!
       cf_login!
       delete_log_emitters!
+      delete_services!
     end
 
     build_ops_file!
     bosh_deploy!
     commit!
-    delete_log_emitters!
     delete_services!
-    create_service!
+    create_services!!
     push_log_emitters!
     create_datadog_event!
   end
@@ -304,16 +305,24 @@ class Deployer
 
   def delete_services!
     Logger.step("Deleting services")
-    exec(bosh_env, ['cf', 'delete-service', settings.syslog_service_name, '-f'])
+
+    output = exec(bosh_env, ['cf', 'services'])
+    output.split("\n").select { |l| l.include?('user-provided') }.each do |l|
+      name = l.split(" ").first
+      exec(bosh_env, ['cf', 'delete-service', name, '-f'])
+    end
   end
 
-  def create_service!
-    Logger.step("Creating service")
-    cmd = [
-      'cf', 'create-user-provided-service', settings.syslog_service_name,
-      '-l', settings.syslog_service_url,
-    ]
-    exec(bosh_env, cmd)
+  def create_services!!
+    Logger.step("Creating services")
+
+    (1..settings.syslog_drains_per_app).each do |c|
+      cmd = [
+        'cf', 'create-user-provided-service', "#{settings.syslog_service_name}-#{c}",
+        '-l', "#{settings.syslog_service_url}?drain-target-number=#{c}",
+      ]
+      exec(bosh_env, cmd)
+    end
   end
 
   def push_log_emitters!
@@ -345,13 +354,15 @@ class Deployer
         '-p', dir,
       ]
 
-      bind_cmd = [
-        'cf', 'bind-service', "log_emitter-#{i}", settings.syslog_service_name
-      ]
-
       threads << Thread.new do
         exec(bosh_env, push_cmd)
-        exec(bosh_env, bind_cmd)
+
+
+        (1..settings.syslog_drains_per_app).each do |c|
+          bind_cmd = [
+            'cf', 'bind-service', "log_emitter-#{i}", "#{settings.syslog_service_name}-#{c}"
+          ]
+          exec(bosh_env, bind_cmd)
       end
     end
 

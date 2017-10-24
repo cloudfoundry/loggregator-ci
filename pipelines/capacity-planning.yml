@@ -135,19 +135,20 @@ jobs:
         CLIENT_ID: capacity_planning_authenticator
         DIEGO_CELL_COUNT: 2
         DOPPLER_COUNT: 1
+        END_RPS: 1600
         EVENT_COUNTER_COUNT: 2
         LOG_API_COUNT: 1
         LOG_EMITTER_COUNT: 2
         LOG_EMITTER_INSTANCE_COUNT: 2
         LOG_SIZE: 1000
         METRIC_EMITTER_COUNT: 2
-        END_RPS: 1600
         ORG: capacity-planning
         ROUTER_COUNT: 4
         SPACE: capacity-planning
         START_RPS: 800
         STEPS: 8
         SYSLOG_COUNTER_COUNT: 2
+        SYSLOG_DRAIN_COUNT_PER_APP: 1
         SYSLOG_SERVICE_NAME: syslog-counter
         SYSLOG_SERVICE_URL: syslog://syslog-counter.service.cf.internal:8080
         SYSTEM_DOMAIN: loggregator-capacity-planning.cf-app.com
