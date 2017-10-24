@@ -15,6 +15,11 @@ resources:
     uri: https://github.com/cloudfoundry/cf-deployment-concourse-tasks
     branch: v4.16
 
+- name: bosh-deployment
+  type: git
+  source:
+    uri: https://github.com/cloudfoundry/bosh-deployment
+
 - name: cf-deployment
   type: git
   source:
@@ -72,7 +77,7 @@ jobs:
     resource: deployments-loggregator
     trigger: false
   - get: ops-files
-    resource: deployments-loggregator
+    resource: bosh-deployment
     trigger: false
   - task: bbl-up
     file: cf-deployment-concourse-tasks/bbl-up/task.yml
@@ -87,6 +92,7 @@ jobs:
       BBL_LB_KEY: {{coconut_bbl_lb_key}}
       BBL_ENV_NAME: playground
       LB_DOMAIN: playground.loggr.cf-app.com
+      OPS_FILES: "local-dns.yml"
   - put: deployments-loggregator
     params:
       repository: updated-bbl-state
