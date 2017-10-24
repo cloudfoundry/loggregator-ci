@@ -19,7 +19,7 @@ resources:
   type: git
   source:
     uri: https://github.com/cloudfoundry/cf-deployment
-    branch: master
+    branch: develop
 
 - name: loggregator
   type: git
