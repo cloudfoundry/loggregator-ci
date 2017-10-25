@@ -267,6 +267,7 @@ jobs:
               #!/bin/bash
               set -ex
 
+              ci_root=$PWD
               mkdir -p workspace/src/code.cloudfoundry.org/loggregator
               cp -r loggregator-src/. workspace/src/code.cloudfoundry.org/loggregator/
 
@@ -282,9 +283,9 @@ jobs:
                 pushd src/code.cloudfoundry.org/loggregator
                   go get -t ./...
                   for pkg in $(go list ./agent/...); do
-                    go test -c -o ../test-binaries/$(munge $pkg)_test.exe $pkg
+                    go test -race -c -o $ci_root/test-binaries/$(munge $pkg)_test.exe $pkg
                   done
-                  go build -o ../binaries/agent.exe code.cloudfoundry.org/loggregator/agent
+                  go build -race -o $ci_root/binaries/agent.exe code.cloudfoundry.org/loggregator/agent
                 popd
               popd
 
@@ -305,7 +306,7 @@ jobs:
               }
 
               $env:SKIP_BUILD = "true"
-              $env:METRON_BUILD_PATH = "binaries\agent.exe"
+              $env:AGENT_BUILD_PATH = "binaries\agent.exe"
 
               # Run all test binaries
               Get-ChildItem -Filter test-binaries\*.exe | ForEach {
