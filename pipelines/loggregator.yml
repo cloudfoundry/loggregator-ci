@@ -283,9 +283,9 @@ jobs:
                 pushd src/code.cloudfoundry.org/loggregator
                   go get -t ./...
                   for pkg in $(go list ./agent/...); do
-                    go test -race -c -o $ci_root/test-binaries/$(munge $pkg)_test.exe $pkg
+                    go test -c -o $ci_root/test-binaries/$(munge $pkg)_test.exe $pkg
                   done
-                  go build -race -o $ci_root/binaries/agent.exe code.cloudfoundry.org/loggregator/agent
+                  go build -o $ci_root/binaries/agent.exe code.cloudfoundry.org/loggregator/agent
                 popd
               popd
 
