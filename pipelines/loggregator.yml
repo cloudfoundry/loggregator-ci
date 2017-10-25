@@ -281,10 +281,10 @@ jobs:
 
                 pushd src/code.cloudfoundry.org/loggregator
                   go get -t ./...
-                  for pkg in $(go list ./metron/...); do
+                  for pkg in $(go list ./agent/...); do
                     go test -c -o ../test-binaries/$(munge $pkg)_test.exe $pkg
                   done
-                  go build -o ../binaries/metron.exe code.cloudfoundry.org/loggregator/metron
+                  go build -o ../binaries/agent.exe code.cloudfoundry.org/loggregator/agent
                 popd
               popd
 
@@ -305,7 +305,7 @@ jobs:
               }
 
               $env:SKIP_BUILD = "true"
-              $env:METRON_BUILD_PATH = "binaries\metron.exe"
+              $env:METRON_BUILD_PATH = "binaries\agent.exe"
 
               # Run all test binaries
               Get-ChildItem -Filter test-binaries\*.exe | ForEach {
