@@ -58,7 +58,7 @@ resources:
   type: github-release
   source:
     user: cloudfoundry
-    repository: loggregator
+    repository: loggregator-release
     access_token: {{access-token}}
     drafts: true
 
