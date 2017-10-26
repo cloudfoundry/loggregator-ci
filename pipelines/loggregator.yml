@@ -556,6 +556,10 @@ jobs:
       trigger: false
     - get: vars-files
       resource: deployments-loggregator
+  - task: upload-stemcell
+    file: cf-deployment-concourse-tasks/bosh-upload-stemcell-from-cf-deployment/task.yml
+    params:
+      BBL_STATE_DIR: gcp/coconut-bbl
   - task: upload-releases
     config:
       platform: linux
@@ -606,7 +610,6 @@ jobs:
         args:
         - "-c"
         - |
-          cp cf-deployment/operations/windows-cell.yml ops-files/
           cp cf-deployment/operations/scale-to-one-az.yml ops-files/
           cp bbl-state/gcp/coconut-bbl/ops-files/*.yml ops-files/
 
@@ -622,17 +625,13 @@ jobs:
               name: cf-syslog-drain
               version: latest
           EOT
-  - task: upload-stemcell
-    file: cf-deployment-concourse-tasks/bosh-upload-stemcell-from-cf-deployment/task.yml
-    params:
-      BBL_STATE_DIR: gcp/coconut-bbl
   - task: cf-deploy
     file: cf-deployment-concourse-tasks/bosh-deploy/task.yml
     params:
       BBL_STATE_DIR: gcp/coconut-bbl
       SYSTEM_DOMAIN: coconut.cf-app.com
       VARS_STORE_FILE: gcp/coconut-bbl/deployment-vars.yml
-      OPS_FILES: "clients.yml scale-to-one-az.yml datadog-agent.yml diego.yml dev-versions.yml windows-cell.yml"
+      OPS_FILES: "clients.yml scale-to-one-az.yml datadog-agent.yml diego.yml dev-versions.yml"
       VARS_FILES: "gcp/coconut-bbl/vars-files/router.yml"
   - task: enable-feature-flags
     file: cf-deployment-concourse-tasks/set-feature-flags/task.yml
