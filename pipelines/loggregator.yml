@@ -12,6 +12,7 @@ groups:
   - loggregator-promotion
   - cf-syslog-drain-tests
   - cf-syslog-drain-bump-submodule
+  - cf-syslog-drain-release-tests
   - cf-syslog-drain-promotion
   - statsd-injector-tests
   - statsd-injector-bump-submodule
@@ -32,6 +33,7 @@ groups:
   jobs:
   - cf-syslog-drain-tests
   - cf-syslog-drain-bump-submodule
+  - cf-syslog-drain-release-tests
   - cf-deploy
   - cats
   - cf-syslog-drain-promotion
@@ -281,7 +283,7 @@ jobs:
                 export PATH="$GOPATH/bin:$PATH"
 
                 pushd src/code.cloudfoundry.org/loggregator
-                  go get -t ./...
+                  go get -t -d ./...
                   for pkg in $(go list ./agent/...); do
                     go test -c -o $ci_root/test-binaries/$(munge $pkg)_test.exe $pkg
                   done
@@ -320,6 +322,7 @@ jobs:
   serial: true
   plan:
   - aggregate:
+    - get: loggregator-ci
     - get: loggregator-release
       trigger: false
     - get: loggregator-src
@@ -348,68 +351,46 @@ jobs:
         args:
         - -c
         - {{update_submodule}}
-  - task: sync-package-spec
-    config:
-      platform: linux
-      image_resource:
-        type: docker-image
-        source:
-          repository: loggregator/base
-      inputs:
-        - name: bumped-loggregator-release
-      outputs:
+  - task: sync-package-specs
+    file: loggregator-ci/tasks/run-release-script.yml
+    input_mapping:
+      release-repo: bumped-loggregator-release
+    output_mapping:
+      updated-release-repo: synced-loggregator-release
+    params:
+      SCRIPT: scripts/sync-package-specs
+  - aggregate:
+    - task: run-specs
+      config:
+        platform: linux
+        image_resource:
+          type: docker-image
+          source:
+            repository: ruby
+        inputs:
         - name: synced-loggregator-release
+        run:
+          path: bash
+          args:
+            - -c
+            - |
+              #!/bin/bash
+              set -e
+              cd synced-loggregator-release
+              bundle install
+              rspec
+    - task: run-tests
+      file: loggregator-ci/tasks/run-release-script.yml
+      input_mapping:
+        release-repo: synced-loggregator-release
       params:
-        RELEASE: bumped-loggregator-release
-        OUTPUT: synced-loggregator-release
-      run:
-        path: bash
-        args:
-        - -c
-        - {{update_package_specs}}
-  - task: run-specs
-    config:
-      platform: linux
-      image_resource:
-        type: docker-image
-        source:
-          repository: ruby
-      inputs:
-      - name: synced-loggregator-release
-      run:
-        path: bash
-        args:
-          - -c
-          - |
-            #!/bin/bash
-            set -e
-            cd synced-loggregator-release
-            bundle install
-            rspec
-  - task: run-tests
-    config:
-      platform: linux
-      image_resource:
-        type: docker-image
-        source:
-          repository: loggregator/base
-      inputs:
-      - name: synced-loggregator-release
-      run:
-        path: bash
-        args:
-        - -c
-        - |
-          #!/bin/bash
-
-          set -ex
-
-          pushd synced-loggregator-release
-            export GOPATH="$PWD"
-            export PATH="$GOPATH/bin:$PATH"
-            export TERM=xterm
-            ./scripts/test
-          popd
+        SCRIPT: scripts/test ~integration
+    - task: run-integration-tests
+      file: loggregator-ci/tasks/run-release-script.yml
+      input_mapping:
+        release-repo: synced-loggregator-release
+      params:
+        SCRIPT: scripts/test integration
   - task: commit
     config:
       platform: linux
@@ -439,70 +420,50 @@ jobs:
 - name: loggregator-release-tests
   serial: true
   plan:
-  - get: loggregator-release
-    trigger: true
-  - task: sync-package-spec
-    config:
-      platform: linux
-      image_resource:
-        type: docker-image
-        source:
-          repository: loggregator/base
-      inputs:
-      - name: loggregator-release
-      outputs:
-      - name: synced-loggregator-release
+  - aggregate:
+    - get: loggregator-ci
+    - get: loggregator-release
+      trigger: true
+  - task: sync-package-specs
+    file: loggregator-ci/tasks/run-release-script.yml
+    input_mapping:
+      release-repo: loggregator-release
+    output_mapping:
+      updated-release-repo: synced-loggregator-release
+    params:
+      SCRIPT: scripts/sync-package-specs
+  - aggregate:
+    - task: run-specs
+      config:
+        platform: linux
+        image_resource:
+          type: docker-image
+          source:
+            repository: ruby
+        inputs:
+        - name: synced-loggregator-release
+        run:
+          path: bash
+          args:
+            - -c
+            - |
+              #!/bin/bash
+              set -e
+              cd synced-loggregator-release
+              bundle install
+              rspec
+    - task: run-tests
+      file: loggregator-ci/tasks/run-release-script.yml
+      input_mapping:
+        release-repo: synced-loggregator-release
       params:
-        RELEASE: loggregator-release
-        OUTPUT: synced-loggregator-release
-      run:
-        path: bash
-        args:
-        - -c
-        - {{update_package_specs}}
-  - task: run-specs
-    config:
-      platform: linux
-      image_resource:
-        type: docker-image
-        source:
-          repository: ruby
-      inputs:
-      - name: synced-loggregator-release
-      run:
-        path: bash
-        args:
-          - -c
-          - |
-            #!/bin/bash
-            set -e
-            cd synced-loggregator-release
-            bundle install
-            rspec
-  - task: run-tests
-    config:
-      platform: linux
-      image_resource:
-        type: docker-image
-        source:
-          repository: loggregator/base
-      inputs:
-      - name: synced-loggregator-release
-      run:
-        path: bash
-        args:
-        - -c
-        - |
-          #!/bin/bash
-
-          set -ex
-
-          pushd synced-loggregator-release
-            export GOPATH="$PWD"
-            export PATH="$GOPATH/bin:$PATH"
-            export TERM=xterm
-            ./scripts/test
-          popd
+        SCRIPT: scripts/test ~integration
+    - task: run-integration-tests
+      file: loggregator-ci/tasks/run-release-script.yml
+      input_mapping:
+        release-repo: synced-loggregator-release
+      params:
+        SCRIPT: scripts/test integration
   - task: commit
     config:
       platform: linux
@@ -551,6 +512,7 @@ jobs:
       trigger: true
       passed:
       - cf-syslog-drain-bump-submodule
+      - cf-syslog-drain-release-tests
     - get: vars-store
       resource: deployments-loggregator
       trigger: false
@@ -956,7 +918,7 @@ jobs:
             export GOPATH="$PWD"
             export PATH="$GOPATH/bin:$PATH"
             pushd src/code.cloudfoundry.org/scalable-syslog
-              go get -t ./...
+              go get -t -d ./...
               go test ./... -race
             popd
           popd
@@ -965,6 +927,7 @@ jobs:
   serial: true
   plan:
   - aggregate:
+    - get: loggregator-ci
     - get: cf-syslog-drain-release
       trigger: false
     - get: scalable-syslog
@@ -993,7 +956,15 @@ jobs:
         args:
         - -c
         - {{update_submodule}}
-  - task: sync-package-spec
+  - task: sync-package-specs
+    file: loggregator-ci/tasks/run-release-script.yml
+    input_mapping:
+      release-repo: updated-cf-syslog-drain-release
+    output_mapping:
+      updated-release-repo: synced-cf-syslog-drain-release
+    params:
+      SCRIPT: scripts/sync-package-specs
+  - task: run-tests
     config:
       platform: linux
       image_resource:
@@ -1001,11 +972,7 @@ jobs:
         source:
           repository: loggregator/base
       inputs:
-      - name: updated-cf-syslog-drain-release
-      outputs:
       - name: synced-cf-syslog-drain-release
-      params:
-        OUTPUT: synced-cf-syslog-drain-release
       run:
         path: bash
         args:
@@ -1013,16 +980,54 @@ jobs:
         - |
           #!/bin/bash
 
-          set -e -x
+          set -ex
 
-          pushd updated-cf-syslog-drain-release
+          pushd synced-cf-syslog-drain-release
             export GOPATH="$PWD"
             export PATH="$GOPATH/bin:$PATH"
-
-            ./scripts/sync-package-specs
+            go test -race code.cloudfoundry.org/scalable-syslog/...
           popd
+  - task: commit
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source:
+          repository: loggregator/base
+      inputs:
+      - name: synced-cf-syslog-drain-release
+      outputs:
+      - name: bumped-cf-syslog-drain-release
+      params:
+        SOURCE: synced-cf-syslog-drain-release
+        PATHS: src/code.cloudfoundry.org/scalable-syslog packages/
+        COMMIT_MESSAGE: "Bump scalable-syslog"
+        OUTPUT: bumped-cf-syslog-drain-release
+      run:
+        path: bash
+        args:
+        - -c
+        - {{commit}}
+  - put: cf-syslog-drain-release
+    params:
+      repository: bumped-cf-syslog-drain-release
+      rebase: true
 
-          cp -r updated-cf-syslog-drain-release/. $OUTPUT/
+- name: cf-syslog-drain-release-tests
+  serial: true
+  plan:
+  - aggregate:
+    - get: loggregator-ci
+    - get: cf-syslog-drain-release
+      trigger: true
+  - task: sync-package-specs
+    file: loggregator-ci/tasks/run-release-script.yml
+    input_mapping:
+      release-repo: cf-syslog-drain-release
+    output_mapping:
+      updated-release-repo: synced-cf-syslog-drain-release
+    params:
+      SCRIPT: scripts/sync-package-specs
   - task: run-tests
     config:
       platform: linux
@@ -1119,7 +1124,7 @@ jobs:
             export PATH="$GOPATH/bin:$PATH"
 
             pushd src/github.com/cloudfoundry/statsd-injector
-              go get -t ./...
+              go get -t -d ./...
               go test -race ./...
             popd
           popd
@@ -1128,6 +1133,7 @@ jobs:
   serial: true
   plan:
   - aggregate:
+    - get: loggregator-ci
     - get: statsd-injector-release
       trigger: false
     - get: statsd-injector
@@ -1156,25 +1162,14 @@ jobs:
         args:
         - -c
         - {{update_submodule}}
-  - task: sync-package-spec
-    config:
-      platform: linux
-      image_resource:
-        type: docker-image
-        source:
-          repository: loggregator/base
-      inputs:
-        - name: statsd-injector-release
-      outputs:
-        - name: synced-statsd-injector-release
-      params:
-        RELEASE: statsd-injector-release
-        OUTPUT: synced-statsd-injector-release
-      run:
-        path: bash
-        args:
-        - -c
-        - {{update_package_specs}}
+  - task: sync-package-specs
+    file: loggregator-ci/tasks/run-release-script.yml
+    input_mapping:
+      release-repo: statsd-injector-release
+    output_mapping:
+      updated-release-repo: synced-statsd-injector-release
+    params:
+      SCRIPT: scripts/sync-package-specs
   - task: run-tests
     config:
       platform: linux
@@ -1227,27 +1222,18 @@ jobs:
 - name: statsd-injector-release-tests
   serial: true
   plan:
-  - get: statsd-injector-release
-    trigger: true
-  - task: sync-package-spec
-    config:
-      platform: linux
-      image_resource:
-        type: docker-image
-        source:
-          repository: loggregator/base
-      inputs:
-      - name: statsd-injector-release
-      outputs:
-      - name: synced-statsd-injector-release
-      params:
-        RELEASE: statsd-injector-release
-        OUTPUT: synced-statsd-injector-release
-      run:
-        path: bash
-        args:
-        - -c
-        - {{update_package_specs}}
+  - aggregate:
+    - get: loggregator-ci
+    - get: statsd-injector-release
+      trigger: true
+  - task: sync-package-specs
+    file: loggregator-ci/tasks/run-release-script.yml
+    input_mapping:
+      release-repo: statsd-injector-release
+    output_mapping:
+      updated-release-repo: synced-statsd-injector-release
+    params:
+      SCRIPT: scripts/sync-package-specs
   - task: run-tests
     config:
       platform: linux
