@@ -10,7 +10,6 @@ fi
 pushd release-repo
   export GOPATH="$PWD"
   export PATH="$GOPATH/bin:$PATH"
-  export TERM=xterm
   "$SCRIPT"
 popd
 
