@@ -244,7 +244,41 @@ jobs:
 
               pushd src/code.cloudfoundry.org/loggregator
                 go get -t -d ./...
-                go test -race ./...
+                go test -race $(go list ./... | grep -v integration_tests) \
+                  -ginkgo.randomizeAllSpecs \
+                  -ginkgo.slowSpecThreshold 20
+              popd
+            popd
+    - task: run-integration-tests
+      timeout: 10m
+      config:
+        platform: linux
+        image_resource:
+          type: docker-image
+          source:
+            repository: loggregator/base
+        inputs:
+        - name: loggregator-src
+        run:
+          path: bash
+          args:
+          - -c
+          - |
+            #!/bin/bash
+            set -ex
+
+            mkdir -p workspace/src/code.cloudfoundry.org/loggregator
+            cp -r loggregator-src/. workspace/src/code.cloudfoundry.org/loggregator/
+
+            pushd workspace
+              export GOPATH="$PWD"
+              export PATH="$GOPATH/bin:$PATH"
+
+              pushd src/code.cloudfoundry.org/loggregator
+                go get -t -d ./...
+                go test ./integration_tests/... -race \
+                  -ginkgo.randomizeAllSpecs \
+                  -ginkgo.slowSpecThreshold 20
               popd
             popd
 
@@ -285,11 +319,12 @@ jobs:
                 pushd src/code.cloudfoundry.org/loggregator
                   go get -t -d ./...
                   for pkg in $(go list ./agent/...); do
-                    go test -c -o $ci_root/test-binaries/$(munge $pkg)_test.exe $pkg
+                    go test -c -o $ci_root/test-binaries/$(munge $pkg)_test.exe $pkg &
                   done
-                  go build -o $ci_root/binaries/agent.exe code.cloudfoundry.org/loggregator/agent
+                  go build -o $ci_root/binaries/agent.exe code.cloudfoundry.org/loggregator/agent &
                 popd
               popd
+              wait
 
       - task: run-windows-tests
         config:
