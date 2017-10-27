@@ -10,7 +10,7 @@ fi
 pushd release-repo
   export GOPATH="$PWD"
   export PATH="$GOPATH/bin:$PATH"
-  "$SCRIPT"
+  $SCRIPT
 popd
 
 cp -r release-repo/. updated-release-repo/
