@@ -6,6 +6,8 @@ image_resource:
 inputs:
 # - The source bosh release repo where the script resides and will be ran.
 - name: release-repo
+# - The repo that contains run-release-script.sh.
+- name: loggregator-ci
 outputs:
 # - The directory where the result of running the script is copied. This will
 #   include all the files from the input bosh release.
