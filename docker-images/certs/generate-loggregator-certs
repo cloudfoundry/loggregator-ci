@@ -1,0 +1,26 @@
+#!/bin/sh
+
+set -e -x
+
+depot_path=$PWD
+# Install certstrap
+go get -v github.com/square/certstrap
+
+# CA to distribute to loggregator certs
+certstrap --depot-path ${depot_path} init --passphrase '' --common-name ca
+
+# Doppler certificate
+certstrap --depot-path ${depot_path} request-cert --passphrase '' --common-name doppler
+certstrap --depot-path ${depot_path} sign doppler --CA ca
+
+# Traffic Controller certificate
+certstrap --depot-path ${depot_path} request-cert --passphrase '' --common-name trafficcontroller
+certstrap --depot-path ${depot_path} sign trafficcontroller --CA ca
+
+# Metron certificate
+certstrap --depot-path ${depot_path} request-cert --passphrase '' --common-name metron
+certstrap --depot-path ${depot_path} sign metron --CA ca
+
+# Reverse Log Proxy certificate
+certstrap --depot-path ${depot_path} request-cert --passphrase '' --common-name reverselogproxy
+certstrap --depot-path ${depot_path} sign reverselogproxy --CA ca

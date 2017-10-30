@@ -1,0 +1,17 @@
+#!/bin/bash
+
+cp ca.crt ../router/
+cp ca.crt ../agent/
+cp ca.crt ../trafficcontroller/
+
+cp doppler.crt ../router/router.crt
+cp doppler.key ../router/router.key
+
+cp metron.crt ../agent/agent.crt
+cp metron.key ../agent/agent.key
+
+cp trafficcontroller.crt ../trafficcontroller/
+cp trafficcontroller.key ../trafficcontroller/
+
+cp reverselogproxy.crt ../rlp/rlp.crt
+cp reverselogproxy.key ../rlp/rlp.key
