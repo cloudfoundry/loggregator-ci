@@ -2,6 +2,8 @@ groups:
 - name: main
   jobs:
   - cf-deploy
+  - volley-deploy
+  - volley-teardown
   - blackbox-tests
   - firehose-reliability
   - start-incidents
@@ -110,7 +112,6 @@ jobs:
     - get: cf-deployment-concourse-tasks
     - get: loggregator
       resource: loggregator-release-elect
-    - get: ouroboros
     - get: cf-syslog-drain
       resource: cf-syslog-drain-release-elect
     - get: loggregator-tools
@@ -134,7 +135,6 @@ jobs:
         - name: bbl-state
         - name: loggregator
         - name: cf-syslog-drain
-        - name: ouroboros
         run:
           path: /bin/bash
           args:
@@ -151,7 +151,7 @@ jobs:
               export BOSH_ENVIRONMENT=`bbl director-address`
             popd
 
-            releases="loggregator cf-syslog-drain ouroboros"
+            releases="loggregator cf-syslog-drain"
             for rel in $releases; do
               pushd $rel
                 bosh create-release
@@ -242,9 +242,79 @@ jobs:
       VARS_STORE_FILE: gcp/staging/deployment-vars.yml
       VARS_FILES: "turbulence.yml"
       OPS_FILES: "clients.yml turbulence.yml cf-versions.yml non-collocated-cf-syslog-drain.yml allow-insecure-syslog-drains.yml export-links.yml"
+  - aggregate:
+    - put: deployments-loggregator
+      params:
+        repository: final-vars-store
+        rebase: true
+    - task: bosh-cleanup
+      input_mapping:
+        bbl-state: deployments-loggregator
+      file: cf-deployment-concourse-tasks/bosh-cleanup/task.yml
+      params:
+        BBL_STATE_DIR: gcp/staging
+    - task: setup-cf
+      input_mapping:
+        vars-store: deployments-loggregator
+      file: loggregator-ci/tasks/staging/setup-cf.yml
+      params:
+        SYSTEM_DOMAIN: staging.loggr.cf-app.com
+        VARS_STORE_FILE: gcp/staging/deployment-vars.yml
+        ORG: cf-lamb
+        SPACE: development
+    - task: setup-event
+      file: loggregator-ci/tasks/staging/setup-datadog-event.yml
+      params:
+        DATADOG_APP_KEY: {{datadog-dev-app-key}}
+
+- name: volley-deploy
+  plan:
+  - aggregate:
+    - get: daily
+      trigger: true
+    - get: cf-deployment-concourse-tasks
+    - get: deployments-loggregator
+    - get: ouroboros
+      trigger: true
+  - task: upload-releases
+    input_mapping:
+      bbl-state: deployments-loggregator
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source:
+          repository: relintdockerhubpushbot/cf-deployment-concourse-tasks
+      inputs:
+      - name: bbl-state
+      - name: ouroboros
+      run:
+        path: /bin/bash
+        args:
+        - "-c"
+        - |
+          #!/bin/bash
+
+          set -ex
+
+          pushd bbl-state/gcp/staging
+            export BOSH_CLIENT=`bbl director-username`
+            export BOSH_CLIENT_SECRET=`bbl director-password`
+            export BOSH_CA_CERT=`bbl director-ca-cert`
+            export BOSH_ENVIRONMENT=`bbl director-address`
+          popd
+
+          releases="ouroboros"
+          for rel in $releases; do
+            pushd $rel
+              bosh create-release
+              bosh upload-release --rebase
+            popd
+          done
   - task: deploy-ouroboros
     input_mapping:
       bbl-state: deployments-loggregator
+      updated-vars-store: deployments-loggregator
     config:
       platform: linux
       image_resource:
@@ -293,19 +363,27 @@ jobs:
       file: cf-deployment-concourse-tasks/bosh-cleanup/task.yml
       params:
         BBL_STATE_DIR: gcp/staging
-    - task: setup-cf
+
+- name: volley-teardown
+  plan:
+  - aggregate:
+    - get: cf-deployment-concourse-tasks
+    - get: deployments-loggregator
+  - task: teardown-ouroboros
+    input_mapping:
+      bbl-state: deployments-loggregator
+      updated-vars-store: deployments-loggregator
+    file: cf-deployment-concourse-tasks/bosh-delete-deployment/task.yml
+    params:
+      DEPLOYMENT_NAME: ouroboros
+      BBL_STATE_DIR: gcp/staging
+  - aggregate:
+    - task: bosh-cleanup
       input_mapping:
-        vars-store: deployments-loggregator
-      file: loggregator-ci/tasks/staging/setup-cf.yml
+        bbl-state: deployments-loggregator
+      file: cf-deployment-concourse-tasks/bosh-cleanup/task.yml
       params:
-        SYSTEM_DOMAIN: staging.loggr.cf-app.com
-        VARS_STORE_FILE: gcp/staging/deployment-vars.yml
-        ORG: cf-lamb
-        SPACE: development
-    - task: setup-event
-      file: loggregator-ci/tasks/staging/setup-datadog-event.yml
-      params:
-        DATADOG_APP_KEY: {{datadog-dev-app-key}}
+        BBL_STATE_DIR: gcp/staging
 
 - name: blackbox-tests
   serial: true
@@ -439,7 +517,7 @@ jobs:
   - cf-deploy-start-incidents
   plan:
   - get: 2h
-    trigger: true
+    trigger: false
   - aggregate:
     - get: vars-store
       resource: deployments-loggregator
