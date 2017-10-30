@@ -3,7 +3,6 @@ groups:
   jobs:
   - loggregator-tests
   - loggregator-bump-submodule
-  - loggregator-release-tests
   - loggregator-deploy
   - cf-deploy
   - lats
@@ -12,17 +11,14 @@ groups:
   - loggregator-promotion
   - cf-syslog-drain-tests
   - cf-syslog-drain-bump-submodule
-  - cf-syslog-drain-release-tests
   - cf-syslog-drain-promotion
   - statsd-injector-tests
   - statsd-injector-bump-submodule
-  - statsd-injector-release-tests
   - statsd-injector-deploy
 - name: loggregator
   jobs:
   - loggregator-tests
   - loggregator-bump-submodule
-  - loggregator-release-tests
   - loggregator-deploy
   - cf-deploy
   - lats
@@ -33,7 +29,6 @@ groups:
   jobs:
   - cf-syslog-drain-tests
   - cf-syslog-drain-bump-submodule
-  - cf-syslog-drain-release-tests
   - cf-deploy
   - cats
   - cf-syslog-drain-promotion
@@ -41,7 +36,6 @@ groups:
   jobs:
   - statsd-injector-tests
   - statsd-injector-bump-submodule
-  - statsd-injector-release-tests
   - statsd-injector-deploy
 
 resources:
@@ -359,7 +353,7 @@ jobs:
   - aggregate:
     - get: loggregator-ci
     - get: loggregator-release
-      trigger: false
+      trigger: true
     - get: loggregator-src
       passed:
       - loggregator-tests
@@ -452,79 +446,6 @@ jobs:
       repository: committed-loggregator-release
       rebase: true
 
-- name: loggregator-release-tests
-  serial: true
-  plan:
-  - aggregate:
-    - get: loggregator-ci
-    - get: loggregator-release
-      trigger: true
-  - task: sync-package-specs
-    file: loggregator-ci/tasks/run-release-script.yml
-    input_mapping:
-      release-repo: loggregator-release
-    output_mapping:
-      updated-release-repo: synced-loggregator-release
-    params:
-      SCRIPT: scripts/sync-package-specs
-  - aggregate:
-    - task: run-specs
-      config:
-        platform: linux
-        image_resource:
-          type: docker-image
-          source:
-            repository: ruby
-        inputs:
-        - name: synced-loggregator-release
-        run:
-          path: bash
-          args:
-            - -c
-            - |
-              #!/bin/bash
-              set -e
-              cd synced-loggregator-release
-              bundle install
-              rspec
-    - task: run-tests
-      file: loggregator-ci/tasks/run-release-script.yml
-      input_mapping:
-        release-repo: synced-loggregator-release
-      params:
-        SCRIPT: scripts/test ~integration
-    - task: run-integration-tests
-      file: loggregator-ci/tasks/run-release-script.yml
-      input_mapping:
-        release-repo: synced-loggregator-release
-      params:
-        SCRIPT: scripts/test integration
-  - task: commit
-    config:
-      platform: linux
-      image_resource:
-        type: docker-image
-        source:
-          repository: loggregator/base
-      inputs:
-        - name: synced-loggregator-release
-      outputs:
-        - name: committed-loggregator-release
-      params:
-        SOURCE: synced-loggregator-release
-        PATHS: "src/code.cloudfoundry.org/loggregator packages"
-        COMMIT_MESSAGE: "Sync package specs"
-        OUTPUT: committed-loggregator-release
-      run:
-        path: bash
-        args:
-        - -c
-        - {{commit}}
-  - put: loggregator-release-updated
-    params:
-      repository: committed-loggregator-release
-      rebase: false
-
 - name: cf-deploy
   serial: true
   serial_groups:
@@ -542,12 +463,10 @@ jobs:
       trigger: true
       passed:
       - loggregator-bump-submodule
-      - loggregator-release-tests
     - get: cf-syslog-drain-release
       trigger: true
       passed:
       - cf-syslog-drain-bump-submodule
-      - cf-syslog-drain-release-tests
     - get: vars-store
       resource: deployments-loggregator
       trigger: false
@@ -656,7 +575,6 @@ jobs:
     - get: loggregator-release-updated
       passed:
       - loggregator-bump-submodule
-      - loggregator-release-tests
       trigger: true
     - get: deployments-loggregator
       trigger: false
@@ -964,7 +882,7 @@ jobs:
   - aggregate:
     - get: loggregator-ci
     - get: cf-syslog-drain-release
-      trigger: false
+      trigger: true
     - get: scalable-syslog
       passed:
       - cf-syslog-drain-tests
@@ -995,70 +913,6 @@ jobs:
     file: loggregator-ci/tasks/run-release-script.yml
     input_mapping:
       release-repo: updated-cf-syslog-drain-release
-    output_mapping:
-      updated-release-repo: synced-cf-syslog-drain-release
-    params:
-      SCRIPT: scripts/sync-package-specs
-  - task: run-tests
-    config:
-      platform: linux
-      image_resource:
-        type: docker-image
-        source:
-          repository: loggregator/base
-      inputs:
-      - name: synced-cf-syslog-drain-release
-      run:
-        path: bash
-        args:
-        - -c
-        - |
-          #!/bin/bash
-
-          set -ex
-
-          pushd synced-cf-syslog-drain-release
-            export GOPATH="$PWD"
-            export PATH="$GOPATH/bin:$PATH"
-            go test -race code.cloudfoundry.org/scalable-syslog/...
-          popd
-  - task: commit
-    config:
-      platform: linux
-      image_resource:
-        type: docker-image
-        source:
-          repository: loggregator/base
-      inputs:
-      - name: synced-cf-syslog-drain-release
-      outputs:
-      - name: bumped-cf-syslog-drain-release
-      params:
-        SOURCE: synced-cf-syslog-drain-release
-        PATHS: src/code.cloudfoundry.org/scalable-syslog packages/
-        COMMIT_MESSAGE: "Bump scalable-syslog"
-        OUTPUT: bumped-cf-syslog-drain-release
-      run:
-        path: bash
-        args:
-        - -c
-        - {{commit}}
-  - put: cf-syslog-drain-release
-    params:
-      repository: bumped-cf-syslog-drain-release
-      rebase: true
-
-- name: cf-syslog-drain-release-tests
-  serial: true
-  plan:
-  - aggregate:
-    - get: loggregator-ci
-    - get: cf-syslog-drain-release
-      trigger: true
-  - task: sync-package-specs
-    file: loggregator-ci/tasks/run-release-script.yml
-    input_mapping:
-      release-repo: cf-syslog-drain-release
     output_mapping:
       updated-release-repo: synced-cf-syslog-drain-release
     params:
@@ -1170,7 +1024,7 @@ jobs:
   - aggregate:
     - get: loggregator-ci
     - get: statsd-injector-release
-      trigger: false
+      trigger: true
     - get: statsd-injector
       passed:
       - statsd-injector-tests
@@ -1254,70 +1108,6 @@ jobs:
       repository: committed-statsd-injector-release
       rebase: true
 
-- name: statsd-injector-release-tests
-  serial: true
-  plan:
-  - aggregate:
-    - get: loggregator-ci
-    - get: statsd-injector-release
-      trigger: true
-  - task: sync-package-specs
-    file: loggregator-ci/tasks/run-release-script.yml
-    input_mapping:
-      release-repo: statsd-injector-release
-    output_mapping:
-      updated-release-repo: synced-statsd-injector-release
-    params:
-      SCRIPT: scripts/sync-package-specs
-  - task: run-tests
-    config:
-      platform: linux
-      image_resource:
-        type: docker-image
-        source:
-          repository: loggregator/base
-      inputs:
-      - name: synced-statsd-injector-release
-      run:
-        path: bash
-        args:
-        - -c
-        - |
-          #!/bin/bash
-
-          set -ex
-
-          pushd synced-statsd-injector-release
-            export GOPATH="$PWD"
-            export PATH="$GOPATH/bin:$PATH"
-            go test -race github.com/cloudfoundry/statsd-injector/...
-          popd
-  - task: commit
-    config:
-      platform: linux
-      image_resource:
-        type: docker-image
-        source:
-          repository: loggregator/base
-      inputs:
-      - name: synced-statsd-injector-release
-      outputs:
-      - name: committed-statsd-injector-release
-      params:
-        SOURCE: synced-statsd-injector-release
-        PATHS: src/github.com/cloudfoundry/statsd-injector
-        COMMIT_MESSAGE: "Updated statsd-injector-release"
-        OUTPUT: committed-statsd-injector-release
-      run:
-        path: bash
-        args:
-        - -c
-        - {{commit}}
-  - put: statsd-injector-release-updated
-    params:
-      repository: committed-statsd-injector-release
-      rebase: false
-
 - name: statsd-injector-deploy
   serial: true
   public: false
@@ -1327,7 +1117,6 @@ jobs:
       trigger: true
       passed:
       - statsd-injector-bump-submodule
-      - statsd-injector-release-tests
     - get: deployments-loggregator
       trigger: false
   - task: deploy
