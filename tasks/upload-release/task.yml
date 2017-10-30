@@ -1,0 +1,22 @@
+---
+platform: linux
+
+image_resource:
+  type: docker-image
+  source:
+    repository: relintdockerhubpushbot/cf-deployment-concourse-tasks
+    tag: v3.15.0
+
+inputs:
+- name: bbl-state  # - The Director's `bbl-state.json`
+- name: bosh-release-dir  # - The release to upload
+
+run:
+  path: loggregator-ci/tasks/upload-release/task
+
+params:
+  BBL_STATE_DIR:
+  # - Optional
+  # - Path to the directory containing the `bbl-state.json` file
+  # - The path is relative to root of the `bbl-state` input
+  # - Defaults to the root of the `bbl-state` input

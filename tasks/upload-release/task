@@ -1,0 +1,15 @@
+#!/bin/bash
+
+set -exu
+
+pushd bbl-state/$BBL_STATE_DIR
+  export BOSH_CLIENT=`bbl director-username`
+  export BOSH_CLIENT_SECRET=`bbl director-password`
+  export BOSH_CA_CERT=`bbl director-ca-cert`
+  export BOSH_ENVIRONMENT=`bbl director-address`
+popd
+
+pushd bosh-release-dir
+    bosh create-release
+    bosh upload-release --rebase
+popd

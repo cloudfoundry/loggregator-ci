@@ -122,42 +122,20 @@ jobs:
       file: cf-deployment-concourse-tasks/bosh-upload-stemcell-from-cf-deployment/task.yml
       params:
         BBL_STATE_DIR: gcp/staging
-    - task: upload-releases
+    - task: upload-loggregator-release
       input_mapping:
+        bosh-release-dir: loggregator
         bbl-state: deployments-loggregator
-      config:
-        platform: linux
-        image_resource:
-          type: docker-image
-          source:
-            repository: relintdockerhubpushbot/cf-deployment-concourse-tasks
-        inputs:
-        - name: bbl-state
-        - name: loggregator
-        - name: cf-syslog-drain
-        run:
-          path: /bin/bash
-          args:
-          - "-c"
-          - |
-            #!/bin/bash
-
-            set -ex
-
-            pushd bbl-state/gcp/staging
-              export BOSH_CLIENT=`bbl director-username`
-              export BOSH_CLIENT_SECRET=`bbl director-password`
-              export BOSH_CA_CERT=`bbl director-ca-cert`
-              export BOSH_ENVIRONMENT=`bbl director-address`
-            popd
-
-            releases="loggregator cf-syslog-drain"
-            for rel in $releases; do
-              pushd $rel
-                bosh create-release
-                bosh upload-release --rebase
-              popd
-            done
+      file: loggregator-ci/tasks/upload-release/task.yml
+      PARAMS:
+        BBL_STATE_DIR: gcp/staging
+    - task: upload-cf-syslog-drain-release
+      input_mapping:
+        bosh-release-dir: cf-syslog-drain
+        bbl-state: deployments-loggregator
+      file: loggregator-ci/tasks/upload-release/task.yml
+      PARAMS:
+        BBL_STATE_DIR: gcp/staging
     - task: create-turbulence-vars
       input_mapping:
         bbl-state: deployments-loggregator
@@ -276,41 +254,13 @@ jobs:
     - get: deployments-loggregator
     - get: ouroboros
       trigger: true
-  - task: upload-releases
+  - task: upload-release
     input_mapping:
+      bosh-release-dir: ouroboros
       bbl-state: deployments-loggregator
-    config:
-      platform: linux
-      image_resource:
-        type: docker-image
-        source:
-          repository: relintdockerhubpushbot/cf-deployment-concourse-tasks
-      inputs:
-      - name: bbl-state
-      - name: ouroboros
-      run:
-        path: /bin/bash
-        args:
-        - "-c"
-        - |
-          #!/bin/bash
-
-          set -ex
-
-          pushd bbl-state/gcp/staging
-            export BOSH_CLIENT=`bbl director-username`
-            export BOSH_CLIENT_SECRET=`bbl director-password`
-            export BOSH_CA_CERT=`bbl director-ca-cert`
-            export BOSH_ENVIRONMENT=`bbl director-address`
-          popd
-
-          releases="ouroboros"
-          for rel in $releases; do
-            pushd $rel
-              bosh create-release
-              bosh upload-release --rebase
-            popd
-          done
+    file: loggregator-ci/tasks/upload-release/task.yml
+    PARAMS:
+      BBL_STATE_DIR: gcp/staging
   - task: deploy-ouroboros
     input_mapping:
       bbl-state: deployments-loggregator
