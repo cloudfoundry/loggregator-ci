@@ -8,6 +8,7 @@ image_resource:
     tag: v3.15.0
 
 inputs:
+- name: loggregator-ci # - This repo
 - name: bbl-state  # - The Director's `bbl-state.json`
 - name: bosh-release-dir  # - The release to upload
 

@@ -127,14 +127,14 @@ jobs:
         bosh-release-dir: loggregator
         bbl-state: deployments-loggregator
       file: loggregator-ci/tasks/upload-release/task.yml
-      PARAMS:
+      params:
         BBL_STATE_DIR: gcp/staging
     - task: upload-cf-syslog-drain-release
       input_mapping:
         bosh-release-dir: cf-syslog-drain
         bbl-state: deployments-loggregator
       file: loggregator-ci/tasks/upload-release/task.yml
-      PARAMS:
+      params:
         BBL_STATE_DIR: gcp/staging
     - task: create-turbulence-vars
       input_mapping:
@@ -251,6 +251,7 @@ jobs:
     - get: daily
       trigger: true
     - get: cf-deployment-concourse-tasks
+    - get: loggregator-ci
     - get: deployments-loggregator
     - get: ouroboros
       trigger: true
@@ -259,7 +260,7 @@ jobs:
       bosh-release-dir: ouroboros
       bbl-state: deployments-loggregator
     file: loggregator-ci/tasks/upload-release/task.yml
-    PARAMS:
+    params:
       BBL_STATE_DIR: gcp/staging
   - task: deploy-ouroboros
     input_mapping:
