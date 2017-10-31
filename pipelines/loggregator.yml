@@ -428,7 +428,7 @@ jobs:
       committed-repo: committed-loggregator-release
     params:
       PATHS: "src/code.cloudfoundry.org/loggregator packages"
-  - put: loggregator-release-updated
+  - put: loggregator-release
     params:
       repository: committed-loggregator-release
       rebase: true

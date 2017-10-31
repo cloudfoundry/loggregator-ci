@@ -129,15 +129,15 @@ jobs:
       params:
         # ADAPTER_COLLOCATED: If false adapters will be deployed to their own instance group.
         # If true, adapters will be deployed with doppler.
-        ADAPTER_COLLOCATED: false
+        ADAPTER_COLLOCATED: true
         ADAPTER_COUNT: 2
         API_VERSION: v2
         CLIENT_ID: capacity_planning_authenticator
         DIEGO_CELL_COUNT: 2
-        DOPPLER_COUNT: 1
+        DOPPLER_COUNT: 2
         END_RPS: 1600
         EVENT_COUNTER_COUNT: 2
-        LOG_API_COUNT: 1
+        LOG_API_COUNT: 2
         LOG_EMITTER_COUNT: 2
         LOG_EMITTER_INSTANCE_COUNT: 2
         LOG_SIZE: 1000
@@ -148,7 +148,7 @@ jobs:
         START_RPS: 800
         STEPS: 8
         SYSLOG_COUNTER_COUNT: 2
-        SYSLOG_DRAIN_COUNT_PER_APP: 1
+        SYSLOG_DRAIN_COUNT_PER_APP: 10
         SYSLOG_SERVICE_NAME: syslog-counter
         SYSLOG_SERVICE_URL: syslog://syslog-counter.service.cf.internal:8080
         SYSTEM_DOMAIN: loggregator-capacity-planning.cf-app.com
@@ -192,6 +192,13 @@ jobs:
             - type: replace
               path: /instance_groups/name=router/instances
               value: $ROUTER_COUNT
+            - type: replace
+              path: /instance_groups/name=router/azs
+              value:
+                - z1
+                - z2
+                - z3
+                - z4
             - type: replace
               path: /instance_groups/name=log-api/instances
               value: $LOG_API_COUNT
