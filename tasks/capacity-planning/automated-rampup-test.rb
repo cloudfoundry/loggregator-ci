@@ -354,7 +354,21 @@ class Deployer
       ]
 
       threads << Thread.new do
-        exec(bosh_env, push_cmd)
+        max_attempts = 3
+        (1..max_attempts).to_a.each do |attempt|
+          begin
+            exec(bosh_env, push_cmd)
+            break
+          rescue => e
+            Logger.fatal("Failed attempt ##{attempt} of #{max_attempts}")
+            Logger.fatal(e.message)
+            Logger.fatal(e.backtrace)
+
+            if attempt == max_attempts
+              raise e
+            end
+          end
+        end
 
         (1..settings.syslog_drain_count_per_app).each do |c|
           bind_cmd = [
