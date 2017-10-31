@@ -15,7 +15,7 @@ outputs:
 - name: committed-repo
 
 run:
-  path: loggregator-ci/tasks/commit-with-shortlog/task
+  path: ../loggregator-ci/tasks/commit-with-shortlog/task
   dir: commited-repo
 
 params:
