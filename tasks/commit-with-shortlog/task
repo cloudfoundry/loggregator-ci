@@ -62,7 +62,9 @@ class Committer
   end
 
   def commit(msg)
-    `git commit -m "#{msg}" --author="Loggregator CI <cf-loggregator@pivotal.io>"`
+    `git config --global user.email "cf-loggregator@pivotal.io>"`
+    `git config --global user.name "Loggregator CI"`
+    `git commit -m "#{msg}"`
   end
 
   def copy_release_dir

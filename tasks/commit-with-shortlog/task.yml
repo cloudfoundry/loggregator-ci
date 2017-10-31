@@ -16,7 +16,7 @@ outputs:
 
 run:
   path: ../loggregator-ci/tasks/commit-with-shortlog/task
-  dir: commited-repo
+  dir: committed-repo
 
 params:
   # Required. The paths to commit.
