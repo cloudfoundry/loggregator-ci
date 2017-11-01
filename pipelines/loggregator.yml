@@ -428,7 +428,7 @@ jobs:
       committed-repo: committed-loggregator-release
     params:
       PATHS: "src/code.cloudfoundry.org/loggregator packages"
-  - put: loggregator-release
+  - put: loggregator-release-updated
     params:
       repository: committed-loggregator-release
       rebase: true
@@ -928,29 +928,16 @@ jobs:
             go test -race code.cloudfoundry.org/scalable-syslog/...
           popd
   - task: commit
-    config:
-      platform: linux
-      image_resource:
-        type: docker-image
-        source:
-          repository: loggregator/base
-      inputs:
-      - name: synced-cf-syslog-drain-release
-      outputs:
-      - name: bumped-cf-syslog-drain-release
-      params:
-        SOURCE: synced-cf-syslog-drain-release
-        PATHS: src/code.cloudfoundry.org/scalable-syslog packages/
-        COMMIT_MESSAGE: "Bump scalable-syslog"
-        OUTPUT: bumped-cf-syslog-drain-release
-      run:
-        path: bash
-        args:
-        - -c
-        - {{commit}}
+    file: loggregator-ci/tasks/commit-with-shortlog/task.yml
+    input_mapping:
+      release-repo: synced-cf-syslog-drain-release
+    output_mapping:
+      committed-repo: committed-cf-syslog-drain-release
+    params:
+      PATHS: "src/code.cloudfoundry.org/scalable-syslog packages"
   - put: cf-syslog-drain-release
     params:
-      repository: bumped-cf-syslog-drain-release
+      repository: committed-cf-syslog-drain-release
       rebase: true
 
 - name: cf-syslog-drain-promotion
