@@ -21,7 +21,7 @@ resources:
   type: git
   source:
     uri: git@github.com:cloudfoundry/loggregator-release.git
-    branch: &backport-branch back-ports/1.10
+    branch: &backport-branch v77.x
     private_key: {{loggregator-key}}
 
 - name: loggregator-final-release-develop
@@ -322,7 +322,7 @@ jobs:
         S3_ACCESS_KEY: {{s3-access-key}}
         S3_SECRET_KEY: {{s3-secret-key}}
         SSH_KEY: {{loggregator-key}}
-        NEW_VERSION: 77.2
+        NEW_VERSION: 77.3
         BRANCH_NAME: *backport-branch
       inputs:
       - name: loggregator-backport
