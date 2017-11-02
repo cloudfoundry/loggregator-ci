@@ -8,18 +8,20 @@ ENV["DATADOG_API_KEY"].split(' ').each do |k|
   client = Dogapi::Client.new(k)
 
   metadata = {
+    timestamp: Time.now,
     host: ENV["CF_API"],
     tags: [
       ENV["APP_NAME"],
+      "delay_unit:#{ENV["DELAY_UNIT"]}",
     ],
   }
 
-  client.emit_point("smoke_test.loggregator.msg_count", ENV["MSG_COUNT"], metadata)
-  client.emit_point("smoke_test.loggregator.cycles", ENV["CYCLES"].to_i, metadata)
+  client.batch_metrics do
+    client.emit_point("smoke_test.loggregator.delay", ENV["DELAY"].to_i, metadata)
+    client.emit_point("smoke_test.loggregator.msg_count", ENV["MSG_COUNT"], metadata)
+    client.emit_point("smoke_test.loggregator.cycles", ENV["CYCLES"].to_i, metadata)
+  end
 
-  delay_unit = ENV["DELAY_UNIT"]
-  metadata[:tags] << "delay_unit:#{delay_unit}"
-  client.emit_point("smoke_test.loggregator.delay", ENV["DELAY"].to_i, metadata)
 end
 RUBY
 )"
