@@ -223,7 +223,7 @@ jobs:
   - aggregate:
     - put: deployments-loggregator
       params:
-        repository: final-vars-store
+        repository: updated-vars-store
         rebase: true
     - task: bosh-cleanup
       input_mapping:
