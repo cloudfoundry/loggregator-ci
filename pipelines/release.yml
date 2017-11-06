@@ -185,7 +185,219 @@ resources:
     access_token: {{access-token}}
     drafts: true
 
+- name: loggregator-capacity-planning-release
+  type: git
+  source:
+    uri: git@github.com:cloudfoundry-incubator/loggregator-capacity-planning-release
+    branch: master
+    private_key: {{cf-loggregator-oauth-bot-key}}
+
+- name: loggregator-bench-release
+  type: git
+  source:
+    uri: git@github.com:cloudfoundry-incubator/loggregator-bench-release
+    branch: master
+    private_key: {{cf-loggregator-oauth-bot-key}}
+
+- name: ouroboros-release
+  type: git
+  source:
+    uri: git@github.com:cloudfoundry-incubator/ouroboros-release
+    branch: master
+    private_key: {{cf-loggregator-oauth-bot-key}}
+
+- name: reference-nozzle-release
+  type: git
+  source:
+    uri: git@github.com:cloudfoundry-incubator/reference-nozzle-release
+    branch: master
+    private_key: {{cf-loggregator-oauth-bot-key}}
+
 jobs:
+- name: bump-golang
+  serial: true
+  plan:
+  - aggregate:
+    - get: loggregator-ci
+    - get: loggregator-develop
+    - get: loggregator-capacity-planning-release
+    - get: loggregator-bench-release
+    - get: cf-syslog-drain-release-develop
+    - get: statsd-injector-release
+    - get: ouroboros-release
+    - get: bosh-hm-forwarder-release
+    - get: reference-nozzle-release
+  - aggregate:
+    - do:
+      - task: bump-loggregator-release
+        file: loggregator-ci/tasks/bump-golang/task.yml
+        input_mapping:
+          release-repo: loggregator-develop
+        output_mapping:
+          updated-release-repo: updated-loggregator-release
+        params:
+          VERSION: 1.9.2 &golang-version
+          INCLUDE_WINDOWS: true
+      - task: commit-loggregator-release
+        file: loggregator-ci/tasks/commit/task.yml
+        input_mapping:
+          release-repo: updated-release-repo
+        output_mapping:
+          committed-repo: committed-loggregator-release
+        params:
+          COMMIT_MESSAGE: "Bump golang version"
+      # - put: loggregator-develop
+      #   params:
+      #     repository: commited-loggregator-release
+      #     rebase: false
+    - do:
+      - task: bump-loggregator-capacity-planning-release
+        file: loggregator-ci/tasks/bump-golang/task.yml
+        input_mapping:
+          release-repo: loggregator-capacity-planning-release
+        output_mapping:
+          updated-release-repo: updated-loggregator-capacity-planning-release
+        params:
+          VERSION: *golang-version
+      - task: commit-loggregator-capacity-planning-release
+        file: loggregator-ci/tasks/commit/task.yml
+        input_mapping:
+          release-repo: updated-loggregator-capacity-planning-release
+        output_mapping:
+          committed-repo: committed-loggregator-capacity-planning-release
+        params:
+          COMMIT_MESSAGE: "Bump golang version"
+      # - put: loggregator-capacity-planning-release
+      #   params:
+      #     repository: committed-loggregator-capacity-planning-release
+      #     rebase: false
+    - do:
+      - task: bump-loggregator-bench-release
+        file: loggregator-ci/tasks/bump-golang/task.yml
+        input_mapping:
+          release-repo: loggregator-bench-release
+        output_mapping:
+          updated-release-repo: updated-loggregator-bench-release
+        params:
+          VERSION: *golang-version
+      - task: commit-loggregator-bench-release
+        file: loggregator-ci/tasks/commit/task.yml
+        input_mapping:
+          release-repo: updated-loggregator-bench-release
+        output_mapping:
+          committed-repo: committed-loggregator-bench-release
+        params:
+          COMMIT_MESSAGE: "Bump golang version"
+      # - put: loggregator-bench-release
+      #   params:
+      #     repository: committed-loggregator-bench-release
+      #     rebase: false
+    - do:
+      - task: bump-cf-syslog-drain-release
+        file: loggregator-ci/tasks/bump-golang/task.yml
+        input_mapping:
+          release-repo: cf-syslog-drain-release-develop
+        output_mapping:
+          updated-release-repo: updated-cf-syslog-drain-release
+        params:
+          VERSION: *golang-version
+      - task: commit-cf-syslog-drain-release
+        file: loggregator-ci/tasks/commit/task.yml
+        input_mapping:
+          release-repo: updated-cf-syslog-drain-release
+        output_mapping:
+          committed-repo: committed-cf-syslog-drain-release
+        params:
+          COMMIT_MESSAGE: "Bump golang version"
+      # - put: cf-syslog-drain-release-develop
+      #   params:
+      #     repository: committed-cf-syslog-drain-release
+      #     rebase: false
+    - do:
+      - task: bump-statsd-injector-release
+        file: loggregator-ci/tasks/bump-golang/task.yml
+        input_mapping:
+          release-repo: statsd-injector-release
+        output_mapping:
+          updated-release-repo: updated-statsd-injector-release
+        params:
+          VERSION: *golang-version
+      - task: commit-statsd-injector-release
+        file: loggregator-ci/tasks/commit/task.yml
+        input_mapping:
+          release-repo: updated-statsd-injector-release
+        output_mapping:
+          committed-repo: committed-statsd-injector-release
+        params:
+          COMMIT_MESSAGE: "Bump golang version"
+      # - put: statsd-injector-release
+      #   params:
+      #     repository: committed-statsd-injector-release
+      #     rebase: false
+    - do:
+      - task: bump-ouroboros-release
+        file: loggregator-ci/tasks/bump-golang/task.yml
+        input_mapping:
+          release-repo: ouroboros-release
+        output_mapping:
+          updated-release-repo: updated-ouroboros-release
+        params:
+          VERSION: *golang-version
+      - task: commit-ouroboros-release
+        file: loggregator-ci/tasks/commit/task.yml
+        input_mapping:
+          release-repo: updated-ouroboros-release
+        output_mapping:
+          committed-repo: committed-ouroboros-release
+        params:
+          COMMIT_MESSAGE: "Bump golang version"
+      # - put: ouroboros-release
+      #   params:
+      #     repository: committed-ouroboros-release
+      #     rebase: false
+    - do:
+      - task: bump-bosh-hm-forwarder-release
+        file: loggregator-ci/tasks/bump-golang/task.yml
+        input_mapping:
+          release-repo: bosh-hm-forwarder-release
+        output_mapping:
+          updated-release-repo: updated-bosh-hm-forwarder-release
+        params:
+          VERSION: *golang-version
+      - task: commit-bosh-hm-forwarder-release
+        file: loggregator-ci/tasks/commit/task.yml
+        input_mapping:
+          release-repo: updated-bosh-hm-forwarder-release
+        output_mapping:
+          committed-repo: committed-bosh-hm-forwarder-release
+        params:
+          COMMIT_MESSAGE: "Bump golang version"
+      # - put: bosh-hm-forwarder-release
+      #   params:
+      #     repository: committed-bosh-hm-forwarder-release
+      #     rebase: false
+    - do:
+      - task: bump-reference-nozzle-release
+        file: loggregator-ci/tasks/bump-golang/task.yml
+        input_mapping:
+          release-repo: reference-nozzle-release
+        output_mapping:
+          updated-release-repo: updated-reference-nozzle-release
+        params:
+          VERSION: *golang-version
+      - task: commit-reference-nozzle-release
+        file: loggregator-ci/tasks/commit/task.yml
+        input_mapping:
+          release-repo: updated-reference-nozzle-release
+        output_mapping:
+          committed-repo: committed-reference-nozzle-release
+        params:
+          COMMIT_MESSAGE: "Bump golang version"
+      # - put: reference-nozzle-release
+      #   params:
+      #     repository: committed-reference-nozzle-release
+      #     rebase: false
+
 - name: loggregator-create-final-release
   serial: true
   plan:
