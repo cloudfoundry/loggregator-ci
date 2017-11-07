@@ -78,6 +78,7 @@ def bump_in_files(dir, from_version, to_version)
 end
 
 def sync_package_specs
+  ENV["GOPATH"] = Dir.pwd
   `./scripts/sync-package-specs`
   check_process($?, "deploying bosh lite")
 end
