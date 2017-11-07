@@ -257,7 +257,7 @@ jobs:
           COMMIT_MESSAGE: "Bump golang version"
       - put: loggregator-develop
         params:
-          repository: commited-loggregator-release
+          repository: committed-loggregator-release
           rebase: false
     - do:
       - task: bump-loggregator-capacity-planning-release
