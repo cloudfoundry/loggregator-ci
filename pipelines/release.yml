@@ -250,7 +250,7 @@ jobs:
       - task: commit-loggregator-release
         file: loggregator-ci/tasks/commit/task.yml
         input_mapping:
-          release-repo: updated-release-repo
+          release-repo: updated-loggregator-release
         output_mapping:
           committed-repo: committed-loggregator-release
         params:
@@ -268,6 +268,9 @@ jobs:
           updated-release-repo: updated-loggregator-capacity-planning-release
         params:
           VERSION: *golang-version
+          ACCESS_KEY_ID: {{s3-access-key-id}}
+          SECRET_ACCESS_KEY: {{s3-secret-access-key}}
+          BUCKET_NAME: loggregator-release-blobs
       - task: commit-loggregator-capacity-planning-release
         file: loggregator-ci/tasks/commit/task.yml
         input_mapping:
@@ -289,6 +292,9 @@ jobs:
           updated-release-repo: updated-loggregator-bench-release
         params:
           VERSION: *golang-version
+          ACCESS_KEY_ID: {{loggregator-bench-s3-access-key-id}}
+          SECRET_ACCESS_KEY: {{loggregator-bench-s3-secret-access-key}}
+          BUCKET_NAME: loggregator-bench-release-blobs
       - task: commit-loggregator-bench-release
         file: loggregator-ci/tasks/commit/task.yml
         input_mapping:
@@ -310,6 +316,9 @@ jobs:
           updated-release-repo: updated-cf-syslog-drain-release
         params:
           VERSION: *golang-version
+          ACCESS_KEY_ID: {{s3-access-key-id}}
+          SECRET_ACCESS_KEY: {{s3-secret-access-key}}
+          BUCKET_NAME: cf-syslog-drain-release-blobs
       - task: commit-cf-syslog-drain-release
         file: loggregator-ci/tasks/commit/task.yml
         input_mapping:
@@ -331,6 +340,9 @@ jobs:
           updated-release-repo: updated-statsd-injector-release
         params:
           VERSION: *golang-version
+          ACCESS_KEY_ID: {{s3-access-key-id}}
+          SECRET_ACCESS_KEY: {{s3-secret-access-key}}
+          BUCKET_NAME: statsd-injector-release-blobs
       - task: commit-statsd-injector-release
         file: loggregator-ci/tasks/commit/task.yml
         input_mapping:
@@ -352,6 +364,9 @@ jobs:
           updated-release-repo: updated-ouroboros-release
         params:
           VERSION: *golang-version
+          ACCESS_KEY_ID: {{s3-access-key-id}}
+          SECRET_ACCESS_KEY: {{s3-secret-access-key}}
+          BUCKET_NAME: loggregator-release-blobs
       - task: commit-ouroboros-release
         file: loggregator-ci/tasks/commit/task.yml
         input_mapping:
@@ -373,6 +388,9 @@ jobs:
           updated-release-repo: updated-bosh-hm-forwarder-release
         params:
           VERSION: *golang-version
+          ACCESS_KEY_ID: {{s3-access-key-id}}
+          SECRET_ACCESS_KEY: {{s3-secret-access-key}}
+          BUCKET_NAME: bosh-hm-forwarder-release-blobs
       - task: commit-bosh-hm-forwarder-release
         file: loggregator-ci/tasks/commit/task.yml
         input_mapping:
@@ -394,6 +412,9 @@ jobs:
           updated-release-repo: updated-reference-nozzle-release
         params:
           VERSION: *golang-version
+          ACCESS_KEY_ID: {{s3-access-key-id}}
+          SECRET_ACCESS_KEY: {{s3-secret-access-key}}
+          BUCKET_NAME: reference-nozzle-release-blobs
       - task: commit-reference-nozzle-release
         file: loggregator-ci/tasks/commit/task.yml
         input_mapping:
