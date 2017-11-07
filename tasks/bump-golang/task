@@ -118,7 +118,7 @@ create_config_private
 header "Adding Linux blob..."
 add_blob(linux_filename(to_version))
 
-if ENV["INCLUDE_WINDOWS"] == true
+if ENV["INCLUDE_WINDOWS"] == "true"
   header "Adding Windows blob..."
   add_blob(windows_filename(to_version))
 end
