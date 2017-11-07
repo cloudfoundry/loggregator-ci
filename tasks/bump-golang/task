@@ -78,7 +78,7 @@ def bump_in_files(dir, from_version, to_version)
 end
 
 def sync_package_specs
-  `GOPATH=$PWD ./scripts/sync-package-specs`
+  `PATH=$PATH:$PWD/bin GOPATH=$PWD ./scripts/sync-package-specs`
   check_process($?, "sync package specs")
 end
 
