@@ -18,9 +18,22 @@ params:
   # - The version of Go to bump to.
   VERSION:
 
+  # - Required
+  # - S3 access key ID for blob storage.
+  ACCESS_KEY_ID:
+
+  # - Required
+  # - S3 secret access key for blob storage.
+  SECRET_ACCESS_KEY:
+
+  # - Required
+  # - Bucket name to store blobs in.
+  BUCKET_NAME:
+
   # - Optional
   # - Whether to bump windows golang version.
   INCLUDE_WINDOWS: false
+
 run:
   path: ../loggregator-ci/tasks/bump-golang/task
   dir: updated-release-repo

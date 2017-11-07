@@ -1,4 +1,10 @@
 resources:
+- name: loggregator-ci
+  type: git
+  source:
+    uri: git@github.com:cloudfoundry/loggregator-ci.git
+    private_key: {{loggregator-key}}
+
 - name: loggregator-develop
   type: git
   source: &loggregator_develop
@@ -236,8 +242,11 @@ jobs:
         output_mapping:
           updated-release-repo: updated-loggregator-release
         params:
-          VERSION: 1.9.2 &golang-version
+          VERSION: &golang-version 1.9.2
           INCLUDE_WINDOWS: true
+          ACCESS_KEY_ID: {{s3-access-key-id}}
+          SECRET_ACCESS_KEY: {{s3-secret-access-key}}
+          BUCKET_NAME: loggregator-release-blobs
       - task: commit-loggregator-release
         file: loggregator-ci/tasks/commit/task.yml
         input_mapping:
