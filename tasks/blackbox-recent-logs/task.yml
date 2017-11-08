@@ -6,4 +6,4 @@ image_resource:
 inputs:
   - name: loggregator-ci
 run:
-  path: loggregator-ci/tasks/scripts/run-recent-logs-smoke-test.sh
+  path: loggregator-ci/tasks/blackbox-recent-logs/task

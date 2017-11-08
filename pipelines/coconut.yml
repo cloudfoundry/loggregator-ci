@@ -74,7 +74,7 @@ jobs:
       MESSAGE: "FIFTEEN-MINUTE"
     timeout: 15m
   - task: run-recent-logs-smoke-tests
-    file: loggregator-ci/tasks/generic-recent-logs-smoke-test.yml
+    file: loggregator-ci/tasks/blackbox-recent-logs/task.yml
     params: &basic-smoke-details
       APP_NAME: "floodspinner"
       CF_API: "api.coconut.cf-app.com"
