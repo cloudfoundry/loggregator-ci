@@ -381,7 +381,7 @@ jobs:
         - -c
         - {{update_submodule}}
   - task: sync-package-specs
-    file: loggregator-ci/tasks/run-release-script.yml
+    file: loggregator-ci/tasks/run-release-script/task.yml
     input_mapping:
       release-repo: bumped-loggregator-release
     output_mapping:
@@ -409,13 +409,13 @@ jobs:
               bundle install
               rspec
     - task: run-tests
-      file: loggregator-ci/tasks/run-release-script.yml
+      file: loggregator-ci/tasks/run-release-script/task.yml
       input_mapping:
         release-repo: synced-loggregator-release
       params:
         SCRIPT: scripts/test ~integration
     - task: run-integration-tests
-      file: loggregator-ci/tasks/run-release-script.yml
+      file: loggregator-ci/tasks/run-release-script/task.yml
       input_mapping:
         release-repo: synced-loggregator-release
       params:
@@ -891,7 +891,7 @@ jobs:
         - -c
         - {{update_submodule}}
   - task: sync-package-specs
-    file: loggregator-ci/tasks/run-release-script.yml
+    file: loggregator-ci/tasks/run-release-script/task.yml
     input_mapping:
       release-repo: updated-cf-syslog-drain-release
     output_mapping:
@@ -1018,7 +1018,7 @@ jobs:
         - -c
         - {{update_submodule}}
   - task: sync-package-specs
-    file: loggregator-ci/tasks/run-release-script.yml
+    file: loggregator-ci/tasks/run-release-script/task.yml
     input_mapping:
       release-repo: statsd-injector-release
     output_mapping:

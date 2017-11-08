@@ -17,4 +17,4 @@ params:
   # - The script to run inside the bosh release repo.
   SCRIPT:
 run:
-  path: loggregator-ci/tasks/scripts/run-release-script.sh
+  path: loggregator-ci/tasks/run-release-script/task
