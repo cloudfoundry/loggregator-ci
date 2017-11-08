@@ -12,4 +12,4 @@ inputs:
 outputs:
 - name: updated-capacity-planning-vars-store
 run:
-  path: loggregator-ci/tasks/capacity-planning/automated-rampup-test.rb
+  path: loggregator-ci/tasks/automated-rampup-test/task
