@@ -742,7 +742,7 @@ jobs:
       repository: committed-deployments-loggregator
       rebase: true
   - task: run-benchmarks
-    file: loggregator-ci/tasks/loggregator/benchmarks.yml
+    file: loggregator-ci/tasks/loggregator-bench/task.yml
     params:
       BBL_STATE_DIR: deployments-loggregator/gcp/coconut-bbl
   - put: loggregator-bench-results

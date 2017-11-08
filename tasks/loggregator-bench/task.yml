@@ -13,4 +13,4 @@ outputs:
 params:
   BBL_STATE_DIR: deployments-loggregator/gcp/coconut-bbl
 run:
-  path: loggregator-ci/tasks/loggregator/benchmarks.rb
+  path: loggregator-ci/tasks/loggregator-bench/task
