@@ -119,28 +119,6 @@ bosh_hm_forwarder_units: |
     go install github.com/onsi/ginkgo/ginkgo
     ginkgo -r -race -randomizeAllSpecs ./src/github.com/cloudfoundry/bosh-hm-forwarder
   popd
-upload_blobs: |
-  #!/bin/bash
-  set -ex
-
-  pushd "${RELEASE}"
-    cat << EOF > config/private.yml
-  ---
-  blobstore:
-    provider: s3
-    options:
-      bucket_name: $S3_BUCKET
-      access_key_id: $S3_ACCESS_KEY
-      secret_access_key: $S3_SECRET_KEY
-  EOF
-
-    bosh -n sync-blobs
-
-    ./scripts/blobify
-    bosh -n upload-blobs
-  popd
-
-  cp -r "${RELEASE}/." "${OUTPUT}/"
 update_submodule: |
   #!/bin/bash
 
@@ -172,36 +150,6 @@ commit: |
   popd
 
   cp -r "${SOURCE}/." "${OUTPUT}/"
-
-create-bosh-lite: |
-  #!/bin/bash
-  set -eux
-  export BOSH_LITE_NAME=$VM_NAME
-
-  creds_location='/tmp/google_creds'
-  cat <<EOF > "${creds_location}"
-  ${GOOGLE_CREDENTIALS}
-  EOF
-
-  if gcloud compute instances delete -q --zone "${GCE_ZONE}" "${VM_NAME}"
-  then
-    echo "Deleted instance ${VM_NAME}"
-  fi
-
-
-  cat <<EOF > Vagrantfile
-  Vagrant.configure('2') do |config|
-    config.vm.box = "cloudfoundry/bosh-lite"
-    config.vm.provider :google do |google, override|
-      google.google_project_id = "${PROJECT_ID}"
-      google.google_client_email = "${PROJECT_EMAIL_ADDR}"
-      google.google_json_key_location = "${creds_location}"
-      google.tags = ["bosh", "vms"]
-    end
-  end
-  EOF
-
-  vagrant up --provider=google
 
 prepare-docker-image: |
   #!/bin/bash
