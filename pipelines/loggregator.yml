@@ -37,6 +37,10 @@ groups:
   - statsd-injector-tests
   - statsd-injector-bump-submodule
   - statsd-injector-deploy
+- name: director-lifecycle
+  jobs:
+  - coconut-bbl-up
+  - coconut-bbl-destroy
 
 resources:
 - name: 10m
@@ -201,6 +205,49 @@ resources:
     - releases
 
 jobs:
+- name: coconut-bbl-up
+  public: false
+  plan:
+  - aggregate:
+    - get: cf-deployment-concourse-tasks
+    - get: bbl-state
+      resource: deployments-loggregator
+    - get: ops-files
+      resource: deployments-loggregator
+  - task: bbl-up
+    file: cf-deployment-concourse-tasks/bbl-up/task.yml
+    params:
+      BBL_GCP_SERVICE_ACCOUNT_KEY: service-account.key.json
+      BBL_GCP_PROJECT_ID: cff-loggregator
+      BBL_GCP_ZONE: us-central1-a
+      BBL_GCP_REGION: us-central1
+      BBL_STATE_DIR: gcp/coconut-bbl
+      BBL_IAAS: gcp
+      BBL_LB_CERT: {{coconut_bbl_lb_cert}}
+      BBL_LB_KEY: {{coconut_bbl_lb_key}}
+      BBL_ENV_NAME: coconut-bbl
+      LB_DOMAIN: coconut.cf-app.com
+  - put: deployments-loggregator
+    params:
+      repository: updated-bbl-state
+      rebase: true
+
+- name: coconut-bbl-destroy
+  public: false
+  plan:
+  - aggregate:
+    - get: cf-deployment-concourse-tasks
+    - get: bbl-state
+      resource: deployments-loggregator
+  - task: bbl-destroy
+    file: cf-deployment-concourse-tasks/bbl-destroy/task.yml
+    params:
+      BBL_STATE_DIR: gcp/coconut-bbl
+  - put: deployments-loggregator
+    params:
+      repository: updated-bbl-state
+      rebase: true
+
 - name: loggregator-tests
   serial: true
   public: true
