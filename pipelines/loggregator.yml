@@ -812,20 +812,14 @@ jobs:
   serial: true
   plan:
   - aggregate:
-    - get: release-elect
-      resource: loggregator-release-elect
-      trigger: false
     - get: develop
       resource: loggregator-release-updated
       trigger: true
       passed: ["lats", "cats", "loggregator-benchmarks"]
-    - get: loggregator-ci
-  - task: promote
-    file: loggregator-ci/tasks/promote.yml
+    - get: loggregator-release-elect
   - put: loggregator-release-elect
     params:
-      repository: promote-develop
-      rebase: false
+      repository: develop
 
 - name: cf-syslog-drain-tests
   serial: true
@@ -948,9 +942,7 @@ jobs:
       resource: cf-syslog-drain-release
       trigger: true
       passed: ["cats"]
-    - get: release-elect
-      resource: cf-syslog-drain-release-release-elect
-    - get: loggregator-ci
+    - get: cf-syslog-drain-release-release-elect
   - put: cf-syslog-drain-release-release-elect
     params:
       repository: develop
