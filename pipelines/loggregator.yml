@@ -704,7 +704,7 @@ jobs:
 
             bosh -n -d loggregator deploy \
               --vars-store "$deployment_dir/loggregator-vars.yml" \
-              "$loggregator_dir/templates/loggregator.yml"
+              "$loggregator_dir/manifests/loggregator.yml"
 
             rsync -ac deployments-loggregator/ updated-deployments-loggregator
   - task: commit
