@@ -15,6 +15,9 @@ groups:
   - statsd-injector-tests
   - statsd-injector-bump-submodule
   - statsd-injector-deploy
+  - noisy-neighbor-nozzle-tests
+  - noisy-neighbor-nozzle-bump-submodule
+  - noisy-neighbor-nozzle-deploy
 - name: loggregator
   jobs:
   - loggregator-tests
@@ -37,6 +40,11 @@ groups:
   - statsd-injector-tests
   - statsd-injector-bump-submodule
   - statsd-injector-deploy
+- name: noisy-neighbor-nozzle
+  jobs:
+  - noisy-neighbor-nozzle-tests
+  - noisy-neighbor-nozzle-bump-submodule
+  - noisy-neighbor-nozzle-deploy
 - name: director-lifecycle
   jobs:
   - coconut-bbl-up
@@ -203,6 +211,23 @@ resources:
     ignore_paths:
     - .final_builds
     - releases
+
+- name: noisy-neighbor-nozzle-release
+  type: git
+  source:
+    uri: git@github.com:cloudfoundry-incubator/noisy-neighbor-nozzle-release
+    branch: master
+    private_key: {{cf-loggregator-oauth-bot-key}}
+    ignore_paths:
+    - .final_builds
+    - releases
+
+- name: noisy-neighbor-nozzle
+  type: git
+  source:
+    uri: git@github.com:cloudfoundry-incubator/noisy-neighbor-nozzle
+    branch: master
+    private_key: {{cf-loggregator-oauth-bot-key}}
 
 jobs:
 - name: coconut-bbl-up
@@ -1187,3 +1212,154 @@ jobs:
     params:
       repository: updated-deployments-loggregator
       rebase: true
+
+- name: noisy-neighbor-nozzle-tests
+  serial: true
+  public: true
+  plan:
+  - get: noisy-neighbor-nozzle
+    trigger: true
+  - task: run-tests
+    config:
+      image_resource:
+        type: docker-image
+        source:
+          repository: loggregator/base
+      platform: linux
+      inputs:
+      - name: noisy-neighbor-nozzle
+      run:
+        path: bash
+        args:
+        - -c
+        - |
+          #!/bin/bash
+
+          set -ex
+
+          mkdir -p workspace/src/code.cloudfoundry.org/noisy-neighbor-nozzle
+          cp -r noisy-neighbor-nozzle/. workspace/src/code.cloudfoundry.org/noisy-neighbor-nozzle/
+
+          pushd workspace
+            export GOPATH="$PWD"
+            export PATH="$GOPATH/bin:$PATH"
+            pushd src/code.cloudfoundry.org/noisy-neighbor-nozzle
+              go get -t -d ./...
+              go test ./... -race
+            popd
+          popd
+
+- name: noisy-neighbor-nozzle-bump-submodule
+  serial: true
+  plan:
+  - aggregate:
+    - get: loggregator-ci
+    - get: noisy-neighbor-nozzle-release
+      trigger: true
+    - get: noisy-neighbor-nozzle
+      passed:
+      - noisy-neighbor-nozzle-tests
+      trigger: true
+  - task: update-submodule
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source:
+          repository: loggregator/base
+      inputs:
+      - name: noisy-neighbor-nozzle-release
+      - name: noisy-neighbor-nozzle
+      outputs:
+      - name: updated-noisy-neighbor-nozzle-release
+      params:
+        PARENT: noisy-neighbor-nozzle-release
+        OUTPUT: updated-noisy-neighbor-nozzle-release
+        CHILD: noisy-neighbor-nozzle
+        CHILD_PATH: src/code.cloudfoundry.org/noisy-neighbor-nozzle
+      run:
+        path: bash
+        args:
+        - -c
+        - {{update_submodule}}
+  - task: sync-package-specs
+    file: loggregator-ci/tasks/run-release-script/task.yml
+    input_mapping:
+      release-repo: updated-noisy-neighbor-nozzle-release
+    output_mapping:
+      updated-release-repo: synced-noisy-neighbor-nozzle-release
+    params:
+      SCRIPT: scripts/sync-package-specs
+  - task: run-tests
+    file: loggregator-ci/tasks/run-release-script/task.yml
+    input_mapping:
+      release-repo: synced-noisy-neighbor-nozzle-release
+    params:
+      SCRIPT: scripts/test
+  - task: commit
+    file: loggregator-ci/tasks/commit-with-shortlog/task.yml
+    input_mapping:
+      release-repo: synced-noisy-neighbor-nozzle-release
+    output_mapping:
+      committed-repo: committed-noisy-neighbor-nozzle-release
+    params:
+      PATHS: "src/code.cloudfoundry.org/noisy-neighbor-nozzle packages"
+  - put: noisy-neighbor-nozzle-release
+    params:
+      repository: committed-noisy-neighbor-nozzle-release
+      rebase: true
+
+- name: noisy-neighbor-nozzle-deploy
+  serial: true
+  public: false
+  plan:
+  - aggregate:
+    - get: noisy-neighbor-nozzle-release
+      trigger: true
+      passed:
+      - noisy-neighbor-nozzle-bump-submodule
+    - get: deployments-loggregator
+      trigger: false
+  - task: deploy
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source:
+          repository: relintdockerhubpushbot/cf-deployment-concourse-tasks
+      inputs:
+      - name: noisy-neighbor-nozzle-release
+      - name: deployments-loggregator
+      outputs:
+      - name: updated-deployments-loggregator
+      run:
+        path: bash
+        args:
+          - -c
+          - |
+            #!/bin/bash
+            set -e
+
+            bbl_dir="$PWD/deployments-loggregator/gcp/coconut-bbl"
+            nnnr="$PWD/noisy-neighbor-nozzle-release"
+
+            pushd deployments-loggregator/gcp/coconut-bbl
+              export BOSH_CLIENT=`bbl director-username`
+              export BOSH_CLIENT_SECRET=`bbl director-password`
+              export BOSH_CA_CERT=`bbl director-ca-cert`
+              export BOSH_ENVIRONMENT=`bbl director-address`
+              export UAA_CLIENT_ID=`bosh int datadog-vars.yml --path /uaa_client`
+              export UAA_CLIENT_SECRET=`bosh int datadog-vars.yml --path /uaa_secret`
+            popd
+
+            pushd "$nnnr"
+              bosh create-release
+              bosh upload-release --rebase
+
+              bosh -n -d noisy-neighbor-nozzle deploy \
+                --vars-file "$bbl_dir/deployment-vars.yml" \
+                "manifests/noisy-neighbor-nozzle.yml" \
+                -v "uaa_client_id=$UAA_CLIENT_ID" \
+                -v "uaa_client_secret=$UAA_CLIENT_SECRET" \
+                -v "system_domain=coconut.cf-app.com"
+            popd
