@@ -1350,6 +1350,7 @@ jobs:
               export BOSH_ENVIRONMENT=`bbl director-address`
               export UAA_CLIENT_ID=`bosh int datadog-vars.yml --path /uaa_client`
               export UAA_CLIENT_SECRET=`bosh int datadog-vars.yml --path /uaa_secret`
+              export DATADOG_API_KEY=`bosh int datadog-vars.yml --path /datadog_key`
             popd
 
             pushd "$nnnr"
@@ -1359,6 +1360,7 @@ jobs:
               bosh -n -d noisy-neighbor-nozzle deploy \
                 --vars-file "$bbl_dir/deployment-vars.yml" \
                 "manifests/noisy-neighbor-nozzle.yml" \
+                -v "datadog_api_key=$DATADOG_API_KEY" \
                 -v "uaa_client_id=$UAA_CLIENT_ID" \
                 -v "uaa_client_secret=$UAA_CLIENT_SECRET" \
                 -v "system_domain=coconut.cf-app.com"
