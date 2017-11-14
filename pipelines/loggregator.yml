@@ -1156,58 +1156,23 @@ jobs:
       passed:
       - statsd-injector-bump-submodule
     - get: deployments-loggregator
-      trigger: false
+    - get: loggregator-ci
   - task: deploy
-    config:
-      platform: linux
-      image_resource:
-        type: docker-image
-        source:
-          repository: relintdockerhubpushbot/cf-deployment-concourse-tasks
-      inputs:
-      - name: statsd-injector-release-updated
-      - name: deployments-loggregator
-      outputs:
-      - name: updated-deployments-loggregator
-      run:
-        path: bash
-        args:
-          - -c
-          - |
-            #!/bin/bash
-            set -e
-
-            bbl_dir="$PWD/deployments-loggregator/gcp/coconut-bbl"
-            statsd_dir="$PWD/statsd-injector-release-updated"
-
-            pushd deployments-loggregator/gcp/coconut-bbl
-              export BOSH_CLIENT=`bbl director-username`
-              export BOSH_CLIENT_SECRET=`bbl director-password`
-              export BOSH_CA_CERT=`bbl director-ca-cert`
-              export BOSH_ENVIRONMENT=`bbl director-address`
-            popd
-
-            pushd "$statsd_dir"
-              bosh create-release
-              bosh upload-release --rebase
-
-              bosh -n -d statsd-injector deploy \
-                --vars-store "$bbl_dir/statsd-injector-vars.yml" \
-                --vars-file "$bbl_dir/deployment-vars.yml" \
-                "$statsd_dir/manifests/statsd-injector.yml"
-            popd
-
-            set +e
-            pushd deployments-loggregator
-              git config user.email "cf-loggregator@pivotal.io"
-              git config user.name "Loggregator CI"
-              git add . --all
-              git commit -m "Updated statsd-injector deployment vars
-
-              [ci-skip]"
-            popd
-
-            rsync -ac deployments-loggregator/ updated-deployments-loggregator
+    file: loggregator-ci/tasks/bosh-deploy/task.yml
+    input_mapping:
+      bbl-state: deployments-loggregator
+      vars-store: deployments-loggregator
+      ops-files: deployments-loggregator
+      vars-files: deployments-loggregator
+      bosh-release: statsd-injector-release-updated
+    output_mapping:
+      updated-vars-store: updated-deployments-loggregator
+    params:
+      BBL_STATE_DIR: gcp/coconut-bbl
+      DEPLOYMENT_NAME: statsd-injector
+      MANIFEST_FILE: manifests/statsd-injector.yml
+      VARS_STORE_FILE: gcp/coconut-bbl/statsd-injector-vars.yml
+      VARS_FILES: "gcp/coconut-bbl/deployment-vars.yml"
   - put: deployments-loggregator
     params:
       repository: updated-deployments-loggregator
@@ -1319,49 +1284,18 @@ jobs:
       passed:
       - noisy-neighbor-nozzle-bump-submodule
     - get: deployments-loggregator
-      trigger: false
+    - get: loggregator-ci
   - task: deploy
-    config:
-      platform: linux
-      image_resource:
-        type: docker-image
-        source:
-          repository: relintdockerhubpushbot/cf-deployment-concourse-tasks
-      inputs:
-      - name: noisy-neighbor-nozzle-release
-      - name: deployments-loggregator
-      outputs:
-      - name: updated-deployments-loggregator
-      run:
-        path: bash
-        args:
-          - -c
-          - |
-            #!/bin/bash
-            set -e
-
-            bbl_dir="$PWD/deployments-loggregator/gcp/coconut-bbl"
-            nnnr="$PWD/noisy-neighbor-nozzle-release"
-
-            pushd deployments-loggregator/gcp/coconut-bbl
-              export BOSH_CLIENT=`bbl director-username`
-              export BOSH_CLIENT_SECRET=`bbl director-password`
-              export BOSH_CA_CERT=`bbl director-ca-cert`
-              export BOSH_ENVIRONMENT=`bbl director-address`
-              export UAA_CLIENT_ID=`bosh int datadog-vars.yml --path /uaa_client`
-              export UAA_CLIENT_SECRET=`bosh int datadog-vars.yml --path /uaa_secret`
-              export DATADOG_API_KEY=`bosh int datadog-vars.yml --path /datadog_key`
-            popd
-
-            pushd "$nnnr"
-              bosh create-release
-              bosh upload-release --rebase
-
-              bosh -n -d noisy-neighbor-nozzle deploy \
-                --vars-file "$bbl_dir/deployment-vars.yml" \
-                "manifests/noisy-neighbor-nozzle.yml" \
-                -v "datadog_api_key=$DATADOG_API_KEY" \
-                -v "uaa_client_id=$UAA_CLIENT_ID" \
-                -v "uaa_client_secret=$UAA_CLIENT_SECRET" \
-                -v "system_domain=coconut.cf-app.com"
-            popd
+    file: loggregator-ci/tasks/bosh-deploy/task.yml
+    input_mapping:
+      bbl-state: deployments-loggregator
+      vars-store: deployments-loggregator
+      ops-files: deployments-loggregator
+      vars-files: deployments-loggregator
+      bosh-release: noisy-neighbor-nozzle-release
+    params:
+      BBL_STATE_DIR: gcp/coconut-bbl
+      DEPLOYMENT_NAME: noisy-neighbor-nozzle
+      MANIFEST_FILE: manifests/noisy-neighbor-nozzle.yml
+      VARS_STORE_FILE: gcp/coconut-bbl/throw-away.yml # We do not want to save this vars store.
+      VARS_FILES: "gcp/coconut-bbl/noisy-neighbor-nozzle-vars.yml"
