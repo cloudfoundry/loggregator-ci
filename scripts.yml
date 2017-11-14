@@ -119,21 +119,6 @@ bosh_hm_forwarder_units: |
     go install github.com/onsi/ginkgo/ginkgo
     ginkgo -r -race -randomizeAllSpecs ./src/github.com/cloudfoundry/bosh-hm-forwarder
   popd
-update_submodule: |
-  #!/bin/bash
-
-  set -ex
-
-  pushd "${CHILD}"
-    target_sha="$(git rev-parse HEAD)"
-  popd
-
-  pushd "${PARENT}/${CHILD_PATH}"
-    git fetch
-    git checkout "$target_sha"
-  popd
-
-  cp -r "${PARENT}/." "${OUTPUT}/"
 commit: |
   #!/bin/bash
   set -ex

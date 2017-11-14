@@ -420,31 +420,18 @@ jobs:
     - get: loggregator-release
       trigger: true
     - get: loggregator-src
+      trigger: true
       passed:
       - loggregator-tests
-      trigger: true
   - task: update-submodule
-    config:
-      platform: linux
-      image_resource:
-        type: docker-image
-        source:
-          repository: loggregator/base
-      inputs:
-      - name: loggregator-release
-      - name: loggregator-src
-      outputs:
-      - name: bumped-loggregator-release
-      params:
-        PARENT: loggregator-release
-        OUTPUT: bumped-loggregator-release
-        CHILD: loggregator-src
-        CHILD_PATH: src/code.cloudfoundry.org/loggregator
-      run:
-        path: bash
-        args:
-        - -c
-        - {{update_submodule}}
+    file: loggregator-ci/tasks/bump-submodule/task.yml
+    input_mapping:
+      release-repo: loggregator-release
+      source-repo: loggregator-src
+    output_mapping:
+      bumped-release-repo: bumped-loggregator-release
+    params:
+      SUBMODULE_PATH: src/code.cloudfoundry.org/loggregator
   - task: sync-package-specs
     file: loggregator-ci/tasks/run-release-script/task.yml
     input_mapping:
@@ -892,27 +879,14 @@ jobs:
       - cf-syslog-drain-tests
       trigger: true
   - task: update-submodule
-    config:
-      platform: linux
-      image_resource:
-        type: docker-image
-        source:
-          repository: loggregator/base
-      inputs:
-      - name: cf-syslog-drain-release
-      - name: scalable-syslog
-      outputs:
-      - name: updated-cf-syslog-drain-release
-      params:
-        PARENT: cf-syslog-drain-release
-        OUTPUT: updated-cf-syslog-drain-release
-        CHILD: scalable-syslog
-        CHILD_PATH: src/code.cloudfoundry.org/scalable-syslog
-      run:
-        path: bash
-        args:
-        - -c
-        - {{update_submodule}}
+    file: loggregator-ci/tasks/bump-submodule/task.yml
+    input_mapping:
+      release-repo: cf-syslog-drain-release
+      source-repo: scalable-syslog
+    output_mapping:
+      bumped-release-repo: updated-cf-syslog-drain-release
+    params:
+      SUBMODULE_PATH: src/code.cloudfoundry.org/scalable-syslog
   - task: sync-package-specs
     file: loggregator-ci/tasks/run-release-script/task.yml
     input_mapping:
@@ -1019,31 +993,18 @@ jobs:
       - statsd-injector-tests
       trigger: true
   - task: update-submodule
-    config:
-      platform: linux
-      image_resource:
-        type: docker-image
-        source:
-          repository: loggregator/base
-      inputs:
-      - name: statsd-injector-release
-      - name: statsd-injector
-      outputs:
-      - name: bumped-statsd-injector-release
-      params:
-        PARENT: statsd-injector-release
-        OUTPUT: bumped-statsd-injector-release
-        CHILD: statsd-injector
-        CHILD_PATH: src/github.com/cloudfoundry/statsd-injector
-      run:
-        path: bash
-        args:
-        - -c
-        - {{update_submodule}}
+    file: loggregator-ci/tasks/bump-submodule/task.yml
+    input_mapping:
+      release-repo: statsd-injector-release
+      source-repo: statsd-injector
+    output_mapping:
+      bumped-release-repo: bumped-statsd-injector-release
+    params:
+      SUBMODULE_PATH: src/github.com/cloudfoundry/statsd-injector
   - task: sync-package-specs
     file: loggregator-ci/tasks/run-release-script/task.yml
     input_mapping:
-      release-repo: statsd-injector-release
+      release-repo: bumped-statsd-injector-release
     output_mapping:
       updated-release-repo: synced-statsd-injector-release
     params:
@@ -1177,31 +1138,18 @@ jobs:
       - noisy-neighbor-nozzle-tests
       trigger: true
   - task: update-submodule
-    config:
-      platform: linux
-      image_resource:
-        type: docker-image
-        source:
-          repository: loggregator/base
-      inputs:
-      - name: noisy-neighbor-nozzle-release
-      - name: noisy-neighbor-nozzle
-      outputs:
-      - name: updated-noisy-neighbor-nozzle-release
-      params:
-        PARENT: noisy-neighbor-nozzle-release
-        OUTPUT: updated-noisy-neighbor-nozzle-release
-        CHILD: noisy-neighbor-nozzle
-        CHILD_PATH: src/code.cloudfoundry.org/noisy-neighbor-nozzle
-      run:
-        path: bash
-        args:
-        - -c
-        - {{update_submodule}}
+    file: loggregator-ci/tasks/bump-submodule/task.yml
+    input_mapping:
+      release-repo: noisy-neighbor-nozzle-release
+      source-repo: noisy-neighbor-nozzle
+    output_mapping:
+      bumped-release-repo: bumped-noisy-neighbor-nozzle-release
+    params:
+      SUBMODULE_PATH: src/code.cloudfoundry.org/noisy-neighbor-nozzle
   - task: sync-package-specs
     file: loggregator-ci/tasks/run-release-script/task.yml
     input_mapping:
-      release-repo: updated-noisy-neighbor-nozzle-release
+      release-repo: bumped-noisy-neighbor-nozzle-release
     output_mapping:
       updated-release-repo: synced-noisy-neighbor-nozzle-release
     params:
