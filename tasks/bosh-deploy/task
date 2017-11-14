@@ -22,3 +22,14 @@ bosh -d "$DEPLOYMENT_NAME" -n deploy "bosh-release/$MANIFEST_FILE" \
   --vars-store "vars-store/$VARS_STORE_FILE" \
   $arguments
 
+set +e
+pushd vars-store
+  git config user.email "cf-loggregator@pivotal.io"
+  git config user.name "Loggregator CI"
+  git add . --all
+  git commit -m "Updated vars store for $DEPLOYMENT_NAME
+
+  [ci-skip]"
+popd
+
+rsync -ac vars-store/ updated-vars-store
