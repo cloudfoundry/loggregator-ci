@@ -14,7 +14,7 @@ outputs:
 - name: bumped-release-repo # - The updated release-repo with the bumped submodule.
 
 run:
-  path: loggregator-ci/tasks/bump-submodule
+  path: loggregator-ci/tasks/bump-submodule/task
 
 params:
   # - Required
