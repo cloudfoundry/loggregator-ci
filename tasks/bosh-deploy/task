@@ -18,7 +18,7 @@ for v in $VARS_FILES; do
   arguments="$arguments --vars-file vars-files/$v"
 done
 
-bosh -d "$DEPLOYMENT_NAME" deploy "bosh-release/$MANIFEST_FILE" \
+bosh -d "$DEPLOYMENT_NAME" -n deploy "bosh-release/$MANIFEST_FILE" \
   --vars-store "vars-store/$VARS_STORE_FILE" \
   $arguments
 
