@@ -106,16 +106,6 @@ resources:
     - .final_builds
     - releases
 
-- name: loggregator-release-updated
-  type: git
-  source:
-    uri: git@github.com:cloudfoundry/loggregator-release.git
-    branch: develop
-    private_key: {{loggregator-key}}
-    ignore_paths:
-    - .final_builds
-    - releases
-
 - name: loggregator-src
   type: git
   source:
@@ -186,16 +176,6 @@ resources:
     private_key: {{cf-loggregator-oauth-bot-key}}
 
 - name: statsd-injector-release
-  type: git
-  source:
-    uri: git@github.com:cloudfoundry/statsd-injector-release
-    branch: master
-    private_key: {{cf-loggregator-oauth-bot-key}}
-    ignore_paths:
-    - .final_builds
-    - releases
-
-- name: statsd-injector-release-updated
   type: git
   source:
     uri: git@github.com:cloudfoundry/statsd-injector-release
@@ -480,7 +460,7 @@ jobs:
       committed-repo: committed-loggregator-release
     params:
       PATHS: "src/code.cloudfoundry.org/loggregator packages"
-  - put: loggregator-release-updated
+  - put: loggregator-release
     params:
       repository: committed-loggregator-release
       rebase: true
@@ -493,12 +473,10 @@ jobs:
   - aggregate:
     - get: bbl-state
       resource: deployments-loggregator
-      trigger: false
     - get: cf-deployment
       trigger: true
     - get: cf-deployment-concourse-tasks
-      trigger: false
-    - get: loggregator-release-updated
+    - get: loggregator-release
       trigger: true
       passed:
       - loggregator-bump-submodule
@@ -508,7 +486,6 @@ jobs:
       - cf-syslog-drain-bump-submodule
     - get: vars-store
       resource: deployments-loggregator
-      trigger: false
     - get: vars-files
       resource: deployments-loggregator
   - task: upload-releases
@@ -520,7 +497,7 @@ jobs:
           repository: relintdockerhubpushbot/cf-deployment-concourse-tasks
       inputs:
       - name: bbl-state
-      - name: loggregator-release-updated
+      - name: loggregator-release
       - name: cf-syslog-drain-release
       run:
         path: /bin/bash
@@ -538,7 +515,7 @@ jobs:
             export BOSH_ENVIRONMENT=`bbl director-address`
           popd
 
-          releases="loggregator-release-updated cf-syslog-drain-release"
+          releases="loggregator-release cf-syslog-drain-release"
           for rel in $releases; do
             pushd $rel
               bosh create-release
@@ -610,7 +587,7 @@ jobs:
   plan:
   - aggregate:
     - get: consul-release
-    - get: loggregator-release-updated
+    - get: loggregator-release
       trigger: true
       passed:
       - loggregator-bump-submodule
@@ -626,7 +603,7 @@ jobs:
       inputs:
       - name: deployments-loggregator
       - name: consul-release
-      - name: loggregator-release-updated
+      - name: loggregator-release
       run:
         path: bash
         args:
@@ -634,7 +611,7 @@ jobs:
         - |
           #!/bin/bash
           set -eux
-          loggregator_dir="$PWD/loggregator-release-updated"
+          loggregator_dir="$PWD/loggregator-release"
 
           pushd deployments-loggregator/gcp/coconut-bbl
             export BOSH_CLIENT=`bbl director-username`
@@ -658,7 +635,7 @@ jobs:
       vars-store: deployments-loggregator
       ops-files: deployments-loggregator
       vars-files: deployments-loggregator
-      bosh-release: loggregator-release-updated
+      bosh-release: loggregator-release
     output_mapping:
       updated-vars-store: updated-deployments-loggregator
     params:
@@ -680,7 +657,7 @@ jobs:
     - get: deployments-loggregator
     - get: loggregator-ci
     - get: loggregator-release
-      resource: loggregator-release-updated
+      resource: loggregator-release
       trigger: true
       passed:
       - cf-deploy
@@ -769,7 +746,7 @@ jobs:
       - get: cats-concourse-task
       - get: integration-config
       - get: cf-acceptance-tests
-      - get: loggregator-release-updated
+      - get: loggregator-release
         trigger: true
         passed: ["cf-deploy"]
       - get: cf-syslog-drain-release
@@ -786,12 +763,11 @@ jobs:
   - bosh-loggregator
   plan:
   - aggregate:
-    - get: loggregator-release-updated
+    - get: loggregator-release
       passed:
       - loggregator-deploy
       trigger: true
     - get: deployments-loggregator
-      trigger: false
   - task: run-lats
     config:
       image_resource:
@@ -823,7 +799,7 @@ jobs:
   plan:
   - aggregate:
     - get: develop
-      resource: loggregator-release-updated
+      resource: loggregator-release
       trigger: true
       passed: ["lats", "cats", "loggregator-benchmarks"]
     - get: loggregator-release-elect
@@ -1053,7 +1029,7 @@ jobs:
         args:
         - -c
         - {{commit}}
-  - put: statsd-injector-release-updated
+  - put: statsd-injector-release
     params:
       repository: committed-statsd-injector-release
       rebase: true
@@ -1063,7 +1039,7 @@ jobs:
   public: false
   plan:
   - aggregate:
-    - get: statsd-injector-release-updated
+    - get: statsd-injector-release
       trigger: true
       passed:
       - statsd-injector-bump-submodule
@@ -1076,7 +1052,7 @@ jobs:
       vars-store: deployments-loggregator
       ops-files: deployments-loggregator
       vars-files: deployments-loggregator
-      bosh-release: statsd-injector-release-updated
+      bosh-release: statsd-injector-release
     output_mapping:
       updated-vars-store: updated-deployments-loggregator
     params:
