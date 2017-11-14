@@ -1,3 +1,5 @@
+# This task can be used as a generic BOSH deploy task. If you are deploying CF
+# it is recommended that you use `cf-deployment-concourse-tasks` instead.
 ---
 platform: linux
 
@@ -41,7 +43,7 @@ params:
   # - Filepath to the BOSH deployment vars-store yaml file
   # - The path is relative to root of the `vars-store` input
   VARS_STORE_FILE: deployment-vars.yml
-  
+
   # - Optional
   # - List of operations files to be applied to the manifest
   # - Quoted and space-separated
