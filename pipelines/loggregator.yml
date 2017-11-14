@@ -630,13 +630,11 @@ jobs:
   plan:
   - aggregate:
     - get: consul-release
-      trigger: false
     - get: loggregator-release-updated
+      trigger: true
       passed:
       - loggregator-bump-submodule
-      trigger: true
     - get: deployments-loggregator
-      trigger: false
   - task: upload-loggregator
     config:
       image_resource:
@@ -673,64 +671,24 @@ jobs:
             bosh upload-release --rebase
           popd
   - task: deploy
-    config:
-      image_resource:
-        type: docker-image
-        source:
-          repository: relintdockerhubpushbot/cf-deployment-concourse-tasks
-      platform: linux
-      inputs:
-      - name: deployments-loggregator
-      - name: loggregator-release-updated
-      outputs:
-      - name: updated-deployments-loggregator
-      run:
-        path: bash
-        args:
-          - -c
-          - |
-            #!/bin/bash
-            set -eux
-
-            loggregator_dir="$PWD/loggregator-release-updated"
-            deployment_dir="$PWD/deployments-loggregator/gcp/coconut-bbl"
-
-            pushd deployments-loggregator/gcp/coconut-bbl
-              export BOSH_CLIENT=`bbl director-username`
-              export BOSH_CLIENT_SECRET=`bbl director-password`
-              export BOSH_CA_CERT=`bbl director-ca-cert`
-              export BOSH_ENVIRONMENT=`bbl director-address`
-            popd
-
-            bosh -n -d loggregator deploy \
-              --vars-store "$deployment_dir/loggregator-vars.yml" \
-              "$loggregator_dir/manifests/loggregator.yml"
-
-            rsync -ac deployments-loggregator/ updated-deployments-loggregator
-  - task: commit
-    config:
-      platform: linux
-      image_resource:
-        type: docker-image
-        source:
-          repository: loggregator/base
-      inputs:
-      - name: updated-deployments-loggregator
-      outputs:
-      - name: committed-deployments-loggregator
-      params:
-        SOURCE: updated-deployments-loggregator
-        PATHS: gcp/coconut-bbl/loggregator-vars.yml
-        COMMIT_MESSAGE: "Update loggregator vars store"
-        OUTPUT: committed-deployments-loggregator
-      run:
-        path: bash
-        args:
-        - -c
-        - {{commit}}
+    file: loggregator-ci/tasks/bosh-deploy/task.yml
+    input_mapping:
+      bbl-state: deployments-loggregator
+      vars-store: deployments-loggregator
+      ops-files: deployments-loggregator
+      vars-files: deployments-loggregator
+      bosh-release: loggregator-release-updated
+    output_mapping:
+      updated-vars-store: updated-deployments-loggregator
+    params:
+      BBL_STATE_DIR: gcp/coconut-bbl
+      DEPLOYMENT_NAME: loggregator
+      MANIFEST_FILE: manifests/loggregator.yml
+      VARS_STORE_FILE: gcp/coconut-bbl/loggregator-vars.yml
+      VARS_FILES: "gcp/coconut-bbl/deployment-vars.yml"
   - put: deployments-loggregator-with-changes
     params:
-      repository: committed-deployments-loggregator
+      repository: updated-deployments-loggregator
       rebase: true
 
 - name: loggregator-benchmarks
