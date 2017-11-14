@@ -135,7 +135,6 @@ commit: |
   popd
 
   cp -r "${SOURCE}/." "${OUTPUT}/"
-
 prepare-docker-image: |
   #!/bin/bash
   set -e
