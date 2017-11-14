@@ -1,0 +1,24 @@
+#!/bin/bash
+
+set -exu
+
+pushd bbl-state/$BBL_STATE_DIR
+  export BOSH_CLIENT=`bbl director-username`
+  export BOSH_CLIENT_SECRET=`bbl director-password`
+  export BOSH_CA_CERT=`bbl director-ca-cert`
+  export BOSH_ENVIRONMENT=`bbl director-address`
+popd
+
+arguments=""
+for o in $OPS_FILES; do
+  arguments="$arguments --ops-file ops-files/$o"
+done
+
+for v in $VARS_FILES; do
+  arguments="$arguments --vars-file vars-files/$v"
+done
+
+bosh -d "$DEPLOYMENT_NAME" deploy "bosh-release/$MANIFEST_FILE" \
+  --vars-store "vars-store/$VARS_STORE_FILE" \
+  $arguments
+
