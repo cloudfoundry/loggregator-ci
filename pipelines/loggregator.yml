@@ -12,6 +12,8 @@ groups:
   - cf-syslog-drain-tests
   - cf-syslog-drain-bump-submodule
   - cf-syslog-drain-promotion
+  - log-cache-tests
+  - log-cache-bump-submodule
   - statsd-injector-tests
   - statsd-injector-bump-submodule
   - statsd-injector-deploy
@@ -35,6 +37,10 @@ groups:
   - cf-deploy
   - cats
   - cf-syslog-drain-promotion
+- name: log-cache
+  jobs:
+  - log-cache-tests
+  - log-cache-bump-submodule
 - name: statsd-injector
   jobs:
   - statsd-injector-tests
@@ -199,6 +205,23 @@ resources:
   type: git
   source:
     uri: git@github.com:cloudfoundry-incubator/noisy-neighbor-nozzle
+    branch: master
+    private_key: {{cf-loggregator-oauth-bot-key}}
+
+- name: log-cache-release
+  type: git
+  source:
+    uri: git@github.com:cloudfoundry-incubator/log-cache-release
+    branch: master
+    private_key: {{cf-loggregator-oauth-bot-key}}
+    ignore_paths:
+    - .final_builds
+    - releases
+
+- name: log-cache
+  type: git
+  source:
+    uri: git@github.com:cloudfoundry-incubator/log-cache
     branch: master
     private_key: {{cf-loggregator-oauth-bot-key}}
 
@@ -1110,9 +1133,9 @@ jobs:
     - get: noisy-neighbor-nozzle-release
       trigger: true
     - get: noisy-neighbor-nozzle
+      trigger: true
       passed:
       - noisy-neighbor-nozzle-tests
-      trigger: true
   - task: update-submodule
     file: loggregator-ci/tasks/bump-submodule/task.yml
     input_mapping:
@@ -1174,3 +1197,86 @@ jobs:
       MANIFEST_FILE: manifests/noisy-neighbor-nozzle.yml
       VARS_STORE_FILE: gcp/coconut-bbl/throw-away.yml # We do not want to save this vars store.
       VARS_FILES: "gcp/coconut-bbl/noisy-neighbor-nozzle-vars.yml"
+
+- name: log-cache-tests
+  serial: true
+  public: true
+  plan:
+  - get: log-cache
+    trigger: true
+  - task: run-tests
+    config:
+      image_resource:
+        type: docker-image
+        source:
+          repository: loggregator/base
+      platform: linux
+      inputs:
+      - name: log-cache
+      run:
+        path: bash
+        args:
+        - -c
+        - |
+          #!/bin/bash
+
+          set -ex
+
+          mkdir -p workspace/src/code.cloudfoundry.org/log-cache
+          cp -r log-cache/. workspace/src/code.cloudfoundry.org/log-cache/
+
+          pushd workspace
+            export GOPATH="$PWD"
+            export PATH="$GOPATH/bin:$PATH"
+            pushd src/code.cloudfoundry.org/log-cache
+              go get -t -d ./...
+              go test ./... -race
+            popd
+          popd
+
+- name: log-cache-bump-submodule
+  serial: true
+  plan:
+  - aggregate:
+    - get: loggregator-ci
+    - get: log-cache-release
+      trigger: true
+    - get: log-cache
+      trigger: true
+      passed:
+      - log-cache-tests
+  - task: update-submodule
+    file: loggregator-ci/tasks/bump-submodule/task.yml
+    input_mapping:
+      release-repo: log-cache-release
+      source-repo: log-cache
+    output_mapping:
+      bumped-release-repo: bumped-log-cache-release
+    params:
+      SUBMODULE_PATH: src/code.cloudfoundry.org/log-cache
+  - task: sync-package-specs
+    file: loggregator-ci/tasks/run-release-script/task.yml
+    input_mapping:
+      release-repo: bumped-log-cache-release
+    output_mapping:
+      updated-release-repo: synced-log-cache-release
+    params:
+      SCRIPT: scripts/sync-package-specs
+  - task: run-tests
+    file: loggregator-ci/tasks/run-release-script/task.yml
+    input_mapping:
+      release-repo: synced-log-cache-release
+    params:
+      SCRIPT: scripts/test
+  - task: commit
+    file: loggregator-ci/tasks/commit-with-shortlog/task.yml
+    input_mapping:
+      release-repo: synced-log-cache-release
+    output_mapping:
+      committed-repo: committed-log-cache-release
+    params:
+      PATHS: "src/code.cloudfoundry.org/log-cache packages"
+  - put: log-cache-release
+    params:
+      repository: committed-log-cache-release
+      rebase: true
