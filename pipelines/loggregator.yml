@@ -92,13 +92,6 @@ resources:
     uri: https://github.com/cloudfoundry/cf-deployment-concourse-tasks
     branch: v4.6
 
-# This is here because concourse has a bug in which putting to a git resource
-# creates a new version that can trigger jobs even if the commit has [ci skip]
-# present.
-- name: deployments-loggregator-with-changes
-  type: git
-  source: *deployments_loggregator
-
 - name: integration-config
   type: git
   source: *deployments_loggregator
@@ -614,7 +607,7 @@ jobs:
     params:
       SYSTEM_DOMAIN: coconut.cf-app.com
       VARS_STORE_FILE: gcp/coconut-bbl/deployment-vars.yml
-  - put: deployments-loggregator-with-changes
+  - put: deployments-loggregator
     params:
       repository: updated-vars-store
       rebase: true
@@ -635,6 +628,7 @@ jobs:
       passed:
       - loggregator-bump-submodule
     - get: deployments-loggregator
+    - get: loggregator-ci
   - task: upload-loggregator
     config:
       image_resource:
@@ -685,8 +679,7 @@ jobs:
       DEPLOYMENT_NAME: loggregator
       MANIFEST_FILE: manifests/loggregator.yml
       VARS_STORE_FILE: gcp/coconut-bbl/loggregator-vars.yml
-      VARS_FILES: "gcp/coconut-bbl/deployment-vars.yml"
-  - put: deployments-loggregator-with-changes
+  - put: deployments-loggregator
     params:
       repository: updated-deployments-loggregator
       rebase: true
@@ -767,7 +760,7 @@ jobs:
         args:
         - -c
         - {{commit}}
-  - put: deployments-loggregator-with-changes
+  - put: deployments-loggregator
     params:
       repository: committed-deployments-loggregator
       rebase: true
