@@ -88,6 +88,11 @@ resources:
     branch: master
     private_key: {{deployments-loggregator-key}}
 
+- name: bosh-deployment
+  type: git
+  source:
+    uri: https://github.com/cloudfoundry/bosh-deployment
+
 jobs:
 - name: cf-deploy
   serial: true
@@ -481,7 +486,7 @@ jobs:
   - get: deployments-loggregator
   - task: bbl-up
     input_mapping:
-      ops-files: deployments-loggregator
+      ops-files: bosh-deployment
       bbl-state: deployments-loggregator
     file: cf-deployment-concourse-tasks/bbl-up/task.yml
     params:
@@ -495,6 +500,7 @@ jobs:
       BBL_LB_KEY: {{coconut_bbl_lb_key}}
       BBL_ENV_NAME: staging
       LB_DOMAIN: staging.loggr.cf-app.com
+      OPS_FILES: local-dns.yml
   - put: deployments-loggregator
     params:
       repository: updated-bbl-state

@@ -225,6 +225,11 @@ resources:
     branch: master
     private_key: {{cf-loggregator-oauth-bot-key}}
 
+- name: bosh-deployment
+  type: git
+  source:
+    uri: https://github.com/cloudfoundry/bosh-deployment
+
 jobs:
 - name: coconut-bbl-up
   public: false
@@ -234,7 +239,7 @@ jobs:
     - get: bbl-state
       resource: deployments-loggregator
     - get: ops-files
-      resource: deployments-loggregator
+      resource: bosh-deployment
   - task: bbl-up
     file: cf-deployment-concourse-tasks/bbl-up/task.yml
     params:
@@ -248,6 +253,7 @@ jobs:
       BBL_LB_KEY: {{coconut_bbl_lb_key}}
       BBL_ENV_NAME: coconut-bbl
       LB_DOMAIN: coconut.cf-app.com
+      OPS_FILES: local-dns.yml
   - put: deployments-loggregator
     params:
       repository: updated-bbl-state

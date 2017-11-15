@@ -44,6 +44,11 @@ resources:
   type: git
   source: *deployments_loggregator
 
+- name: bosh-deployment
+  type: git
+  source:
+    uri: https://github.com/cloudfoundry/bosh-deployment
+
 - name: datadog-firehose-nozzle-release
   type: git
   source: &datadog-firehose-nozzle-release
@@ -59,10 +64,10 @@ jobs:
   - get: bbl-state
     resource: deployments-loggregator
     trigger: false
+  - get: ops-files
+    resource: bosh-deployment
   - task: bbl-up
     file: cf-deployment-concourse-tasks/bbl-up/task.yml
-    input_mapping:
-      ops-files: bbl-state
     params:
       BBL_GCP_SERVICE_ACCOUNT_KEY: service-account.key.json
       BBL_GCP_PROJECT_ID: cff-loggregator
@@ -74,6 +79,7 @@ jobs:
       BBL_LB_KEY: {{coconut_bbl_lb_key}}
       BBL_ENV_NAME: loggregator-capacity-planning
       LB_DOMAIN: loggregator-capacity-planning.cf-app.com
+      OPS_FILES: local-dns.yml
   - put: deployments-loggregator-with-changes
     params:
       repository: updated-bbl-state
