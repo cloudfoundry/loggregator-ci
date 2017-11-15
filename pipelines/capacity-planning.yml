@@ -215,11 +215,7 @@ jobs:
                 name: cf-syslog-drain
                 url: https://bosh.io/d/github.com/cloudfoundry/cf-syslog-drain-release
                 version: latest
-            - type: replace
-              path: /instance_groups/name=adapter/instances
-              value: $ADAPTER_COUNT
             EOT
-            fi
     - task: cf-deploy
       file: cf-deployment-concourse-tasks/bosh-deploy/task.yml
       params:
