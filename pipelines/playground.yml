@@ -192,6 +192,7 @@ jobs:
           #!/bin/bash
 
           cp cf-deployment/operations/scale-to-one-az.yml ops-files/
+          cp cf-deployment/operations/experimental/use-bosh-dns.yml ops-files/
           cp bbl-state/gcp/playground/ops-files/*.yml ops-files/
   - task: cf-deploy
     file: cf-deployment-concourse-tasks/bosh-deploy/task.yml
