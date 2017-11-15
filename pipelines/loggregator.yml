@@ -507,6 +507,10 @@ jobs:
       trigger: true
       passed:
       - cf-syslog-drain-bump-submodule
+    - get: log-cache-release
+      trigger: true
+      passed:
+      - log-cache-bump-submodule
     - get: vars-store
       resource: deployments-loggregator
     - get: vars-files
@@ -522,6 +526,7 @@ jobs:
       - name: bbl-state
       - name: loggregator-release
       - name: cf-syslog-drain-release
+      - name: log-cache-release
       run:
         path: /bin/bash
         args:
@@ -538,7 +543,7 @@ jobs:
             export BOSH_ENVIRONMENT=`bbl director-address`
           popd
 
-          releases="loggregator-release cf-syslog-drain-release"
+          releases="loggregator-release cf-syslog-drain-release log-cache-release"
           for rel in $releases; do
             pushd $rel
               bosh create-release
@@ -554,6 +559,7 @@ jobs:
       inputs:
       - name: bbl-state
       - name: cf-deployment
+      - name: log-cache-release
       outputs:
       - name: ops-files
       run:
@@ -564,6 +570,7 @@ jobs:
           cp cf-deployment/operations/windows-cell.yml ops-files/
           cp cf-deployment/operations/scale-to-one-az.yml ops-files/
           cp bbl-state/gcp/coconut-bbl/ops-files/*.yml ops-files/
+          cp log-cache-release/manifests/operations/deploy-in-cf.yml ops-files/add-log-cache.yml
 
           cat <<EOT >> ops-files/dev-versions.yml
           - type: replace
@@ -576,6 +583,11 @@ jobs:
             value:
               name: cf-syslog-drain
               version: latest
+          - type: replace
+            path: /releases/name=log-cache
+            value:
+              name: log-cache
+              version: latest
           EOT
   - task: upload-stemcell
     file: cf-deployment-concourse-tasks/bosh-upload-stemcell-from-cf-deployment/task.yml
@@ -587,7 +599,7 @@ jobs:
       BBL_STATE_DIR: gcp/coconut-bbl
       SYSTEM_DOMAIN: coconut.cf-app.com
       VARS_STORE_FILE: gcp/coconut-bbl/deployment-vars.yml
-      OPS_FILES: "clients.yml scale-to-one-az.yml datadog-agent.yml diego.yml dev-versions.yml windows-cell.yml"
+      OPS_FILES: "clients.yml scale-to-one-az.yml datadog-agent.yml diego.yml dev-versions.yml windows-cell.yml add-log-cache.yml"
       VARS_FILES: "gcp/coconut-bbl/vars-files/router.yml"
   - task: enable-feature-flags
     file: cf-deployment-concourse-tasks/set-feature-flags/task.yml
