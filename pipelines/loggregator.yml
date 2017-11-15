@@ -821,37 +821,16 @@ jobs:
   serial: true
   public: true
   plan:
-  - get: scalable-syslog
-    trigger: true
+  - aggregate:
+    - get: loggregator-ci
+    - get: scalable-syslog
+      trigger: true
   - task: run-tests
-    config:
-      image_resource:
-        type: docker-image
-        source:
-          repository: loggregator/base
-      platform: linux
-      inputs:
-      - name: scalable-syslog
-      run:
-        path: bash
-        args:
-        - -c
-        - |
-          #!/bin/bash
-
-          set -ex
-
-          mkdir -p workspace/src/code.cloudfoundry.org/scalable-syslog
-          cp -r scalable-syslog/. workspace/src/code.cloudfoundry.org/scalable-syslog/
-
-          pushd workspace
-            export GOPATH="$PWD"
-            export PATH="$GOPATH/bin:$PATH"
-            pushd src/code.cloudfoundry.org/scalable-syslog
-              go get -t -d ./...
-              go test ./... -race
-            popd
-          popd
+    file: loggregator-ci/tasks/go-test-with-latest-packages/task.yml
+    input_mapping:
+      source-repo: scalable-syslog
+    params:
+      IMPORT_PATH: code.cloudfoundry.org/scalable-syslog
 
 - name: cf-syslog-drain-bump-submodule
   serial: true
@@ -934,38 +913,16 @@ jobs:
   serial: true
   public: true
   plan:
-  - get: statsd-injector
-    trigger: true
-  - task: run-units
-    config:
-      image_resource:
-        type: docker-image
-        source:
-          repository: loggregator/base
-      platform: linux
-      inputs:
-      - name: statsd-injector
-      run:
-        path: bash
-        args:
-        - -c
-        - |
-          #!/bin/bash
-
-          set -ex
-
-          mkdir -p workspace/src/github.com/cloudfoundry/statsd-injector
-          cp -r statsd-injector/. workspace/src/github.com/cloudfoundry/statsd-injector/
-
-          pushd workspace
-            export GOPATH="$PWD"
-            export PATH="$GOPATH/bin:$PATH"
-
-            pushd src/github.com/cloudfoundry/statsd-injector
-              go get -t -d ./...
-              go test -race ./...
-            popd
-          popd
+  - aggregate:
+    - get: loggregator-ci
+    - get: statsd-injector
+      trigger: true
+  - task: run-tests
+    file: loggregator-ci/tasks/go-test-with-latest-packages/task.yml
+    input_mapping:
+      source-repo: statsd-injector
+    params:
+      IMPORT_PATH: github.com/cloudfoundry/statsd-injector
 
 - name: statsd-injector-bump-submodule
   serial: true
@@ -1067,37 +1024,16 @@ jobs:
   serial: true
   public: true
   plan:
-  - get: noisy-neighbor-nozzle
-    trigger: true
+  - aggregate:
+    - get: loggregator-ci
+    - get: noisy-neighbor-nozzle
+      trigger: true
   - task: run-tests
-    config:
-      image_resource:
-        type: docker-image
-        source:
-          repository: loggregator/base
-      platform: linux
-      inputs:
-      - name: noisy-neighbor-nozzle
-      run:
-        path: bash
-        args:
-        - -c
-        - |
-          #!/bin/bash
-
-          set -ex
-
-          mkdir -p workspace/src/code.cloudfoundry.org/noisy-neighbor-nozzle
-          cp -r noisy-neighbor-nozzle/. workspace/src/code.cloudfoundry.org/noisy-neighbor-nozzle/
-
-          pushd workspace
-            export GOPATH="$PWD"
-            export PATH="$GOPATH/bin:$PATH"
-            pushd src/code.cloudfoundry.org/noisy-neighbor-nozzle
-              go get -t -d ./...
-              go test ./... -race
-            popd
-          popd
+    file: loggregator-ci/tasks/go-test-with-latest-packages/task.yml
+    input_mapping:
+      source-repo: noisy-neighbor-nozzle
+    params:
+      IMPORT_PATH: code.cloudfoundry.org/noisy-neighbor-nozzle
 
 - name: noisy-neighbor-nozzle-bump-submodule
   serial: true
@@ -1176,37 +1112,16 @@ jobs:
   serial: true
   public: true
   plan:
-  - get: log-cache
-    trigger: true
+  - aggregate:
+    - get: loggregator-ci
+    - get: log-cache
+      trigger: true
   - task: run-tests
-    config:
-      image_resource:
-        type: docker-image
-        source:
-          repository: loggregator/base
-      platform: linux
-      inputs:
-      - name: log-cache
-      run:
-        path: bash
-        args:
-        - -c
-        - |
-          #!/bin/bash
-
-          set -ex
-
-          mkdir -p workspace/src/code.cloudfoundry.org/log-cache
-          cp -r log-cache/. workspace/src/code.cloudfoundry.org/log-cache/
-
-          pushd workspace
-            export GOPATH="$PWD"
-            export PATH="$GOPATH/bin:$PATH"
-            pushd src/code.cloudfoundry.org/log-cache
-              go get -t -d ./...
-              go test ./... -race
-            popd
-          popd
+    file: loggregator-ci/tasks/go-test-with-latest-packages/task.yml
+    input_mapping:
+      source-repo: log-cache
+    params:
+      IMPORT_PATH: code.cloudfoundry.org/log-cache
 
 - name: log-cache-bump-submodule
   serial: true
