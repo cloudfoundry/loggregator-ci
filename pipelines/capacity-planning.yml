@@ -3,7 +3,7 @@ resources:
   type: git
   source:
     uri: https://github.com/cloudfoundry/cf-deployment-concourse-tasks
-    branch: v3.5
+    branch: v4.16
 
 - name: deployments-loggregator
   type: git
@@ -61,6 +61,8 @@ jobs:
     trigger: false
   - task: bbl-up
     file: cf-deployment-concourse-tasks/bbl-up/task.yml
+    input_mapping:
+      ops-files: bbl-state
     params:
       BBL_GCP_SERVICE_ACCOUNT_KEY: service-account.key.json
       BBL_GCP_PROJECT_ID: cff-loggregator
@@ -129,7 +131,7 @@ jobs:
       params:
         # ADAPTER_COLLOCATED: If false adapters will be deployed to their own instance group.
         # If true, adapters will be deployed with doppler.
-        ADAPTER_COLLOCATED: true
+        ADAPTER_COLLOCATED: false
         ADAPTER_COUNT: 2
         API_VERSION: v2
         CLIENT_ID: capacity_planning_authenticator
@@ -304,4 +306,3 @@ jobs:
             popd
             bosh -n -d ${DEPLOYMENT_NAME} deploy ${MANIFEST_FILE} -l ${MANIFEST_VARS} \
               -o deployments-loggregator/gcp/loggregator-capacity-planning/ops-files/datadog.yml
-
