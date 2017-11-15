@@ -1,6 +1,9 @@
 ---
 platform: linux
 
+caches:
+- path: bosh-release-dir/blobs
+
 image_resource:
   type: docker-image
   source:
