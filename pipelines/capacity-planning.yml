@@ -129,9 +129,6 @@ jobs:
     - task: build-settings
       file: loggregator-ci/tasks/capacity-planning/build-settings.yml
       params:
-        # ADAPTER_COLLOCATED: If false adapters will be deployed to their own instance group.
-        # If true, adapters will be deployed with doppler.
-        ADAPTER_COLLOCATED: false
         ADAPTER_COUNT: 2
         API_VERSION: v2
         CLIENT_ID: capacity_planning_authenticator
@@ -178,7 +175,6 @@ jobs:
 
             SETTINGS_FILE="$PWD/deployment-settings/settings.json"
 
-            ADAPTER_COLLOCATED=$(cat $SETTINGS_FILE | jq .ADAPTER_COLLOCATED --raw-output)
             ADAPTER_COUNT=$(cat $SETTINGS_FILE | jq .ADAPTER_COUNT --raw-output)
             DIEGO_CELL_COUNT=$(cat $SETTINGS_FILE | jq .DIEGO_CELL_COUNT --raw-output)
             DOPPLER_COUNT=$(cat $SETTINGS_FILE | jq .DOPPLER_COUNT --raw-output)
@@ -219,12 +215,6 @@ jobs:
                 name: cf-syslog-drain
                 url: https://bosh.io/d/github.com/cloudfoundry/cf-syslog-drain-release
                 version: latest
-            EOT
-
-            if [ "$ADAPTER_COLLOCATED" == "false" ]; then
-              cat cf-deployment-develop/operations/non-collocated-cf-syslog-drain.yml >> ops-files/capacity-planning-config.yml
-              cat <<EOT >> ops-files/capacity-planning-config.yml
-
             - type: replace
               path: /instance_groups/name=adapter/instances
               value: $ADAPTER_COUNT
