@@ -727,26 +727,13 @@ jobs:
 
             rsync -ac deployments-loggregator/ updated-deployments-loggregator
   - task: commit
-    config:
-      platform: linux
-      image_resource:
-        type: docker-image
-        source:
-          repository: loggregator/base
-      inputs:
-      - name: updated-deployments-loggregator
-      outputs:
-      - name: committed-deployments-loggregator
-      params:
-        SOURCE: updated-deployments-loggregator
-        PATHS: gcp/coconut-bbl/loggregator-bench-vars.yml
-        COMMIT_MESSAGE: "Update loggregator-bench vars store"
-        OUTPUT: committed-deployments-loggregator
-      run:
-        path: bash
-        args:
-        - -c
-        - {{commit}}
+    file: loggregator-ci/tasks/commit/task.yml
+    input_mapping:
+      release-repo: updated-deployments-loggregator
+    output_mapping:
+      committed-repo: committed-deployments-loggregator
+    params:
+      COMMIT_MESSAGE: "Update loggregator-bench vars store"
   - put: deployments-loggregator
     params:
       repository: committed-deployments-loggregator
@@ -1032,26 +1019,13 @@ jobs:
             go test -race github.com/cloudfoundry/statsd-injector/...
           popd
   - task: commit
-    config:
-      platform: linux
-      image_resource:
-        type: docker-image
-        source:
-          repository: loggregator/base
-      inputs:
-        - name: synced-statsd-injector-release
-      outputs:
-      - name: committed-statsd-injector-release
-      params:
-        SOURCE: synced-statsd-injector-release
-        PATHS: src/github.com/cloudfoundry/statsd-injector
-        COMMIT_MESSAGE: "Bump statsd-injector"
-        OUTPUT: committed-statsd-injector-release
-      run:
-        path: bash
-        args:
-        - -c
-        - {{commit}}
+    file: loggregator-ci/tasks/commit/task.yml
+    input_mapping:
+      release-repo: synced-statsd-injector-release
+    output_mapping:
+      committed-repo: committed-statsd-injector-release
+    params:
+      COMMIT_MESSAGE: "Bump statsd-injector"
   - put: statsd-injector-release
     params:
       repository: committed-statsd-injector-release

@@ -62,26 +62,13 @@ jobs:
     params:
       SUBMODULE_PATH: src/github.com/cloudfoundry/bosh-hm-forwarder
   - task: commit
-    config:
-      platform: linux
-      image_resource:
-        type: docker-image
-        source:
-          repository: loggregator/base
-      inputs:
-      - name: updated-bosh-hm-forwarder-release
-      outputs:
-      - name: bumped-bosh-hm-forwarder-release
-      params:
-        SOURCE: updated-bosh-hm-forwarder-release
-        PATHS: src/github.com/cloudfoundry/bosh-hm-forwarder
-        COMMIT_MESSAGE: "Bump bosh-hm-forwarder"
-        OUTPUT: bumped-bosh-hm-forwarder-release
-      run:
-        path: bash
-        args:
-        - -c
-        - {{commit}}
+    file: loggregator-ci/tasks/commit/task.yml
+    input_mapping:
+      release-repo: updated-bosh-hm-forwarder-release
+    output_mapping:
+      committed-repo: bumped-bosh-hm-forwarder-release
+    params:
+      COMMIT_MESSAGE: "Bump bosh-hm-forwarder"
   - put: bosh-hm-forwarder-release
     params:
       repository: bumped-bosh-hm-forwarder-release

@@ -119,22 +119,6 @@ bosh_hm_forwarder_units: |
     go install github.com/onsi/ginkgo/ginkgo
     ginkgo -r -race -randomizeAllSpecs ./src/github.com/cloudfoundry/bosh-hm-forwarder
   popd
-commit: |
-  #!/bin/bash
-  set -ex
-
-  pushd "${SOURCE}"
-    if [ ! "$(git status --porcelain)" = "" ]; then
-      git config user.email "cf-loggregator@pivotal.io"
-      git config user.name "Loggregator CI"
-      git add ${PATHS}
-      git commit -m "$COMMIT_MESSAGE"
-    else
-      echo "No changes to commit"
-    fi
-  popd
-
-  cp -r "${SOURCE}/." "${OUTPUT}/"
 prepare-docker-image: |
   #!/bin/bash
   set -e
