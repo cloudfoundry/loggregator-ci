@@ -26,6 +26,12 @@ resources:
     uri: https://github.com/cloudfoundry/cf-deployment
     branch: develop
 
+- name: log-cache-release
+  type: git
+  source:
+    uri: https://github.com/cloudfoundry-incubator/log-cache-release
+    branch: master
+
 - name: loggregator
   type: git
   source:
@@ -133,6 +139,7 @@ jobs:
     - get: loggregator
     - get: cf-syslog-drain-release
     - get: statsd-injector-release
+    - get: log-cache-release
   - task: upload-stemcell
     file: cf-deployment-concourse-tasks/bosh-upload-stemcell-from-cf-deployment/task.yml
     params:
@@ -149,6 +156,7 @@ jobs:
       - name: loggregator
       - name: statsd-injector-release
       - name: cf-syslog-drain-release
+      - name: log-cache-release
       run:
         path: /bin/bash
         args:
@@ -165,7 +173,7 @@ jobs:
             export BOSH_ENVIRONMENT=`bbl director-address`
           popd
 
-          releases="loggregator cf-syslog-drain-release statsd-injector-release"
+          releases="loggregator cf-syslog-drain-release statsd-injector-release log-cache-release"
           for rel in $releases; do
             pushd $rel
               bosh create-release
@@ -182,6 +190,7 @@ jobs:
       inputs:
       - name: bbl-state
       - name: cf-deployment
+      - name: log-cache-release
       outputs:
       - name: ops-files
       run:
@@ -190,17 +199,19 @@ jobs:
         - "-c"
         - |
           #!/bin/bash
+          set -x
 
           cp cf-deployment/operations/scale-to-one-az.yml ops-files/
           cp cf-deployment/operations/experimental/use-bosh-dns.yml ops-files/
           cp bbl-state/gcp/playground/ops-files/*.yml ops-files/
+          cp log-cache-release/manifests/operations/deploy-in-cf.yml ops-files/deploy-log-cache.yml
   - task: cf-deploy
     file: cf-deployment-concourse-tasks/bosh-deploy/task.yml
     params:
       BBL_STATE_DIR: gcp/playground
       SYSTEM_DOMAIN: playground.loggr.cf-app.com
       VARS_STORE_FILE: gcp/playground/deployment-vars.yml
-      OPS_FILES: "scale-to-one-az.yml clients.yml allow-insecure-syslog-drains.yml cf-versions.yml"
+      OPS_FILES: "scale-to-one-az.yml clients.yml allow-insecure-syslog-drains.yml cf-versions.yml use-bosh-dns.yml deploy-log-cache.yml"
   - task: bosh-cleanup
     file: cf-deployment-concourse-tasks/bosh-cleanup/task.yml
     params:
