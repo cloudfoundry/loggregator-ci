@@ -187,6 +187,7 @@ jobs:
             LOG_API_COUNT=$(cat $SETTINGS_FILE | jq .LOG_API_COUNT --raw-output)
             ROUTER_COUNT=$(cat $SETTINGS_FILE | jq .ROUTER_COUNT --raw-output)
 
+            cp cf-deployment-develop/operations/experimental/use-bosh-dns.yml ops-files/
             cp bbl-state/gcp/loggregator-capacity-planning/ops-files/*.yml ops-files/
 
             cat <<EOT >> ops-files/capacity-planning-config.yml
@@ -228,7 +229,7 @@ jobs:
         BBL_STATE_DIR: gcp/loggregator-capacity-planning
         SYSTEM_DOMAIN: loggregator-capacity-planning.cf-app.com
         VARS_STORE_FILE: gcp/loggregator-capacity-planning/deployment-vars.yml
-        OPS_FILES: "clients.yml instance-types.yml capacity-planning-config.yml"
+        OPS_FILES: "clients.yml instance-types.yml capacity-planning-config.yml use-bosh-dns.yml"
     - put: deployments-loggregator-with-changes
       params:
         repository: updated-vars-store
