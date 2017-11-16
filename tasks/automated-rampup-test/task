@@ -63,13 +63,7 @@ class Settings
     ]
 
     given_attrs = settings.to_h.keys
-
-    missing = required.select do |attr|
-      if !given_attrs.include?(attr)
-        missing << attr
-      end
-    end
-
+    missing = required.select { |attr| !given_attrs.include?(attr) }
     if missing.length > 0
       raise "Missing required settings attribute(s): #{missing.join(', ')}"
     end
