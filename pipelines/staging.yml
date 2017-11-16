@@ -194,6 +194,7 @@ jobs:
             #!/bin/bash
             set -ex
 
+            cp cf-deployment/operations/experimental/use-bosh-dns.yml ops-files/
             cp bbl-state/gcp/staging/ops-files/*.yml ops-files/
 
             cat <<EOT >> ops-files/export-links.yml
@@ -216,7 +217,7 @@ jobs:
       SYSTEM_DOMAIN: staging.loggr.cf-app.com
       VARS_STORE_FILE: gcp/staging/deployment-vars.yml
       VARS_FILES: "turbulence.yml"
-      OPS_FILES: "clients.yml turbulence.yml cf-versions.yml allow-insecure-syslog-drains.yml export-links.yml"
+      OPS_FILES: "clients.yml turbulence.yml cf-versions.yml allow-insecure-syslog-drains.yml export-links.yml use-bosh-dns.yml"
   - aggregate:
     - put: deployments-loggregator
       params:
