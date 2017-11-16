@@ -485,6 +485,7 @@ jobs:
   plan:
   - get: cf-deployment-concourse-tasks
   - get: deployments-loggregator
+  - get: bosh-deployment
   - task: bbl-up
     input_mapping:
       ops-files: bosh-deployment
