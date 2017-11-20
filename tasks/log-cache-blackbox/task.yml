@@ -1,0 +1,50 @@
+---
+platform: linux
+
+image_resource:
+  type: docker-image
+  source:
+    repository: relintdockerhubpushbot/cf-deployment-concourse-tasks
+    tag: v3.15.0
+
+inputs:
+- name: loggregator-ci    # - This repo
+- name: loggregator-tools # - Log cache blackbox test app repo
+
+run:
+  path: loggregator-ci/tasks/log-cache-blackbox/task
+
+params:
+  # - Required
+  # - The CF application domain.
+  # - This is usually <app-name>.<system-domain>
+  APP_DOMAIN:
+
+  # - Required
+  # - The application name.
+  APP_NAME:
+
+  # - Required
+  # - The CF API domain
+  # - This is usually api.<system-domain>
+  CF_API:
+
+  # - Required
+  # - The API Key to send metrics to DataDog.
+  DATADOG_API_KEY:
+
+  # - Required
+  # - The CF organization that the app will run in.
+  ORG:
+
+  # - Required
+  # - The CF space that the app is run in.
+  SPACE:
+
+  # - Required
+  # - The username for CF login.
+  USERNAME:
+
+  # - Required
+  # - The password for CF login.
+  PASSWORD:

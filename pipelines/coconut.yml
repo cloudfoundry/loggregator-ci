@@ -233,3 +233,24 @@ jobs:
       PASSWORD: {{coconut-password}}
       CLIENT_ID: {{coconut-firehose-reliability-client-id}}
       CLIENT_SECRET: {{coconut-firehose-reliability-client-secret}}
+
+- name: log-cache
+  public: false
+  serial: true
+  plan:
+  - aggregate:
+    - get: loggregator-tools
+    - get: loggregator-ci
+    - get: 10m
+      trigger: true
+  - task: log-cache-blackbox-tests
+    file: loggregator-ci/tasks/log-cache-blackbox/task.yml
+    params:
+      APP_DOMAIN: "log-cache-blackbox.coconut.cf-app.com"
+      APP_NAME: "log-cache-blackbox"
+      CF_API: "api.coconut.cf-app.com"
+      DATADOG_API_KEY: {{datadog-loggregator-api-key}}
+      ORG: system
+      SPACE: blackbox-testing
+      USERNAME: {{coconut-username}}
+      PASSWORD: {{coconut-password}}

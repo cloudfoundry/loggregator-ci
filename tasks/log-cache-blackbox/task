@@ -1,0 +1,45 @@
+#!/bin/bash
+
+set -ex
+
+# target api
+cf login \
+  -a "$CF_API" \
+  -u "$USERNAME" \
+  -p "$PASSWORD" \
+  -s "$SPACE" \
+  -o "$ORG"
+
+GOPATH=$PWD/go
+pushd loggregator-tools/log-cache-blackbox
+  go get ./...
+  go build
+  cf push "$APP_NAME" -b binary_buildpack -c ./log-cache-blackbox
+popd
+
+response=$(curl "$APP_DOMAIN" -d='')
+
+latency=$(echo $response | jq .latency)
+avg_query_time=$(echo $response | jq .averageQueryTime)
+
+currenttime=$(date +%s)
+curl  -X POST -H "Content-type: application/json" \
+-d "{ \"series\" :
+  [
+    {
+      \"metric\":\"log-cache-blackbox.latency\",
+      \"points\":[[${currenttime}, ${latency}]],
+      \"type\":\"gauge\",
+      \"host\":\"${CF_API}\",
+      \"tags\":[\"${APP_NAME}\"]
+    },
+    {
+      \"metric\":\"log-cache-blackbox.avg_query_time\",
+      \"points\":[[${currenttime}, ${avg_query_time}]],
+      \"type\":\"gauge\",
+      \"host\":\"${CF_API}\",
+      \"tags\":[\"${APP_NAME}\"]
+    }
+  ]
+}" \
+'https://app.datadoghq.com/api/v1/series?api_key='"$DATADOG_API_KEY"
