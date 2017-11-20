@@ -14,7 +14,7 @@ GOPATH=$PWD/go
 pushd loggregator-tools/log-cache-blackbox
   go get -d ./...
   go build
-  cf push "$APP_NAME" -b binary_buildpack -c ./log-cache-blackbox
+  cf push "$APP_NAME" -b binary_buildpack -c ./log-cache-blackbox -m 1G
 popd
 
 response=$(curl "$APP_DOMAIN" -d='')
