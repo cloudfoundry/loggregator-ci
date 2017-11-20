@@ -22,6 +22,11 @@ response=$(curl "$APP_DOMAIN" -d='')
 latency=$(echo $response | jq .latency)
 avg_query_time=$(echo $response | jq .averageQueryTime)
 
+response=$(curl "$APP_DOMAIN/reliability" -d='')
+
+logs_sent=$(echo $response | jq .logsSent)
+logs_received=$(echo $response | jq .logsReceived)
+
 currenttime=$(date +%s)
 curl  -X POST -H "Content-type: application/json" \
 -d "{ \"series\" :
@@ -36,6 +41,20 @@ curl  -X POST -H "Content-type: application/json" \
     {
       \"metric\":\"log-cache-blackbox.avg_query_time\",
       \"points\":[[${currenttime}, ${avg_query_time}]],
+      \"type\":\"gauge\",
+      \"host\":\"${CF_API}\",
+      \"tags\":[\"${APP_NAME}\"]
+    },
+    {
+      \"metric\":\"log-cache-blackbox.logs_sent\",
+      \"points\":[[${currenttime}, ${logs_sent}]],
+      \"type\":\"gauge\",
+      \"host\":\"${CF_API}\",
+      \"tags\":[\"${APP_NAME}\"]
+    },
+    {
+      \"metric\":\"log-cache-blackbox.logs_received\",
+      \"points\":[[${currenttime}, ${logs_received}]],
       \"type\":\"gauge\",
       \"host\":\"${CF_API}\",
       \"tags\":[\"${APP_NAME}\"]
