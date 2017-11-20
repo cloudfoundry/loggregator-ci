@@ -29,12 +29,6 @@ resources:
   type: git
   source:
     uri: https://github.com/cloudfoundry/cf-deployment
-    branch: master
-
-- name: cf-deployment-develop
-  type: git
-  source:
-    uri: https://github.com/cloudfoundry/cf-deployment
     branch: develop
 
 # This is here because concourse has a bug in which putting to a git resource
@@ -121,7 +115,6 @@ jobs:
       - get: bbl-state
         resource: deployments-loggregator
       - get: cf-deployment
-      - get: cf-deployment-develop
       - get: cf-deployment-concourse-tasks
       - get: vars-store
         resource: deployments-loggregator
@@ -167,7 +160,7 @@ jobs:
             repository: relintdockerhubpushbot/cf-deployment-concourse-tasks
         inputs:
         - name: bbl-state
-        - name: cf-deployment-develop
+        - name: cf-deployment
         - name: deployment-settings
         outputs:
         - name: ops-files
@@ -187,7 +180,7 @@ jobs:
             LOG_API_COUNT=$(cat $SETTINGS_FILE | jq .LOG_API_COUNT --raw-output)
             ROUTER_COUNT=$(cat $SETTINGS_FILE | jq .ROUTER_COUNT --raw-output)
 
-            cp cf-deployment-develop/operations/experimental/use-bosh-dns.yml ops-files/
+            cp cf-deployment/operations/experimental/use-bosh-dns.yml ops-files/
             cp bbl-state/gcp/loggregator-capacity-planning/ops-files/*.yml ops-files/
 
             cat <<EOT >> ops-files/capacity-planning-config.yml
@@ -220,7 +213,6 @@ jobs:
               path: /releases/name=cf-syslog-drain
               value:
                 name: cf-syslog-drain
-                url: https://bosh.io/d/github.com/cloudfoundry/cf-syslog-drain-release
                 version: latest
             EOT
     - task: cf-deploy
