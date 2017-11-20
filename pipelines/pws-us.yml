@@ -238,7 +238,7 @@ jobs:
       DRAIN_VERSION: "2.0"
       DRAIN_TYPE: "syslog"
       JOB_NAME: "syslog-no-teardown"
-    timeout: 20m
+    timeout: 30m
 
 - name: latency
   public: false
