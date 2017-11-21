@@ -31,7 +31,174 @@ resources:
     branch: master
     private_key: {{sonde-go-key}}
 
+- name: loggregator-ci
+  type: git
+  source:
+    uri: https://github.com/cloudfoundry/loggregator-ci
+    branch: master
+
+- name: go-loggregator
+  type: git
+  source:
+    uri: https://github.com/cloudfoundry/go-loggregator
+    branch: master
+
+- name: go-diodes
+  type: git
+  source:
+    uri: https://github.com/cloudfoundry/go-diodes
+    branch: master
+
+- name: go-batching
+  type: git
+  source:
+    uri: https://github.com/cloudfoundry/go-batching
+    branch: master
+
+- name: go-pubsub
+  type: git
+  source:
+    uri: https://github.com/cloudfoundry/go-pubsub
+    branch: master
+
+- name: go-envstruct
+  type: git
+  source:
+    uri: https://github.com/cloudfoundry/go-envstruct
+    branch: master
+
+- name: go-orchestrator
+  type: git
+  source:
+    uri: https://github.com/cloudfoundry-incubator/go-orchestrator
+    branch: master
+
+- name: rfc5424
+  type: git
+  source:
+    uri: https://github.com/cloudfoundry-incubator/rfc5424
+    branch: master
+
+- name: grpc-throughputlb
+  type: git
+  source:
+    uri: https://github.com/cloudfoundry-incubator/grpc-throughputlb
+    branch: master
+
 jobs:
+- name: go-loggregator-tests
+  serial: true
+  plan:
+  - aggregate:
+    - get: go-loggregator
+      trigger: true
+    - get: loggregator-ci
+  - task: run-tests
+    file: loggregator-ci/tasks/go-test-with-latest-packages/task.yml
+    input_mapping:
+      source-repo: go-loggregator
+    params:
+      IMPORT_PATH: code.cloudfoundry.org/go-loggregator
+
+- name: go-diodes-tests
+  serial: true
+  plan:
+  - aggregate:
+    - get: go-diodes
+      trigger: true
+    - get: loggregator-ci
+  - task: run-tests
+    file: loggregator-ci/tasks/go-test-with-latest-packages/task.yml
+    input_mapping:
+      source-repo: go-diodes
+    params:
+      IMPORT_PATH: code.cloudfoundry.org/go-diodes
+
+- name: go-batching-tests
+  serial: true
+  plan:
+  - aggregate:
+    - get: go-batching
+      trigger: true
+    - get: loggregator-ci
+  - task: run-tests
+    file: loggregator-ci/tasks/go-test-with-latest-packages/task.yml
+    input_mapping:
+      source-repo: go-batching
+    params:
+      IMPORT_PATH: code.cloudfoundry.org/go-batching
+
+- name: go-pubsub-tests
+  serial: true
+  plan:
+  - aggregate:
+    - get: go-pubsub
+      trigger: true
+    - get: loggregator-ci
+  - task: run-tests
+    file: loggregator-ci/tasks/go-test-with-latest-packages/task.yml
+    input_mapping:
+      source-repo: go-pubsub
+    params:
+      IMPORT_PATH: code.cloudfoundry.org/go-pubsub
+
+- name: go-envstruct-tests
+  serial: true
+  plan:
+  - aggregate:
+    - get: go-envstruct
+      trigger: true
+    - get: loggregator-ci
+  - task: run-tests
+    file: loggregator-ci/tasks/go-test-with-latest-packages/task.yml
+    input_mapping:
+      source-repo: go-envstruct
+    params:
+      IMPORT_PATH: code.cloudfoundry.org/go-envstruct
+
+- name: go-orchestrator-tests
+  serial: true
+  plan:
+  - aggregate:
+    - get: go-orchestrator
+      trigger: true
+    - get: loggregator-ci
+  - task: run-tests
+    file: loggregator-ci/tasks/go-test-with-latest-packages/task.yml
+    input_mapping:
+      source-repo: go-orchestrator
+    params:
+      IMPORT_PATH: code.cloudfoundry.org/go-orchestrator
+
+
+- name: rfc5424-tests
+  serial: true
+  plan:
+  - aggregate:
+    - get: rfc5424
+      trigger: true
+    - get: loggregator-ci
+  - task: run-tests
+    file: loggregator-ci/tasks/go-test-with-latest-packages/task.yml
+    input_mapping:
+      source-repo: rfc5424
+    params:
+      IMPORT_PATH: code.cloudfoundry.org/rfc5424
+
+- name: grpc-throughputlb-tests
+  serial: true
+  plan:
+  - aggregate:
+    - get: grpc-throughputlb
+      trigger: true
+    - get: loggregator-ci
+  - task: run-tests
+    file: loggregator-ci/tasks/go-test-with-latest-packages/task.yml
+    input_mapping:
+      source-repo: grpc-throughputlb
+    params:
+      IMPORT_PATH: code.cloudfoundry.org/grpc-throughputlb
+
 - name: dropsonde-unit-tests
   serial: true
   plan:
@@ -277,4 +444,3 @@ jobs:
     params:
       repository: bumped-loggregator
       rebase: true
-

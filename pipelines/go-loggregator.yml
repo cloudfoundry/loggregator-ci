@@ -2,9 +2,8 @@ resources:
 - name: go-loggregator
   type: git
   source:
-    uri: git@github.com:cloudfoundry-incubator/go-loggregator.git
+    uri: https://github.com/cloudfoundry-incubator/go-loggregator
     branch: master
-    private_key: {{loggregator-key}}
 
 jobs:
 - name: tests

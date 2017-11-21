@@ -13,6 +13,7 @@ groups:
   - cf-syslog-drain-bump-submodule
   - cf-syslog-drain-promotion
   - log-cache-tests
+  - log-cache-cli-tests
   - log-cache-bump-submodule
   - statsd-injector-tests
   - statsd-injector-bump-submodule
@@ -40,6 +41,7 @@ groups:
 - name: log-cache
   jobs:
   - log-cache-tests
+  - log-cache-cli-tests
   - log-cache-bump-submodule
 - name: statsd-injector
   jobs:
@@ -222,6 +224,13 @@ resources:
   type: git
   source:
     uri: git@github.com:cloudfoundry-incubator/log-cache
+    branch: master
+    private_key: {{cf-loggregator-oauth-bot-key}}
+
+- name: log-cache-cli
+  type: git
+  source:
+    uri: git@github.com:cloudfoundry-incubator/log-cache-cli
     branch: master
     private_key: {{cf-loggregator-oauth-bot-key}}
 
@@ -1106,6 +1115,21 @@ jobs:
       MANIFEST_FILE: manifests/noisy-neighbor-nozzle.yml
       VARS_STORE_FILE: gcp/coconut-bbl/throw-away.yml # We do not want to save this vars store.
       VARS_FILES: "gcp/coconut-bbl/noisy-neighbor-nozzle-vars.yml"
+
+- name: log-cache-cli-tests
+  serial: true
+  public: true
+  plan:
+  - aggregate:
+    - get: loggregator-ci
+    - get: log-cache-cli
+      trigger: true
+  - task: run-tests
+    file: loggregator-ci/tasks/go-test-with-latest-packages/task.yml
+    input_mapping:
+      source-repo: log-cache-cli
+    params:
+      IMPORT_PATH: code.cloudfoundry.org/log-cache-cli
 
 - name: log-cache-tests
   serial: true
