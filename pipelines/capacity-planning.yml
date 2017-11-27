@@ -286,7 +286,7 @@ jobs:
               export BOSH_ENVIRONMENT=`bbl director-address`
             popd
 
-            pushd datadog-firehose-nozzel-release
+            pushd datadog-firehose-nozzle-release
               bosh -n upload-release "releases/datadog-firehose-nozzle/datadog-firehose-nozzle-${NOZZLE_VERSION}.yml"
             popd
             bosh -n -d ${DEPLOYMENT_NAME} deploy ${MANIFEST_FILE} -l ${MANIFEST_VARS} \
