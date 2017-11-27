@@ -49,6 +49,12 @@ resources:
     uri: https://github.com/datadog/datadog-firehose-nozzle-release.git
     branch: master
 
+- name: noisy-neighbor-nozzle-release
+  type: git
+  source:
+    uri: https://github.com/cloudfoundry-incubator/noisy-neighbor-nozzle-release
+    branch: master
+
 jobs:
 - name: bbl-create
   public: false
@@ -243,6 +249,38 @@ jobs:
       file: cf-deployment-concourse-tasks/bosh-cleanup/task.yml
       params:
         BBL_STATE_DIR: gcp/loggregator-capacity-planning
+
+- name: noisy-neighbor-nozzle-deploy
+  serial: true
+  plan:
+  - aggregate:
+    - get: loggregator-ci
+    - get: bbl-state
+      resource: deployments-loggregator
+    - get: bosh-release
+      resource: noisy-neighbor-nozzle-release
+    - get: noisy-neighbor-nozzle
+      resource: noisy-neighbor-nozzle-release
+    - get: vars-store
+      resource: deployments-loggregator
+    - get: ops-files
+      resource: deployments-loggregator
+    - get: vars-files
+      resource: deployments-loggregator
+  - task: upload-release
+    file: loggregator-ci/tasks/upload-release/task.yml
+    input_mapping:
+      bosh-release-dir: noisy-neighbor-nozzle
+    params:
+      BBL_STATE_DIR: gcp/loggregator-capacity-planning
+  - task: deploy
+    file: loggregator-ci/tasks/bosh-deploy/task.yml
+    params:
+      BBL_STATE_DIR: gcp/loggregator-capacity-planning/
+      DEPLOYMENT_NAME: noisy-neighbor-nozzle
+      MANIFEST_FILE: manifests/noisy-neighbor-nozzle.yml
+      VARS_STORE_FILE: gcp/loggregator-capacity-planning/nnn-vars.yml
+      VARS_FILES: gcp/loggregator-capacity-planning/noisy-neighbor-nozzle-vars.yml
 
 - name: datadog-nozzle-deploy
   serial: true
