@@ -1,6 +1,5 @@
-FROM cfssl/cfssl:latest
+FROM alpine:latest
 
-COPY generate-certs.sh /generate-certs.sh
+COPY ["cfssl", "cfssljson", "generate-certs.sh", "/usr/local/bin/"]
 
-ENTRYPOINT ["/generate-certs.sh"]
-CMD ["/output"]
+CMD ["generate-certs.sh", "/output"]

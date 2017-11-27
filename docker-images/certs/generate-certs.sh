@@ -1,10 +1,14 @@
-#!/bin/bash
+#!/bin/sh
 
 set -e
 
 csr_template='
 {
   "CN": "CN_PLACEHOLDER",
+  "hosts": [
+      "CN_PLACEHOLDER",
+      "ADDITIONAL_HOST_PLACEHOLDER"
+  ],
   "key": {
     "algo": "rsa",
     "size": 2048
@@ -48,12 +52,14 @@ function create_ca {
 }
 
 function create_keypair {
+    echo "$ca_config" > /tmp/ca_config
     echo "$csr_template" | \
-        sed "s/CN_PLACEHOLDER/$2/" | \
+        sed "s/CN_PLACEHOLDER/$1/" | \
+        sed "s/ADDITIONAL_HOST_PLACEHOLDER/$2/" | \
         cfssl gencert \
             -ca=ca.crt \
             -ca-key=ca.key \
-            -config=<(echo "$ca_config") \
+            -config=/tmp/ca_config \
             -profile=loggregator \
             - | \
         cfssljson -bare "$1"
@@ -77,11 +83,10 @@ function validate {
 function main {
     validate $1
     mkdir -p "$1"
-    pushd "$1" > /dev/null
-        create_ca
-        create_keypair router doppler
-        create_keypair rlp reverselogproxy
-        create_keypair agent metron
-    popd > /dev/null
+    cd "$1"
+    create_ca
+    create_keypair router doppler
+    create_keypair rlp reverselogproxy
+    create_keypair agent metron
 }
 main $@
