@@ -12,6 +12,7 @@ sha="$(cd loggregator-src && git rev-parse @)"
 workspace_code_path=workspace/src/code.cloudfoundry.org/loggregator
 mkdir -p "$workspace_code_path"
 cp -r loggregator-src/. "$workspace_code_path/"
+go get -d -v code.cloudfoundry.org/loggregator/...
 export GOPATH="$PWD/workspace"
 
 pushd "loggregator-ci/docker-images/$IMAGE_NAME" > /dev/null
