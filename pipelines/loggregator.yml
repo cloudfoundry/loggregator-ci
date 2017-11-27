@@ -2,6 +2,7 @@ groups:
 - name: all
   jobs:
   - loggregator-tests
+  - loggregator-docker-images
   - loggregator-bump-submodule
   - loggregator-deploy
   - cf-deploy
@@ -24,6 +25,7 @@ groups:
 - name: loggregator
   jobs:
   - loggregator-tests
+  - loggregator-docker-images
   - loggregator-bump-submodule
   - loggregator-deploy
   - cf-deploy
@@ -239,6 +241,27 @@ resources:
   source:
     uri: https://github.com/cloudfoundry/bosh-deployment
 
+- name: agent-image
+  type: docker-image
+  source:
+    repository: loggregator/agent
+    username: {{docker-hub-username}}
+    password: {{docker-hub-password}}
+
+- name: router-image
+  type: docker-image
+  source:
+    repository: loggregator/router
+    username: {{docker-hub-username}}
+    password: {{docker-hub-password}}
+
+- name: rlp-image
+  type: docker-image
+  source:
+    repository: loggregator/rlp
+    username: {{docker-hub-username}}
+    password: {{docker-hub-password}}
+
 jobs:
 - name: coconut-bbl-up
   public: false
@@ -429,6 +452,58 @@ jobs:
                   throw "test failed"
                 }
               }
+
+- name: loggregator-docker-images
+  serial: true
+  public: true
+  plan:
+  - aggregate:
+    - get: loggregator-ci
+    - get: loggregator-src
+      trigger: true
+      passed:
+      - loggregator-tests
+  - aggregate:
+    - task: build-agent-image
+      file: loggregator-ci/tasks/build-docker-image/task.yml
+      params:
+        IMAGE_NAME: agent
+      output_mapping:
+        build-image: build-agent-image
+    - task: build-router-image
+      file: loggregator-ci/tasks/build-docker-image/task.yml
+      params:
+        IMAGE_NAME: router
+      output_mapping:
+        build-image: build-router-image
+    - task: build-rlp-image
+      file: loggregator-ci/tasks/build-docker-image/task.yml
+      params:
+        IMAGE_NAME: rlp
+      output_mapping:
+        build-image: build-rlp-image
+  - aggregate:
+    - put: agent-image
+      params:
+        build: build-agent-image/build
+        tag: build-agent-image/tag
+        tag_as_latest: true
+        cache: true
+        cache_tag: latest
+    - put: router-image
+      params:
+        build: build-router-image/build
+        tag: build-router-image/tag
+        tag_as_latest: true
+        cache: true
+        cache_tag: latest
+    - put: rlp-image
+      params:
+        build: build-rlp-image/build
+        tag: build-rlp-image/tag
+        tag_as_latest: true
+        cache: true
+        cache_tag: latest
 
 - name: loggregator-bump-submodule
   serial: true

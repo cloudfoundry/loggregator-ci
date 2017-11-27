@@ -5,9 +5,8 @@ function set_globals {
 }
 
 function validate {
-    echo $pipeline pipeline
-    if [ -z "$pipeline" ]; then
-        echo "usage: $0 <pipeline | all>"
+    if [ "$pipeline" = "-h" ] || [ "$pipeline" = "--help" ] || [ -z "$pipeline" ]; then
+        print_usage
         exit 1
     fi
 }
@@ -33,6 +32,10 @@ function set_pipelines {
     fi
 
     set_pipeline "$pipeline"
+}
+
+function print_usage {
+    echo "usage: $0 <pipeline | all>"
 }
 
 function main {
