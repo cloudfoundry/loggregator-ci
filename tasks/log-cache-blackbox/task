@@ -28,7 +28,7 @@ logs_sent=$(echo $response | jq .logsSent)
 logs_received=$(echo $response | jq .logsReceived)
 
 currenttime=$(date +%s)
-curl  -X POST -H "Content-type: application/json" \
+curl --fail -X POST -H "Content-type: application/json" \
 -d "{ \"series\" :
   [
     {
