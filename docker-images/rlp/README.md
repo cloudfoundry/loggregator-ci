@@ -1,4 +1,8 @@
 
+# Supported tags and respective `Dockerfile` links
+
+- `latest` [(Dockerfile)][latest-dockerfile]
+
 # Usage
 
 - You should publish the gRPC API port 8082.
@@ -13,6 +17,8 @@ docker run \
     --detach \
     --publish 8082:8082
     --env "ROUTER_ADDRS=router:8082" \
-    --volume "$PWD/loggregator-certs:/srv/rlp/certs:ro \
+    --volume "$PWD/loggregator-certs:/srv/rlp/certs:ro" \
     loggregator/rlp
 ```
+
+[latest-dockerfile]: https://github.com/cloudfoundry/loggregator-ci/blob/master/docker-images/rlp/Dockerfile
