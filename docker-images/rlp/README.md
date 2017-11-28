@@ -15,7 +15,7 @@ For example:
 ```bash
 docker run \
     --detach \
-    --publish 8082:8082
+    --publish 8082:8082 \
     --env "ROUTER_ADDRS=router:8082" \
     --volume "$PWD/loggregator-certs:/srv/rlp/certs:ro" \
     loggregator/rlp

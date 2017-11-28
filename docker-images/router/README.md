@@ -13,7 +13,7 @@ For example:
 ```bash
 docker run \
     --detach \
-    --publish 8082:8082
+    --publish 8082:8082 \
     --volume "$PWD/loggregator-certs:/srv/router/certs:ro" \
     loggregator/router
 ```
