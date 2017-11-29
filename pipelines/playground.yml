@@ -211,7 +211,7 @@ jobs:
       BBL_STATE_DIR: gcp/playground
       SYSTEM_DOMAIN: playground.loggr.cf-app.com
       VARS_STORE_FILE: gcp/playground/deployment-vars.yml
-      OPS_FILES: "scale-to-one-az.yml clients.yml allow-insecure-syslog-drains.yml cf-versions.yml use-bosh-dns.yml deploy-log-cache.yml"
+      OPS_FILES: "scale-to-one-az.yml clients.yml allow-insecure-syslog-drains.yml cf-versions.yml use-bosh-dns.yml deploy-log-cache.yml enable-metrics-to-syslog.yml"
   - task: bosh-cleanup
     file: cf-deployment-concourse-tasks/bosh-cleanup/task.yml
     params:
