@@ -228,6 +228,7 @@ jobs:
         SYSTEM_DOMAIN: loggregator-capacity-planning.cf-app.com
         VARS_STORE_FILE: gcp/loggregator-capacity-planning/deployment-vars.yml
         OPS_FILES: "clients.yml instance-types.yml capacity-planning-config.yml use-bosh-dns.yml bosh-dns.yml"
+        : "clients.yml instance-types.yml capacity-planning-config.yml use-bosh-dns.yml bosh-dns.yml"
     - put: deployments-loggregator-with-changes
       params:
         repository: updated-vars-store
