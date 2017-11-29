@@ -9,6 +9,7 @@ inputs:
 - name: loggregator-capacity-planning-release
 - name: loggregator-ci
 - name: updated-vars-store
+- name: ops-files
 outputs:
 - name: updated-capacity-planning-vars-store
 run:
