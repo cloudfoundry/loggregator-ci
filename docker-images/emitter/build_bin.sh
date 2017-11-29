@@ -6,4 +6,4 @@ GOARCH=amd64 \
     -a \
     -installsuffix nocgo \
     -o ./emitter \
-    code.cloudfoundry.org/loggregator-emitter
+    code.cloudfoundry.org/loggregator-tools/emitter
