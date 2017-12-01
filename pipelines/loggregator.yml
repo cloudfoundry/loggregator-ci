@@ -818,7 +818,7 @@ jobs:
                 "manifests/loggregator-bench.yml"
             popd
 
-            rsync -ac deployments-loggregator/ updated-deployments-loggregator
+            rsync -ac deployments-loggregator/loggregator-bench-vars.yml updated-deployments-loggregator
   - task: commit
     file: loggregator-ci/tasks/commit/task.yml
     input_mapping:
