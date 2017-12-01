@@ -6,8 +6,8 @@ csr_template='
 {
   "CN": "CN_PLACEHOLDER",
   "hosts": [
-      "CN_PLACEHOLDER",
-      "ADDITIONAL_HOST_PLACEHOLDER"
+      "CN_PLACEHOLDER"
+      ADDITIONAL_HOST_PLACEHOLDER
   ],
   "key": {
     "algo": "rsa",
@@ -41,9 +41,23 @@ ca_config='
 }
 '
 
-function create_ca {
+function json_join {
+    for var in "$@"; do
+        printf ',"'$var'"';
+    done;
+}
+
+function render_csr {
+    local cn
+    cn=$1
+    shift
     echo "$csr_template" | \
-        sed 's/CN_PLACEHOLDER/loggregatorCA/' | \
+        sed "s/CN_PLACEHOLDER/$cn/" | \
+        sed "s/ADDITIONAL_HOST_PLACEHOLDER/$(json_join $@)/"
+}
+
+function create_ca {
+    render_csr loggregatorCA | \
         cfssl gencert -initca - | \
         cfssljson -bare ca
     mv ca.pem ca.crt
@@ -53,9 +67,7 @@ function create_ca {
 
 function create_keypair {
     echo "$ca_config" > /tmp/ca_config
-    echo "$csr_template" | \
-        sed "s/CN_PLACEHOLDER/$1/" | \
-        sed "s/ADDITIONAL_HOST_PLACEHOLDER/$2/" | \
+    render_csr "$@" | \
         cfssl gencert \
             -ca=ca.crt \
             -ca-key=ca.key \
@@ -87,6 +99,6 @@ function main {
     create_ca
     create_keypair router doppler
     create_keypair rlp reverselogproxy
-    create_keypair agent metron
+    create_keypair agent metron localhost 127.0.0.1
 }
 main $@
