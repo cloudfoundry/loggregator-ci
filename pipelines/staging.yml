@@ -17,7 +17,7 @@ resources:
   type: git
   source:
     uri: https://github.com/cloudfoundry/cf-deployment-concourse-tasks
-    branch: v4.16
+    branch: v4.21
 
 - name: loggregator-release-elect
   type: git
