@@ -205,13 +205,14 @@ jobs:
           cp cf-deployment/operations/experimental/use-bosh-dns.yml ops-files/
           cp bbl-state/gcp/playground/ops-files/*.yml ops-files/
           cp log-cache-release/manifests/operations/deploy-in-cf.yml ops-files/deploy-log-cache.yml
+          cp log-cache-release/manifests/operations/expvar-scraper.yml ops-files/log-cache-expvar-scraper.yml
   - task: cf-deploy
     file: cf-deployment-concourse-tasks/bosh-deploy/task.yml
     params:
       BBL_STATE_DIR: gcp/playground
       SYSTEM_DOMAIN: playground.loggr.cf-app.com
       VARS_STORE_FILE: gcp/playground/deployment-vars.yml
-      OPS_FILES: "scale-to-one-az.yml clients.yml allow-insecure-syslog-drains.yml cf-versions.yml use-bosh-dns.yml deploy-log-cache.yml enable-metrics-to-syslog.yml"
+      OPS_FILES: "scale-to-one-az.yml clients.yml allow-insecure-syslog-drains.yml cf-versions.yml use-bosh-dns.yml deploy-log-cache.yml enable-metrics-to-syslog.yml log-cache-expvar-scraper.yml"
       VARS_FILES: gcp/playground/datadog-vars.yml
   - task: bosh-cleanup
     file: cf-deployment-concourse-tasks/bosh-cleanup/task.yml
