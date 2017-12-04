@@ -99,6 +99,6 @@ function main {
     create_ca
     create_keypair router doppler
     create_keypair rlp reverselogproxy
-    create_keypair agent metron localhost 127.0.0.1
+    create_keypair agent metron localhost ip6-localhost 127.0.0.1 ::1
 }
 main $@
