@@ -19,8 +19,12 @@ run:
   path: loggregator-ci/tasks/upload-release/task
 
 params:
-  BBL_STATE_DIR:
   # - Optional
   # - Path to the directory containing the `bbl-state.json` file
   # - The path is relative to root of the `bbl-state` input
   # - Defaults to the root of the `bbl-state` input
+  BBL_STATE_DIR:
+
+  # - Optional
+  # - Ignore dirty state of release repo.
+  FORCE: false
