@@ -118,6 +118,12 @@ resources:
     - .final_builds
     - releases
 
+- name: logging-acceptance-tests
+  type: git
+  source:
+    uri: https://github.com/cloudfoundry/logging-acceptance-tests
+    branch: master
+
 - name: loggregator-src
   type: git
   source:
@@ -710,6 +716,7 @@ jobs:
       - loggregator-bump-submodule
     - get: deployments-loggregator
     - get: loggregator-ci
+    - get: logging-acceptance-tests
   - task: upload-loggregator
     config:
       image_resource:
@@ -721,6 +728,7 @@ jobs:
       - name: deployments-loggregator
       - name: consul-release
       - name: loggregator-release
+      - name: logging-acceptance-tests
       run:
         path: bash
         args:
@@ -745,7 +753,12 @@ jobs:
             bosh create-release --name=loggregator --force
             bosh upload-release --rebase
           popd
-  - task: deploy
+
+          pushd logging-acceptance-tests
+            bosh create-release --force
+            bosh upload-release --rebase
+          popd
+  - task: loggregator-deploy
     file: loggregator-ci/tasks/bosh-deploy/task.yml
     input_mapping:
       bbl-state: deployments-loggregator
@@ -760,6 +773,22 @@ jobs:
       DEPLOYMENT_NAME: loggregator
       MANIFEST_FILE: manifests/loggregator.yml
       VARS_STORE_FILE: gcp/coconut-bbl/loggregator-vars.yml
+  - task: lats-deploy
+    file: loggregator-ci/tasks/bosh-deploy/task.yml
+    input_mapping:
+      bbl-state: deployments-loggregator
+      vars-store: deployments-loggregator
+      ops-files: deployments-loggregator
+      vars-files: deployments-loggregator
+      bosh-release: logging-acceptance-tests
+    # output_mapping:
+    #   updated-vars-store: updated-deployments-loggregator
+    params:
+      BBL_STATE_DIR: gcp/coconut-bbl
+      DEPLOYMENT_NAME: lats
+      MANIFEST_FILE: manifests/lats.yml
+      VARS_STORE_FILE: gcp/coconut-bbl/lats-vars.yml
+      VARS_FILES: gcp/coconut-bbl/loggregator-vars.yml
   - put: deployments-loggregator
     params:
       repository: updated-deployments-loggregator
