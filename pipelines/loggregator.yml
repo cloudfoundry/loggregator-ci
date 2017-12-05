@@ -812,10 +812,22 @@ jobs:
     input_mapping:
       release-repo: loggregator-bench-release
       source-repo: loggregator-release
-    output_mapping:
-      bumped-release-repo: bumped-loggregator-bench-release
     params:
       SUBMODULE_PATH: src/loggregator-release
+  - task: update-submodules
+    file: loggregator-ci/tasks/run-release-script/task.yml
+    input_mapping:
+      release-repo: bumped-release-repo
+    params:
+      SCRIPT: git submodule update --init --recursive
+  - task: sync-package-specs
+    file: loggregator-ci/tasks/run-release-script/task.yml
+    input_mapping:
+      release-repo: updated-release-repo
+    output_mapping:
+      updated-release-repo: bumped-loggregator-bench-release
+    params:
+      SCRIPT: ./scripts/sync-package-specs
   - task: upload-benchmark-release
     file: loggregator-ci/tasks/upload-release/task.yml
     input_mapping:
