@@ -807,48 +807,37 @@ jobs:
       trigger: true
       passed:
       - cf-deploy
+  - task: bump-loggregator-release
+    file: loggregator-ci/tasks/bump-submodule/task.yml
+    input_mapping:
+      release-repo: loggregator-bench-release
+      source-repo: loggregator-release
+    output_mapping:
+      bumped-release-repo: bumped-loggregator-bench-release
+    params:
+      SUBMODULE_PATH: src/loggregator-release
+  - task: upload-benchmark-release
+    file: loggregator-ci/tasks/upload-release/task.yml
+    input_mapping:
+      bbl-state: deployments-loggregator
+      bosh-release-dir: bumped-loggregator-bench-release
+    params:
+      BBL_STATE_DIR: gcp/coconut-bbl
   - task: deploy-benchmarks
-    config:
-      image_resource:
-        type: docker-image
-        source:
-          repository: relintdockerhubpushbot/cf-deployment-concourse-tasks
-      platform: linux
-      inputs:
-      - name: deployments-loggregator
-      - name: loggregator-release
-      - name: loggregator-bench-release
-      outputs:
-      - name: updated-deployments-loggregator
-      run:
-        path: bash
-        args:
-          - -c
-          - |
-            #!/bin/bash
-            set -eux
-
-            deployment_dir="$PWD/deployments-loggregator/gcp/coconut-bbl"
-
-            pushd deployments-loggregator/gcp/coconut-bbl
-              export BOSH_CLIENT=`bbl director-username`
-              export BOSH_CLIENT_SECRET=`bbl director-password`
-              export BOSH_CA_CERT=`bbl director-ca-cert`
-              export BOSH_ENVIRONMENT=`bbl director-address`
-            popd
-
-            cp -R loggregator-release loggregator-bench-release/src/loggregator-release
-
-            pushd loggregator-bench-release
-              bosh create-release --force
-              bosh upload-release --rebase
-
-              bosh -n -d loggregator-bench deploy \
-                --vars-store "$deployment_dir/loggregator-bench-vars.yml" \
-                "manifests/loggregator-bench.yml"
-            popd
-
-            rsync -ac $deployment_dir/ updated-deployments-loggregator
+    file: loggregator-ci/tasks/bosh-deploy/task.yml
+    input_mapping:
+      bbl-state: deployments-loggregator
+      bosh-release: bumped-loggregator-bench-release
+      vars-store: deployments-loggregator
+      ops-files: deployments-loggregator
+      vars-files: deployments-loggregator
+    output_mapping:
+      updated-vars-store: updated-deployments-loggregator
+    params:
+      BBL_STATE_DIR: gcp/coconut-bbl
+      DEPLOYMENT_NAME: loggregator-bench
+      MANIFEST_FILE: manifests/loggregator-bench.yml
+      VARS_STORE_FILE: gcp/coconut-bbl/loggregator-bench-vars.yml
   - task: commit
     file: loggregator-ci/tasks/commit/task.yml
     input_mapping:

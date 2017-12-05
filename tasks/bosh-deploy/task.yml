@@ -12,7 +12,7 @@ image_resource:
 inputs:
 - name: loggregator-ci # - This repo
 - name: bbl-state      # - The Director's `bbl-state.json`
-- name: bosh-release   # - The release to upload
+- name: bosh-release   # - The release that contains the manifest file.
 - name: vars-store     # - The directory where the VARS_STORE_FILE will be saved
 - name: ops-files      # - The directory from which to read ops-files
 - name: vars-files     # - The directory from which to read vars files
@@ -36,7 +36,7 @@ params:
 
   # - Required
   # - Filepath to the deployment manifest file.
-  # - The path is relative to the bosh-release-dir.
+  # - The path is relative to the bosh-release.
   MANIFEST_FILE:
 
   # - Required
