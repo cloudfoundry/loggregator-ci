@@ -118,10 +118,10 @@ resources:
     - .final_builds
     - releases
 
-- name: logging-acceptance-tests
+- name: logging-acceptance-tests-release
   type: git
   source:
-    uri: https://github.com/cloudfoundry/logging-acceptance-tests
+    uri: https://github.com/cloudfoundry/logging-acceptance-tests-release
     branch: master
 
 - name: loggregator-src
@@ -716,7 +716,7 @@ jobs:
       - loggregator-bump-submodule
     - get: deployments-loggregator
     - get: loggregator-ci
-    - get: logging-acceptance-tests
+    - get: logging-acceptance-tests-release
   - task: upload-loggregator
     config:
       image_resource:
@@ -728,7 +728,7 @@ jobs:
       - name: deployments-loggregator
       - name: consul-release
       - name: loggregator-release
-      - name: logging-acceptance-tests
+      - name: logging-acceptance-tests-release
       run:
         path: bash
         args:
@@ -754,7 +754,7 @@ jobs:
             bosh upload-release --rebase
           popd
 
-          pushd logging-acceptance-tests
+          pushd logging-acceptance-tests-release
             bosh create-release --force
             bosh upload-release --rebase
           popd
@@ -780,7 +780,7 @@ jobs:
       vars-store: deployments-loggregator
       ops-files: deployments-loggregator
       vars-files: deployments-loggregator
-      bosh-release: logging-acceptance-tests
+      bosh-release: logging-acceptance-tests-release
     # output_mapping:
     #   updated-vars-store: updated-deployments-loggregator
     params:
@@ -885,11 +885,12 @@ jobs:
   - bosh-loggregator
   plan:
   - aggregate:
+    - get: deployments-loggregator
+    - get: logging-acceptance-tests-release
     - get: loggregator-release
       passed:
       - loggregator-deploy
       trigger: true
-    - get: deployments-loggregator
   - task: run-lats
     config:
       image_resource:
@@ -914,7 +915,7 @@ jobs:
               export BOSH_ENVIRONMENT=`bbl director-address`
             popd
 
-            bosh -d loggregator run-errand loggregator-acceptance-tests --keep-alive
+            bosh -d lats run-errand lats --keep-alive
 
 - name: loggregator-promotion
   serial: true
