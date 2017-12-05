@@ -10,10 +10,11 @@ pushd "bbl-state/$BBL_STATE_DIR"
 popd
 
 pushd bosh-release-dir
-  bosh create-release
   if [ "$FORCE" == "true" ]; then
-    bosh upload-release --rebase --force
+    bosh create-release --force
   else
-    bosh upload-release --rebase
+    bosh create-release
   fi
+
+  bosh upload-release --rebase
 popd

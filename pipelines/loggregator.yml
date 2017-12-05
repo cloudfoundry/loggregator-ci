@@ -823,6 +823,7 @@ jobs:
       bosh-release-dir: bumped-loggregator-bench-release
     params:
       BBL_STATE_DIR: gcp/coconut-bbl
+      FORCE: true
   - task: deploy-benchmarks
     file: loggregator-ci/tasks/bosh-deploy/task.yml
     input_mapping:
