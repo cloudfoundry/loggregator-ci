@@ -981,8 +981,6 @@ jobs:
     - get: cf-syslog-drain-release
       trigger: true
     - get: scalable-syslog
-      passed:
-      - cf-syslog-drain-tests
       trigger: true
   - task: update-submodule
     file: loggregator-ci/tasks/bump-submodule/task.yml
