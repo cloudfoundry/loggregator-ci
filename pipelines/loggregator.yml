@@ -717,6 +717,7 @@ jobs:
     - get: deployments-loggregator
     - get: loggregator-ci
     - get: logging-acceptance-tests-release
+      trigger: true
   - task: upload-loggregator
     config:
       image_resource:
