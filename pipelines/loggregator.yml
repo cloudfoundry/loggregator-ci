@@ -810,27 +810,31 @@ jobs:
     input_mapping:
       release-repo: loggregator-bench-release
       source-repo: loggregator-release
+    output_mapping:
+      bumped-release-repo: bumped-loggregator-bench-release
     params:
       SUBMODULE_PATH: src/loggregator-release
   - task: update-submodules
     file: loggregator-ci/tasks/run-release-script/task.yml
     input_mapping:
-      release-repo: bumped-release-repo
+      release-repo: bumped-loggregator-bench-release
+    output_mapping:
+      updated-release-repo: updated-loggregator-bench-release
     params:
       SCRIPT: git submodule update --init --recursive
   - task: sync-package-specs
     file: loggregator-ci/tasks/run-release-script/task.yml
     input_mapping:
-      release-repo: updated-release-repo
+      release-repo: updated-loggregator-bench-release
     output_mapping:
-      updated-release-repo: bumped-loggregator-bench-release
+      updated-release-repo: synced-loggregator-bench-release
     params:
-      SCRIPT: ./scripts/sync-package-specs
+      SCRIPT: ./scripts/sync-package-specs-with-gopath
   - task: upload-benchmark-release
     file: loggregator-ci/tasks/upload-release/task.yml
     input_mapping:
       bbl-state: deployments-loggregator
-      bosh-release-dir: bumped-loggregator-bench-release
+      bosh-release-dir: synced-loggregator-bench-release
     params:
       BBL_STATE_DIR: gcp/coconut-bbl
       FORCE: true
@@ -838,7 +842,7 @@ jobs:
     file: loggregator-ci/tasks/bosh-deploy/task.yml
     input_mapping:
       bbl-state: deployments-loggregator
-      bosh-release: bumped-loggregator-bench-release
+      bosh-release: synced-loggregator-bench-release
       vars-store: deployments-loggregator
       ops-files: deployments-loggregator
       vars-files: deployments-loggregator
