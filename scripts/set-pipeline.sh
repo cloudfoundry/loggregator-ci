@@ -12,9 +12,9 @@ function validate {
 }
 
 function set_pipeline {
-    echo setting pipeline for "$pipeline"
-    fly -t loggregator set-pipeline -p "$pipeline" \
-        -c "pipelines/$pipeline.yml" \
+    echo setting pipeline for "$1"
+    fly -t loggregator set-pipeline -p "$1" \
+        -c "pipelines/$1.yml" \
         -l ~/workspace/deployments-loggregator/shared-secrets.yml \
         -l ~/workspace/loggregator-ci/scripts.yml
 }
@@ -26,7 +26,7 @@ function sync_fly {
 function set_pipelines {
     if [ "$pipeline" = all ]; then
         for pipeline_file in $(ls "pipelines/"); do
-            "${env}_set_pipeline" "${pipeline_file%.yml}"
+            set_pipeline "${pipeline_file%.yml}"
         done
         exit 0
     fi
