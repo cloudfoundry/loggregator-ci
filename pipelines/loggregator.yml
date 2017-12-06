@@ -781,8 +781,6 @@ jobs:
       ops-files: deployments-loggregator
       vars-files: deployments-loggregator
       bosh-release: logging-acceptance-tests-release
-    # output_mapping:
-    #   updated-vars-store: updated-deployments-loggregator
     params:
       BBL_STATE_DIR: gcp/coconut-bbl
       DEPLOYMENT_NAME: lats
