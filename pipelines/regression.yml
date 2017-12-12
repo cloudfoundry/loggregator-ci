@@ -50,11 +50,11 @@ resources:
     uri: https://github.com/cloudfoundry/loggregator-release
     branch: v99.x
 
-# - name: loggregator-release
-#   type: git
-#   source:
-#     uri: https://github.com/cloudfoundry/loggregator-release
-#     branch: release-elect
+- name: loggregator-release
+  type: git
+  source:
+    uri: https://github.com/cloudfoundry/loggregator-release
+    branch: release-elect
 
 - name: cf-syslog-drain-release
   type: git
@@ -80,22 +80,6 @@ resources:
     uri: git@github.com:cloudfoundry/deployments-loggregator.git
     branch: master
     private_key: {{deployments-loggregator-key}}
-
-# - name: weekday-before-work
-#   type: time
-#   source:
-#     start: 7:00 AM
-#     stop: 8:00 AM
-#     location: America/Denver
-#     days: [Monday, Tuesday, Wednesday, Thursday, Friday]
-
-# - name: weekday-after-work
-#   type: time
-#   source:
-#     start: 6:00 PM
-#     stop: 7:00 PM
-#     location: America/Denver
-#     days: [Monday, Tuesday, Wednesday, Thursday, Friday]
 
 jobs:
 - name: bbl-create
@@ -149,52 +133,54 @@ jobs:
   public: false
   serial_groups: ["deployment"]
   plan:
-  # - get: weekday-before-work
-  #   trigger: true
   - aggregate:
-    - get: bbl-state
-      resource: deployments-loggregator
+    - get: deployments-loggregator
     - get: cf-deployment
     - get: cf-deployment-concourse-tasks
-    - get: vars-store
-      resource: deployments-loggregator
-    - get: vars-files
-      resource: deployments-loggregator
-    - get: loggregator-release-99
     - get: cf-syslog-drain-release
     - get: loggregator-ci
     - get: cats-concourse-task
-    - get: deployments-loggregator
     - get: cf-acceptance-tests
+    - get: loggregator-release-99
+      trigger: true
     - get: capi-release
+      trigger: true
     - get: diego-release
-    # - get: loggregator-release
+      trigger: true
+    - get: loggregator-release
+      trigger: true
   - task: upload-stemcell
     file: cf-deployment-concourse-tasks/bosh-upload-stemcell-from-cf-deployment/task.yml
+    input_mapping:
+      bbl-state: deployments-loggregator
     params:
       BBL_STATE_DIR: gcp/regression
   - aggregate:
     - task: upload-loggregator-99
       file: loggregator-ci/tasks/upload-release/task.yml
       input_mapping:
+        bbl-state: deployments-loggregator
         bosh-release-dir: loggregator-release-99
       params:
         BBL_STATE_DIR: gcp/regression
     - task: upload-cf-syslog-drain
       file: loggregator-ci/tasks/upload-release/task.yml
       input_mapping:
+        bbl-state: deployments-loggregator
         bosh-release-dir: cf-syslog-drain-release
       params:
         BBL_STATE_DIR: gcp/regression
     - task: upload-capi
       file: loggregator-ci/tasks/upload-release/task.yml
       input_mapping:
+        bbl-state: deployments-loggregator
         bosh-release-dir: capi-release
       params:
         BBL_STATE_DIR: gcp/regression
     - task: upload-diego
       file: loggregator-ci/tasks/upload-release/task.yml
       input_mapping:
+        bbl-state: deployments-loggregator
         bosh-release-dir: diego-release
       params:
         BBL_STATE_DIR: gcp/regression
@@ -206,7 +192,7 @@ jobs:
         source:
           repository: relintdockerhubpushbot/cf-deployment-concourse-tasks
       inputs:
-      - name: bbl-state
+      - name: deployments-loggregator
       - name: cf-deployment
       outputs:
       - name: ops-files
@@ -220,9 +206,13 @@ jobs:
 
           cp cf-deployment/operations/scale-to-one-az.yml ops-files/
           cp cf-deployment/operations/experimental/use-bosh-dns.yml ops-files/
-          cp bbl-state/gcp/regression/ops-files/*.yml ops-files/
+          cp deployments-loggregator/gcp/regression/ops-files/*.yml ops-files/
   - task: cf-deploy
     file: cf-deployment-concourse-tasks/bosh-deploy/task.yml
+    input_mapping:
+      vars-store: deployments-loggregator
+      vars-files: deployments-loggregator
+      bbl-state: deployments-loggregator
     params:
       BBL_STATE_DIR: gcp/regression
       SYSTEM_DOMAIN: regression.loggr.cf-app.com
@@ -231,6 +221,8 @@ jobs:
       VARS_FILES: gcp/regression/datadog-vars.yml
   - task: bosh-cleanup
     file: cf-deployment-concourse-tasks/bosh-cleanup/task.yml
+    input_mapping:
+      bbl-state: deployments-loggregator
     params:
       BBL_STATE_DIR: gcp/regression
   - put: deployments-loggregator
@@ -247,11 +239,16 @@ jobs:
   - task: upload-loggregator
     file: loggregator-ci/tasks/upload-release/task.yml
     input_mapping:
+      bbl-state: deployments-loggregator
       bosh-release-dir: loggregator-release
     params:
       BBL_STATE_DIR: gcp/regression
   - task: cf-deploy
     file: cf-deployment-concourse-tasks/bosh-deploy/task.yml
+    input_mapping:
+      vars-store: deployments-loggregator
+      vars-files: deployments-loggregator
+      bbl-state: deployments-loggregator
     params:
       BBL_STATE_DIR: gcp/regression
       SYSTEM_DOMAIN: regression.loggr.cf-app.com
@@ -270,8 +267,6 @@ jobs:
   serial_groups: ["deployment"]
   public: false
   plan:
-  # - get: weekday-after-work
-  #   trigger: true
   - aggregate:
     - get: bbl-state
       resource: deployments-loggregator
