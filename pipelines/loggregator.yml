@@ -1235,6 +1235,13 @@ jobs:
       - noisy-neighbor-nozzle-bump-submodule
     - get: deployments-loggregator
     - get: loggregator-ci
+  - task: upload-noisy-neighbor-nozzle-release
+    file: loggregator-ci/tasks/upload-release/task.yml
+    input_mapping:
+      bbl-state: deployments-loggregator
+      bosh-release-dir: noisy-neighbor-nozzle-release
+    params:
+      BBL_STATE_DIR: gcp/coconut-bbl
   - task: deploy
     file: loggregator-ci/tasks/bosh-deploy/task.yml
     input_mapping:
