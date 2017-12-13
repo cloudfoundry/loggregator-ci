@@ -287,14 +287,9 @@ class Deployer
     Logger.step('Removing existing log emitters')
     apps = exec(bosh_env, ['cf', 'apps']).scan(/(log_emitter-\d*)/).flatten
 
-    threads = []
     apps.each do |name|
-      threads << Thread.new do
-        exec(bosh_env, ['cf', 'delete', name, '-f', '-r'])
-      end
+      exec(bosh_env, ['cf', 'delete', name, '-f', '-r'])
     end
-
-    threads.map { |t| t.join }
   end
 
   def delete_services!
@@ -325,7 +320,6 @@ class Deployer
     Logger.step("Building log emitter")
     exec(bosh_env, ['go', 'build'], dir)
 
-    threads = []
     (1..settings.log_emitter_count).each do |i|
       Logger.step("Deploying log emitter #{i}")
 
@@ -348,33 +342,29 @@ class Deployer
         '-p', dir,
       ]
 
-      threads << Thread.new do
-        max_attempts = 3
-        (1..max_attempts).to_a.each do |attempt|
-          begin
-            exec(bosh_env, push_cmd)
-            break
-          rescue => e
-            Logger.fatal("Failed attempt ##{attempt} of #{max_attempts}")
-            Logger.fatal(e.message)
-            Logger.fatal(e.backtrace)
+      max_attempts = 3
+      (1..max_attempts).to_a.each do |attempt|
+        begin
+          exec(bosh_env, push_cmd)
+          break
+        rescue => e
+          Logger.fatal("Failed attempt ##{attempt} of #{max_attempts}")
+          Logger.fatal(e.message)
+          Logger.fatal(e.backtrace)
 
-            if attempt == max_attempts
-              raise e
-            end
+          if attempt == max_attempts
+            raise e
           end
         end
+      end
 
-        (1..settings.syslog_drain_count_per_app).each do |c|
-          bind_cmd = [
-            'cf', 'bind-service', "log_emitter-#{i}", "#{settings.syslog_service_name}-#{c}"
-          ]
-          exec(bosh_env, bind_cmd)
-        end
+      (1..settings.syslog_drain_count_per_app).each do |c|
+        bind_cmd = [
+          'cf', 'bind-service', "log_emitter-#{i}", "#{settings.syslog_service_name}-#{c}"
+        ]
+        exec(bosh_env, bind_cmd)
       end
     end
-
-    threads.map { |t| t.join }
   end
 
   def create_datadog_event!
