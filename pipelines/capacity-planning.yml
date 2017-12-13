@@ -233,7 +233,7 @@ jobs:
         repository: updated-vars-store
         rebase: true
     - task: create-org-and-space
-      file: loggregator-ci/tasks/create-org-and-space.yml
+      file: loggregator-ci/tasks/create-org-and-space/task.yml
       params:
         VARS_STORE_FILE: gcp/loggregator-capacity-planning/deployment-vars.yml
         ORG: capacity-planning

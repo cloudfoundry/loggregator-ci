@@ -12,4 +12,4 @@ params:
   SPACE:
   SYSTEM_DOMAIN:
 run:
-  path: loggregator-ci/tasks/scripts/create-org-and-space.sh
+  path: loggregator-ci/tasks/create-org-and-space/task
