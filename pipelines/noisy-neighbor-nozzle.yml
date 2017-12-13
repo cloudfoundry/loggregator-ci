@@ -69,11 +69,15 @@ jobs:
             -b binary_buildpack \
             -c "./nozzle" \
             -i "$NOZZLE_COUNT" \
+            -m 256M \
+            -k 256M \
             --no-start
           cf push nn-accumulator \
             -p "$GOPATH/bin/" \
             -b binary_buildpack \
             -c "./accumulator" \
+            -m 256M \
+            -k 256M \
             --no-start
 
           # Set env for nozzle
