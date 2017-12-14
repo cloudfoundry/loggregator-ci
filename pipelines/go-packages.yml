@@ -37,12 +37,6 @@ resources:
     uri: https://github.com/cloudfoundry/loggregator-ci
     branch: master
 
-- name: cf-drain-cli
-  type: git
-  source:
-    uri: https://github.com/cloudfoundry-incubator/cf-drain-cli
-    branch: master
-
 - name: go-loggregator
   type: git
   source:
@@ -92,20 +86,6 @@ resources:
     branch: master
 
 jobs:
-- name: cf-drain-cli-tests
-  serial: true
-  plan:
-  - aggregate:
-    - get: cf-drain-cli
-      trigger: true
-    - get: loggregator-ci
-  - task: run-tests
-    file: loggregator-ci/tasks/go-test-with-latest-packages/task.yml
-    input_mapping:
-      source-repo: cf-drain-cli
-    params:
-      IMPORT_PATH: code.cloudfoundry.org/cf-drain-cli
-
 - name: go-loggregator-tests
   serial: true
   plan:
