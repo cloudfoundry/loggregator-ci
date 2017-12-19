@@ -893,6 +893,7 @@ jobs:
       file: cats-concourse-task/task.yml
       params:
         CONFIG_FILE_PATH: gcp/coconut-bbl/cats-config.json
+        NODES: 6
 
 - name: lats
   serial: true
