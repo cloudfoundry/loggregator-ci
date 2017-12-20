@@ -261,7 +261,7 @@ jobs:
       integration-config: deployments-loggregator
     params:
       CONFIG_FILE_PATH: gcp/regression/cats-config.json
-      NODES: 1
+      NODES: 9
 
 - name: cf-destroy
   serial_groups: ["deployment"]
