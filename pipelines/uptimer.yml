@@ -1,0 +1,122 @@
+groups:
+- name: main
+  jobs:
+  - uptimer
+- name: director-lifecycle
+  jobs:
+  - bbl-create
+  - bbl-destroy
+
+resources:
+- name: cf-deployment-concourse-tasks
+  type: git
+  source:
+    uri: https://github.com/cloudfoundry/cf-deployment-concourse-tasks
+    branch: v4.21
+
+- name: bosh-deployment
+  type: git
+  source:
+    uri: https://github.com/cloudfoundry/bosh-deployment
+
+- name: cf-deployment
+  type: git
+  source:
+    uri: https://github.com/cloudfoundry/cf-deployment
+    branch: develop
+
+- name: deployments-loggregator
+  type: git
+  source:
+    uri: git@github.com:cloudfoundry/deployments-loggregator.git
+    branch: master
+    private_key: {{deployments-loggregator-key}}
+
+jobs:
+- name: bbl-create
+  public: false
+  plan:
+  - get: cf-deployment-concourse-tasks
+    trigger: false
+  - get: bbl-state
+    resource: deployments-loggregator
+    trigger: false
+  - get: ops-files
+    resource: bosh-deployment
+    trigger: false
+  - task: bbl-up
+    file: cf-deployment-concourse-tasks/bbl-up/task.yml
+    params:
+      BBL_GCP_SERVICE_ACCOUNT_KEY: service-account.key.json
+      BBL_GCP_PROJECT_ID: cff-loggregator
+      BBL_GCP_ZONE: us-central1-a
+      BBL_GCP_REGION: us-central1
+      BBL_STATE_DIR: gcp/uptimer
+      BBL_IAAS: gcp
+      BBL_LB_CERT: {{coconut_bbl_lb_cert}}
+      BBL_LB_KEY: {{coconut_bbl_lb_key}}
+      BBL_ENV_NAME: uptimer
+      LB_DOMAIN: uptimer.loggr.cf-app.com
+      OPS_FILES: "local-dns.yml"
+  - put: deployments-loggregator
+    params:
+      repository: updated-bbl-state
+      rebase: true
+
+- name: bbl-destroy
+  public: false
+  plan:
+  - get: cf-deployment-concourse-tasks
+    trigger: false
+  - get: bbl-state
+    resource: deployments-loggregator
+    trigger: false
+  - task: bbl-destroy
+    file: cf-deployment-concourse-tasks/bbl-destroy/task.yml
+    params:
+      BBL_STATE_DIR: gcp/uptimer
+  - put: deployments-loggregator
+    params:
+      repository: updated-bbl-state
+      rebase: true
+
+- name: uptimer
+  public: false
+  plan:
+  - aggregate:
+    - get: cf-deployment
+    - get: deployments-loggregator
+  - task: copy-ops-files
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source:
+          repository: relintdockerhubpushbot/cf-deployment-concourse-tasks
+      inputs:
+      - name: deployments-loggregator
+      - name: cf-deployment
+      outputs:
+      - name: ops-files
+      run:
+        path: /bin/bash
+        args:
+        - "-c"
+        - |
+          #!/bin/bash
+          set -x
+
+          cp deployments-loggregator/gcp/uptimer/ops-files/*.yml ops-files/
+  - task: cf-deploy
+    file: cf-deployment-concourse-tasks/bosh-deploy/task.yml
+    input_mapping:
+      vars-store: deployments-loggregator
+      vars-files: deployments-loggregator
+      bbl-state: deployments-loggregator
+    params:
+      BBL_STATE_DIR: gcp/uptimer
+      SYSTEM_DOMAIN: uptimer.loggr.cf-app.com
+      VARS_STORE_FILE: gcp/uptimer/deployment-vars.yml
+      OPS_FILES: "allow-insecure-syslog-drains.yml"
+      VARS_FILES: gcp/uptimer/datadog-vars.yml
+
