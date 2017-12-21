@@ -163,6 +163,7 @@ jobs:
         bosh-release-dir: loggregator-release-99
       params:
         BBL_STATE_DIR: gcp/regression
+        NO_REBASE: true
     - task: upload-cf-syslog-drain
       file: loggregator-ci/tasks/upload-release/task.yml
       input_mapping:
@@ -243,6 +244,7 @@ jobs:
       bosh-release-dir: loggregator-release
     params:
       BBL_STATE_DIR: gcp/regression
+      NO_REBASE: true
   - task: cf-deploy
     file: cf-deployment-concourse-tasks/bosh-deploy/task.yml
     input_mapping:
@@ -262,6 +264,20 @@ jobs:
     params:
       CONFIG_FILE_PATH: gcp/regression/cats-config.json
       NODES: 9
+  ensure:
+    do:
+    - task: delete-deployment
+      file: cf-deployment-concourse-tasks/delete-deployment/task.yml
+      input_mapping:
+        bbl-state: deployments-loggregator
+      params:
+        BBL_STATE_DIR: gcp/regression
+    - task: bosh-cleanup
+      file: cf-deployment-concourse-tasks/bosh-cleanup/task.yml
+      input_mapping:
+        bbl-state: deployments-loggregator
+      params:
+        BBL_STATE_DIR: gcp/regression
 
 - name: cf-destroy
   serial_groups: ["deployment"]
