@@ -16,5 +16,9 @@ pushd bosh-release-dir
     bosh create-release
   fi
 
-  bosh upload-release --rebase
+  if [ "$NO_REBASE" = "true" ]; then
+    bosh upload-release
+  else
+    bosh upload-release --rebase
+  fi
 popd
