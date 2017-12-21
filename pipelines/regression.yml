@@ -236,7 +236,7 @@ jobs:
       integration-config: deployments-loggregator
     params:
       CONFIG_FILE_PATH: gcp/regression/cats-config.json
-      NODES: 1
+      NODES: 6
   - task: upload-loggregator
     file: loggregator-ci/tasks/upload-release/task.yml
     input_mapping:
@@ -263,7 +263,7 @@ jobs:
       integration-config: deployments-loggregator
     params:
       CONFIG_FILE_PATH: gcp/regression/cats-config.json
-      NODES: 9
+      NODES: 6
   ensure:
     do:
     - task: delete-deployment
