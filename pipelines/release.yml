@@ -219,18 +219,18 @@ resources:
     branch: master
     private_key: {{cf-loggregator-oauth-bot-key}}
 
-- name: cf-syslog-cli
+- name: cf-drain-cli
   type: git
   source:
-    uri: git@github.com:cloudfoundry-incubator/cf-syslog-cli
+    uri: git@github.com:cloudfoundry-incubator/cf-drain-cli
     branch: master
     private_key: {{cf-loggregator-oauth-bot-key}}
 
-- name: cf-syslog-cli-github-release-drafts
+- name: cf-drain-cli-github-release-drafts
   type: github-release
   source:
     user: cloudfoundry-incubator
-    repository: cf-syslog-cli
+    repository: cf-drain-cli
     access_token: {{access-token}}
     drafts: true
 
@@ -1006,11 +1006,11 @@ jobs:
       globs:
       - github-release/*.tgz
 
-- name: cf-syslog-cli
+- name: cf-drain-cli
   serial: true
   plan:
   - aggregate:
-    - get: cf-syslog-cli
+    - get: cf-drain-cli
       trigger: false
   - task: create-binaries
     config:
@@ -1021,9 +1021,9 @@ jobs:
       platform: linux
       params:
         VERSION_MAJOR: 0
-        VERSION_MINOR: 1
+        VERSION_MINOR: 2
       inputs:
-      - name: cf-syslog-cli
+      - name: cf-drain-cli
       outputs:
       - name: output-repo
       - name: github-release
@@ -1040,41 +1040,41 @@ jobs:
             semver="v$VERSION_MAJOR.$VERSION_MINOR"
 
             # write out github release files
-            echo "CF Syslog CLI $semver" > github-release/name
+            echo "CF Drain CLI $semver" > github-release/name
             echo $semver> github-release/tag
             echo "TBD" > github-release/body
 
             # setup go path
-            cfsyslog=$PWD/cf-syslog-cli
+            cfdrain=$PWD/cf-drain-cli
             mkdir -p go
             pushd go
               export GOPATH=$PWD
-              go get code.cloudfoundry.org/cf-syslog-cli
-              rm -rf src/code.cloudfoundry.org/cf-syslog-cli
-              cp -r $cfsyslog src/code.cloudfoundry.org/cf-syslog-cli
+              go get code.cloudfoundry.org/cf-drain-cli
+              rm -rf src/code.cloudfoundry.org/cf-drain-cli
+              cp -r $cfdrain src/code.cloudfoundry.org/cf-drain-cli
             popd
 
             # build binaries
             mkdir -p github-release/builds
             output=$PWD/github-release/builds
-            pushd $GOPATH/src/code.cloudfoundry.org/cf-syslog-cli
-              GOOS=linux go build -ldflags "-X main.version=$version" -o $output/cf-syslog-cli-linux
-              GOOS=darwin go build -ldflags "-X main.version=$version" -o $output/cf-syslog-cli-darwin
-              GOOS=windows go build -ldflags "-X main.version=$version" -o $output/cf-syslog-cli-windows
+            pushd $GOPATH/src/code.cloudfoundry.org/cf-drain-cli
+              GOOS=linux go build -ldflags "-X main.version=$version" -o $output/cf-drain-cli-linux
+              GOOS=darwin go build -ldflags "-X main.version=$version" -o $output/cf-drain-cli-darwin
+              GOOS=windows go build -ldflags "-X main.version=$version" -o $output/cf-drain-cli-windows
             popd
 
-            pushd $cfsyslog
+            pushd $cfdrain
               # add git tag
               git config --global user.email "cf-loggregator@pivotal.io"
               git config --global user.name "Loggregator CI"
               git tag "$semver"
             popd
-            cp -r $cfsyslog output-repo/
-  - put: cf-syslog-cli
+            cp -r $cfdrain output-repo/
+  - put: cf-drain-cli
     params:
-      repository: output-repo/cf-syslog-cli
+      repository: output-repo/cf-drain-cli
       rebase: false
-  - put: cf-syslog-cli-github-release-drafts
+  - put: cf-drain-cli-github-release-drafts
     params:
       name: github-release/name
       tag: github-release/tag
