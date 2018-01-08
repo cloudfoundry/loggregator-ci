@@ -5,14 +5,13 @@ groups:
 - name: director-lifecycle
   jobs:
   - bbl-create
-  - bbl-destroy
 
 resources:
 - name: cf-deployment-concourse-tasks
   type: git
   source:
     uri: https://github.com/cloudfoundry/cf-deployment-concourse-tasks
-    branch: v4.21
+    branch: v5.0
 
 - name: bosh-deployment
   type: git
@@ -32,53 +31,57 @@ resources:
     branch: master
     private_key: {{deployments-loggregator-key}}
 
+- name: uptimer
+  type: git
+  source:
+    uri: https://github.com/cloudfoundry/uptimer
+
 jobs:
 - name: bbl-create
   public: false
   plan:
   - get: cf-deployment-concourse-tasks
     trigger: false
-  - get: bbl-state
-    resource: deployments-loggregator
-    trigger: false
-  - get: ops-files
-    resource: bosh-deployment
-    trigger: false
+  - get: deployments-loggregator
+  - get: bosh-deployment
   - task: bbl-up
     file: cf-deployment-concourse-tasks/bbl-up/task.yml
+    input_mapping:
+      env-repo: deployments-loggregator
+      ops-files: bosh-deployment
     params:
-      BBL_GCP_SERVICE_ACCOUNT_KEY: service-account.key.json
+      BBL_GCP_SERVICE_ACCOUNT_KEY: gcp/service-account.key.json
       BBL_GCP_PROJECT_ID: cff-loggregator
       BBL_GCP_ZONE: us-central1-a
       BBL_GCP_REGION: us-central1
-      BBL_STATE_DIR: gcp/uptimer
+      BBL_STATE_DIR: gcp/upity
       BBL_IAAS: gcp
       BBL_LB_CERT: {{coconut_bbl_lb_cert}}
       BBL_LB_KEY: {{coconut_bbl_lb_key}}
-      BBL_ENV_NAME: uptimer
-      LB_DOMAIN: uptimer.loggr.cf-app.com
+      BBL_ENV_NAME: upity
+      LB_DOMAIN: upity.loggr.cf-app.com
       OPS_FILES: "local-dns.yml"
   - put: deployments-loggregator
     params:
-      repository: updated-bbl-state
+      repository: updated-env-repo
       rebase: true
 
-- name: bbl-destroy
-  public: false
-  plan:
-  - get: cf-deployment-concourse-tasks
-    trigger: false
-  - get: bbl-state
-    resource: deployments-loggregator
-    trigger: false
-  - task: bbl-destroy
-    file: cf-deployment-concourse-tasks/bbl-destroy/task.yml
-    params:
-      BBL_STATE_DIR: gcp/uptimer
-  - put: deployments-loggregator
-    params:
-      repository: updated-bbl-state
-      rebase: true
+# - name: bbl-destroy
+#   public: false
+#   plan:
+#   - get: cf-deployment-concourse-tasks
+#     trigger: false
+#   - get: bbl-state
+#     resource: deployments-loggregator
+#     trigger: false
+#   - task: bbl-destroy
+#     file: cf-deployment-concourse-tasks/bbl-destroy/task.yml
+#     params:
+#       BBL_STATE_DIR: gcp/upity
+#   - put: deployments-loggregator
+#     params:
+#       repository: updated-bbl-state
+#       rebase: true
 
 - name: uptimer
   public: false
@@ -86,6 +89,14 @@ jobs:
   - aggregate:
     - get: cf-deployment
     - get: deployments-loggregator
+    - get: cf-deployment-concourse-tasks
+    - get: uptimer
+  - task: upload-stemcell
+    file: cf-deployment-concourse-tasks/bosh-upload-stemcell-from-cf-deployment/task.yml
+    input_mapping:
+      env-repo: deployments-loggregator
+    params:
+      BBL_STATE_DIR: gcp/upity
   - task: copy-ops-files
     config:
       platform: linux
@@ -106,17 +117,52 @@ jobs:
           #!/bin/bash
           set -x
 
-          cp deployments-loggregator/gcp/uptimer/ops-files/*.yml ops-files/
+          cp deployments-loggregator/gcp/upity/ops-files/*.yml ops-files/
+          cat <<EOT >> ops-files/versions.yml
+          - type: replace
+            path: /releases/name=cf-syslog-drain
+            value:
+              name: cf-syslog-drain
+              version: latest
+          EOT
+          cat <<EOT >> ops-files/stemcell.yml
+          - type: replace
+            path: /stemcells/alias=default/version
+            value: 3468.1
+          EOT
+  - task: cf-deploy
+    file: cf-deployment-concourse-tasks/bosh-deploy/task.yml
+    input_mapping:
+      vars-store: deployments-loggregator
+      vars-files: deployments-loggregator
+      env-repo: deployments-loggregator
+    output_mapping:
+      updated-vars-store: updated-deployments-loggregator
+    params:
+      BBL_STATE_DIR: gcp/upity
+      SYSTEM_DOMAIN: upity.loggr.cf-app.com
+      VARS_STORE_FILE: gcp/upity/deployment-vars.yml
+      OPS_FILES: "allow-insecure-syslog-drains.yml stemcell.yml versions.yml"
+  - put: deployments-loggregator
+    params:
+      repository: updated-deployments-loggregator
+      rebase: true
   - task: cf-deploy
     file: cf-deployment-concourse-tasks/bosh-deploy/task.yml
     input_mapping:
       vars-store: deployments-loggregator
       vars-files: deployments-loggregator
       bbl-state: deployments-loggregator
+      env-repo: deployments-loggregator
+    output_mapping:
+      updated-vars-store: updated-deployments-loggregator
     params:
-      BBL_STATE_DIR: gcp/uptimer
-      SYSTEM_DOMAIN: uptimer.loggr.cf-app.com
-      VARS_STORE_FILE: gcp/uptimer/deployment-vars.yml
-      OPS_FILES: "allow-insecure-syslog-drains.yml"
-      VARS_FILES: gcp/uptimer/datadog-vars.yml
-
+      BBL_STATE_DIR: gcp/upity
+      SYSTEM_DOMAIN: upity.loggr.cf-app.com
+      VARS_STORE_FILE: gcp/upity/deployment-vars.yml
+      OPS_FILES: "allow-insecure-syslog-drains.yml versions.yml"
+      DEPLOY_WITH_UPTIME_MEASUREMENTS: true
+      MEASURE_SYSLOG_AVAILABILITY: true
+      TCP_DOMAIN: tcp.upity.loggr.cf-app.com
+      AVAILABLE_PORT: 1025
+      FAIL_ON_DOWNTIME: true
