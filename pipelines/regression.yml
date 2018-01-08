@@ -267,7 +267,7 @@ jobs:
   ensure:
     do:
     - task: delete-deployment
-      file: cf-deployment-concourse-tasks/delete-deployment/task.yml
+      file: cf-deployment-concourse-tasks/bosh-delete-deployment/task.yml
       input_mapping:
         bbl-state: deployments-loggregator
       params:
