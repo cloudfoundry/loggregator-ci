@@ -25,7 +25,7 @@ resources:
   type: git
   source:
     branch: master
-    uri: https://github.com/loggregator/cf-acceptance-tests
+    uri: https://github.com/cloudfoundry/cf-acceptance-tests
 
 - name: cf-deployment-concourse-tasks
   type: git
