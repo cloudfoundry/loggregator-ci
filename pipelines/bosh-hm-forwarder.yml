@@ -15,6 +15,13 @@ resources:
     uri: git@github.com:cloudfoundry/bosh-hm-forwarder
     private_key: {{bosh-hm-forwarder-key}}
 
+- name: loggregator-ci
+  type: git
+  source:
+    uri: git@github.com:cloudfoundry/loggregator-ci
+    private_key: {{bosh-hm-forwarder-key}}
+
+
 jobs:
 - name: unit-tests
   serial: true
@@ -46,6 +53,8 @@ jobs:
   public: false
   plan:
   - aggregate:
+    - get: loggregator-ci
+      trigger: false
     - get: bosh-hm-forwarder-release
       trigger: false
     - get: bosh-hm-forwarder
