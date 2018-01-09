@@ -48,3 +48,7 @@ params:
   # - Required
   # - The password for CF login.
   PASSWORD:
+
+  # - Required
+  # - The base address for log cache.
+  LOG_CACHE_ADDR:
