@@ -27,6 +27,16 @@ resources:
   type: git
   source:
     uri: https://github.com/cloudfoundry-incubator/loggregator-tools
+- name: deployments-loggregator
+  type: git
+  source: &deployments_loggregator
+    uri: git@github.com:cloudfoundry/deployments-loggregator.git
+    branch: master
+    private_key: {{deployments-loggregator-key}}
+- name: loggregator-capacity-planning-release
+  type: git
+  source:
+    uri: https://github.com/cloudfoundry-incubator/loggregator-capacity-planning-release
 
 jobs:
 - name: restage-logspinners
@@ -254,3 +264,38 @@ jobs:
       SPACE: blackbox-testing
       USERNAME: {{coconut-username}}
       PASSWORD: {{coconut-password}}
+
+- name: event-reliability-deploy
+  public: false
+  serial: true
+  plan:
+  - aggregate:
+    - get: loggregator-ci
+    - get: loggregator-capacity-planning-release
+      trigger: true
+    - get: deployments-loggregator
+  - task: upload-release
+    file: loggregator-ci/tasks/upload-release/task.yml
+    input_mapping:
+      bbl-state: deployments-loggregator
+      bosh-release-dir: loggregator-capacity-planning-release
+    params:
+      BBL_STATE_DIR: gcp/coconut-bbl
+  - task: deploy
+    file: loggregator-ci/tasks/bosh-deploy/task.yml
+    input_mapping:
+      bbl-state: deployments-loggregator
+      bosh-release: loggregator-capacity-planning-release
+      vars-store: deployments-loggregator
+      ops-files: deployments-loggregator
+      vars-files: deployments-loggregator
+    params:
+      BBL_STATE_DIR: gcp/coconut-bbl
+      DEPLOYMENT_NAME: event-reliability
+      MANIFEST_FILE: manifests/event-reliability.yml
+      VARS_STORE_FILE: gcp/coconut-bbl/event-reliability-vars.yml
+      VARS_FILES: "gcp/coconut-bbl/datadog-vars.yml gcp/coconut-bbl/deployment-vars.yml"
+  - put: deployments-loggregator
+    params:
+      repository: updated-vars-store
+      rebase: true
