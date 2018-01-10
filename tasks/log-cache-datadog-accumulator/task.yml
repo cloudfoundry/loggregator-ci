@@ -12,7 +12,7 @@ inputs:
 - name: loggregator-tools # - Log cache blackbox test app repo
 
 run:
-  path: loggregator-ci/tasks/log-cache-blackbox/task
+  path: loggregator-ci/tasks/log-cache-datadog-accumulator/task
 
 params:
   # - Required
