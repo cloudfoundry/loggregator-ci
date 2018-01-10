@@ -16,11 +16,6 @@ run:
 
 params:
   # - Required
-  # - The CF application domain.
-  # - This is usually <app-name>.<system-domain>
-  APP_DOMAIN:
-
-  # - Required
   # - The application name.
   APP_NAME:
 

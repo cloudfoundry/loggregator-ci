@@ -1,0 +1,28 @@
+#!/bin/bash
+
+set -ex
+
+# target api
+cf login \
+  -a api."$SYSTEM_DOMAIN" \
+  -u "$USERNAME" \
+  -p "$PASSWORD" \
+  -s "$SPACE" \
+  -o "$ORG"
+
+GOPATH=$PWD/go
+
+pushd loggregator-tools/experimental/data-dog-accumulator
+  go get -d ./...
+  go build
+
+  cf push $APP_NAME -b binary_buildpack -c ./data-dog-accumulator -m 1G -u none --no-start
+
+  cf set-env $APP_NAME LOG_CACHE_ADDR $LOG_CACHE_ADDR
+  cf set-env $APP_NAME SOURCE_ID log-cache
+  cf set-env $APP_NAME DATA_DOG_API_KEY $DATADOG_API_KEY
+  cf set-env $APP_NAME HOST $SYSTEM_DOMAIN
+  cf set-env $APP_NAME METRIC_PREFIX log_cache
+
+  cf start $APP_NAME
+popd

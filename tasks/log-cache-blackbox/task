@@ -21,21 +21,6 @@ pushd loggregator-tools/log-cache-blackbox
   cf start $APP_NAME
 popd
 
-pushd loggregator-tools/experimental/data-dog-accumulator
-  go get -d ./...
-  go build
-
-  cf push $ACCUMULATOR_APP -b binary_buildpack -c ./data-dog-accumulator -m 1G -u none --no-start
-
-  cf set-env $ACCUMULATOR_APP LOG_CACHE_ADDR $LOG_CACHE_ADDR
-  cf set-env $ACCUMULATOR_APP SOURCE_ID log-cache
-  cf set-env $ACCUMULATOR_APP DATA_DOG_API_KEY $DATADOG_API_KEY
-  cf set-env $ACCUMULATOR_APP HOST $SYSTEM_DOMAIN
-  cf set-env $ACCUMULATOR_APP METRIC_PREFIX log_cache
-
-  cf start $ACCUMULATOR_APP
-popd
-
 response=$(curl "$APP_DOMAIN" -d='')
 
 latency=$(echo $response | jq .latency)
