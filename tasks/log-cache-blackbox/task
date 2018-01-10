@@ -20,7 +20,7 @@ pushd loggregator-tools/experimental/data-dog-accumulator
 
   cf set-env $ACCUMULATOR_APP LOG_CACHE_ADDR $LOG_CACHE_ADDR
   cf set-env $ACCUMULATOR_APP SOURCE_ID $ACCUMULATOR_APP
-  cf set-env $ACCUMULATOR_APP DATA_DOG_API_KEY $DATA_DOG_API_KEY
+  cf set-env $ACCUMULATOR_APP DATA_DOG_API_KEY $DATADOG_API_KEY
   cf set-env $ACCUMULATOR_APP HOST $SYSTEM_DOMAIN
 
   cf start $ACCUMULATOR_APP
