@@ -25,7 +25,7 @@ pushd loggregator-tools/experimental/data-dog-accumulator
   go get -d ./...
   go build
 
-  cf push $ACCUMULATOR_APP -b binary_buildpack -c ./data-dog-accumulator -m 1G -u process --no-start
+  cf push $ACCUMULATOR_APP -b binary_buildpack -c ./data-dog-accumulator -m 1G -u none --no-start
 
   cf set-env $ACCUMULATOR_APP LOG_CACHE_ADDR $LOG_CACHE_ADDR
   cf set-env $ACCUMULATOR_APP SOURCE_ID $(cf app $APP_NAME --guid)
