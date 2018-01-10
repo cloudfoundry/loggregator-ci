@@ -25,6 +25,11 @@ params:
   APP_NAME:
 
   # - Required
+  # - Name of the app that accumulates logs from logstash and forwards them to
+  # datadog
+  ACCUMULATOR_APP:
+
+  # - Required
   # - The CF system domain
   SYSTEM_DOMAIN:
 
