@@ -258,7 +258,7 @@ jobs:
     params:
       APP_DOMAIN: "log-cache-blackbox.coconut.cf-app.com"
       APP_NAME: "log-cache-blackbox"
-      CF_API: "api.coconut.cf-app.com"
+      SYSTEM_DOMAIN: "coconut.cf-app.com"
       DATADOG_API_KEY: {{datadog-loggregator-api-key}}
       LOG_CACHE_ADDR: log-cache.coconut.cf-app.com
       ORG: system

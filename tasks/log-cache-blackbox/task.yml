@@ -25,9 +25,8 @@ params:
   APP_NAME:
 
   # - Required
-  # - The CF API domain
-  # - This is usually api.<system-domain>
-  CF_API:
+  # - The CF system domain
+  SYSTEM_DOMAIN:
 
   # - Required
   # - The API Key to send metrics to DataDog.

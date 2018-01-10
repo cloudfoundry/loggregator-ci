@@ -4,7 +4,7 @@ set -ex
 
 # target api
 cf login \
-  -a "$CF_API" \
+  -a api."$SYSTEM_DOMAIN" \
   -u "$USERNAME" \
   -p "$PASSWORD" \
   -s "$SPACE" \
@@ -38,28 +38,28 @@ curl --fail -X POST -H "Content-type: application/json" \
       \"metric\":\"log-cache-blackbox.latency\",
       \"points\":[[${currenttime}, ${latency}]],
       \"type\":\"gauge\",
-      \"host\":\"${CF_API}\",
+      \"host\":\"${SYSTEM_DOMAIN}\",
       \"tags\":[\"${APP_NAME}\"]
     },
     {
       \"metric\":\"log-cache-blackbox.avg_query_time\",
       \"points\":[[${currenttime}, ${avg_query_time}]],
       \"type\":\"gauge\",
-      \"host\":\"${CF_API}\",
+      \"host\":\"${SYSTEM_DOMAIN}\",
       \"tags\":[\"${APP_NAME}\"]
     },
     {
       \"metric\":\"log-cache-blackbox.logs_sent\",
       \"points\":[[${currenttime}, ${logs_sent}]],
       \"type\":\"gauge\",
-      \"host\":\"${CF_API}\",
+      \"host\":\"${SYSTEM_DOMAIN}\",
       \"tags\":[\"${APP_NAME}\"]
     },
     {
       \"metric\":\"log-cache-blackbox.logs_received\",
       \"points\":[[${currenttime}, ${logs_received}]],
       \"type\":\"gauge\",
-      \"host\":\"${CF_API}\",
+      \"host\":\"${SYSTEM_DOMAIN}\",
       \"tags\":[\"${APP_NAME}\"]
     }
   ]
