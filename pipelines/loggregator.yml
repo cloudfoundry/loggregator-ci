@@ -7,6 +7,7 @@ groups:
   - loggregator-deploy
   - cf-deploy
   - lats
+  - cfar-lats
   - cats
   - loggregator-benchmarks
   - loggregator-promotion
@@ -32,6 +33,7 @@ groups:
   - cf-deploy
   - lats
   - cats
+  - cfar-lats
   - loggregator-benchmarks
   - loggregator-promotion
 - name: cf-syslog-drain
@@ -41,12 +43,14 @@ groups:
   - cf-syslog-drain-bump-submodule
   - cf-deploy
   - cats
+  - cfar-lats
   - cf-syslog-drain-promotion
 - name: log-cache
   jobs:
   - log-cache-tests
   - log-cache-cli-tests
   - log-cache-bump-submodule
+  - cfar-lats
 - name: statsd-injector
   jobs:
   - statsd-injector-tests
@@ -910,15 +914,16 @@ jobs:
   plan:
     - aggregate:
       - get: cfar-logging-acceptance-tests
+        trigger: true
       - get: loggregator-release
         trigger: true
         passed: ["cf-deploy"]
-      - get: cf-syslog-release
+      - get: cf-syslog-drain-release
         trigger: true
         passed: ["cf-deploy"]
       - get: log-cache-release
         trigger: true
-        paassed: ["cf-deploy"]
+        passed: ["cf-deploy"]
       - get: loggregator-ci
     - task: run-cfar-lats
       file: loggregator-ci/tasks/cfar-lats/task.yml
