@@ -80,6 +80,12 @@ resources:
     branch: master
     uri: https://github.com/cloudfoundry/cf-acceptance-tests.git
 
+- name: cfar-logging-acceptance-tests
+  type: git
+  source:
+    branch: master
+    uri: https://github.com/cloudfoundry/cfar-logging-acceptance-tests.git
+
 - name: cf-deployment
   type: git
   source:
@@ -897,6 +903,26 @@ jobs:
         CONFIG_FILE_PATH: gcp/coconut-bbl/cats-config.json
         NODES: 9
 
+- name: cfar-lats
+  serial: true
+  serial_groups:
+  - bosh-cfar-lats
+  plan:
+    - aggregate:
+      - get: cfar-logging-acceptance-tests
+      - get: loggregator-release
+        trigger: true
+        passed: ["cf-deploy"]
+      - get: cf-syslog-release
+        trigger: true
+        passed: ["cf-deploy"]
+      - get: log-cache-release
+        trigger: true
+        paassed: ["cf-deploy"]
+      - get: loggregator-ci
+    - task: run-cfar-lats
+      file: loggregator-ci/tasks/cfar-lats/task.yml
+
 - name: lats
   serial: true
   serial_groups:
@@ -942,7 +968,7 @@ jobs:
     - get: develop
       resource: loggregator-release
       trigger: true
-      passed: ["lats", "cats", "loggregator-benchmarks"]
+      passed: ["lats", "cats", "loggregator-benchmarks", "cfar-lats"]
     - get: loggregator-release-elect
   - put: loggregator-release-elect
     params:
@@ -1050,7 +1076,7 @@ jobs:
     - get: develop
       resource: cf-syslog-drain-release
       trigger: true
-      passed: ["cats"]
+      passed: ["cats", "cfar-lats"]
     - get: cf-syslog-drain-release-release-elect
   - put: cf-syslog-drain-release-release-elect
     params:
