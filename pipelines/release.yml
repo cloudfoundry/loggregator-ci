@@ -157,15 +157,6 @@ resources:
     access_token: {{access-token}}
     drafts: true
 
-- name: statsd-injector-version
-  type: semver
-  source:
-    initial_version: 1.0.0
-    bucket: statsd-injector-release-blobs
-    key: version
-    access_key_id: {{s3-access-key-id}}
-    secret_access_key: {{s3-secret-access-key}}
-
 - name: statsd-injector-release
   type: git
   source:
@@ -925,9 +916,6 @@ jobs:
   serial: true
   plan:
   - aggregate:
-    - get: statsd-injector-version
-      params:
-        bump: patch
     - get: statsd-injector-release
   - task: create-final-release
     config:
@@ -937,12 +925,12 @@ jobs:
         source:
           repository: loggregator/base
       inputs:
-      - name: statsd-injector-version
       - name: statsd-injector-release
       outputs:
       - name: final-statsd-injector-release
       - name: github-release
       params:
+        NEW_VERSION: 1.1.0
         RELEASE: statsd-injector-release
         S3_BUCKET: statsd-injector-release-blobs
         S3_ACCESS_KEY: {{s3-access-key-id}}
@@ -957,11 +945,11 @@ jobs:
 
           set -e -x
 
-          new_version=$(cat statsd-injector-version/version)
-          tag_name="v$new_version"
+          tag_name="v$NEW_VERSION"
+          echo $tag_name > github-release/tag
 
           # write out github release files
-          echo "Statsd Injector $new_version" > github-release/name
+          echo "Statsd Injector $NEW_VERSION" > github-release/name
           echo $tag_name > github-release/tag
           echo "TBD" > github-release/body
 
@@ -978,7 +966,7 @@ jobs:
 
             bosh -n create-release --sha2 --final \
               --tarball ../github-release/release.tgz \
-              --version "$new_version"
+              --version "$NEW_VERSION"
             git config user.email "cf-loggregator@pivotal.io"
             git config user.name "Loggregator CI"
             git add .
@@ -989,15 +977,11 @@ jobs:
           popd
 
           cp -r "${RELEASE}/." "${OUTPUT}/"
-  - put: statsd-injector-version
-    params:
-      file: statsd-injector-version/version
   - put: statsd-injector-final-release
     params:
       repository: final-statsd-injector-release
       rebase: false
-      tag: statsd-injector-version/version
-      tag_prefix: v
+      tag: github-release/tag
   - put: statsd-injector-release-github-release-drafts
     params:
       name: github-release/name
