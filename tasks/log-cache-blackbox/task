@@ -8,13 +8,19 @@ function fail_on_empty {
     fi
 }
 
+login_args=""
+if [ "$SKIP_SSL_VALIDATION" = "true" ]; then
+    login_args="--skip-ssl-validation"
+fi
+
 # target api
 cf login \
   -a api."$SYSTEM_DOMAIN" \
   -u "$USERNAME" \
   -p "$PASSWORD" \
   -s "$SPACE" \
-  -o "$ORG"
+  -o "$ORG" \
+  $login_args
 
 GOPATH=$PWD/go
 
