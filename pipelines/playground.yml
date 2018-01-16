@@ -2,6 +2,7 @@ groups:
 - name: main
   jobs:
   - cf-deploy
+  - log-cache-blackbox
   - cf-destroy
 - name: director-lifecycle
   jobs:
@@ -9,6 +10,10 @@ groups:
   - bbl-destroy
 
 resources:
+- name: 10m
+  type: time
+  source: {interval: 10m}
+
 - name: cf-deployment-concourse-tasks
   type: git
   source:
@@ -37,6 +42,16 @@ resources:
   source:
     uri: https://github.com/cloudfoundry/loggregator-release
     branch: release-elect
+
+- name: loggregator-ci
+  type: git
+  source:
+    uri: https://github.com/cloudfoundry/loggregator-ci
+
+- name: loggregator-tools
+  type: git
+  source:
+    uri: https://github.com/cloudfoundry-incubator/loggregator-tools
 
 - name: statsd-injector-release
   type: git
@@ -244,3 +259,39 @@ jobs:
       params:
         BBL_STATE_DIR: gcp/playground
         DEPLOYMENT_NAME: cf-syslog-drain
+
+- name: log-cache-blackbox
+  public: false
+  serial: true
+  plan:
+  - aggregate:
+    - get: loggregator-tools
+    - get: loggregator-ci
+    - get: 10m
+      trigger: true
+  - task: log-cache-blackbox-tests
+    file: loggregator-ci/tasks/log-cache-blackbox/task.yml
+    params:
+      APP_DOMAIN: "log-cache-blackbox.playground.loggr.cf-app.com"
+      APP_NAME: "log-cache-blackbox"
+      SYSTEM_DOMAIN: "playground.loggr.cf-app.com"
+      DATADOG_API_KEY: {{datadog-loggregator-api-key}}
+      LOG_CACHE_ADDR: http://log-cache.playground.loggr.cf-app.com
+      ORG: system
+      SPACE: blackbox-testing
+      SKIP_SSL_VALIDATION: true
+      USERNAME: {{playground-username}}
+      PASSWORD: {{playground-password}}
+  - task: push-datadog-accumulator
+    file: loggregator-ci/tasks/log-cache-datadog-accumulator/task.yml
+    params:
+      APP_DOMAIN: "log-cache-blackbox.playground.loggr.cf-app.com"
+      APP_NAME: "log-cache-data-dog-accumulator"
+      SYSTEM_DOMAIN: "playground.loggr.cf-app.com"
+      DATADOG_API_KEY: {{datadog-loggregator-api-key}}
+      LOG_CACHE_ADDR: http://log-cache.playground.loggr.cf-app.com
+      ORG: system
+      SPACE: blackbox-testing
+      SKIP_SSL_VALIDATION: true
+      USERNAME: {{playground-username}}
+      PASSWORD: {{playground-password}}
