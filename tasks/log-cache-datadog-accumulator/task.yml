@@ -35,6 +35,10 @@ params:
   # - The CF space that the app is run in.
   SPACE:
 
+  # - Optional
+  # - Skip SSL validation when logging into CF.
+  SKIP_SSL_VALIDATION:
+
   # - Required
   # - The username for CF login.
   USERNAME:
