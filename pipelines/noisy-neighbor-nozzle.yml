@@ -10,11 +10,12 @@ resources:
     uri: https://github.com/cloudfoundry/loggregator-ci
 
 jobs:
-- name: test-and-deploy
+- name: run-tests
   serial: true
   plan:
   - aggregate:
     - get: noisy-neighbor-nozzle
+      trigger: true
     - get: loggregator-ci
   - task: run-tests
     file: loggregator-ci/tasks/go-test-with-latest-packages/task.yml
@@ -22,6 +23,14 @@ jobs:
       source-repo: noisy-neighbor-nozzle
     params:
       IMPORT_PATH: code.cloudfoundry.org/noisy-neighbor-nozzle
+- name: deploy-to-prod
+  serial: true
+  plan:
+  - aggregate:
+    - get: noisy-neighbor-nozzle
+      passed: [run-tests]
+      trigger: true
+    - get: loggregator-ci
   - task: deploy-to-prod
     config:
       platform: linux
@@ -56,6 +65,7 @@ jobs:
 
           go install code.cloudfoundry.org/noisy-neighbor-nozzle/cmd/nozzle
           go install code.cloudfoundry.org/noisy-neighbor-nozzle/cmd/accumulator
+          go install code.cloudfoundry.org/noisy-neighbor-nozzle/cmd/datadog-reporter
 
           cf login -a "api.$SYSTEM_DOMAIN" -u "$USERNAME" -p "$PASSWORD" -o "$ORG" -s "$SPACE"
 
@@ -79,6 +89,14 @@ jobs:
             -m 256M \
             -k 256M \
             --no-start
+          cf push nn-datadog-reporter \
+            -p "$GOPATH/bin/" \
+            -b binary_buildpack \
+            -c "./datadog-reporter" \
+            -m 256M \
+            -k 256M \
+            -u none \
+            --no-start
 
           # Set env for nozzle
           cf set-env nn-nozzle UAA_ADDR $UAA_ADDR
@@ -89,14 +107,21 @@ jobs:
 
           # Set env for accumulator
           cf set-env nn-accumulator UAA_ADDR $UAA_ADDR
-          cf set-env nn-accumulator CAPI_ADDR $CAPI_ADDR
           cf set-env nn-accumulator CLIENT_ID $CLIENT_ID
           cf set-env nn-accumulator CLIENT_SECRET $CLIENT_SECRET
-          cf set-env nn-accumulator DATADOG_API_KEY $DATADOG_API_KEY
           cf set-env nn-accumulator NOZZLE_ADDRS https://nn-nozzle.cfapps.io
           cf set-env nn-accumulator NOZZLE_COUNT $NOZZLE_COUNT
           cf set-env nn-accumulator NOZZLE_APP_GUID $(cf app nn-nozzle --guid)
-          cf set-env nn-accumulator REPORTER_HOST $SYSTEM_DOMAIN
+
+          # Set env for datadog reporter
+          cf set-env nn-datadog-reporter UAA_ADDR $UAA_ADDR
+          cf set-env nn-datadog-reporter CAPI_ADDR $CAPI_ADDR
+          cf set-env nn-datadog-reporter ACCUMULATOR_ADDR https://nn-accumulator.cfapps.io
+          cf set-env nn-datadog-reporter CLIENT_ID $CLIENT_ID
+          cf set-env nn-datadog-reporter CLIENT_SECRET $CLIENT_SECRET
+          cf set-env nn-datadog-reporter DATADOG_API_KEY $DATADOG_API_KEY
+          cf set-env nn-datadog-reporter REPORTER_HOST $SYSTEM_DOMAIN
 
           cf start nn-nozzle
           cf start nn-accumulator
+          cf start nn-datadog-reporter
