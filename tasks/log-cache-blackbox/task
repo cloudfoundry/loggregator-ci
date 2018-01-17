@@ -30,6 +30,9 @@ pushd loggregator-tools/log-cache-blackbox
 
   cf push "$APP_NAME" -b binary_buildpack -c ./log-cache-blackbox -m 1G --no-start
   cf set-env "$APP_NAME" LOG_CACHE_ADDR "$LOG_CACHE_ADDR"
+  cf set-env "$APP_NAME" UAA_ADDR https://uaa."$SYSTEM_DOMAIN"
+  cf set-env "$APP_NAME" UAA_CLIENT $UAA_CLIENT
+  cf set-env "$APP_NAME" UAA_CLIENT_SECRET $UAA_CLIENT_SECRET
   cf start "$APP_NAME"
 popd
 
