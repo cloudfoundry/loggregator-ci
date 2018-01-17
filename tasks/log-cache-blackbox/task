@@ -33,6 +33,7 @@ pushd loggregator-tools/log-cache-blackbox
   cf set-env "$APP_NAME" UAA_ADDR https://uaa."$SYSTEM_DOMAIN"
   cf set-env "$APP_NAME" UAA_CLIENT $UAA_CLIENT
   cf set-env "$APP_NAME" UAA_CLIENT_SECRET $UAA_CLIENT_SECRET
+  cf set-env "$APP_NAME" SKIP_SSL_VALIDATION $SKIP_SSL_VALIDATION
   cf start "$APP_NAME"
 popd
 
