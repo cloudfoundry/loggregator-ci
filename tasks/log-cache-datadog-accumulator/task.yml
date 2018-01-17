@@ -50,3 +50,11 @@ params:
   # - Required
   # - The base address for log cache.
   LOG_CACHE_ADDR:
+
+  # - Required
+  # - The UAA Client
+  UAA_CLIENT:
+
+  # - Required
+  # - The UAA Client Secret
+  UAA_CLIENT_SECRET:
