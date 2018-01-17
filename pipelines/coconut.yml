@@ -265,6 +265,8 @@ jobs:
       SPACE: blackbox-testing
       USERNAME: {{coconut-username}}
       PASSWORD: {{coconut-password}}
+      UAA_CLIENT: {{coconut-uaa-client}}
+      UAA_CLIENT_SECRET: {{coconut-uaa-client-secret}}
   - task: push-datadog-accumulator
     file: loggregator-ci/tasks/log-cache-datadog-accumulator/task.yml
     params:
@@ -277,6 +279,8 @@ jobs:
       SPACE: blackbox-testing
       USERNAME: {{coconut-username}}
       PASSWORD: {{coconut-password}}
+      UAA_CLIENT: {{coconut-uaa-client}}
+      UAA_CLIENT_SECRET: {{coconut-uaa-client-secret}}
 
 - name: event-reliability-deploy
   public: false
