@@ -225,6 +225,21 @@ resources:
     access_token: {{access-token}}
     drafts: true
 
+- name: noisy-neighbor-nozzle-repo
+  type: git
+  source:
+    uri: https://github.com/cloudfoundry/noisy-neighbor-nozzle
+    branch: master
+    private_key: {{cf-loggregator-oauth-bot-key}}
+
+- name: noisy-neighbor-binaries
+  type: s3
+  source:
+    bucket: noisy-neighbor-binaries
+    regexp: noisy-neighbor-(nozzle|accumulator|datadog-reporter)-(.*)
+    access_key_id: {{loggregator-team-s3-access-key}}
+    secret_access_key: {{loggregator-team-s3-secret-key}}
+
 jobs:
 - name: bump-golang
   serial: true
@@ -1065,3 +1080,60 @@ jobs:
       body: github-release/body
       globs:
       - github-release/builds/*
+
+- name: build-and-upload-noisy-neighbor-nozzle-binaries
+  serial: true
+  plan:
+  - aggregate:
+    - get: noisy-neighbor-nozzle-repo
+  - task: create-binaries
+    config:
+      image_resource:
+        type: docker-image
+        source:
+          repository: loggregator/base
+      platform: linux
+      params:
+        VERSION_MAJOR: 0
+        VERSION_MINOR: 2
+      inputs:
+      - name: noisy-neighbor-nozzle-repo
+      outputs:
+      - name: binary-output
+      run:
+        path: bash
+        args:
+          - -c
+          - |
+            #!/bin/bash
+            set -ex
+
+            export WORKSPACE=$PWD
+
+            mkdir -p go
+            pushd go
+              export GOPATH=$PWD
+              mkdir -p src/code.cloudfoundry.org
+              cp -R $WORKSPACE/noisy-neighbor-nozzle-repo/ src/code.cloudfoundry.org/
+            popd
+
+            pushd $GOPATH/src/code.cloudfoundry.org/noisy-neighbor-nozzle-repo/
+              go get -u ./...
+              for c in $(ls cmd); do
+                pushd cmd/$c
+                  binary_file=noisy-neighbor-$c-$(date +%s)
+                  GOOS=linux go build -o $binary_file
+                  cp $binary_file $WORKSPACE/binary-output
+                popd
+              done
+            popd
+
+  - put: noisy-neighbor-binaries
+    params:
+      file: binary-output/noisy-neighbor-accumulator-*
+  - put: noisy-neighbor-binaries
+    params:
+      file: binary-output/noisy-neighbor-datadog-reporter-*
+  - put: noisy-neighbor-binaries
+    params:
+      file: binary-output/noisy-neighbor-nozzle-*
