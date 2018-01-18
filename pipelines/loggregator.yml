@@ -669,6 +669,7 @@ jobs:
           cp cf-deployment/operations/windows-cell.yml ops-files/
           cp cf-deployment/operations/scale-to-one-az.yml ops-files/
           cp cf-deployment/operations/experimental/use-bosh-dns.yml ops-files/
+          cp cf-deployment/operations/experimental/use-bosh-dns-for-containers.yml ops-files/
           cp bbl-state/gcp/coconut-bbl/ops-files/*.yml ops-files/
           cp log-cache-release/manifests/operations/deploy-in-cf.yml ops-files/add-log-cache.yml
           cp log-cache-release/manifests/operations/log-cache-instances.yml ops-files/
@@ -706,6 +707,7 @@ jobs:
         windows-cell.yml
         add-log-cache.yml
         use-bosh-dns.yml
+        use-bosh-dns-for-containers.yml
         datadog-agent.yml
         log-cache-instances.yml
       VARS_FILES: "gcp/coconut-bbl/vars-files/router.yml gcp/coconut-bbl/datadog-vars.yml"
