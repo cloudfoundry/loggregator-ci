@@ -1,0 +1,94 @@
+resources:
+- name: loggregator-ci
+  type: git
+  source:
+    uri: https://github.com/cloudfoundry/loggregator-ci
+- name: deployments-loggregator
+  type: git
+  source:
+    uri: https://github.com/cloudfoundry/deployments-loggregator
+    branch: develop
+- name: log-cache-release
+  type: git
+  source:
+    uri: https://github.com/cloudfoundry-incubator/log-cache-release
+
+jobs:
+- name: log-cache-deploy
+  serial: true
+  plan:
+  - aggregate:
+    - get: deployments-loggregator
+    - get: loggregator-ci
+    - get: log-cache-release
+      trigger: true
+  - task: copy-ops-files
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source: { repository: ubuntu }
+      inputs:
+      - name: deployments-loggregator
+      outputs:
+      - name: ops-files
+      run:
+        path: /bin/bash
+        args:
+        - "-c"
+        - |
+          cp deployments-loggregator/pws/ops-files/log-cache.yml ops-files/
+
+  - task: upload-log-cache
+    config:
+      image_resource:
+        type: docker-image
+        source:
+          repository: relintdockerhubpushbot/cf-deployment-concourse-tasks
+      platform: linux
+      inputs:
+      - name: deployments-loggregator
+      - name: log-cache-release
+      run:
+        path: bash
+        args:
+        - -c
+        - |
+          #!/bin/bash
+          set -eux
+          log_cache_dir="$PWD/log-cache-release"
+
+          pushd deployments-loggregator/gcp/coconut-bbl
+            export BOSH_CLIENT=`bbl director-username`
+            export BOSH_CLIENT_SECRET=`bbl director-password`
+            export BOSH_CA_CERT=`bbl director-ca-cert`
+            export BOSH_ENVIRONMENT=`bbl director-address`
+          popd
+
+          pushd $log_cache_dir
+            bosh create-release --name=log-cache --force
+            bosh upload-release --rebase
+          popd
+  - task: log-cache-deploy
+    file: loggregator-ci/tasks/bosh-deploy/task.yml
+    input_mapping:
+      bbl-state: deployments-loggregator
+      vars-store: deployments-loggregator
+      vars-files: deployments-loggregator
+      bosh-release: log-cache-release
+    output_mapping:
+      updated-vars-store: updated-deployments-loggregator
+    params:
+      BBL_STATE_DIR: gcp/coconut-bbl
+      SYSTEM_DOMAIN: coconut.cf-app.com
+      DEPLOYMENT_NAME: log-cache
+      MANIFEST_FILE: manifests/log-cache.yml
+      VARS_STORE_FILE: gcp/coconut-bbl/log-cache-vars.yml
+      VARS_FILES: |
+        gcp/coconut-bbl/deployment-vars.yml
+      OPS_FILES: |
+        log-cache.yml
+  - put: deployments-loggregator
+    params:
+      repository: updated-deployments-loggregator
+      rebase: true
