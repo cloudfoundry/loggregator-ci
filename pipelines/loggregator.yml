@@ -239,6 +239,7 @@ resources:
     ignore_paths:
     - .final_builds
     - releases
+    disable_ci_skip: false
 
 - name: log-cache
   type: git
