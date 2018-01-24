@@ -267,6 +267,7 @@ jobs:
       PASSWORD: {{coconut-password}}
       UAA_CLIENT: {{coconut-uaa-client}}
       UAA_CLIENT_SECRET: {{coconut-uaa-client-secret}}
+      ITERATIONS: 10
   - task: push-datadog-accumulator
     file: loggregator-ci/tasks/log-cache-datadog-accumulator/task.yml
     params:

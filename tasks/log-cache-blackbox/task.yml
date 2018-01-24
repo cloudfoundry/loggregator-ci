@@ -63,3 +63,7 @@ params:
   # - Required
   # - The UAA Client Secret
   UAA_CLIENT_SECRET:
+
+  # - The number of times to run the blackbox test before reporting.
+  # - Defaults to 1
+  ITERATIONS: 1

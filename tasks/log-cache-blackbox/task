@@ -41,20 +41,22 @@ pushd loggregator-tools/log-cache-blackbox
   cf start "$APP_NAME"
 popd
 
-response=$(curl "$APP_DOMAIN" -d='')
+for i in $(seq $ITERATIONS); do
+  response=$(curl "$APP_DOMAIN" -d='')
 
-latency=$(echo "$response" | jq .latency)
-avg_query_time=$(echo "$response" | jq .averageQueryTime)
+  latency=$(echo "$response" | jq .latency)
+  avg_query_time=$(echo "$response" | jq .averageQueryTime)
 
-fail_on_empty "$latency"
-fail_on_empty "$avg_query_time"
+  fail_on_empty "$latency"
+  fail_on_empty "$avg_query_time"
 
-response=$(curl "$APP_DOMAIN/reliability" -d='')
+  response=$(curl "$APP_DOMAIN/reliability" -d='')
 
-logs_sent=$(echo "$response" | jq .logsSent)
-logs_received=$(echo "$response" | jq .logsReceived)
+  logs_sent=$(echo "$response" | jq .logsSent)
+  logs_received=$(echo "$response" | jq .logsReceived)
 
-fail_on_empty "$logs_received"
+  fail_on_empty "$logs_received"
+done
 
 currenttime=$(date +%s)
 curl --fail -X POST -H "Content-type: application/json" \
