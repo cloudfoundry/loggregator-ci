@@ -58,7 +58,6 @@ class Committer
       end
     end
 
-    commit_msg << "[ci skip]"
     commit_msg.join("\n")
   end
 
