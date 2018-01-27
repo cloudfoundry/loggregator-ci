@@ -206,6 +206,7 @@ jobs:
           set -x
 
           cp cf-deployment/operations/scale-to-one-az.yml ops-files/
+          cp cf-deployment/operations/workaround/use-4-azs-for-router.yml ops-files/
           cp cf-deployment/operations/experimental/use-bosh-dns.yml ops-files/
           cp deployments-loggregator/gcp/regression/ops-files/*.yml ops-files/
   - task: cf-deploy
@@ -218,7 +219,7 @@ jobs:
       BBL_STATE_DIR: gcp/regression
       SYSTEM_DOMAIN: regression.loggr.cf-app.com
       VARS_STORE_FILE: gcp/regression/deployment-vars.yml
-      OPS_FILES: "scale-to-one-az.yml clients.yml allow-insecure-syslog-drains.yml cf-versions.yml use-bosh-dns.yml enable-metrics-to-syslog.yml disable-doppler-etcd.yml versions.yml"
+      OPS_FILES: "scale-to-one-az.yml clients.yml allow-insecure-syslog-drains.yml cf-versions.yml use-bosh-dns.yml enable-metrics-to-syslog.yml disable-doppler-etcd.yml versions.yml use-4-azs-for-router.yml"
       VARS_FILES: gcp/regression/datadog-vars.yml
   - task: bosh-cleanup
     file: cf-deployment-concourse-tasks/bosh-cleanup/task.yml
@@ -255,7 +256,7 @@ jobs:
       BBL_STATE_DIR: gcp/regression
       SYSTEM_DOMAIN: regression.loggr.cf-app.com
       VARS_STORE_FILE: gcp/regression/deployment-vars.yml
-      OPS_FILES: "scale-to-one-az.yml clients.yml allow-insecure-syslog-drains.yml cf-versions.yml use-bosh-dns.yml enable-metrics-to-syslog.yml disable-doppler-etcd.yml versions.yml"
+      OPS_FILES: "scale-to-one-az.yml clients.yml allow-insecure-syslog-drains.yml cf-versions.yml use-bosh-dns.yml enable-metrics-to-syslog.yml disable-doppler-etcd.yml versions.yml use-4-azs-for-router.yml"
       VARS_FILES: gcp/regression/datadog-vars.yml
   - task: run-cats
     file: cats-concourse-task/task.yml
@@ -293,8 +294,3 @@ jobs:
       params:
         BBL_STATE_DIR: gcp/regression
         DEPLOYMENT_NAME: cf
-    - task: cf-syslog-drain-destroy
-      file: cf-deployment-concourse-tasks/bosh-delete-deployment/task.yml
-      params:
-        BBL_STATE_DIR: gcp/regression
-        DEPLOYMENT_NAME: cf-syslog-drain
