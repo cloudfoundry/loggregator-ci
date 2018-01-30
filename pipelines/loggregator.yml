@@ -656,7 +656,9 @@ jobs:
       platform: linux
       image_resource:
         type: docker-image
-        source: { repository: ubuntu }
+        source:
+          repository: relintdockerhubpushbot/cf-deployment-concourse-tasks
+          tag: v3.19.0
       inputs:
       - name: bbl-state
       - name: cf-deployment
@@ -686,6 +688,13 @@ jobs:
               name: loggregator
               version: latest
           - type: replace
+            path: /releases/name=diego
+            value:
+              name: diego
+              version: $(bosh int cf-deployment/cf-deployment.yml --path=/releases/name=diego/version)
+              url: $(bosh int cf-deployment/cf-deployment.yml --path=/releases/name=diego/url)
+              sha1: $(bosh int cf-deployment/cf-deployment.yml --path=/releases/name=diego/sha1)
+          - type: replace
             path: /releases/name=cf-syslog-drain
             value:
               name: cf-syslog-drain
@@ -694,6 +703,7 @@ jobs:
             path: /instance_groups/name=doppler/instances
             value: 2
           EOT
+
   - task: upload-stemcell
     file: cf-deployment-concourse-tasks/bosh-upload-stemcell-from-cf-deployment/task.yml
     params:
@@ -710,6 +720,7 @@ jobs:
         diego.yml
         use-compiled-releases.yml
         on-the-fly.yml
+        windows-cell.yml
         add-log-cache.yml
         use-bosh-dns.yml
         use-bosh-dns-for-containers.yml
