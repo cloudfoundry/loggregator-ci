@@ -51,6 +51,8 @@ groups:
   - log-cache-cli-tests
   - log-cache-bump-submodule
   - cfar-lats
+  - cf-deploy
+  - log-cache-promotion
 - name: statsd-injector
   jobs:
   - statsd-injector-tests
@@ -234,12 +236,22 @@ resources:
   type: git
   source:
     uri: git@github.com:cloudfoundry-incubator/log-cache-release
-    branch: master
+    branch: develop
     private_key: {{cf-loggregator-oauth-bot-key}}
     ignore_paths:
     - .final_builds
     - releases
     disable_ci_skip: false
+
+- name: log-cache-release-elect
+  type: git
+  source:
+    uri: git@github.com:cloudfoundry-incubator/log-cache-release
+    branch: release-elect
+    private_key: {{cf-loggregator-oauth-bot-key}}
+    ignore_paths:
+    - .final_builds
+    - releases
 
 - name: log-cache
   type: git
@@ -1398,3 +1410,16 @@ jobs:
     params:
       repository: committed-log-cache-release
       rebase: true
+
+- name: log-cache-promotion
+  serial: true
+  plan:
+  - aggregate:
+    - get: develop
+      resource: log-cache-release
+      trigger: true
+      passed: ["cfar-lats"]
+    - get: log-cache-release-elect
+  - put: log-cache-release-elect
+    params:
+      repository: develop
