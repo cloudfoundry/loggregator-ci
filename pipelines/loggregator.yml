@@ -245,11 +245,18 @@ resources:
     - releases
     disable_ci_skip: false
 
-- name: log-cache-release-elect
+- name: log-cache-release-elect-get
   type: git
   source:
     uri: https://github.com/cloudfoundry-incubator/log-cache-release
     branch: release-elect
+
+- name: log-cache-release-elect-put
+  type: git
+  source:
+    uri: git@github.com:cloudfoundry-incubator/log-cache-release
+    branch: release-elect
+    private_key: {{cf-loggregator-oauth-bot-key}}
 
 - name: log-cache-release-master
   type: git
@@ -1435,8 +1442,8 @@ jobs:
       resource: log-cache-release
       trigger: true
       passed: ["cfar-lats"]
-    - get: log-cache-release-elect
-  - put: log-cache-release-elect
+    - get: log-cache-release-elect-get
+  - put: log-cache-release-elect-put
     params:
       repository: develop
 
@@ -1447,8 +1454,9 @@ jobs:
     - get: develop
       resource: log-cache-release
       passed: ["log-cache-promotion"]
+      trigger: true
     - get: release-elect
-      resource: log-cache-release-elect
+      resource: log-cache-release-elect-get
     - get: master
       resource: log-cache-release-master
     - get: bumper-tool
@@ -1488,7 +1496,7 @@ jobs:
       outputs:
         - name: bumper-sha
       params:
-        TRACKER_KEY: c82e3905444e6b9a6d8229b16cfa8c8f
+        TRACKER_KEY: {{tracker-api-token}}
       run:
         path: bash
         args:
@@ -1503,6 +1511,7 @@ jobs:
             git fetch origin
             git checkout master
 
+            FOLLOW_BUMPS_OF='src/code.cloudfoundry.org/log-cache' $workspace/bumper/bumper --verbose
             FOLLOW_BUMPS_OF='src/code.cloudfoundry.org/log-cache' $workspace/bumper/bumper > $workspace/bumper-sha/sha
           popd
   - task: merge
@@ -1525,23 +1534,20 @@ jobs:
           #!/bin/bash
           set -eux
 
-          workspace=$(pwd)
-
           pushd master
             git config remote.origin.fetch "+refs/heads/*:refs/remotes/origin/*"
-            git fetch origin
-            git checkout release-elect # tell git release-elect is a branch it can use
+            git fetch origin            
           popd
-
           git clone master merged-master
 
-          bump_sha=$(cat $workspace/bumper-sha/sha)
+          bump_sha=$(cat bumper-sha/sha)
           if [ -z $bump_sha ]; then
             echo "There are no commits to bump!"
             exit 0
           fi
 
           pushd merged-master
+            git checkout release-elect
             git checkout master
             git merge release-elect --ff-only $bump_sha
           popd
