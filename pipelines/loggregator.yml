@@ -1495,8 +1495,6 @@ jobs:
         - name: release-elect
       outputs:
         - name: bumper-sha
-      params:
-        TRACKER_KEY: {{tracker-api-token}}
       run:
         path: bash
         args:
