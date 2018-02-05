@@ -1119,7 +1119,7 @@ jobs:
 
             pushd $GOPATH/src/code.cloudfoundry.org/noisy-neighbor-nozzle-repo/
               go get ./...
-              for c in $(ls cmd); do
+              for c in cmd/*; do
                 pushd cmd/$c
                   binary_file=noisy-neighbor-$c
                   GOOS=linux go build -o $binary_file
@@ -1128,6 +1128,11 @@ jobs:
               done
             popd
 
+            pushd cmd/cli-plugin
+              GOOS=linux go build -o $WORKSPACE/binary-output/noisy-neighbor-cli-plugin-linux
+              GOOS=darwin go build -o $WORKSPACE/binary-output/noisy-neighbor-cli-plugin-darwin
+              GOOS=windows go build -o $WORKSPACE/binary-output/noisy-neighbor-cli-plugin-windows
+            popd
   - put: noisy-neighbor-binaries
     params:
       file: binary-output/noisy-neighbor-accumulator
@@ -1137,3 +1142,12 @@ jobs:
   - put: noisy-neighbor-binaries
     params:
       file: binary-output/noisy-neighbor-nozzle
+  - put: noisy-neighbor-binaries
+    params:
+      file: binary-output/noisy-neighbor-cli-plugin-linux
+  - put: noisy-neighbor-binaries
+    params:
+      file: binary-output/noisy-neighbor-cli-plugin-darwin
+  - put: noisy-neighbor-binaries
+    params:
+      file: binary-output/noisy-neighbor-cli-plugin-windows
