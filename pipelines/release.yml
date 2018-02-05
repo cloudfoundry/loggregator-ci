@@ -236,7 +236,7 @@ resources:
   type: s3
   source:
     bucket: noisy-neighbor-binaries
-    regexp: noisy-neighbor-(nozzle|accumulator|datadog-reporter)-(.*)
+    regexp: noisy-neighbor-(nozzle|accumulator|datadog-reporter)
     access_key_id: {{loggregator-team-s3-access-key}}
     secret_access_key: {{loggregator-team-s3-secret-key}}
 
@@ -1118,10 +1118,10 @@ jobs:
             popd
 
             pushd $GOPATH/src/code.cloudfoundry.org/noisy-neighbor-nozzle-repo/
-              go get -u ./...
+              go get ./...
               for c in $(ls cmd); do
                 pushd cmd/$c
-                  binary_file=noisy-neighbor-$c-$(date +%s)
+                  binary_file=noisy-neighbor-$c
                   GOOS=linux go build -o $binary_file
                   cp $binary_file $WORKSPACE/binary-output
                 popd
@@ -1130,10 +1130,10 @@ jobs:
 
   - put: noisy-neighbor-binaries
     params:
-      file: binary-output/noisy-neighbor-accumulator-*
+      file: binary-output/noisy-neighbor-accumulator
   - put: noisy-neighbor-binaries
     params:
-      file: binary-output/noisy-neighbor-datadog-reporter-*
+      file: binary-output/noisy-neighbor-datadog-reporter
   - put: noisy-neighbor-binaries
     params:
-      file: binary-output/noisy-neighbor-nozzle-*
+      file: binary-output/noisy-neighbor-nozzle
