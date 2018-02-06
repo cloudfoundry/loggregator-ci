@@ -1532,9 +1532,9 @@ jobs:
 
           pushd master
             git config remote.origin.fetch "+refs/heads/*:refs/remotes/origin/*"
-            git fetch origin            
+            git fetch origin
           popd
-          git clone master merged-master
+          cp -R master/. merged-master
 
           bump_sha=$(cat bumper-sha/sha)
           if [ -z $bump_sha ]; then
@@ -1545,7 +1545,7 @@ jobs:
           pushd merged-master
             git checkout release-elect
             git checkout master
-            git merge release-elect --ff-only $bump_sha
+            git merge $bump_sha --ff-only
           popd
 
   - put: log-cache-release-master-put
