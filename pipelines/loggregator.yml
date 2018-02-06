@@ -1451,12 +1451,10 @@ jobs:
   serial: true
   plan:
   - aggregate:
-    - get: develop
-      resource: log-cache-release
-      passed: ["log-cache-promotion"]
-      trigger: true
     - get: release-elect
       resource: log-cache-release-elect-get
+      passed: ["log-cache-promotion"]
+      trigger: true
     - get: master
       resource: log-cache-release-master
     - get: bumper-tool
