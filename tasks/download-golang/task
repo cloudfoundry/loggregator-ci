@@ -4,7 +4,7 @@ def header(txt)
   puts "\e[32m### #{txt}\e[0m"
 end
 
-def download_golang_blob(filename)
+def download_blob(filename)
   `wget "https://redirector.gvt1.com/edgedl/go/#{filename}" -O "golang-blobs/#{filename}"`
   check_process($?, "downloading #{filename}")
 end
