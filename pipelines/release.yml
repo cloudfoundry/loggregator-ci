@@ -225,6 +225,13 @@ resources:
     access_token: {{access-token}}
     drafts: true
 
+- name: noisy-neighbor-nozzle-release
+  type: git
+  source:
+    uri: git@github.com:cloudfoundry/noisy-neighbor-nozzle-release
+    branch: master
+    private_key: {{cf-loggregator-oauth-bot-key}}
+
 - name: noisy-neighbor-nozzle-repo
   type: git
   source:
@@ -240,6 +247,13 @@ resources:
     access_token: {{access-token}}
     drafts: true
 
+- name: log-cache-release
+  type: git
+  source:
+    uri: git@github.com:cloudfoundry-incubator/log-cache-release
+    branch: master
+    private_key: {{cf-loggregator-oauth-bot-key}}
+
 jobs:
 - name: bump-golang
   serial: true
@@ -254,6 +268,8 @@ jobs:
     - get: ouroboros-release
     - get: bosh-hm-forwarder-release
     - get: reference-nozzle-release
+    - get: noisy-neighbor-nozzle-release
+    - get: log-cache-release
   - aggregate:
     - do:
       - task: bump-loggregator-release
@@ -263,7 +279,7 @@ jobs:
         output_mapping:
           updated-release-repo: updated-loggregator-release
         params:
-          VERSION: &golang-version 1.9.2
+          VERSION: &golang-version 1.9.4
           INCLUDE_WINDOWS: true
           ACCESS_KEY_ID: {{s3-access-key-id}}
           SECRET_ACCESS_KEY: {{s3-secret-access-key}}
@@ -447,6 +463,56 @@ jobs:
       - put: reference-nozzle-release
         params:
           repository: committed-reference-nozzle-release
+          rebase: false
+
+    - do:
+      - task: bump-noisy-neighbor-nozzle-release
+        file: loggregator-ci/tasks/bump-golang/task.yml
+        input_mapping:
+          release-repo: noisy-neighbor-nozzle-release
+        output_mapping:
+          updated-release-repo: updated-noisy-neighbor-nozzle-release
+        params:
+          VERSION: *golang-version
+          ACCESS_KEY_ID: {{s3-access-key-id}}
+          SECRET_ACCESS_KEY: {{s3-secret-access-key}}
+          BUCKET_NAME: noisy-neighbor-release-blobs
+      - task: commit-noisy-neighbor-nozzle-release
+        file: loggregator-ci/tasks/commit/task.yml
+        input_mapping:
+          release-repo: updated-noisy-neighbor-nozzle-release
+        output_mapping:
+          committed-repo: committed-noisy-neighbor-nozzle-release
+        params:
+          COMMIT_MESSAGE: "Bump golang version"
+      - put: noisy-neighbor-nozzle-release
+        params:
+          repository: committed-noisy-neighbor-nozzle-release
+          rebase: false
+
+    - do:
+      - task: bump-log-cache-release
+        file: loggregator-ci/tasks/bump-golang/task.yml
+        input_mapping:
+          release-repo: log-cache-release
+        output_mapping:
+          updated-release-repo: updated-log-cache-release
+        params:
+          VERSION: *golang-version
+          ACCESS_KEY_ID: {{s3-access-key-id}}
+          SECRET_ACCESS_KEY: {{s3-secret-access-key}}
+          BUCKET_NAME: log-cache-release-blobs
+      - task: commit-log-cache-release
+        file: loggregator-ci/tasks/commit/task.yml
+        input_mapping:
+          release-repo: updated-log-cache-release
+        output_mapping:
+          committed-repo: committed-log-cache-release
+        params:
+          COMMIT_MESSAGE: "Bump golang version"
+      - put: log-cache-release
+        params:
+          repository: committed-log-cache-release
           rebase: false
 
 - name: loggregator-create-final-release
