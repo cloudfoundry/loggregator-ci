@@ -19,6 +19,7 @@ groups:
   - log-cache-cli-tests
   - log-cache-bump-submodule
   - log-cache-merge-branches
+  - log-cache-cats
   - statsd-injector-tests
   - statsd-injector-bump-submodule
   - statsd-injector-deploy
@@ -55,6 +56,7 @@ groups:
   - cf-deploy
   - log-cache-promotion
   - log-cache-merge-branches
+  - log-cache-cats
 - name: statsd-injector
   jobs:
   - statsd-injector-tests
@@ -87,6 +89,12 @@ resources:
   source:
     branch: master
     uri: https://github.com/cloudfoundry/cf-acceptance-tests.git
+
+- name: log-cache-cf-acceptance-tests
+  type: git
+  source:
+    branch: cf-log-cache-tests
+    uri: https://github.com/loggregator/cf-acceptance-tests.git
 
 - name: cfar-logging-acceptance-tests
   type: git
@@ -989,6 +997,93 @@ jobs:
       - get: loggregator-ci
     - task: run-cfar-lats
       file: loggregator-ci/tasks/cfar-lats/task.yml
+
+- name: log-cache-cats
+  serial: true
+  serial_groups:
+  - bosh-cf-cats
+  plan:
+    - aggregate:
+      - get: cats-concourse-task
+      - get: integration-config
+      - get: cf-acceptance-tests
+        resource: log-cache-cf-acceptance-tests
+      - get: loggregator-release
+      - get: cf-syslog-drain-release
+      - get: log-cache-cli
+        passed: ["log-cache-cli-tests"]
+        trigger: true
+      - get: log-cache-release
+        passed: ["cf-deploy"]
+        trigger: true
+    - task: run-cats
+      config:
+        platform: linux
+        image_resource:
+          type: docker-image
+          source:
+            repository: relintdockerhubpushbot/cats-concourse-task
+        inputs:
+        - name: log-cache-cli
+        - name: cats-concourse-task
+        - name: cf-acceptance-tests
+        - name: integration-config
+        outputs:
+        - name: cats-trace-output
+        params:
+          SKIP_REGEXP:
+          CAPTURE_LOGS: falses
+          CONFIG_FILE_PATH: gcp/coconut-bbl/cats-config.json
+          NODES: 9
+        run:
+          path: bash
+          args:
+          - -c
+          - |
+            #!/bin/bash
+            set -xeu
+
+            mkdir -p $GOPATH/src/code.cloudfoundry.org/
+            cp -R log-cache-cli $GOPATH/src/code.cloudfoundry.org/
+            pushd $GOPATH/src/code.cloudfoundry.org/log-cache-cli
+              go get ./...
+              go build -o lcli
+              cf install-plugin -f lcli
+            popd
+
+            build_dir=${PWD}
+
+            export CONFIG
+            original_config="$PWD/integration-config/${CONFIG_FILE_PATH}"
+
+            if ${CAPTURE_LOGS}; then
+              CONFIG=$(mktemp)
+              jq ".artifacts_directory=\"${build_dir}/cats-trace-output\"" ${original_config} > ${CONFIG}
+            else
+              CONFIG=${original_config}
+            fi
+
+            CF_GOPATH=/go/src/github.com/cloudfoundry/
+
+            echo "Moving cf-acceptance-tests onto the gopath..."
+            mkdir -p $CF_GOPATH
+            cp -R cf-acceptance-tests $CF_GOPATH
+
+            cd /go/src/github.com/cloudfoundry/cf-acceptance-tests
+
+            export CF_DIAL_TIMEOUT=11
+
+            export CF_PLUGIN_HOME=$HOME
+
+            ./bin/test \
+            -keepGoing \
+            -randomizeAllSpecs \
+            -skipPackage=helpers \
+            -slowSpecThreshold=120 \
+            -nodes="${NODES}" \
+            -skip="${SKIP_REGEXP}" \
+            -flakeAttempts=2 \
+            -noisySkippings=false
 
 - name: lats
   serial: true
