@@ -9,8 +9,10 @@ image_resource:
 inputs:
 # - The source bosh release repo where the script resides and will be ran.
 - name: release-repo
-# - The repo that contains run-release-script.sh.
+# - The repo that contains the task scripts.
 - name: loggregator-ci
+# - The director that contains the downloaded golang blobs.
+- name: golang-blobs
 
 outputs:
 # - The directory where the result of running the script is copied. This will

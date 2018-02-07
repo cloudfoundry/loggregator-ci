@@ -39,10 +39,7 @@ def check_process(process, action)
 end
 
 def add_blob(filename)
-  `wget "https://redirector.gvt1.com/edgedl/go/#{filename}" -O "/tmp/#{filename}"`
-  check_process($?, "downloading #{filename}")
-
-  `bosh add-blob "/tmp/#{filename}" "golang/#{filename}" --sha2`
+  `bosh add-blob "../golang-blobs/#{filename}" "golang/#{filename}" --sha2`
   check_process($?, "adding blob #{filename}")
 end
 
