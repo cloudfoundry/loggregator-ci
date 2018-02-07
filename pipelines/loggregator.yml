@@ -286,6 +286,12 @@ resources:
     branch: master
     private_key: {{cf-loggregator-oauth-bot-key}}
 
+- name: go-log-cache
+  type: git
+  source:
+    uri: https://github.com/cloudfoundry-incubator/go-log-cache
+    branch: master
+
 - name: log-cache-cli
   type: git
   source:
@@ -1493,7 +1499,9 @@ jobs:
       trigger: true
       passed:
       - log-cache-tests
-  - task: update-submodule
+    - get: go-log-cache
+      trigger: true
+  - task: update-log-cache-submodule
     file: loggregator-ci/tasks/bump-submodule/task.yml
     input_mapping:
       release-repo: log-cache-release
@@ -1502,10 +1510,19 @@ jobs:
       bumped-release-repo: bumped-log-cache-release
     params:
       SUBMODULE_PATH: src/code.cloudfoundry.org/log-cache
+  - task: update-go-log-cache-submodule
+    file: loggregator-ci/tasks/bump-submodule/task.yml
+    input_mapping:
+      release-repo: bumped-log-cache-release
+      source-repo: go-log-cache
+    output_mapping:
+      bumped-release-repo: bumped-go-log-cache-release
+    params:
+      SUBMODULE_PATH: src/code.cloudfoundry.org/go-log-cache
   - task: sync-package-specs
     file: loggregator-ci/tasks/run-release-script/task.yml
     input_mapping:
-      release-repo: bumped-log-cache-release
+      release-repo: bumped-go-log-cache-release
     output_mapping:
       updated-release-repo: synced-log-cache-release
     params:
