@@ -220,14 +220,14 @@ resources:
 - name: cf-drain-cli
   type: git
   source:
-    uri: git@github.com:cloudfoundry-incubator/cf-drain-cli
+    uri: git@github.com:cloudfoundry/cf-drain-cli
     branch: master
     private_key: {{cf-loggregator-oauth-bot-key}}
 
 - name: cf-drain-cli-github-release-drafts
   type: github-release
   source:
-    user: cloudfoundry-incubator
+    user: cloudfoundry
     repository: cf-drain-cli
     access_token: {{access-token}}
     drafts: true
@@ -1088,7 +1088,7 @@ jobs:
       platform: linux
       params:
         VERSION_MAJOR: 0
-        VERSION_MINOR: 2
+        VERSION_MINOR: 4
       inputs:
       - name: cf-drain-cli
       outputs:
