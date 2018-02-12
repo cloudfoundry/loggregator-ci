@@ -1001,6 +1001,10 @@ jobs:
       - get: loggregator-ci
     - task: run-cfar-lats
       file: loggregator-ci/tasks/cfar-lats/task.yml
+      params:
+        USERNAME: {{coconut-username}}
+        PASSWORD: {{coconut-password}}
+        API_ENDPOINT: api.coconut.cf-app.com
 
 - name: log-cache-cats
   serial: true

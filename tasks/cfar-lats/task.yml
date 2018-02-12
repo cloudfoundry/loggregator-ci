@@ -12,3 +12,20 @@ inputs:
 
 run:
   path: loggregator-ci/tasks/cfar-lats/task
+
+params:
+  # - Required
+  # - Username to use to login to cloud foundry.
+  USERNAME:
+
+  # - Required
+  # - The password to use to login to cloud foundry.
+  PASSWORD:
+
+  # - Required
+  # - The cloud foundry API endpoint.
+  API_ENDPOINT:
+
+  # - Optional
+  # - Whether to disable SSL validation.
+  SKIP_SSL_VALIDATION: false
