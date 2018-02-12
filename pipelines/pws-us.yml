@@ -362,8 +362,7 @@ jobs:
       PASSWORD: {{pws-password}}
       UAA_CLIENT: {{pws-uaa-client}}
       UAA_CLIENT_SECRET: {{pws-uaa-client-secret}}
-      ITERATIONS: 10
-    timeout: 9m
+    timeout: 5m
   - task: push-datadog-accumulator
     file: loggregator-ci/tasks/log-cache-datadog-accumulator/task.yml
     params:
