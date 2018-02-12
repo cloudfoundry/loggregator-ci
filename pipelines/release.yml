@@ -68,13 +68,6 @@ resources:
     access_token: {{access-token}}
     drafts: true
 
-- name: cf-release-develop
-  type: git
-  source:
-    uri: git@github.com:cloudfoundry/cf-release
-    branch: develop
-    private_key: {{cf-loggregator-oauth-bot-key}}
-
 - name: cf-syslog-drain-release-develop
   type: git
   source:
@@ -729,67 +722,6 @@ jobs:
       body: github-release/body
       globs:
       - github-release/*.tgz
-
-- name: loggregator-bump-cf-release
-  plan:
-    - get: loggregator-master
-      resource: loggregator-final-release-master
-      passed: ["loggregator-create-final-release"]
-    - get: cf-release
-      resource: cf-release-develop
-    - task: bump-submodule
-      config:
-        image_resource:
-          type: docker-image
-          source:
-            repository: loggregator/bosh10
-        platform: linux
-        inputs:
-        - name: loggregator-master
-        - name: cf-release
-        outputs:
-        - name: cf-release-bump
-        run:
-          path: bash
-          args:
-            - -c
-            - |
-              #!/bin/bash
-              set -ex
-
-              pushd loggregator-master
-                LOGGREGATOR_SHA=$(git rev-parse HEAD)
-              popd
-
-              pushd cf-release/src/loggregator
-                echo "Moving Loggregator in cf-release to ${LOGGREGATOR_SHA}"
-                git checkout ${LOGGREGATOR_SHA}
-                git submodule update --init --recursive
-              popd
-
-              pushd cf-release
-                echo "Running ./scripts/test"
-                ./scripts/test
-
-                echo "Configuring Git"
-                git config --global user.email "cf-loggregator@pivotal.io"
-                git config --global user.name "Loggregator CI"
-                git config --global alias.ci commit
-
-                echo "Bumping loggregator SHA in cf-release"
-                echo "New loggregator SHA is ${LOGGREGATOR_SHA}"
-                git add src/loggregator
-
-                echo "Commiting with shortlog"
-                ./scripts/commit_with_shortlog
-              popd
-
-              rsync -ca cf-release/ cf-release-bump/
-
-    - put: cf-release-develop
-      params:
-        rebase: true
-        repository: cf-release-bump
 
 - name: cf-syslog-drain-create-final-release
   serial: true
