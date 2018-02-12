@@ -8,5 +8,5 @@ cp -R cfar-logging-acceptance-tests $GOPATH/src/github.com/cloudfoundry
 pushd $GOPATH/src/github.com/cloudfoundry/cfar-logging-acceptance-tests
   go get -t ./...
   go install github.com/onsi/ginkgo/ginkgo
-  ginkgo -r
+  ginkgo -r -race
 popd
