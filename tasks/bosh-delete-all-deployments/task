@@ -1,0 +1,19 @@
+#!/bin/bash
+
+set -exu
+
+pushd bbl-state/$BBL_STATE_DIR
+  eval $(bbl print-env)
+popd
+
+function bosh_delete_deployment() {
+  bosh \
+  -n \
+  delete-deployment -d $1
+}
+
+deployments=$(bosh deployments --column=name --json | jq -r .Tables[].Rows[].name)
+for d in $deployments; do
+  bosh_delete_deployment $d
+done
+
