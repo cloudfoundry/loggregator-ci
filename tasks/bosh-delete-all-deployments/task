@@ -10,7 +10,7 @@ pushd bbl-state/$BBL_STATE_DIR
 popd
 
 function bosh_delete_deployment() {
-  echo bosh \
+  bosh \
   -n \
   delete-deployment -d $1
 }
