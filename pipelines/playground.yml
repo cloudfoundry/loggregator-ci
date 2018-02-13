@@ -221,13 +221,21 @@ jobs:
           cp cf-deployment/operations/experimental/use-bosh-dns-for-containers.yml ops-files/
           cp bbl-state/gcp/playground/ops-files/*.yml ops-files/
           cp log-cache-release/manifests/operations/deploy-in-cf.yml ops-files/deploy-log-cache.yml
+          cat <<EOF > ops-files/router-group.yml
+          - type: replace
+            path: /instance_groups/name=api/jobs/name=routing-api/properties/routing_api/router_groups/-
+            value:
+              name: loggregator
+              type: tcp
+              reservable_ports: 3456-3457
+          EOF
   - task: cf-deploy
     file: cf-deployment-concourse-tasks/bosh-deploy/task.yml
     params:
       BBL_STATE_DIR: gcp/playground
       SYSTEM_DOMAIN: playground.loggr.cf-app.com
       VARS_STORE_FILE: gcp/playground/deployment-vars.yml
-      OPS_FILES: "scale-to-one-az.yml clients.yml allow-insecure-syslog-drains.yml cf-versions.yml use-bosh-dns.yml use-bosh-dns-for-containers.yml deploy-log-cache.yml enable-metrics-to-syslog.yml"
+      OPS_FILES: "scale-to-one-az.yml clients.yml allow-insecure-syslog-drains.yml cf-versions.yml use-bosh-dns.yml use-bosh-dns-for-containers.yml deploy-log-cache.yml enable-metrics-to-syslog.yml router-group.yml"
       VARS_FILES: gcp/playground/datadog-vars.yml
   - task: bosh-cleanup
     file: cf-deployment-concourse-tasks/bosh-cleanup/task.yml
