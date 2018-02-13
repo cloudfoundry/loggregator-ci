@@ -733,8 +733,7 @@ jobs:
           cp cf-deployment/operations/experimental/use-bosh-dns-for-containers.yml ops-files/
           cp cf-deployment/operations/use-compiled-releases.yml ops-files/
           cp bbl-state/gcp/coconut-bbl/ops-files/*.yml ops-files/
-          cp log-cache-release/manifests/operations/deploy-in-cf.yml ops-files/add-log-cache.yml
-          cp log-cache-release/manifests/operations/log-cache-instances.yml ops-files/
+          cp log-cache-release/manifests/operations/deploy-in-cf-doppler-colocated.yml ops-files/add-log-cache.yml
 
           cat <<EOT >> ops-files/on-the-fly.yml
           - type: replace
@@ -779,7 +778,6 @@ jobs:
         add-log-cache.yml
         use-bosh-dns.yml
         use-bosh-dns-for-containers.yml
-        log-cache-instances.yml
   - task: enable-feature-flags
     file: cf-deployment-concourse-tasks/set-feature-flags/task.yml
     params:
