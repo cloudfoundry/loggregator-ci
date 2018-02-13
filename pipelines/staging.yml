@@ -510,11 +510,12 @@ jobs:
 
 - name: bbl-destroy
   plan:
+  - get: loggregator-ci
   - get: cf-deployment-concourse-tasks
   - get: bbl-state
     resource: deployments-loggregator
-  - task: delete-cf-deployment
-    file: cf-deployment-concourse-tasks/bosh-delete-deployment/task.yml
+  - task: delete-deployments
+    file: loggregator-ci/tasks/bosh-delete-all-deployments/task.yml
     params:
       BBL_STATE_DIR: gcp/staging
   - task: bbl-destroy

@@ -127,6 +127,11 @@ jobs:
   - get: bbl-state
     resource: deployments-loggregator
     trigger: false
+  - get: loggregator-ci
+  - task: delete-deployments
+    file: loggregator-ci/tasks/bosh-delete-all-deployments/task.yml
+    params:
+      BBL_STATE_DIR: gcp/playground
   - task: bbl-destroy
     file: cf-deployment-concourse-tasks/bbl-destroy/task.yml
     params:

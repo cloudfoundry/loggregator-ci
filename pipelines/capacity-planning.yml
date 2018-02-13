@@ -93,17 +93,17 @@ jobs:
   - get: bbl-state
     resource: deployments-loggregator
     trigger: false
+  - get: loggregator-ci
   - aggregate:
     - task: delete-datadog-firehose-nozzle
       file: cf-deployment-concourse-tasks/bosh-delete-deployment/task.yml
       params:
         BBL_STATE_DIR: gcp/loggregator-capacity-planning
         DEPLOYMENT_NAME: datadog
-    - task: delete-cf
-      file: cf-deployment-concourse-tasks/bosh-delete-deployment/task.yml
+    - task: delete-deployments
+      file: loggregator-ci/tasks/bosh-delete-all-deployments/task.yml
       params:
         BBL_STATE_DIR: gcp/loggregator-capacity-planning
-        DEPLOYMENT_NAME: cf
   - task: bbl-destroy
     file: cf-deployment-concourse-tasks/bbl-destroy/task.yml
     params:
