@@ -12,7 +12,7 @@ inputs:
 - name: loggregator-ci  # - This repo
 
 run:
-  path: loggregator-ci/tasks/bosh-delete-all-deployment/task
+  path: loggregator-ci/tasks/bosh-delete-all-deployments/task
 
 params:
   BBL_STATE_DIR: bbl-state
