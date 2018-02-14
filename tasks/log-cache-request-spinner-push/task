@@ -19,7 +19,7 @@ cf login \
 GOPATH=$PWD/go
 
 mkdir -p $GOPATH/src/code.cloudfoundry.org
-mv loggregator-tools $GOPATH/src/code.cloudfoundry.org/
+cp -r loggregator-tools $GOPATH/src/code.cloudfoundry.org/
 
 pushd $GOPATH/src/code.cloudfoundry.org/loggregator-tools/request-spinner
   go get -d ./...
