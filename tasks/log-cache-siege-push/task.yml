@@ -56,5 +56,9 @@ params:
   UAA_CLIENT:
 
   # - Required
-  # - The UAA Client Secret
+  # - The UAA Client Secret.
   UAA_CLIENT_SECRET:
+
+  # - Optional
+  # - The number of concurrent requests.
+  CONCURRENT_REQUESTS:

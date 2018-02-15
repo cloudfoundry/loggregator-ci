@@ -38,5 +38,9 @@ pushd $GOPATH/src/code.cloudfoundry.org/loggregator-tools/log-cache-siege
     cf set-env "$APP_NAME" SKIP_SSL_VALIDATION $SKIP_SSL_VALIDATION
   fi
 
+  if [ ! -z "$CONCURRENT_REQUESTS" ]; then
+    cf set-env "$APP_NAME" CONCURRENT_REQUESTS $CONCURRENT_REQUESTS
+  fi
+
   cf start $APP_NAME
 popd
