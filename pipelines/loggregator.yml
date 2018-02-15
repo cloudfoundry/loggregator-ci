@@ -23,6 +23,7 @@ groups:
   - log-cache-bump-submodule
   - log-cache-merge-branches
   - log-cache-cats
+  - log-cache-promotion
   - statsd-injector-tests
   - statsd-injector-bump-submodule
   - statsd-injector-deploy
