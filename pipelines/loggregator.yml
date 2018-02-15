@@ -2,8 +2,10 @@ groups:
 - name: all
   jobs:
   - loggregator-tests
+  - loggregator-agent-tests
   - loggregator-docker-images
   - loggregator-bump-submodule
+  - loggregator-agent-bump-submodule
   - loggregator-deploy
   - cf-deploy
   - lats
@@ -11,6 +13,7 @@ groups:
   - cats
   - loggregator-benchmarks
   - loggregator-promotion
+  - loggregator-agent-promotion
   - cf-syslog-drain-tests
   - cf-drain-cli-tests
   - cf-syslog-drain-bump-submodule
@@ -29,8 +32,10 @@ groups:
 - name: loggregator
   jobs:
   - loggregator-tests
+  - loggregator-agent-tests
   - loggregator-docker-images
   - loggregator-bump-submodule
+  - loggregator-agent-bump-submodule
   - loggregator-deploy
   - cf-deploy
   - lats
@@ -38,6 +43,7 @@ groups:
   - cfar-lats
   - loggregator-benchmarks
   - loggregator-promotion
+  - loggregator-agent-promotion
 - name: cf-syslog-drain
   jobs:
   - cf-syslog-drain-tests
@@ -181,6 +187,27 @@ resources:
   source:
     uri: git@github.com:cloudfoundry-incubator/loggregator-bench-results.git
     branch: master
+    private_key: {{cf-loggregator-oauth-bot-key}}
+
+- name: loggregator-agent
+  type: git
+  source:
+    uri: git@github.com:cloudfoundry/loggregator-agent.git
+    branch: master
+    private_key: {{cf-loggregator-oauth-bot-key}}
+
+- name: loggregator-agent-release
+  type: git
+  source:
+    uri: git@github.com:cloudfoundry/loggregator-agent-release.git
+    branch: develop
+    private_key: {{cf-loggregator-oauth-bot-key}}
+
+- name: loggregator-agent-release-elect
+  type: git
+  source:
+    uri: git@github.com:cloudfoundry/loggregator-agent-release.git
+    branch: release-elect
     private_key: {{cf-loggregator-oauth-bot-key}}
 
 - name: cf-syslog-drain-release
@@ -658,6 +685,88 @@ jobs:
       repository: committed-loggregator-release
       rebase: true
 
+- name: loggregator-agent-tests
+  serial: true
+  public: true
+  plan:
+  - aggregate:
+    - get: loggregator-ci
+    - get: loggregator-agent
+      trigger: true
+  - task: run-tests
+    file: loggregator-ci/tasks/go-test-with-latest-packages/task.yml
+    input_mapping:
+      source-repo: loggregator-agent
+    params:
+      IMPORT_PATH: code.cloudfoundry.org/loggregator-agent
+
+- name: loggregator-agent-bump-submodule
+  serial: true
+  plan:
+  - aggregate:
+    - get: loggregator-ci
+    - get: loggregator-agent-release
+      trigger: true
+    - get: loggregator-agent
+      trigger: true
+      passed:
+      - loggregator-agent-tests
+  - task: update-submodule
+    file: loggregator-ci/tasks/bump-submodule/task.yml
+    input_mapping:
+      release-repo: loggregator-agent-release
+      source-repo: loggregator-agent
+    output_mapping:
+      bumped-release-repo: bumped-loggregator-agent-release
+    params:
+      SUBMODULE_PATH: src/code.cloudfoundry.org/loggregator-agent
+  - task: sync-package-specs
+    file: loggregator-ci/tasks/run-release-script/task.yml
+    input_mapping:
+      release-repo: bumped-loggregator-agent-release
+    output_mapping:
+      updated-release-repo: synced-loggregator-agent-release
+    params:
+      SCRIPT: scripts/sync-package-specs
+  - aggregate:
+    - task: run-specs
+      config:
+        platform: linux
+        image_resource:
+          type: docker-image
+          source:
+            repository: ruby
+        inputs:
+        - name: synced-loggregator-agent-release
+        run:
+          path: bash
+          args:
+            - -c
+            - |
+              #!/bin/bash
+              set -e
+              cd synced-loggregator-agent-release
+              bundle install
+              rspec
+    - task: run-tests
+      file: loggregator-ci/tasks/run-release-script/task.yml
+      input_mapping:
+        release-repo: synced-loggregator-agent-release
+      params:
+        SCRIPT: scripts/test
+  - task: commit
+    file: loggregator-ci/tasks/commit-with-shortlog/task.yml
+    input_mapping:
+      release-repo: synced-loggregator-agent-release
+    output_mapping:
+      committed-repo: committed-loggregator-agent-release
+    params:
+      PATHS: "src/code.cloudfoundry.org/loggregator-agent packages"
+  - put: loggregator-agent-release
+    params:
+      repository: committed-loggregator-agent-release
+      rebase: true
+
 - name: cf-deploy
   serial: true
   serial_groups:
@@ -675,6 +784,10 @@ jobs:
       trigger: true
       passed:
       - loggregator-bump-submodule
+    - get: loggregator-agent-release
+      trigger: true
+      passed:
+      - loggregator-agent-bump-submodule
     - get: cf-syslog-drain-release
       trigger: true
       passed:
@@ -692,6 +805,12 @@ jobs:
       file: loggregator-ci/tasks/upload-release/task.yml
       input_mapping:
         bosh-release-dir: loggregator-release
+      params:
+        BBL_STATE_DIR: gcp/coconut-bbl
+    - task: upload-loggregator-agent-release
+      file: loggregator-ci/tasks/upload-release/task.yml
+      input_mapping:
+        bosh-release-dir: loggregator-agent-release
       params:
         BBL_STATE_DIR: gcp/coconut-bbl
     - task: upload-cf-syslog-drain-release
@@ -718,6 +837,7 @@ jobs:
       - name: bbl-state
       - name: cf-deployment
       - name: log-cache-release
+      - name: loggregator-agent-release
       outputs:
       - name: ops-files
       run:
@@ -734,6 +854,7 @@ jobs:
           cp cf-deployment/operations/use-compiled-releases.yml ops-files/
           cp bbl-state/gcp/coconut-bbl/ops-files/*.yml ops-files/
           cp log-cache-release/manifests/operations/deploy-in-cf-doppler-colocated.yml ops-files/add-log-cache.yml
+          cp loggregator-agent-release/manifests/operations/cf-deployment-addon.yml ops-files/use-loggregator-agent.yml
 
           cat <<EOT >> ops-files/on-the-fly.yml
           - type: replace
@@ -757,7 +878,6 @@ jobs:
             path: /instance_groups/name=doppler/instances
             value: 2
           EOT
-
   - task: upload-stemcell
     file: cf-deployment-concourse-tasks/bosh-upload-stemcell-from-cf-deployment/task.yml
     params:
@@ -778,6 +898,7 @@ jobs:
         add-log-cache.yml
         use-bosh-dns.yml
         use-bosh-dns-for-containers.yml
+        use-loggregator-agent.yml
   - task: enable-feature-flags
     file: cf-deployment-concourse-tasks/set-feature-flags/task.yml
     params:
@@ -976,6 +1097,9 @@ jobs:
       - get: loggregator-release
         trigger: true
         passed: ["cf-deploy"]
+      - get: loggregator-agent-release
+        trigger: true
+        passed: ["cf-deploy"]
       - get: cf-syslog-drain-release
         passed: ["cf-deploy"]
         trigger: true
@@ -994,6 +1118,9 @@ jobs:
       - get: cfar-logging-acceptance-tests
         trigger: true
       - get: loggregator-release
+        trigger: true
+        passed: ["cf-deploy"]
+      - get: loggregator-agent-release
         trigger: true
         passed: ["cf-deploy"]
       - get: cf-syslog-drain-release
@@ -1148,6 +1275,19 @@ jobs:
     params:
       repository: develop
 
+- name: loggregator-agent-promotion
+  serial: true
+  plan:
+  - aggregate:
+    - get: develop
+      resource: loggregator-agent-release
+      trigger: true
+      passed: ["cats", "cfar-lats"]
+    - get: loggregator-agent-release-elect
+  - put: loggregator-agent-release-elect
+    params:
+      repository: develop
+
 - name: cf-syslog-drain-tests
   serial: true
   public: true
@@ -1189,7 +1329,6 @@ jobs:
       passed:
       - cf-syslog-drain-tests
       trigger: true
-      passed: ["cf-syslog-drain-tests"]
   - task: update-submodule
     file: loggregator-ci/tasks/bump-submodule/task.yml
     input_mapping:
