@@ -855,6 +855,7 @@ jobs:
           cp bbl-state/gcp/coconut-bbl/ops-files/*.yml ops-files/
           cp log-cache-release/manifests/operations/deploy-in-cf-doppler-colocated.yml ops-files/add-log-cache.yml
           cp loggregator-agent-release/manifests/operations/cf-deployment-addon.yml ops-files/use-loggregator-agent.yml
+          cp loggregator-agent-release/manifests/operations/cf-deployment-windows-addon.yml ops-files/use-loggregator-agent-windows.yml
 
           cat <<EOT >> ops-files/on-the-fly.yml
           - type: replace
@@ -899,6 +900,7 @@ jobs:
         use-bosh-dns.yml
         use-bosh-dns-for-containers.yml
         use-loggregator-agent.yml
+        use-loggregator-agent-windows.yml
   - task: enable-feature-flags
     file: cf-deployment-concourse-tasks/set-feature-flags/task.yml
     params:
