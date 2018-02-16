@@ -1094,7 +1094,8 @@ jobs:
           repository: loggregator/base
       platform: linux
       params:
-        NEW_VERSION: 1.4
+        VERSION_MAJOR: 1
+        VERSION_MINOR: 5
       inputs:
       - name: noisy-neighbor-nozzle-repo
       outputs:
@@ -1110,12 +1111,12 @@ jobs:
             set -ex
 
             # establish version/tag strings
-            new_version="$NEW_VERSION"
-            tag_name="v$new_version"
+            version="{\"Major\":$VERSION_MAJOR,\"Minor\":$VERSION_MINOR}"
+            semver="v$VERSION_MAJOR.$VERSION_MINOR"
 
             # write out github release files
-            echo "noisy-neighbor-nozzle $new_version" > github-release/name
-            echo $tag_name > github-release/tag
+            echo "noisy-neighbor-nozzle $semver" > github-release/name
+            echo $semver > github-release/tag
             echo "TBD" > github-release/body
             cp -R noisy-neighbor-nozzle-repo/. repo-output
 
@@ -1151,9 +1152,9 @@ jobs:
             tar czvf binary-output/noisy-neighbor.tgz noisy-neighbor
 
             pushd $GOPATH/src/code.cloudfoundry.org/noisy-neighbor-nozzle-repo/cmd/cli-plugin
-              GOOS=linux go build -o $WORKSPACE/binary-output/noisy-neighbor-cli-plugin-linux
-              GOOS=darwin go build -o $WORKSPACE/binary-output/noisy-neighbor-cli-plugin-darwin
-              GOOS=windows go build -o $WORKSPACE/binary-output/noisy-neighbor-cli-plugin-windows
+              GOOS=linux go build -ldflags "-X main.version=$version" -o $WORKSPACE/binary-output/noisy-neighbor-cli-plugin-linux
+              GOOS=darwin go build -ldflags "-X main.version=$version" -o $WORKSPACE/binary-output/noisy-neighbor-cli-plugin-darwin
+              GOOS=windows go build -ldflags "-X main.version=$version" -o $WORKSPACE/binary-output/noisy-neighbor-cli-plugin-windows
             popd
   - put: noisy-neighbor-nozzle-repo
     params:
