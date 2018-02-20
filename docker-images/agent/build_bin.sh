@@ -6,4 +6,4 @@ GOARCH=amd64 \
     -a \
     -installsuffix nocgo \
     -o ./agent \
-    code.cloudfoundry.org/loggregator/agent
+    code.cloudfoundry.org/loggregator-agent/cmd/agent
