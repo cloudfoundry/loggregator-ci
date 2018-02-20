@@ -5,10 +5,14 @@ image_resource:
     repository: loggregator/base
 inputs:
 - name: loggregator-ci # repo container Dockerfiles
-- name: loggregator-src # repo to build static binaries from
+- name: source-repo # repo to build static binaries from
 outputs:
 - name: build-image # the place to store the build context and tag
 params:
+  # - Required
+  # - The path of the Go package to build
+  BUILD_PATH:
+
   # - Required
   # - The name of the directory in docker-images that contains the Dockerfile
   #   and the build_bin.sh

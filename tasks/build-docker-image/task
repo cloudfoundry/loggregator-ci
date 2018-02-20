@@ -1,19 +1,24 @@
 #!/bin/bash
 set -ex
 
+if [ "$BUILD_PATH" = "" ]; then
+    echo BUILD_PATH was not set
+    exit 1
+fi
+
 if [ "$IMAGE_NAME" = "" ]; then
     echo IMAGE_NAME was not set
     exit 1
 fi
 
 ciroot="$PWD"
-sha="$(cd loggregator-src && git rev-parse @)"
+sha="$(cd source-repo && git rev-parse @)"
 
-workspace_code_path=workspace/src/code.cloudfoundry.org/loggregator
+workspace_code_path=workspace/src/$BUILD_PATH
 mkdir -p "$workspace_code_path"
-cp -r loggregator-src/. "$workspace_code_path/"
+cp -r source-repo/. "$workspace_code_path/"
 export GOPATH="$PWD/workspace"
-go get -d -v code.cloudfoundry.org/loggregator/...
+go get -d -v $BUILD_PATH/...
 
 pushd "loggregator-ci/docker-images/$IMAGE_NAME" > /dev/null
     ./build_bin.sh
