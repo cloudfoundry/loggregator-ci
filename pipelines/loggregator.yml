@@ -571,25 +571,38 @@ jobs:
       trigger: true
       passed:
       - loggregator-tests
+    - get: loggregator-agent
+      trigger: true
+      passed:
+      - loggregator-agent-tests
   - aggregate:
     - task: build-agent-image
       file: loggregator-ci/tasks/build-docker-image/task.yml
-      params:
-        IMAGE_NAME: agent
+      input_mapping:
+        source-repo: loggregator-agent
       output_mapping:
         build-image: build-agent-image
+      params:
+        BASE_PACKAGE: code.cloudfoundry.org/loggregator-agent
+        IMAGE_NAME: agent
     - task: build-router-image
       file: loggregator-ci/tasks/build-docker-image/task.yml
-      params:
-        IMAGE_NAME: router
+      input_mapping:
+        source-repo: loggregator-src
       output_mapping:
         build-image: build-router-image
+      params:
+        BASE_PACKAGE: code.cloudfoundry.org/loggregator
+        IMAGE_NAME: router
     - task: build-rlp-image
       file: loggregator-ci/tasks/build-docker-image/task.yml
-      params:
-        IMAGE_NAME: rlp
+      input_mapping:
+        source-repo: loggregator-src
       output_mapping:
         build-image: build-rlp-image
+      params:
+        BASE_PACKAGE: code.cloudfoundry.org/loggregator
+        IMAGE_NAME: rlp
   - aggregate:
     - put: agent-image
       params:
@@ -940,6 +953,10 @@ jobs:
       trigger: true
       passed:
       - loggregator-bump-submodule
+    - get: loggregator-agent-release
+      trigger: true
+      passed:
+      - loggregator-agent-bump-submodule
     - get: deployments-loggregator
     - get: loggregator-ci
     - get: logging-acceptance-tests-release
@@ -1252,6 +1269,10 @@ jobs:
       passed:
       - loggregator-deploy
       trigger: true
+    - get: loggregator-agent-release
+      passed:
+      - loggregator-deploy
+      trigger: true
   - task: run-lats
     config:
       image_resource:
@@ -1298,7 +1319,7 @@ jobs:
     - get: develop
       resource: loggregator-agent-release
       trigger: true
-      passed: ["cats", "cfar-lats"]
+      passed: ["cats", "cfar-lats", "lats"]
     - get: loggregator-agent-release-elect
   - put: loggregator-agent-release-elect
     params:
