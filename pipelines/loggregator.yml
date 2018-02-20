@@ -1722,7 +1722,10 @@ jobs:
     output_mapping:
       committed-repo: committed-log-cache-release
     params:
-      PATHS: "src/code.cloudfoundry.org/log-cache packages"
+      PATHS: |
+        src/code.cloudfoundry.org/log-cache
+        src/code.cloudfoundry.org/go-log-cache
+        packages
   - put: log-cache-release
     params:
       repository: committed-log-cache-release
