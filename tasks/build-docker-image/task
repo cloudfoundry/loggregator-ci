@@ -1,8 +1,8 @@
 #!/bin/bash
 set -ex
 
-if [ "$BUILD_PATH" = "" ]; then
-    echo BUILD_PATH was not set
+if [ "$BASE_PACKAGE" = "" ]; then
+    echo BASE_PACKAGE was not set
     exit 1
 fi
 
@@ -14,11 +14,11 @@ fi
 ciroot="$PWD"
 sha="$(cd source-repo && git rev-parse @)"
 
-workspace_code_path=workspace/src/$BUILD_PATH
+workspace_code_path=workspace/src/$BASE_PACKAGE
 mkdir -p "$workspace_code_path"
 cp -r source-repo/. "$workspace_code_path/"
 export GOPATH="$PWD/workspace"
-go get -d -v $BUILD_PATH/...
+go get -d -v $BASE_PACKAGE/...
 
 pushd "loggregator-ci/docker-images/$IMAGE_NAME" > /dev/null
     ./build_bin.sh

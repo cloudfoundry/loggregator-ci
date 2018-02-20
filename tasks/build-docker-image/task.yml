@@ -10,8 +10,8 @@ outputs:
 - name: build-image # the place to store the build context and tag
 params:
   # - Required
-  # - The path of the Go package to build
-  BUILD_PATH:
+  # - The base package for the Go source repo
+  BASE_PACKAGE:
 
   # - Required
   # - The name of the directory in docker-images that contains the Dockerfile
