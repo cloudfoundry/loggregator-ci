@@ -624,10 +624,23 @@ jobs:
       trigger: true
       passed:
       - loggregator-tests
-  - task: update-submodule
+    - get: loggregator-agent
+      trigger: true
+      passed:
+        - loggregator-agent-tests
+  - task: update-loggregator-agent
     file: loggregator-ci/tasks/bump-submodule/task.yml
     input_mapping:
       release-repo: loggregator-release
+      source-repo: loggregator-agent
+    output_mapping:
+      bumped-release-repo: bumped-loggregator-agent-release
+    params:
+      SUBMODULE_PATH: src/code.cloudfoundry.org/loggregator-agent
+  - task: update-loggregator
+    file: loggregator-ci/tasks/bump-submodule/task.yml
+    input_mapping:
+      release-repo: bumped-loggregator-agent-release
       source-repo: loggregator-src
     output_mapping:
       bumped-release-repo: bumped-loggregator-release
