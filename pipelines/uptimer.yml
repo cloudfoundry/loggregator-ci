@@ -121,12 +121,12 @@ jobs:
           cp deployments-loggregator/gcp/upity/ops-files/*.yml ops-files/
           cat <<EOT >> ops-files/starting-doppler-count.yml
           - type: replace
-            path: /instance-groups/name=doppler/instances
+            path: /instance_groups/name=doppler/instances
             value: 2
           EOT
           cat <<EOT >> ops-files/scaling-doppler-count.yml
           - type: replace
-            path: /instance-groups/name=doppler/instances
+            path: /instance_groups/name=doppler/instances
             value: 4
           EOT
   - task: cf-deploy
