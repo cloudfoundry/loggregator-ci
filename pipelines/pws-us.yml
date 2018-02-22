@@ -363,32 +363,6 @@ jobs:
         UAA_CLIENT: {{pws-uaa-client}}
         UAA_CLIENT_SECRET: {{pws-uaa-client-secret}}
       timeout: 5m
-    - task: push-request-spinner
-      file: loggregator-ci/tasks/log-cache-request-spinner-push/task.yml
-      params:
-        APP_NAME: "log-cache-request-spinner"
-        SYSTEM_DOMAIN: "run.pivotal.io"
-        LOG_CACHE_ADDR: http://log-cache.run.pivotal.io
-        ORG: cf-lamb
-        SPACE: development
-        USERNAME: {{pws-username}}
-        PASSWORD: {{pws-password}}
-        UAA_CLIENT: {{pws-uaa-client}}
-        UAA_CLIENT_SECRET: {{pws-uaa-client-secret}}
-    - task: push-log-cache-siege
-      file: loggregator-ci/tasks/log-cache-siege-push/task.yml
-      params:
-        APP_NAME: "log-cache-siege"
-        SYSTEM_DOMAIN: "run.pivotal.io"
-        LOG_CACHE_ADDR: https://log-cache.run.pivotal.io
-        REQUEST_SPINNER_ADDR: http://log-cache-request-spinner.cfapps.io
-        CONCURRENT_REQUESTS: 500
-        ORG: cf-lamb
-        SPACE: development
-        USERNAME: {{pws-username}}
-        PASSWORD: {{pws-password}}
-        UAA_CLIENT: {{pws-uaa-client}}
-        UAA_CLIENT_SECRET: {{pws-uaa-client-secret}}
   - aggregate:
     - task: log-cache-blackbox-tests
       file: loggregator-ci/tasks/log-cache-blackbox/task.yml
@@ -405,21 +379,3 @@ jobs:
         UAA_CLIENT: {{pws-uaa-client}}
         UAA_CLIENT_SECRET: {{pws-uaa-client-secret}}
       timeout: 5m
-    - task: log-cache-siege
-      config:
-        platform: linux
-        image_resource:
-          type: docker-image
-          source:
-            repository: relintdockerhubpushbot/cf-deployment-concourse-tasks
-        params:
-          LOG_CACHE_SIEGE_ADDR: http://log-cache-siege.cfapps.io
-        run:
-          path: bash
-          args:
-          - -c
-          - |
-            #!/bin/bash
-            set -ex
-
-            curl -d '' -X POST $LOG_CACHE_SIEGE_ADDR/v1/siege
