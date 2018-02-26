@@ -16,6 +16,4 @@ pushd "${BASE_DIR}" > /dev/null
 
     ./scripts/run-tests.sh
   popd > /dev/null
-
-  bats --tap $(find . -name *.bats)
 popd > /dev/null
