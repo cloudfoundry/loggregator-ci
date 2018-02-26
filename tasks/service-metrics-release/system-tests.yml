@@ -1,0 +1,20 @@
+---
+platform: linux
+
+image_resource:
+  type: docker-image
+  source: {repository: cflondonservices/services-enablement-ci}
+
+inputs:
+  - name: service-metrics-release
+  - name: loggregator-ci
+
+run:
+  path: loggregator-ci/tasks/service-metrics-release/scripts/system-tests.sh
+
+params:
+  CF_API:
+  CF_USERNAME:
+  CF_PASSWORD:
+  DOPPLER_ADDR:
+  DEPLOYMENT_NAME:

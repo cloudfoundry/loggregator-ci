@@ -1,0 +1,13 @@
+---
+platform: linux
+
+image_resource:
+  type: docker-image
+  source: {repository: cflondonservices/services-enablement-ci}
+
+inputs:
+- name: service-metrics-release
+- name: loggregator-ci
+
+run:
+  path: loggregator-ci/tasks/service-metrics-release/scripts/unit-integration-tests.sh
