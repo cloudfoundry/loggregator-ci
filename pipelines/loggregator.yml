@@ -30,6 +30,7 @@ groups:
   - noisy-neighbor-nozzle-tests
   - noisy-neighbor-nozzle-bump-submodule
   - noisy-neighbor-nozzle-deploy
+  - deploy-service-metrics-injector
 - name: loggregator
   jobs:
   - loggregator-tests
@@ -74,6 +75,9 @@ groups:
   - noisy-neighbor-nozzle-tests
   - noisy-neighbor-nozzle-bump-submodule
   - noisy-neighbor-nozzle-deploy
+- name: service-metrics-injector
+  jobs:
+  - deploy-service-metrics-injector
 - name: director-lifecycle
   jobs:
   - coconut-bbl-up
@@ -343,6 +347,12 @@ resources:
   source:
     uri: https://github.com/loggregator/bosh-deployment
     branch: local-dns
+
+- name: service-metrics-injector
+  type: git
+  source:
+    uri: https://github.com/cloudfoundry/service-metrics-release
+
 
 - name: agent-image
   type: docker-image
@@ -1870,3 +1880,28 @@ jobs:
   - put: log-cache-release-master-put
     params:
       repository: merged-master
+
+- name: deploy-service-metrics-injector
+  serial: true
+  plan:
+  - aggregate:
+    - get: service-metrics-injector
+      trigger: true
+    - get: deployments-loggregator
+    - get: loggregator-ci
+  - task: deploy
+    file: loggregator-ci/tasks/bosh-deploy/task.yml
+    input_mapping:
+      bbl-state: deployments-loggregator
+      vars-store: deployments-loggregator
+      vars-files: deployments-loggregator
+      ops-files: deployments-loggregator
+      bosh-release: service-metrics-injector
+    output_mapping:
+      updated-vars-store: updated-deployments-loggregator
+    params:
+      BBL_STATE_DIR: gcp/coconut-bbl
+      DEPLOYMENT_NAME: service-metrics-injector
+      MANIFEST_FILE: manifests/manifest.yml
+      VARS_STORE_FILE: gcp/coconut-bbl/service-metrics-injector-vars.yml
+      VARS_FILES: gcp/coconut-bbl/deployment-vars.yml
