@@ -8,7 +8,7 @@ pushd "${BASE_DIR}" > /dev/null
   export GOPATH=$PWD
   export PATH=$GOPATH/bin:$PATH
 
-  pushd src/github.com/pivotal-cf/service-metrics > /dev/null
+  pushd src/github.com/cloudfoundry/service-metrics > /dev/null
     go get github.com/tools/godep
     godep restore ./...
 
