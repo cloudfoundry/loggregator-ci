@@ -30,6 +30,7 @@ groups:
   - noisy-neighbor-nozzle-tests
   - noisy-neighbor-nozzle-bump-submodule
   - noisy-neighbor-nozzle-deploy
+  - service-metrics-injector-tests
   - deploy-service-metrics-injector
 - name: loggregator
   jobs:
@@ -77,6 +78,7 @@ groups:
   - noisy-neighbor-nozzle-deploy
 - name: service-metrics-injector
   jobs:
+  - service-metrics-injector-tests
   - deploy-service-metrics-injector
 - name: director-lifecycle
   jobs:
@@ -1881,12 +1883,24 @@ jobs:
     params:
       repository: merged-master
 
+- name: service-metrics-injector-tests
+  serial: true
+  plan:
+  - aggregate:
+    - get: service-metrics-release
+      resource: service-metrics-injector
+      trigger: true
+    - get: loggregator-ci
+  - task: run-tests
+    file: loggregator-ci/tasks/service-metrics-release/unit-integration-tests.yml
+
 - name: deploy-service-metrics-injector
   serial: true
   plan:
   - aggregate:
     - get: service-metrics-injector
       trigger: true
+      passed: ["service-metrics-injector-tests"]
     - get: deployments-loggregator
     - get: loggregator-ci
   - task: deploy

@@ -14,29 +14,39 @@ resources:
     start: 8:00 PM
     stop: 9:00 PM
     location: America/Denver
+
 - name: loggregator-ci
   type: git
   source:
     uri: https://github.com/cloudfoundry/loggregator-ci
+
 - name: loggregator
   type: git
   source:
     uri: https://github.com/cloudfoundry/loggregator-release
     branch: develop
+
 - name: loggregator-tools
   type: git
   source:
     uri: https://github.com/cloudfoundry-incubator/loggregator-tools
+
 - name: deployments-loggregator
   type: git
   source: &deployments_loggregator
     uri: git@github.com:cloudfoundry/deployments-loggregator.git
     branch: master
     private_key: {{deployments-loggregator-key}}
+
 - name: loggregator-capacity-planning-release
   type: git
   source:
     uri: https://github.com/cloudfoundry-incubator/loggregator-capacity-planning-release
+
+- name: service-metrics-injector-release
+  type: git
+  source:
+    uri: https://github.com/cloudfoundry/service-metrics-release
 
 jobs:
 - name: restage-logspinners
@@ -360,3 +370,21 @@ jobs:
     params:
       repository: updated-vars-store
       rebase: true
+
+- name: service-metrics-injector
+  public: false
+  serial: true
+  plan:
+  - get: service-metrics-release
+    resource: service-metrics-injector-release
+  - get: loggregator-ci
+  - get: 10m
+    trigger: true
+  - task: system-tests
+    file: loggregator-ci/tasks/service-metrics-release/system-tests.yml
+    params:
+      CF_API: "https://api.coconut.cf-app.com"
+      CF_USERNAME: {{coconut-username}}
+      CF_PASSWORD: {{coconut-password}}
+      DEPLOYMENT_NAME: service-metrics-injector
+      DOPPLER_ADDR: wss://doppler.coconut.cf-app.com:443
