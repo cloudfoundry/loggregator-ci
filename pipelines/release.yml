@@ -247,6 +247,14 @@ resources:
     access_token: {{access-token}}
     drafts: true
 
+
+- name: logging-acceptance-tests-release
+  type: git
+  source:
+    uri: git@github.com:cloudfoundry/logging-acceptance-tests-release
+    branch: master
+    private_key: {{cf-loggregator-oauth-bot-key}}
+
 jobs:
 - name: bump-golang
   serial: true
@@ -508,6 +516,30 @@ jobs:
       - put: log-cache-release-develop
         params:
           repository: committed-log-cache-release
+          rebase: false
+    - do:
+      - task: bump-logging-acceptance-tests-release
+        file: loggregator-ci/tasks/bump-golang/task.yml
+        input_mapping:
+          release-repo: logging-acceptance-tests-release
+        output_mapping:
+          updated-release-repo: updated-logging-acceptance-tests-release
+        params:
+          VERSION: *golang-version
+          ACCESS_KEY_ID: {{s3-access-key-id}}
+          SECRET_ACCESS_KEY: {{s3-secret-access-key}}
+          BUCKET_NAME: logging-acceptance-tests-blobs
+      - task: commit-logging-acceptance-tests-release
+        file: loggregator-ci/tasks/commit/task.yml
+        input_mapping:
+          release-repo: updated-logging-acceptance-tests-release
+        output_mapping:
+          committed-repo: committed-logging-acceptance-tests-release
+        params:
+          COMMIT_MESSAGE: "Bump golang version"
+      - put: logging-acceptance-tests-release
+        params:
+          repository: committed-logging-acceptance-tests-release
           rebase: false
 
 - name: loggregator-create-final-release
