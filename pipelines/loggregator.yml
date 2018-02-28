@@ -1773,7 +1773,7 @@ jobs:
     - get: develop
       resource: log-cache-release
       trigger: true
-      passed: ["cfar-lats"]
+      passed: ["log-cache-cats", "cfar-lats"]
     - get: log-cache-release-elect-get
   - put: log-cache-release-elect-put
     params:
