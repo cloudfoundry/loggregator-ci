@@ -1299,6 +1299,7 @@ jobs:
   - aggregate:
     - get: deployments-loggregator
     - get: logging-acceptance-tests-release
+      trigger: true
     - get: loggregator-release
       passed:
       - loggregator-deploy
