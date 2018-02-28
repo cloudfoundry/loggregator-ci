@@ -35,7 +35,7 @@ resources:
   type: git
   source:
     uri: https://github.com/cloudfoundry-incubator/log-cache-release
-    branch: master
+    branch: develop
 
 - name: loggregator
   type: git

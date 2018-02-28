@@ -892,7 +892,7 @@ jobs:
           cp cf-deployment/operations/experimental/use-bosh-dns-for-containers.yml ops-files/
           cp cf-deployment/operations/use-compiled-releases.yml ops-files/
           cp bbl-state/gcp/coconut-bbl/ops-files/*.yml ops-files/
-          cp log-cache-release/manifests/operations/deploy-in-cf-doppler-colocated.yml ops-files/add-log-cache.yml
+          cp log-cache-release/manifests/operations/deploy-in-cf-doppler-collocated.yml ops-files/add-log-cache.yml
           cp loggregator-agent-release/manifests/operations/cf-deployment-addon.yml ops-files/use-loggregator-agent.yml
           cp loggregator-agent-release/manifests/operations/cf-deployment-windows-addon.yml ops-files/use-loggregator-agent-windows.yml
 
