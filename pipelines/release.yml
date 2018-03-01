@@ -225,6 +225,30 @@ resources:
     access_token: {{access-token}}
     drafts: true
 
+- name: log-cache-cli
+  type: git
+  source:
+    uri: git@github.com:cloudfoundry-incubator/log-cache-cli
+    private_key: {{cf-loggregator-oauth-bot-key}}
+    branch: master
+
+- name: log-cache-cli-version
+  type: semver
+  source:
+    initial_version: 0.0.0
+    bucket: loggregator-ci-versions
+    key: log-cache-cli
+    access_key_id: {{s3-access-key-id}}
+    secret_access_key: {{s3-secret-access-key}}
+
+- name: log-cache-cli-github-release-drafts
+  type: github-release
+  source:
+    user: cloudfoundry-incubator
+    repository: log-cache-cli
+    access_token: {{access-token}}
+    drafts: true
+
 - name: noisy-neighbor-nozzle-release
   type: git
   source:
@@ -1112,6 +1136,79 @@ jobs:
       body: github-release/body
       globs:
       - github-release/builds/*
+
+- name: log-cache-cli
+  serial: true
+  plan:
+  - aggregate:
+    - get: log-cache-cli
+      trigger: false
+    - get: log-cache-cli-version
+      params: {bump: minor}
+  - task: create-binaries
+    config:
+      image_resource:
+        type: docker-image
+        source:
+          repository: loggregator/base
+      platform: linux
+      inputs:
+      - name: log-cache-cli
+      - name: log-cache-cli-version
+      outputs:
+      - name: output-repo
+      - name: github-release
+      - name: version
+      run:
+        path: bash
+        args:
+          - -c
+          - |
+            #!/bin/bash
+            set -ex
+
+            # establish version/tag strings
+            semver=$(cat log-cache-cli-version/version)
+            cp log-cache-cli-version/version version
+
+            # write out github release files
+            echo "log cache cli $semver" > github-release/name
+            echo $semver > github-release/tag
+            echo "TBD" > github-release/body
+            cp -R log-cache-cli/. output-repo
+
+            export WORKSPACE=$PWD
+
+            mkdir -p go
+            pushd go
+              export GOPATH=$PWD
+              mkdir -p src/code.cloudfoundry.org
+              cp -R $WORKSPACE/log-cache-cli/ src/code.cloudfoundry.org
+              go get ./...
+            popd
+
+            mkdir github-release/builds
+            pushd $GOPATH/src/code.cloudfoundry.org/log-cache-cli/
+              GOOS=linux go build -o $WORKSPACE/github-release/builds/log-cache-cli-plugin-linux
+              GOOS=darwin go build -o $WORKSPACE/github-release/builds/log-cache-cli-plugin-darwin
+              GOOS=windows go build -o $WORKSPACE/github-release/builds/log-cache-cli-plugin-windows
+            popd
+
+  - put: log-cache-cli
+    params:
+      repository: output-repo
+      rebase: false
+      tag: github-release/tag
+  - put: log-cache-cli-github-release-drafts
+    params:
+      name: github-release/name
+      tag: github-release/tag
+      body: github-release/body
+      globs:
+      - github-release/builds/*
+  - put: log-cache-cli-version
+    params:
+      file: version/version
 
 - name: noisy-neighbor-binaries
   serial: true
