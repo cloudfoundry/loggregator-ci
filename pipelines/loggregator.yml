@@ -1839,8 +1839,8 @@ jobs:
             git fetch origin
             git checkout master
 
-            FOLLOW_BUMPS_OF='src/code.cloudfoundry.org/log-cache' $workspace/bumper/bumper --verbose
-            FOLLOW_BUMPS_OF='src/code.cloudfoundry.org/log-cache' $workspace/bumper/bumper > $workspace/bumper-sha/sha
+            FOLLOW_BUMPS_OF='src/code.cloudfoundry.org/log-cache,src/code.cloudfoundry.org/go-log-cache' $workspace/bumper/bumper --verbose
+            FOLLOW_BUMPS_OF='src/code.cloudfoundry.org/log-cache,src/code.cloudfoundry.org/go-log-cache' $workspace/bumper/bumper > $workspace/bumper-sha/sha
           popd
   - task: merge
     config:
