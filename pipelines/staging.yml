@@ -504,7 +504,7 @@ jobs:
       OPS_FILES: local-dns.yml
   - put: deployments-loggregator
     params:
-      repository: updated-bbl-state
+      repository: updated-env-repo
       rebase: true
 
 - name: bbl-destroy
