@@ -24,6 +24,7 @@ groups:
   - log-cache-merge-branches
   - log-cache-cats
   - log-cache-promotion
+  - bump-cf-deployment-log-cache-ops-file
   - statsd-injector-tests
   - statsd-injector-bump-submodule
   - statsd-injector-deploy
@@ -63,9 +64,10 @@ groups:
   - log-cache-bump-submodule
   - cfar-lats
   - cf-deploy
-  - log-cache-promotion
   - log-cache-merge-branches
   - log-cache-cats
+  - log-cache-promotion
+  - bump-cf-deployment-log-cache-ops-file
 - name: statsd-injector
   jobs:
   - statsd-injector-tests
@@ -120,6 +122,7 @@ resources:
   source:
     uri: https://github.com/cloudfoundry/cf-deployment
     branch: develop
+    private_key: {{loggregator-key}}
 
 - name: consul-release
   type: bosh-io-release
@@ -287,13 +290,7 @@ resources:
     - releases
     disable_ci_skip: false
 
-- name: log-cache-release-elect-get
-  type: git
-  source:
-    uri: https://github.com/cloudfoundry-incubator/log-cache-release
-    branch: release-elect
-
-- name: log-cache-release-elect-put
+- name: log-cache-release-elect
   type: git
   source:
     uri: git@github.com:cloudfoundry-incubator/log-cache-release
@@ -301,12 +298,6 @@ resources:
     private_key: {{cf-loggregator-oauth-bot-key}}
 
 - name: log-cache-release-master
-  type: git
-  source:
-    uri: https://github.com/cloudfoundry-incubator/log-cache-release
-    branch: master
-
-- name: log-cache-release-master-put
   type: git
   source:
     uri: git@github.com:cloudfoundry-incubator/log-cache-release
@@ -1774,8 +1765,8 @@ jobs:
       resource: log-cache-release
       trigger: true
       passed: ["log-cache-cats", "cfar-lats"]
-    - get: log-cache-release-elect-get
-  - put: log-cache-release-elect-put
+    - get: log-cache-release-elect
+  - put: log-cache-release-elect
     params:
       repository: develop
 
@@ -1784,7 +1775,7 @@ jobs:
   plan:
   - aggregate:
     - get: release-elect
-      resource: log-cache-release-elect-get
+      resource: log-cache-release-elect
       passed: ["log-cache-promotion"]
       trigger: true
     - get: master
@@ -1879,10 +1870,51 @@ jobs:
             git checkout master
             git merge $bump_sha --ff-only
           popd
-
-  - put: log-cache-release-master-put
+  - put: log-cache-release-master
     params:
       repository: merged-master
+
+- name: bump-cf-deployment-log-cache-ops-file
+  serial: true
+  plan:
+  - aggregate:
+    - get: loggregator-ci
+    - get: log-cache-release-master
+      trigger: true
+      passed: ["log-cache-merge-branches"]
+    - get: cf-deployment
+  - task: generate-ops-file
+    file: loggregator-ci/tasks/run-release-script/task.yml
+    input_mapping:
+      release-repo: log-cache-release-master
+    output_mapping:
+      updated-release-repo: log-cache-release-updated-ops-file
+    params:
+      SCRIPT: scripts/generate-deploy-in-cf-ops
+  - task: merge
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source:
+          repository: loggregator/base
+      inputs:
+        - name: log-cache-release-updated-ops-file
+        - name: cf-deployment
+      outputs:
+        - name: updated-cf-deployment
+      run:
+        path: bash
+        args:
+        - -c
+        - |
+          #!/bin/bash
+          set -eux
+
+          cp log-cache-release-updated-ops-file/manifests/operations/deploy-in-cf.yml \
+            cf-deployment/operations/experimental/use-log-cache.yml
+
+          exit 1
 
 - name: service-metrics-injector-tests
   serial: true
