@@ -124,6 +124,13 @@ resources:
     branch: develop
     private_key: {{loggregator-key}}
 
+- name: cf-deployment-develop
+  type: git
+  source:
+    uri: git@github.com:cloudfoundry/cf-deployment
+    branch: develop
+    private_key: {{loggregator-key}}
+
 - name: consul-release
   type: bosh-io-release
   source:
@@ -1826,6 +1833,7 @@ jobs:
 
           workspace=$(pwd)
           pushd release-elect
+            git remote set-url origin https://github.com/cloudfoundry-incubator/log-cache-release
             git config remote.origin.fetch "+refs/heads/*:refs/remotes/origin/*"
             git fetch origin
             git checkout master
@@ -1854,6 +1862,7 @@ jobs:
           set -eux
 
           pushd master
+            git remote set-url origin https://github.com/cloudfoundry-incubator/log-cache-release
             git config remote.origin.fetch "+refs/heads/*:refs/remotes/origin/*"
             git fetch origin
           popd
@@ -1883,6 +1892,7 @@ jobs:
       trigger: true
       passed: ["log-cache-merge-branches"]
     - get: cf-deployment
+      resource: cf-deployment-develop
   - task: generate-ops-file
     file: loggregator-ci/tasks/run-release-script/task.yml
     input_mapping:
@@ -1891,7 +1901,7 @@ jobs:
       updated-release-repo: log-cache-release-updated-ops-file
     params:
       SCRIPT: scripts/generate-deploy-in-cf-ops
-  - task: merge
+  - task: copy-ops-file
     config:
       platform: linux
       image_resource:
@@ -1914,7 +1924,18 @@ jobs:
           cp log-cache-release-updated-ops-file/manifests/operations/deploy-in-cf.yml \
             cf-deployment/operations/experimental/use-log-cache.yml
 
-          exit 1
+          cp -R cf-deployment/. updated-cf-deployment/.
+  - task: commit
+    file: loggregator-ci/tasks/commit/task.yml
+    input_mapping:
+      release-repo: updated-cf-deployment
+    output_mapping:
+      committed-repo: committed-cf-deployment
+    params:
+      COMMIT_MESSAGE: "Update experimental use-log-cache ops-file"
+  - put: cf-deployment-develop
+    params:
+      repository: committed-cf-deployment
 
 - name: service-metrics-injector-tests
   serial: true
