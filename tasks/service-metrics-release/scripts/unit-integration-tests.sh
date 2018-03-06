@@ -9,11 +9,6 @@ pushd "${BASE_DIR}" > /dev/null
   export PATH=$GOPATH/bin:$PATH
 
   pushd src/github.com/cloudfoundry/service-metrics > /dev/null
-    go get github.com/tools/godep
-    godep restore ./...
-
-    go get github.com/onsi/ginkgo/ginkgo
-
     ./scripts/run-tests.sh
   popd > /dev/null
 popd > /dev/null
