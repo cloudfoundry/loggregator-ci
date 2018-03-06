@@ -129,7 +129,7 @@ resources:
   source:
     uri: git@github.com:cloudfoundry/cf-deployment
     branch: develop
-    private_key: {{loggregator-key}}
+    private_key: {{cf-loggregator-oauth-bot-key}}
 
 - name: consul-release
   type: bosh-io-release
