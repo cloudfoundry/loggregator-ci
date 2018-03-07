@@ -1933,6 +1933,7 @@ jobs:
       committed-repo: committed-cf-deployment
     params:
       COMMIT_MESSAGE: "Update experimental use-log-cache ops-file"
+      CI_SKIP: false
   - put: cf-deployment-develop
     params:
       repository: committed-cf-deployment
