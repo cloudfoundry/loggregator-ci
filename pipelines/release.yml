@@ -1076,7 +1076,7 @@ jobs:
       platform: linux
       params:
         VERSION_MAJOR: 0
-        VERSION_MINOR: 4
+        VERSION_MINOR: 6
       inputs:
       - name: cf-drain-cli
       outputs:
@@ -1104,7 +1104,7 @@ jobs:
             mkdir -p go
             pushd go
               export GOPATH=$PWD
-              go get code.cloudfoundry.org/cf-drain-cli
+              go get -d code.cloudfoundry.org/cf-drain-cli/...
               rm -rf src/code.cloudfoundry.org/cf-drain-cli
               cp -r $cfdrain src/code.cloudfoundry.org/cf-drain-cli
             popd
@@ -1116,6 +1116,11 @@ jobs:
               GOOS=linux go build -ldflags "-X main.version=$version" -o $output/cf-drain-cli-linux
               GOOS=darwin go build -ldflags "-X main.version=$version" -o $output/cf-drain-cli-darwin
               GOOS=windows go build -ldflags "-X main.version=$version" -o $output/cf-drain-cli-windows
+            popd
+
+            # build the space drain app
+            pushd $GOPATH/src/code.cloudfoundry.org/cf-drain-cli/space_drain
+              GOOS=linux go build -o $output/space_drain
             popd
 
             pushd $cfdrain
