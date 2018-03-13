@@ -2021,6 +2021,7 @@ jobs:
   - get: service-metrics-release
     resource: service-metrics-injector
     passed: ["deploy-service-metrics-injector"]
+    trigger: true
   - get: loggregator-ci
   - get: 10m
     trigger: true
