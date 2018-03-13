@@ -43,11 +43,6 @@ resources:
   source:
     uri: https://github.com/cloudfoundry-incubator/loggregator-capacity-planning-release
 
-- name: service-metrics-injector-release
-  type: git
-  source:
-    uri: https://github.com/cloudfoundry/service-metrics-release
-
 jobs:
 - name: restage-logspinners
   public: false
