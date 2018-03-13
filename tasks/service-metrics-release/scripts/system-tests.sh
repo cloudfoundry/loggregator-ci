@@ -11,7 +11,7 @@ pushd "${BASE_DIR}" > /dev/null
 
   git submodule init && git submodule update --recursive
 
-  go install github.com/cloudfoundry/noaa/samples/firehose
+  go get github.com/cloudfoundry/noaa/samples/firehose
 
   bundle install
   bundle exec rake spec
