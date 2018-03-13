@@ -6,6 +6,11 @@ resources:
     branch: develop
     private_key: {{loggregator-key}}
 
+- name: loggregator-tools
+  type: git
+  source:
+    uri: https://github.com/cloudfoundry-incubator/loggregator-tools
+
 - name: dropsonde-protocol
   type: git
   source:
@@ -86,6 +91,20 @@ resources:
     branch: master
 
 jobs:
+- name: loggregator-tools-tests
+  serial: true
+  plan:
+  - aggregate:
+    - get: loggregator-tools
+      trigger: true
+    - get: loggregator-ci
+  - task: run-tests
+    file: loggregator-ci/tasks/go-test-with-latest-packages/task.yml
+    input_mapping:
+      source-repo: loggregator-tools
+    params:
+      IMPORT_PATH: code.cloudfoundry.org/loggregator-tools
+
 - name: go-loggregator-tests
   serial: true
   plan:
