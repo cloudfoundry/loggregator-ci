@@ -1958,13 +1958,38 @@ jobs:
       passed: ["service-metrics-injector-tests"]
     - get: deployments-loggregator
     - get: loggregator-ci
+  - task: copy-ops-files
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source:
+          repository: relintdockerhubpushbot/cf-deployment-concourse-tasks
+          tag: v3.19.0
+      outputs:
+      - name: ops-files
+      run:
+        path: /bin/bash
+        args:
+        - "-c"
+        - |
+          set -e
+
+          cat <<EOT >> ops-files/on-the-fly.yml
+          - type: replace
+            path: /instance_groups/name=service-metrics/jobs/name=metron_agent/consumes/doppler/deployment
+            value: cf
+          - type: replace
+            path: /instance_groups/name=service-metrics/jobs/name=service-metrics/properties/service_metrics/source_id?
+            value: dummy-source-id
+          EOT
   - task: deploy
     file: loggregator-ci/tasks/bosh-deploy/task.yml
     input_mapping:
       bbl-state: deployments-loggregator
       vars-store: deployments-loggregator
       vars-files: deployments-loggregator
-      ops-files: deployments-loggregator
+      ops-files: ops-files
       bosh-release: service-metrics-injector
     output_mapping:
       updated-vars-store: updated-deployments-loggregator
@@ -1974,3 +1999,8 @@ jobs:
       MANIFEST_FILE: manifests/manifest.yml
       VARS_STORE_FILE: gcp/coconut-bbl/service-metrics-injector-vars.yml
       VARS_FILES: gcp/coconut-bbl/deployment-vars.yml
+      OPS_FILES: on-the-fly.yml
+  - put: deployments-loggregator
+    params:
+      repository: updated-deployments-loggregator
+      rebase: true
