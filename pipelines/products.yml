@@ -33,6 +33,7 @@ groups:
   - noisy-neighbor-nozzle-deploy
   - service-metrics-injector-tests
   - deploy-service-metrics-injector
+  - service-metrics-injector-system-tests
 - name: loggregator
   jobs:
   - loggregator-tests
@@ -82,6 +83,7 @@ groups:
   jobs:
   - service-metrics-injector-tests
   - deploy-service-metrics-injector
+  - service-metrics-injector-system-tests
 - name: director-lifecycle
   jobs:
   - coconut-bbl-up
@@ -2011,3 +2013,23 @@ jobs:
     params:
       repository: updated-deployments-loggregator
       rebase: true
+
+- name: service-metrics-injector-system-tests
+  public: false
+  serial: true
+  plan:
+  - get: service-metrics-release
+    resource: service-metrics-injector
+    passed: ["deploy-service-metrics-injector"]
+  - get: loggregator-ci
+  - get: 10m
+    trigger: true
+  - task: system-tests
+    file: loggregator-ci/tasks/service-metrics-release/system-tests.yml
+    params:
+      CF_API: "https://api.coconut.cf-app.com"
+      CF_USERNAME: {{coconut-username}}
+      CF_PASSWORD: {{coconut-password}}
+      DEPLOYMENT_NAME: service-metrics-injector
+      DOPPLER_ADDR: wss://doppler.coconut.cf-app.com:443
+      ORIGIN: service-metrics-injector
