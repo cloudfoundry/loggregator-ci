@@ -1958,6 +1958,13 @@ jobs:
       passed: ["service-metrics-injector-tests"]
     - get: deployments-loggregator
     - get: loggregator-ci
+  - task: upload-service-metrics-release
+    file: loggregator-ci/tasks/upload-release/task.yml
+    input_mapping:
+      bbl-state: deployments-loggregator
+      bosh-release-dir: service-metrics-injector
+    params:
+      BBL_STATE_DIR: gcp/coconut-bbl
   - task: copy-ops-files
     config:
       platform: linux
