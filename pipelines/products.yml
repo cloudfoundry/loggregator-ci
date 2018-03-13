@@ -809,6 +809,7 @@ jobs:
 - name: cf-deploy
   serial: true
   serial_groups:
+  - cf-deploy
   - bosh-cf-cats
   - bosh-cfar-lats
   plan:
@@ -2017,6 +2018,7 @@ jobs:
 - name: service-metrics-injector-system-tests
   public: false
   serial: true
+  serial_groups: ["cf-deploy"]
   plan:
   - get: service-metrics-release
     resource: service-metrics-injector
