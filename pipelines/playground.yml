@@ -88,6 +88,13 @@ resources:
     location: America/Denver
     days: [Monday, Tuesday, Wednesday, Thursday, Friday]
 
+- name: loggregator-agent-release
+  type: git
+  source:
+    uri: git@github.com:cloudfoundry/loggregator-agent-release.git
+    branch: develop
+    private_key: {{cf-loggregator-oauth-bot-key}}
+
 jobs:
 - name: bbl-create
   public: false
@@ -130,15 +137,15 @@ jobs:
     resource: deployments-loggregator
     trigger: false
   - get: loggregator-ci
-  # - task: delete-deployments
-  #   file: loggregator-ci/tasks/bosh-delete-all-deployments/task.yml
-  #   params:
-  #     BBL_STATE_DIR: gcp/playground
+  - task: delete-deployments
+    file: loggregator-ci/tasks/bosh-delete-all-deployments/task.yml
+    params:
+      BBL_STATE_DIR: gcp/playground
   - task: bbl-destroy
     file: cf-deployment-concourse-tasks/bbl-destroy/task.yml
     params:
       BBL_STATE_DIR: gcp/playground
-      BBL_GCP_SERVICE_ACCOUNT_KEY: service-account.key.json
+      BBL_GCP_SERVICE_ACCOUNT_KEY: gcp/playground/service-account.key.json
   - put: deployments-loggregator
     params:
       repository: updated-bbl-state

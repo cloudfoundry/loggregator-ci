@@ -149,7 +149,7 @@ resources:
   type: git
   source:
     uri: https://github.com/cloudfoundry/cf-deployment-concourse-tasks
-    branch: v4.21
+    branch: v6.0
 
 - name: integration-config
   type: git
@@ -347,8 +347,7 @@ resources:
 - name: bosh-deployment
   type: git
   source:
-    uri: https://github.com/loggregator/bosh-deployment
-    branch: local-dns
+    uri: https://github.com/cloudfoundry/bosh-deployment
 
 - name: service-metrics-injector
   type: git
@@ -389,8 +388,10 @@ jobs:
       resource: bosh-deployment
   - task: bbl-up
     file: cf-deployment-concourse-tasks/bbl-up/task.yml
+    input_mapping:
+      bbl-config: bbl-state
     params:
-      BBL_GCP_SERVICE_ACCOUNT_KEY: service-account.key.json
+      BBL_GCP_SERVICE_ACCOUNT_KEY: gcp/coconut-bbl/service-account.key.json
       BBL_GCP_PROJECT_ID: cff-loggregator
       BBL_GCP_ZONE: us-central1-a
       BBL_GCP_REGION: us-central1
