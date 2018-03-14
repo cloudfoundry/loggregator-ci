@@ -702,7 +702,7 @@ jobs:
         S3_ACCESS_KEY: {{s3-access-key}}
         S3_SECRET_KEY: {{s3-secret-key}}
         SSH_KEY: {{loggregator-key}}
-        NEW_VERSION: 101.7
+        NEW_VERSION: 101.8
         BRANCH_NAME: *backport-branch
       inputs:
       - name: loggregator-backport

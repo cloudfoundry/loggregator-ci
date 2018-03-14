@@ -18,7 +18,7 @@ resources:
   type: git
   source:
     uri: https://github.com/cloudfoundry/cf-deployment-concourse-tasks
-    branch: v4.21
+    branch: v6.0
 
 - name: bosh-deployment
   type: git
@@ -102,8 +102,10 @@ jobs:
     trigger: false
   - task: bbl-up
     file: cf-deployment-concourse-tasks/bbl-up/task.yml
+    input_mapping:
+      bbl-config: bbl-state
     params:
-      BBL_GCP_SERVICE_ACCOUNT_KEY: service-account.key.json
+      BBL_GCP_SERVICE_ACCOUNT_KEY: gcp/playground/service-account.key.json
       BBL_GCP_PROJECT_ID: cff-loggregator
       BBL_GCP_ZONE: us-central1-a
       BBL_GCP_REGION: us-central1
@@ -128,14 +130,15 @@ jobs:
     resource: deployments-loggregator
     trigger: false
   - get: loggregator-ci
-  - task: delete-deployments
-    file: loggregator-ci/tasks/bosh-delete-all-deployments/task.yml
-    params:
-      BBL_STATE_DIR: gcp/playground
+  # - task: delete-deployments
+  #   file: loggregator-ci/tasks/bosh-delete-all-deployments/task.yml
+  #   params:
+  #     BBL_STATE_DIR: gcp/playground
   - task: bbl-destroy
     file: cf-deployment-concourse-tasks/bbl-destroy/task.yml
     params:
       BBL_STATE_DIR: gcp/playground
+      BBL_GCP_SERVICE_ACCOUNT_KEY: service-account.key.json
   - put: deployments-loggregator
     params:
       repository: updated-bbl-state
@@ -160,6 +163,7 @@ jobs:
     - get: cf-syslog-drain-release
     - get: statsd-injector-release
     - get: log-cache-release
+    - get: loggregator-agent-release
   - task: upload-stemcell
     file: cf-deployment-concourse-tasks/bosh-upload-stemcell-from-cf-deployment/task.yml
     params:
@@ -187,10 +191,8 @@ jobs:
           set -ex
 
           pushd bbl-state/gcp/playground
-            export BOSH_CLIENT=`bbl director-username`
-            export BOSH_CLIENT_SECRET=`bbl director-password`
-            export BOSH_CA_CERT=`bbl director-ca-cert`
-            export BOSH_ENVIRONMENT=`bbl director-address`
+            eval $(bbl print-env)
+            export BOSH_CA_CERT=$(bbl director-ca-cert)
           popd
 
           releases="loggregator cf-syslog-drain-release statsd-injector-release log-cache-release"
@@ -211,6 +213,7 @@ jobs:
       - name: bbl-state
       - name: cf-deployment
       - name: log-cache-release
+      - name: loggregator-agent-release
       outputs:
       - name: ops-files
       run:
@@ -218,39 +221,67 @@ jobs:
         args:
         - "-c"
         - |
-          #!/bin/bash
-          set -x
+          set -e
 
           cp cf-deployment/operations/scale-to-one-az.yml ops-files/
           cp cf-deployment/operations/experimental/use-bosh-dns.yml ops-files/
           cp cf-deployment/operations/experimental/use-bosh-dns-for-containers.yml ops-files/
+          cp cf-deployment/operations/use-compiled-releases.yml ops-files/
           cp bbl-state/gcp/playground/ops-files/*.yml ops-files/
-          cp log-cache-release/manifests/operations/deploy-in-cf.yml ops-files/deploy-log-cache.yml
-          cat <<EOF > ops-files/router-group.yml
+          cp log-cache-release/manifests/operations/deploy-in-cf.yml ops-files/add-log-cache.yml
+          cp loggregator-agent-release/manifests/operations/cf-deployment-addon.yml ops-files/use-loggregator-agent.yml
+
+          cat <<EOT >> ops-files/on-the-fly.yml
           - type: replace
-            path: /instance_groups/name=api/jobs/name=routing-api/properties/routing_api/router_groups/-
+            path: /releases/name=loggregator
             value:
               name: loggregator
-              type: tcp
-              reservable_ports: 3456-3457
-          EOF
+              version: latest
+          - type: replace
+            path: /releases/name=diego
+            value:
+              name: diego
+              version: $(bosh int cf-deployment/cf-deployment.yml --path=/releases/name=diego/version)
+              url: $(bosh int cf-deployment/cf-deployment.yml --path=/releases/name=diego/url)
+              sha1: $(bosh int cf-deployment/cf-deployment.yml --path=/releases/name=diego/sha1)
+          - type: replace
+            path: /releases/name=cf-syslog-drain
+            value:
+              name: cf-syslog-drain
+              version: latest
+          - type: replace
+            path: /instance_groups/name=doppler/instances
+            value: 2
+          EOT
   - task: cf-deploy
     file: cf-deployment-concourse-tasks/bosh-deploy/task.yml
     params:
       BBL_STATE_DIR: gcp/playground
       SYSTEM_DOMAIN: playground.loggr.cf-app.com
       VARS_STORE_FILE: gcp/playground/deployment-vars.yml
-      OPS_FILES: "scale-to-one-az.yml clients.yml allow-insecure-syslog-drains.yml cf-versions.yml use-bosh-dns.yml use-bosh-dns-for-containers.yml deploy-log-cache.yml enable-metrics-to-syslog.yml router-group.yml"
-      VARS_FILES: gcp/playground/datadog-vars.yml
-  - task: bosh-cleanup
-    file: cf-deployment-concourse-tasks/bosh-cleanup/task.yml
+      OPS_FILES: |
+        clients.yml
+        scale-to-one-az.yml
+        diego.yml
+        use-compiled-releases.yml
+        on-the-fly.yml
+        add-log-cache.yml
+        use-bosh-dns.yml
+        use-bosh-dns-for-containers.yml
+        use-loggregator-agent.yml
+  - task: enable-feature-flags
+    file: cf-deployment-concourse-tasks/set-feature-flags/task.yml
     params:
-      BBL_STATE_DIR: gcp/playground
+      SYSTEM_DOMAIN: playground.loggr.cf-app.com
+      VARS_STORE_FILE: gcp/playground/deployment-vars.yml
   - put: deployments-loggregator
     params:
       repository: updated-vars-store
       rebase: true
-
+  - task: cleanup
+    file: cf-deployment-concourse-tasks/bosh-cleanup/task.yml
+    params:
+      BBL_STATE_DIR: gcp/playground
 - name: cf-destroy
   serial_groups: ["deployment"]
   public: false
