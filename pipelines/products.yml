@@ -719,7 +719,10 @@ jobs:
     output_mapping:
       committed-repo: committed-loggregator-release
     params:
-      PATHS: "src/code.cloudfoundry.org/loggregator packages"
+      PATHS: |
+        src/code.cloudfoundry.org/loggregator
+        src/code.cloudfoundry.org/loggregator-agent
+        packages
   - put: loggregator-release
     params:
       repository: committed-loggregator-release
