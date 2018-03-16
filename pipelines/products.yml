@@ -423,6 +423,7 @@ jobs:
     file: cf-deployment-concourse-tasks/bbl-destroy/task.yml
     params:
       BBL_STATE_DIR: gcp/coconut-bbl
+      BBL_GCP_SERVICE_ACCOUNT_KEY: gcp/coconut-bbl/service-account.key.json
   - put: deployments-loggregator
     params:
       repository: updated-bbl-state
@@ -922,6 +923,12 @@ jobs:
           - type: replace
             path: /instance_groups/name=doppler/instances
             value: 2
+          - path: /releases/name=consul/url
+            type: replace
+            value: https://bosh.io/d/github.com/cloudfoundry-incubator/consul-release?v=192
+          - path: /releases/name=consul/sha1
+            type: replace
+            value: 399894e3b4f5d4ba7ea5abe4ab89190ec2d4ad56
           EOT
   - task: upload-stemcell
     file: cf-deployment-concourse-tasks/bosh-upload-stemcell-from-cf-deployment/task.yml
@@ -978,47 +985,20 @@ jobs:
     - get: loggregator-ci
     - get: logging-acceptance-tests-release
       trigger: true
-  - task: upload-loggregator
-    config:
-      image_resource:
-        type: docker-image
-        source:
-          repository: relintdockerhubpushbot/cf-deployment-concourse-tasks
-      platform: linux
-      inputs:
-      - name: deployments-loggregator
-      - name: consul-release
-      - name: loggregator-release
-      - name: logging-acceptance-tests-release
-      run:
-        path: bash
-        args:
-        - -c
-        - |
-          #!/bin/bash
-          set -eux
-          loggregator_dir="$PWD/loggregator-release"
-
-          pushd deployments-loggregator/gcp/coconut-bbl
-            export BOSH_CLIENT=`bbl director-username`
-            export BOSH_CLIENT_SECRET=`bbl director-password`
-            export BOSH_CA_CERT=`bbl director-ca-cert`
-            export BOSH_ENVIRONMENT=`bbl director-address`
-          popd
-
-          for release in $(find consul-release -name '*.tgz'); do
-            bosh upload-release $release
-          done
-
-          pushd $loggregator_dir
-            bosh create-release --name=loggregator --force
-            bosh upload-release --rebase
-          popd
-
-          pushd logging-acceptance-tests-release
-            bosh create-release --force
-            bosh upload-release --rebase
-          popd
+  - task: upload-loggregator-release
+    file: loggregator-ci/tasks/upload-release/task.yml
+    input_mapping:
+      bbl-state: deployments-loggregator
+      bosh-release-dir: loggregator-release
+    params:
+      BBL_STATE_DIR: gcp/coconut-bbl
+  - task: upload-lats
+    file: loggregator-ci/tasks/upload-release/task.yml
+    input_mapping:
+      bbl-state: deployments-loggregator
+      bosh-release-dir: logging-accetpance-tests-release
+    params:
+      BBL_STATE_DIR: gcp/coconut-bbl
   - task: loggregator-deploy
     file: loggregator-ci/tasks/bosh-deploy/task.yml
     input_mapping:
