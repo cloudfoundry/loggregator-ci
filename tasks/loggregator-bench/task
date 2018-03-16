@@ -58,7 +58,7 @@ def bosh_env
 
   dir = ENV['BBL_STATE_DIR']
 
-  bosh_env = `bbl print-env`
+  bosh_env = exec(ENV.to_h, ['bbl', 'print-env'], dir, silent: true)
    .split!("export ")
    .reject! { |x| x.empty? }
 
