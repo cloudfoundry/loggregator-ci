@@ -22,5 +22,5 @@ RUN go get github.com/onsi/ginkgo/ginkgo
 RUN git config --global user.email "cf-loggregator@pivotal.io" && git config --global user.name "Loggregator CI"
 
 RUN cd /tmp \
-  && wget https://github.com/cloudfoundry/bosh-bootloader/releases/download/v6.4.3/bbl-v6.4.3_linux_x86-64 -O /usr/local/bin/bbl \
+  && wget https://github.com/cloudfoundry/bosh-bootloader/releases/download/v4.10.4/bbl-v4.10.4_linux_x86-64 -O /usr/local/bin/bbl \
   && chmod +x /usr/local/bin/bbl
