@@ -957,6 +957,7 @@ jobs:
     params:
       SYSTEM_DOMAIN: coconut.cf-app.com
       VARS_STORE_FILE: gcp/coconut-bbl/deployment-vars.yml
+      ENABLED_FEATURE_FLAGS: diego_docker
   - put: deployments-loggregator
     params:
       repository: updated-vars-store

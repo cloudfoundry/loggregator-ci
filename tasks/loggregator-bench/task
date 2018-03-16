@@ -58,15 +58,28 @@ def bosh_env
 
   dir = ENV['BBL_STATE_DIR']
 
-  director_creds = {
-    'BOSH_CLIENT' => exec(ENV.to_h, ['bbl', 'director-username'], dir, silent: true),
-    'BOSH_CLIENT_SECRET' => exec(ENV.to_h, ['bbl', 'director-password'], dir, silent: true),
-    'BOSH_CA_CERT' => exec(ENV.to_h, ['bbl', 'director-ca-cert'], dir, silent: true),
-    'BOSH_ENVIRONMENT' => exec(ENV.to_h, ['bbl', 'director-address'], dir, silent: true),
-    'GOPATH' => "#{Dir.pwd}/loggregator-capacity-planning-release"
-  }
+  bosh_env = `bbl print-env`
+   .split!("export ")
+   .reject! { |x| x.empty? }
 
-  @bosh_env = ENV.to_h.merge(director_creds)
+  bosh_env.map! do |keypair|
+    keypair.gsub!("'", "")
+    keypair.strip!
+    idx = keypair.index("=")
+
+    [keypair[0..idx-1], keypair[idx+1..-1]]
+  end
+
+  bosh_env = bosh_env.each_with_object({}) do |(k, v), obj|
+    obj[k] = v
+  end
+
+  bosh_env.merge!({
+    'BOSH_CA_CERT' => exec(ENV.to_h, ['bbl', 'director-ca-cert'], dir, silent: true),
+    'GOPATH' => "#{Dir.pwd}/loggregator-capacity-planning-release"
+  })
+
+  @bosh_env = ENV.to_h.merge(bosh_env)
 end
 
 # This method changes the current working directory and is expected to only be
