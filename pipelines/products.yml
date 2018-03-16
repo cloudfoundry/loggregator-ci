@@ -1299,6 +1299,7 @@ jobs:
         type: docker-image
         source:
           repository: relintdockerhubpushbot/cf-deployment-concourse-tasks
+          tag: v5.2.0
       platform: linux
       inputs:
         - name: deployments-loggregator
@@ -1311,10 +1312,8 @@ jobs:
             set -eux
 
             pushd deployments-loggregator/gcp/coconut-bbl
-              export BOSH_CLIENT=`bbl director-username`
-              export BOSH_CLIENT_SECRET=`bbl director-password`
-              export BOSH_CA_CERT=`bbl director-ca-cert`
-              export BOSH_ENVIRONMENT=`bbl director-address`
+              eval $(bbl print-env)
+              export BOSH_CA_CERT=$(bbl director-ca-cert)
             popd
 
             bosh -d lats run-errand lats --keep-alive
