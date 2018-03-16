@@ -259,6 +259,9 @@ jobs:
           - type: replace
             path: /instance_groups/name=doppler/instances
             value: 2
+          - type: replace
+            path: /instance_groups/name=log-cache/instances
+            value: 6
           EOT
   - task: cf-deploy
     file: cf-deployment-concourse-tasks/bosh-deploy/task.yml
@@ -271,8 +274,8 @@ jobs:
         scale-to-one-az.yml
         diego.yml
         use-compiled-releases.yml
-        on-the-fly.yml
         add-log-cache.yml
+        on-the-fly.yml
         use-bosh-dns.yml
         use-bosh-dns-for-containers.yml
         use-loggregator-agent.yml
