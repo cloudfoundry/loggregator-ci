@@ -326,7 +326,7 @@ jobs:
   - task: log-cache-blackbox-tests
     file: loggregator-ci/tasks/log-cache-blackbox/task.yml
     params:
-      APP_DOMAIN: "log-cache-blackbox.playground.loggr.cf-app.com"
+      APP_ADDR: "log-cache-blackbox.playground.loggr.cf-app.com"
       APP_NAME: "log-cache-blackbox"
       SYSTEM_DOMAIN: "playground.loggr.cf-app.com"
       DATADOG_API_KEY: {{datadog-loggregator-api-key}}
