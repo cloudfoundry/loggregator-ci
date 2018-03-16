@@ -7,7 +7,7 @@ caches:
 image_resource:
   type: docker-image
   source:
-    repository: loggregator/base
+    repository: relintdockerhubpushbot/cf-deployment-concourse-tasks
 
 inputs:
 - name: loggregator-ci # - This repo
