@@ -1186,96 +1186,125 @@ jobs:
       - get: log-cache-release
         passed: ["cf-deploy"]
         trigger: true
-    - task: build-cli-plugin
-      config:
-        platform: linux
-        image_resource:
-          type: docker-image
-          source:
-            repository: loggregator/base
-        inputs:
-        - name: log-cache-cli
-        outputs:
-        - name: log-cache-cli-binary
-        run:
-          path: bash
-          args:
-          - -c
-          - |
-            #!/bin/bash
-            set -xeu
+    - aggregate:
+      - task: run-cats
+        config:
+          platform: linux
+          image_resource:
+            type: docker-image
+            source:
+              repository: loggregator/cf-deployment-concourse-tasks
+          inputs:
+          - name: cats-concourse-task
+          - name: cf-acceptance-tests
+          - name: integration-config
+          outputs:
+          - name: cats-trace-output
+          params:
+            SKIP_REGEXP:
+            CAPTURE_LOGS: falses
+            CONFIG_FILE_PATH: gcp/coconut-bbl/cats-config.json
+            NODES: 9
+          run:
+            path: bash
+            args:
+            - -c
+            - |
+              #!/bin/bash
+              set -xeu
 
-            mkdir -p $GOPATH/src/code.cloudfoundry.org/
-            cp -R log-cache-cli $GOPATH/src/code.cloudfoundry.org/
-            pushd $GOPATH/src/code.cloudfoundry.org/log-cache-cli
-              go get ./...
-              go build -o lcli
-            popd
+              build_dir=${PWD}
 
-            cp $GOPATH/src/code.cloudfoundry.org/log-cache-cli/lcli log-cache-cli-binary
+              export CONFIG
+              original_config="$PWD/integration-config/${CONFIG_FILE_PATH}"
 
-    - task: run-cats
-      config:
-        platform: linux
-        image_resource:
-          type: docker-image
-          source:
-            repository: relintdockerhubpushbot/cats-concourse-task
-        inputs:
-        - name: cats-concourse-task
-        - name: cf-acceptance-tests
-        - name: integration-config
-        - name: log-cache-cli-binary
-        outputs:
-        - name: cats-trace-output
-        params:
-          SKIP_REGEXP:
-          CAPTURE_LOGS: falses
-          CONFIG_FILE_PATH: gcp/coconut-bbl/cats-config.json
-          NODES: 9
-        run:
-          path: bash
-          args:
-          - -c
-          - |
-            #!/bin/bash
-            set -xeu
+              if ${CAPTURE_LOGS}; then
+                CONFIG=$(mktemp)
+                jq ".artifacts_directory=\"${build_dir}/cats-trace-output\"" ${original_config} > ${CONFIG}
+              else
+                CONFIG=${original_config}
+              fi
 
-            cf install-plugin -f log-cache-cli-binary/lcli
+              CF_GOPATH=/go/src/github.com/cloudfoundry/
 
-            build_dir=${PWD}
+              echo "Moving cf-acceptance-tests onto the gopath..."
+              mkdir -p $CF_GOPATH
+              cp -R cf-acceptance-tests $CF_GOPATH
 
-            export CONFIG
-            original_config="$PWD/integration-config/${CONFIG_FILE_PATH}"
+              cd /go/src/github.com/cloudfoundry/cf-acceptance-tests
 
-            if ${CAPTURE_LOGS}; then
-              CONFIG=$(mktemp)
-              jq ".artifacts_directory=\"${build_dir}/cats-trace-output\"" ${original_config} > ${CONFIG}
-            else
-              CONFIG=${original_config}
-            fi
+              export CF_DIAL_TIMEOUT=11
 
-            CF_GOPATH=/go/src/github.com/cloudfoundry/
+              export CF_PLUGIN_HOME=$HOME
 
-            echo "Moving cf-acceptance-tests onto the gopath..."
-            mkdir -p $CF_GOPATH
-            cp -R cf-acceptance-tests $CF_GOPATH
+              ./bin/test \
+              -keepGoing \
+              -randomizeAllSpecs \
+              -skipPackage=helpers \
+              -slowSpecThreshold=120 \
+              -nodes="${NODES}" \
+              -skip="${SKIP_REGEXP}" \
+              -flakeAttempts=2 \
+              -noisySkippings=false
+      - task: run-log-cache-cats
+        config:
+          platform: linux
+          image_resource:
+            type: docker-image
+            source:
+              repository: loggregator/cf-deployment-concourse-tasks
+          inputs:
+          - name: cats-concourse-task
+          - name: cf-acceptance-tests
+          - name: integration-config
+          outputs:
+          - name: cats-trace-output
+          params:
+            SKIP_REGEXP:
+            CAPTURE_LOGS: falses
+            CONFIG_FILE_PATH: gcp/coconut-bbl/log-cache-cats-config.json
+            NODES: 9
+          run:
+            path: bash
+            args:
+            - -c
+            - |
+              #!/bin/bash
+              set -xeu
 
-            cd /go/src/github.com/cloudfoundry/cf-acceptance-tests
+              build_dir=${PWD}
 
-            export CF_DIAL_TIMEOUT=11
+              export CONFIG
+              original_config="$PWD/integration-config/${CONFIG_FILE_PATH}"
 
-            export CF_PLUGIN_HOME=$HOME
+              if ${CAPTURE_LOGS}; then
+                CONFIG=$(mktemp)
+                jq ".artifacts_directory=\"${build_dir}/cats-trace-output\"" ${original_config} > ${CONFIG}
+              else
+                CONFIG=${original_config}
+              fi
 
-            ./bin/test \
-            -keepGoing \
-            -randomizeAllSpecs \
-            -skipPackage=helpers \
-            -slowSpecThreshold=120 \
-            -nodes="${NODES}" \
-            -skip="${SKIP_REGEXP}" \
-            -flakeAttempts=2 \
-            -noisySkippings=false
+              CF_GOPATH=/go/src/github.com/cloudfoundry/
+
+              echo "Moving cf-acceptance-tests onto the gopath..."
+              mkdir -p $CF_GOPATH
+              cp -R cf-acceptance-tests $CF_GOPATH
+
+              cd /go/src/github.com/cloudfoundry/cf-acceptance-tests
+
+              export CF_DIAL_TIMEOUT=11
+
+              export CF_PLUGIN_HOME=$HOME
+
+              ./bin/test \
+              -keepGoing \
+              -randomizeAllSpecs \
+              -skipPackage=helpers \
+              -slowSpecThreshold=120 \
+              -nodes="${NODES}" \
+              -skip="${SKIP_REGEXP}" \
+              -flakeAttempts=2 \
+              -noisySkippings=false
 
 - name: lats
   serial: true
