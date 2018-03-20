@@ -347,7 +347,7 @@ resources:
 - name: cf-drain-cli
   type: git
   source:
-    uri: https://github.com/cloudfoundry-incubator/cf-drain-cli
+    uri: https://github.com/cloudfoundry/cf-drain-cli
     branch: develop
 
 - name: bosh-deployment
