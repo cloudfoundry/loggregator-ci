@@ -291,7 +291,7 @@ resources:
 - name: log-cache-release
   type: git
   source:
-    uri: git@github.com:cloudfoundry-incubator/log-cache-release
+    uri: git@github.com:cloudfoundry/log-cache-release
     branch: develop
     private_key: {{cf-loggregator-oauth-bot-key}}
     ignore_paths:
@@ -302,34 +302,34 @@ resources:
 - name: log-cache-release-elect
   type: git
   source:
-    uri: git@github.com:cloudfoundry-incubator/log-cache-release
+    uri: git@github.com:cloudfoundry/log-cache-release
     branch: release-elect
     private_key: {{cf-loggregator-oauth-bot-key}}
 
 - name: log-cache-release-master
   type: git
   source:
-    uri: git@github.com:cloudfoundry-incubator/log-cache-release
+    uri: git@github.com:cloudfoundry/log-cache-release
     branch: master
     private_key: {{cf-loggregator-oauth-bot-key}}
 
 - name: log-cache
   type: git
   source:
-    uri: git@github.com:cloudfoundry-incubator/log-cache
+    uri: git@github.com:cloudfoundry/log-cache
     branch: master
     private_key: {{cf-loggregator-oauth-bot-key}}
 
 - name: go-log-cache
   type: git
   source:
-    uri: https://github.com/cloudfoundry-incubator/go-log-cache
+    uri: https://github.com/cloudfoundry/go-log-cache
     branch: master
 
 - name: log-cache-cli
   type: git
   source:
-    uri: git@github.com:cloudfoundry-incubator/log-cache-cli
+    uri: git@github.com:cloudfoundry/log-cache-cli
     branch: master
     private_key: {{cf-loggregator-oauth-bot-key}}
 
@@ -1849,7 +1849,7 @@ jobs:
 
           workspace=$(pwd)
           pushd release-elect
-            git remote set-url origin https://github.com/cloudfoundry-incubator/log-cache-release
+            git remote set-url origin https://github.com/cloudfoundry/log-cache-release
             git config remote.origin.fetch "+refs/heads/*:refs/remotes/origin/*"
             git fetch origin
             git checkout master
@@ -1878,7 +1878,7 @@ jobs:
           set -eux
 
           pushd master
-            git remote set-url origin https://github.com/cloudfoundry-incubator/log-cache-release
+            git remote set-url origin https://github.com/cloudfoundry/log-cache-release
             git config remote.origin.fetch "+refs/heads/*:refs/remotes/origin/*"
             git fetch origin
           popd
