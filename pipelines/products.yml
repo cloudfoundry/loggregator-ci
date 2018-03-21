@@ -1901,6 +1901,7 @@ jobs:
     params:
       SOURCE_BRANCH: release-elect
       DEST_BRANCH: master
+      FOLLOW_BUMPS_OF: src/code.cloudfoundry.org/log-cache,src/code.cloudfoundry.org/go-log-cache
   - put: log-cache-release-master
     params:
       repository: merged-dest

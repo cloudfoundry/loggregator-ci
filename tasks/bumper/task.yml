@@ -25,3 +25,8 @@ params:
   # - Required
   # - The destination branch to bump to.
   DEST_BRANCH:
+
+  # - Optional
+  # - Submodules for bumper to follow bumps of.
+  # - Relative to dest.
+  FOLLOW_BUMPS_OF:
