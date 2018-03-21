@@ -15,7 +15,7 @@ outputs:
 - name: merged-dest # - The merged destination repo
 
 run:
-  path: loggregator-cli/tasks/use-bumper/task
+  path: loggregator-cli/tasks/bumper/task
 
 params:
   # - Required
