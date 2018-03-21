@@ -16,19 +16,22 @@ groups:
   - loggregator-agent-promotion
   - cf-syslog-drain-tests
   - cf-drain-cli-tests
+  - cf-drain-cli-promotion
   - cf-syslog-drain-bump-submodule
   - cf-syslog-drain-promotion
   - log-cache-tests
   - log-cache-cli-tests
   - log-cache-bump-submodule
-  - log-cache-merge-branches
   - log-cache-cats
-  - log-cache-promotion
+  - log-cache-release-elect-promotion
+  - log-cache-master-promotion
+  - log-cache-cli-promotion
   - bump-cf-deployment-log-cache-ops-file
   - statsd-injector-tests
   - statsd-injector-bump-submodule
   - statsd-injector-deploy
   - noisy-neighbor-nozzle-tests
+  - noisy-neighbor-nozzle-promotion
   - noisy-neighbor-nozzle-bump-submodule
   - noisy-neighbor-nozzle-deploy
   - service-metrics-injector-tests
@@ -53,6 +56,7 @@ groups:
   jobs:
   - cf-syslog-drain-tests
   - cf-drain-cli-tests
+  - cf-drain-cli-promotion
   - cf-syslog-drain-bump-submodule
   - cf-deploy
   - cats
@@ -65,9 +69,10 @@ groups:
   - log-cache-bump-submodule
   - cfar-lats
   - cf-deploy
-  - log-cache-merge-branches
   - log-cache-cats
-  - log-cache-promotion
+  - log-cache-release-elect-promotion
+  - log-cache-master-promotion
+  - log-cache-cli-promotion
   - bump-cf-deployment-log-cache-ops-file
 - name: statsd-injector
   jobs:
@@ -77,6 +82,7 @@ groups:
 - name: noisy-neighbor-nozzle
   jobs:
   - noisy-neighbor-nozzle-tests
+  - noisy-neighbor-nozzle-promotion
   - noisy-neighbor-nozzle-bump-submodule
   - noisy-neighbor-nozzle-deploy
 - name: service-metrics-injector
@@ -274,7 +280,7 @@ resources:
 - name: noisy-neighbor-nozzle-release
   type: git
   source:
-    uri: git@github.com:cloudfoundry-incubator/noisy-neighbor-nozzle-release
+    uri: git@github.com:cloudfoundry/noisy-neighbor-nozzle-release
     branch: master
     private_key: {{cf-loggregator-oauth-bot-key}}
     ignore_paths:
@@ -284,8 +290,14 @@ resources:
 - name: noisy-neighbor-nozzle
   type: git
   source:
-    uri: git@github.com:cloudfoundry-incubator/noisy-neighbor-nozzle
+    uri: https://github.com/cloudfoundry/noisy-neighbor-nozzle
     branch: develop
+
+- name: noisy-neighbor-nozzle-master
+  type: git
+  source:
+    uri: git@github.com:cloudfoundry/noisy-neighbor-nozzle
+    branch: master
     private_key: {{cf-loggregator-oauth-bot-key}}
 
 - name: log-cache-release
@@ -329,8 +341,14 @@ resources:
 - name: log-cache-cli
   type: git
   source:
-    uri: git@github.com:cloudfoundry/log-cache-cli
+    uri: https://github.com/cloudfoundry/log-cache-cli
     branch: develop
+
+- name: log-cache-cli-master
+  type: git
+  source:
+    uri: git@github.com:cloudfoundry/log-cache-cli
+    branch: master
     private_key: {{cf-loggregator-oauth-bot-key}}
 
 - name: bumper-tool
@@ -343,6 +361,13 @@ resources:
   source:
     uri: https://github.com/cloudfoundry/cf-drain-cli
     branch: develop
+
+- name: cf-drain-cli-master
+  type: git
+  source:
+    uri: git@github.com:cloudfoundry/cf-drain-cli
+    branch: master
+    private_key: {{cf-loggregator-oauth-bot-key}}
 
 - name: bosh-deployment
   type: git
@@ -1404,6 +1429,28 @@ jobs:
     params:
       IMPORT_PATH: code.cloudfoundry.org/cf-drain-cli
 
+- name: cf-drain-cli-promotion
+  serial: true
+  plan:
+  - aggregate:
+    - get: cf-drain-cli
+      passed: ["cf-drain-cli-tests"]
+      trigger: true
+    - get: cf-drain-cli-master
+    - get: bumper-tool
+    - get: loggregator-ci
+  - task: bumper
+    file: loggregator-ci/tasks/bumper/task.yml
+    input_mapping:
+      source: cf-drain-cli
+      dest: cf-drain-cli-master
+    params:
+      SOURCE_BRANCH: develop
+      DEST_BRANCH: master
+  - put: cf-drain-cli-master
+    params:
+      repository: merged-dest
+
 - name: cf-syslog-drain-bump-submodule
   serial: true
   plan:
@@ -1607,6 +1654,28 @@ jobs:
     params:
       IMPORT_PATH: code.cloudfoundry.org/noisy-neighbor-nozzle
 
+- name: noisy-neighbor-nozzle-promotion
+  serial: true
+  plan:
+  - aggregate:
+    - get: noisy-neighbor-nozzle
+      passed: ["noisy-neighbor-nozzle-tests"]
+      trigger: true
+    - get: noisy-neighbor-nozzle-master
+    - get: bumper-tool
+    - get: loggregator-ci
+  - task: bumper
+    file: loggregator-ci/tasks/bumper/task.yml
+    input_mapping:
+      source: noisy-neighbor-nozzle
+      dest: noisy-neighbor-nozzle-master
+    params:
+      SOURCE_BRANCH: develop
+      DEST_BRANCH: master
+  - put: noisy-neighbor-nozzle-master
+    params:
+      repository: merged-dest
+
 - name: noisy-neighbor-nozzle-bump-submodule
   serial: true
   plan:
@@ -1614,15 +1683,14 @@ jobs:
     - get: loggregator-ci
     - get: noisy-neighbor-nozzle-release
       trigger: true
-    - get: noisy-neighbor-nozzle
+    - get: noisy-neighbor-nozzle-master
       trigger: true
-      passed:
-      - noisy-neighbor-nozzle-tests
+      passed: ["noisy-neighbor-nozzle-promotion"]
   - task: update-submodule
     file: loggregator-ci/tasks/bump-submodule/task.yml
     input_mapping:
       release-repo: noisy-neighbor-nozzle-release
-      source-repo: noisy-neighbor-nozzle
+      source-repo: noisy-neighbor-nozzle-master
     output_mapping:
       bumped-release-repo: bumped-noisy-neighbor-nozzle-release
     params:
@@ -1780,7 +1848,7 @@ jobs:
       repository: committed-log-cache-release
       rebase: true
 
-- name: log-cache-promotion
+- name: log-cache-release-elect-promotion
   serial: true
   plan:
   - aggregate:
@@ -1793,111 +1861,49 @@ jobs:
     params:
       repository: develop
 
-- name: log-cache-merge-branches
+- name: log-cache-cli-promotion
   serial: true
   plan:
   - aggregate:
-    - get: release-elect
-      resource: log-cache-release-elect
-      passed: ["log-cache-promotion"]
+    - get: log-cache-cli
+      passed: ["log-cache-cats"]
       trigger: true
-    - get: master
-      resource: log-cache-release-master
+    - get: log-cache-cli-master
     - get: bumper-tool
-  - task: build-bumper
-    config:
-      platform: linux
-      image_resource:
-        type: docker-image
-        source:
-          repository: loggregator/base
-      inputs:
-        - name: bumper-tool
-      outputs:
-        - name: bumper
-      run:
-        path: bash
-        args:
-        - -c
-        - |
-          #!/bin/bash
-          set -eux
+    - get: loggregator-ci
+  - task: bumper
+    file: loggregator-ci/tasks/bumper/task.yml
+    input_mapping:
+      source: log-cache-cli
+      dest: log-cache-cli-master
+    params:
+      SOURCE_BRANCH: develop
+      DEST_BRANCH: master
+  - put: log-cache-cli-master
+    params:
+      repository: merged-dest
 
-          workspace=$(pwd)
-          pushd bumper-tool
-            go build -o $workspace/bumper/bumper
-          popd
-  - task: use-bumper
-    config:
-      platform: linux
-      image_resource:
-        type: docker-image
-        source:
-          repository: loggregator/base
-      inputs:
-        - name: bumper
-        - name: release-elect
-      outputs:
-        - name: bumper-sha
-      run:
-        path: bash
-        args:
-        - -c
-        - |
-          #!/bin/bash
-          set -eux
-
-          workspace=$(pwd)
-          pushd release-elect
-            git remote set-url origin https://github.com/cloudfoundry/log-cache-release
-            git config remote.origin.fetch "+refs/heads/*:refs/remotes/origin/*"
-            git fetch origin
-            git checkout master
-
-            FOLLOW_BUMPS_OF='src/code.cloudfoundry.org/log-cache,src/code.cloudfoundry.org/go-log-cache' $workspace/bumper/bumper --verbose
-            FOLLOW_BUMPS_OF='src/code.cloudfoundry.org/log-cache,src/code.cloudfoundry.org/go-log-cache' $workspace/bumper/bumper > $workspace/bumper-sha/sha
-          popd
-  - task: merge
-    config:
-      platform: linux
-      image_resource:
-        type: docker-image
-        source:
-          repository: loggregator/base
-      inputs:
-        - name: bumper-sha
-        - name: master
-      outputs:
-        - name: merged-master
-      run:
-        path: bash
-        args:
-        - -c
-        - |
-          #!/bin/bash
-          set -eux
-
-          pushd master
-            git remote set-url origin https://github.com/cloudfoundry/log-cache-release
-            git config remote.origin.fetch "+refs/heads/*:refs/remotes/origin/*"
-            git fetch origin
-          popd
-          cp -R master/. merged-master
-
-          bump_sha=$(cat bumper-sha/sha)
-          if [ -z $bump_sha ]; then
-            echo "There are no commits to bump!"
-            exit 0
-          fi
-
-          pushd merged-master
-            git checkout release-elect
-            git checkout master
-            git merge $bump_sha --ff-only
-          popd
+- name: log-cache-master-promotion
+  serial: true
+  plan:
+  - aggregate:
+    - get: log-cache-release-elect
+      passed: ["log-cache-release-elect-promotion"]
+      trigger: true
+    - get: log-cache-release-master
+    - get: bumper-tool
+    - get: loggregator-ci
+  - task: bumper
+    file: loggregator-ci/tasks/bumper/task.yml
+    input_mapping:
+      source: log-cache-release-elect
+      dest: log-cache-release-master
+    params:
+      SOURCE_BRANCH: release-elect
+      DEST_BRANCH: master
   - put: log-cache-release-master
     params:
-      repository: merged-master
+      repository: merged-dest
 
 - name: bump-cf-deployment-log-cache-ops-file
   serial: true
@@ -1906,7 +1912,7 @@ jobs:
     - get: loggregator-ci
     - get: log-cache-release-master
       trigger: true
-      passed: ["log-cache-merge-branches"]
+      passed: ["log-cache-master-promotion"]
     - get: cf-deployment
       resource: cf-deployment-develop
   - task: generate-ops-file
