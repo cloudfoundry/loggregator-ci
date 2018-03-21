@@ -15,7 +15,6 @@ pushd source
 
     $workspace/bumper/bumper --commit-range ${DEST_BRANCH}..${SOURCE_BRANCH} --verbose
     bump_sha=$($workspace/bumper/bumper --commit-range ${DEST_BRANCH}..${SOURCE_BRANCH})
-    exit 1
 popd
 
 if [ -z $bump_sha ]; then
