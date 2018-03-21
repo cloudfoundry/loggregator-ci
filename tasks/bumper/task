@@ -19,6 +19,8 @@ popd
 
 if [ -z $bump_sha ]; then
     echo "There are no commits to bump!"
+    cp -R dest/. merged-dest
+
     exit 0
 fi
 
