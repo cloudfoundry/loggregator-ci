@@ -795,7 +795,7 @@ jobs:
         S3_ACCESS_KEY: {{s3-access-key-id}}
         S3_SECRET_KEY: {{s3-secret-access-key}}
         SSH_KEY: {{cf-loggregator-oauth-bot-key}}
-        NEW_VERSION: "6.0"
+        NEW_VERSION: "6.1"
       inputs:
       - name: cf-syslog-drain-release-develop
       - name: cf-syslog-drain-release-master
