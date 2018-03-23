@@ -1000,7 +1000,7 @@ jobs:
       - name: final-statsd-injector-release
       - name: github-release
       params:
-        NEW_VERSION: 1.2.0
+        NEW_VERSION: 1.3.0
         RELEASE: statsd-injector-release
         S3_BUCKET: statsd-injector-release-blobs
         S3_ACCESS_KEY: {{s3-access-key-id}}
