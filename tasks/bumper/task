@@ -2,7 +2,7 @@
 set -eux
 
 workspace=$(pwd)
-pushd bumper-tool
+pushd bumper-tool/cmd/bumper
     go build -o $workspace/bumper/bumper
 popd
 
