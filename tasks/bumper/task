@@ -5,7 +5,7 @@ workspace=$(pwd)
 
 bumper_path=$GOPATH/src/github.com/loggregator/bumper
 mkdir -p $bumper_path
-mv bumper-tool/. $bumper_path
+cp -R bumper-tool/. $bumper_path
 pushd $bumper_path/cmd/bumper
     go build -o $workspace/bumper/bumper
 popd
