@@ -354,7 +354,7 @@ jobs:
       params:
         APP_NAME: "log-cache-data-dog-accumulator"
         SYSTEM_DOMAIN: "run.pivotal.io"
-        DATADOG_API_KEY: {{datadog-loggregator-api-key}}
+        DATADOG_API_KEY: {{datadog-prod-api-key}}
         LOG_CACHE_ADDR: http://log-cache.run.pivotal.io
         ORG: cf-lamb
         SPACE: development
@@ -370,7 +370,7 @@ jobs:
         APP_ADDR: "log-cache-blackbox.cfapps.io"
         APP_NAME: "log-cache-blackbox"
         SYSTEM_DOMAIN: "run.pivotal.io"
-        DATADOG_API_KEY: {{datadog-loggregator-api-key}}
+        DATADOG_API_KEY: {{datadog-prod-api-key}}
         LOG_CACHE_ADDR: https://log-cache.run.pivotal.io
         ORG: cf-lamb
         SPACE: development
