@@ -18,7 +18,7 @@ cf login \
 
 export GOPATH="$PWD/go"
 mkdir -p "$GOPATH/src"
-mv loggregator-tools "$GOPATH/src/"
+cp -r loggregator-tools "$GOPATH/src/"
 
 pushd "$GOPATH/src/loggregator-tools/log-cache-forwarders/datadog"
   go get -d ./...
