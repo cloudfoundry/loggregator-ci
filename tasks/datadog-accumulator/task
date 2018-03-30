@@ -17,8 +17,8 @@ cf login \
   $login_args
 
 export GOPATH="$PWD/go"
-mkdir -p "$GOPATH/src"
-cp -r loggregator-tools "$GOPATH/src/code.cloudfoundry.org/"
+mkdir -p "$GOPATH/src/code.cloudfoundry.org"
+cp -r loggregator-tools/ "$GOPATH/src/code.cloudfoundry.org/"
 
 pushd "$GOPATH/src/code.cloudfoundry.org/loggregator-tools/log-cache-forwarders/datadog"
   go get -d ./...
