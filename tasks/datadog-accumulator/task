@@ -38,7 +38,7 @@ pushd "$GOPATH/src/code.cloudfoundry.org/loggregator-tools/log-cache-forwarders/
   cf set-env "$APP_NAME" CLIENT_SECRET "$UAA_CLIENT_SECRET"
 
   if [ "$SKIP_SSL_VALIDATION" = "true" ]; then
-    cf set-env "$APP_NAME" SKIP_SSL_VALIDATION "$SKIP_SSL_VALIDATION"
+    cf set-env "$APP_NAME" SKIP_CERT_VERIFY "$SKIP_SSL_VALIDATION"
   fi
 
   cf start "$APP_NAME"
