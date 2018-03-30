@@ -2,6 +2,7 @@ groups:
 - name: main
   jobs:
   - cf-deploy
+  - datadog-accumulator
   - log-cache-blackbox
   - cf-destroy
 - name: director-lifecycle
@@ -321,7 +322,6 @@ jobs:
   - aggregate:
     - get: loggregator-tools
     - get: loggregator-ci
-      passed: ["cf-deploy"]
   - task: deploy-datadog-accumulator
     file: loggregator-ci/tasks/datadog-accumulator/task.yml
     params:
