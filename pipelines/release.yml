@@ -278,6 +278,78 @@ resources:
     branch: master
     private_key: {{cf-loggregator-oauth-bot-key}}
 
+- name: log-cache-develop
+  type: git
+  source:
+    uri: git@github.com:cloudfoundry/log-cache-release
+    branch: develop
+    private_key: {{cf-loggregator-oauth-bot-key}}
+
+- name: log-cache-master
+  type: git
+  source:
+    uri: git@github.com:cloudfoundry/log-cache-release
+    branch: master
+    private_key: {{cf-loggregator-oauth-bot-key}}
+
+- name: log-cache-final-release-develop
+  type: git
+  source:
+    uri: git@github.com:cloudfoundry/log-cache-release
+    branch: develop
+    private_key: {{cf-loggregator-oauth-bot-key}}
+
+- name: log-cache-final-release-master
+  type: git
+  source:
+    uri: git@github.com:cloudfoundry/log-cache-release
+    branch: master
+    private_key: {{cf-loggregator-oauth-bot-key}}
+
+- name: log-cache-github-release-drafts
+  type: github-release
+  source:
+    user: cloudfoundry
+    repository: log-cache-release
+    access_token: {{access-token}}
+    drafts: true
+
+- name: loggregator-agent-develop
+  type: git
+  source:
+    uri: git@github.com:cloudfoundry/loggregator-agent-release
+    branch: develop
+    private_key: {{cf-loggregator-oauth-bot-key}}
+
+- name: loggregator-agent-master
+  type: git
+  source:
+    uri: git@github.com:cloudfoundry/loggregator-agent-release
+    branch: master
+    private_key: {{cf-loggregator-oauth-bot-key}}
+
+- name: loggregator-agent-final-release-develop
+  type: git
+  source:
+    uri: git@github.com:cloudfoundry/loggregator-agent-release
+    branch: develop
+    private_key: {{cf-loggregator-oauth-bot-key}}
+
+- name: loggregator-agent-final-release-master
+  type: git
+  source:
+    uri: git@github.com:cloudfoundry/loggregator-agent-release
+    branch: master
+    private_key: {{cf-loggregator-oauth-bot-key}}
+
+- name: loggregator-agent-github-release-drafts
+  type: github-release
+  source:
+    user: cloudfoundry
+    repository: loggregator-agent-release
+    access_token: {{access-token}}
+    drafts: true
+
 jobs:
 - name: bump-golang
   serial: true
@@ -1306,3 +1378,243 @@ jobs:
       body: github-release/body
       globs:
       - binary-output/*
+
+- name: log-cache-create-final-release
+  serial: true
+  plan:
+  - aggregate:
+    - get: log-cache-develop
+      trigger: false
+    - get: log-cache-master
+      resource: log-cache-master
+  - task: create-final-release
+    config:
+      image_resource:
+        type: docker-image
+        source:
+          repository: loggregator/base
+      platform: linux
+      params:
+        S3_ACCESS_KEY: {{loggregator-team-s3-access-key}}
+        S3_SECRET_KEY: {{loggregator-team-s3-secret-key}}
+        SSH_KEY: {{loggregator-key}}
+        NEW_VERSION: "0.2"
+      inputs:
+      - name: log-cache-develop
+      - name: log-cache-master
+      outputs:
+      - name: github-release
+      - name: create-final-release
+      run:
+        path: bash
+        args:
+          - -c
+          - |
+            #!/bin/bash
+            set -ex
+
+            # establish version/tag strings
+            new_version="$NEW_VERSION"
+            tag_name="v$new_version"
+
+            # write out github release files
+            echo "Log Cache v$new_version" > github-release/name
+            echo $tag_name > github-release/tag
+            echo "TBD" > github-release/body
+
+            # setup git for committing
+            git config --global user.email "cf-loggregator@pivotal.io"
+            git config --global user.name "Loggregator CI"
+
+            # setup ssh for reading from github
+            eval "$(ssh-agent -s)"
+            mkdir -p ~/.ssh
+            echo -e "Host github.com\n\tStrictHostKeyChecking no\n" >> ~/.ssh/config
+            ssh-add <(echo "$SSH_KEY")
+
+            # build final release on master
+            pushd log-cache-master
+              # this is needed to land commits on master since the commit for
+              # master is checked out as a detatched head when the git
+              # resource clones it down
+              git checkout master
+
+              # setup private.yml used by `create-release --final`
+              cat << EOF > config/private.yml
+            ---
+            blobstore:
+              provider: s3
+              options:
+                bucket_name: log-cache-release-blobs
+                access_key_id: $S3_ACCESS_KEY
+                secret_access_key: $S3_SECRET_KEY
+                credentials_source: static
+            EOF
+
+              # create final release and commit artifcats
+              bosh -n create-release --sha2 --final \
+                --tarball ../github-release/release.tgz \
+                --version $new_version
+              git add .
+              git commit -m "Create final release\
+
+
+            [ci skip]"
+
+              final_release_abbrev=$(git rev-parse --abbrev-ref HEAD)
+              final_release_sha=$(git rev-parse HEAD)
+              git tag "$tag_name" $final_release_sha
+            popd
+
+            # merge final release artifacts with develop
+            pushd log-cache-develop
+              # this is needed to land commits on develop since the commit for
+              # develop is checked out as a detatched head when the git
+              # resource clones it down
+              git checkout develop
+
+              git remote add -f master-repo ../log-cache-master
+              git pull
+              git merge -v -m "Merge final release artifacts\
+
+
+            [ci skip]" "master-repo/$final_release_abbrev"
+            popd
+
+            # copy repos into output
+            cp -r log-cache-develop log-cache-master create-final-release
+  - put: log-cache-final-release-master
+    params:
+      repository: create-final-release/log-cache-master
+      rebase: false
+  - put: log-cache-final-release-develop
+    params:
+      repository: create-final-release/log-cache-develop
+      rebase: false
+  - put: log-cache-github-release-drafts
+    params:
+      name: github-release/name
+      tag: github-release/tag
+      body: github-release/body
+      globs:
+      - github-release/*.tgz
+
+- name: loggregator-agent-create-final-release
+  serial: true
+  plan:
+  - aggregate:
+    - get: loggregator-agent-develop
+      trigger: false
+    - get: loggregator-agent-master
+      resource: loggregator-agent-master
+  - task: create-final-release
+    config:
+      image_resource:
+        type: docker-image
+        source:
+          repository: loggregator/base
+      platform: linux
+      params:
+        S3_ACCESS_KEY: {{loggregator-team-s3-access-key}}
+        S3_SECRET_KEY: {{loggregator-team-s3-secret-key}}
+        SSH_KEY: {{loggregator-key}}
+        NEW_VERSION: "1.0"
+      inputs:
+      - name: loggregator-agent-develop
+      - name: loggregator-agent-master
+      outputs:
+      - name: github-release
+      - name: create-final-release
+      run:
+        path: bash
+        args:
+          - -c
+          - |
+            #!/bin/bash
+            set -ex
+
+            # establish version/tag strings
+            new_version="$NEW_VERSION"
+            tag_name="v$new_version"
+
+            # write out github release files
+            echo "Loggregator Agent v$new_version" > github-release/name
+            echo $tag_name > github-release/tag
+            echo "TBD" > github-release/body
+
+            # setup git for committing
+            git config --global user.email "cf-loggregator@pivotal.io"
+            git config --global user.name "Loggregator CI"
+
+            # setup ssh for reading from github
+            eval "$(ssh-agent -s)"
+            mkdir -p ~/.ssh
+            echo -e "Host github.com\n\tStrictHostKeyChecking no\n" >> ~/.ssh/config
+            ssh-add <(echo "$SSH_KEY")
+
+            # build final release on master
+            pushd loggregator-agent-master
+              # this is needed to land commits on master since the commit for
+              # master is checked out as a detatched head when the git
+              # resource clones it down
+              git checkout master
+
+              # setup private.yml used by `create-release --final`
+              cat << EOF > config/private.yml
+            ---
+            blobstore:
+              provider: s3
+              options:
+                bucket_name: loggregator-agent-release-blobs
+                access_key_id: $S3_ACCESS_KEY
+                secret_access_key: $S3_SECRET_KEY
+                credentials_source: static
+            EOF
+
+              # create final release and commit artifcats
+              bosh -n create-release --sha2 --final \
+                --tarball ../github-release/release.tgz \
+                --version $new_version
+              git add .
+              git commit -m "Create final release\
+
+
+            [ci skip]"
+
+              final_release_abbrev=$(git rev-parse --abbrev-ref HEAD)
+              final_release_sha=$(git rev-parse HEAD)
+              git tag "$tag_name" $final_release_sha
+            popd
+
+            # merge final release artifacts with develop
+            pushd loggregator-agent-develop
+              # this is needed to land commits on develop since the commit for
+              # develop is checked out as a detatched head when the git
+              # resource clones it down
+              git checkout develop
+
+              git remote add -f master-repo ../loggregator-agent-master
+              git pull
+              git merge -v -m "Merge final release artifacts\
+
+
+            [ci skip]" "master-repo/$final_release_abbrev"
+            popd
+
+            # copy repos into output
+            cp -r loggregator-agent-develop loggregator-agent-master create-final-release
+  - put: loggregator-agent-final-release-master
+    params:
+      repository: create-final-release/loggregator-agent-master
+      rebase: false
+  - put: loggregator-agent-final-release-develop
+    params:
+      repository: create-final-release/loggregator-agent-develop
+      rebase: false
+  - put: loggregator-agent-github-release-drafts
+    params:
+      name: github-release/name
+      tag: github-release/tag
+      body: github-release/body
+      globs:
+      - github-release/*.tgz
