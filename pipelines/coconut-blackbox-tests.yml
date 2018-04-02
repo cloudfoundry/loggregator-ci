@@ -72,7 +72,7 @@ jobs:
   - get: 15m
     trigger: true
   - task: run-smoke-tests
-    file: loggregator-ci/tasks/blackbox/app.yml
+    file: loggregator-ci/tasks/blackbox/task.yml
     params:
       CF_API: "api.coconut.cf-app.com"
       ORG: "system"
@@ -114,7 +114,7 @@ jobs:
   - get: 1h
     trigger: true
   - task: run-smoke-tests
-    file: loggregator-ci/tasks/blackbox/app.yml
+    file: loggregator-ci/tasks/blackbox/task.yml
     params:
       CF_API: "api.coconut.cf-app.com"
       DATADOG_API_KEY: {{datadog-loggregator-api-key}}
@@ -141,7 +141,7 @@ jobs:
   - get: 1h
     trigger: true
   - task: run-smoke-tests
-    file: loggregator-ci/tasks/blackbox/app.yml
+    file: loggregator-ci/tasks/blackbox/task.yml
     params:
       CF_API: "api.coconut.cf-app.com"
       DATADOG_API_KEY: {{datadog-loggregator-api-key}}
