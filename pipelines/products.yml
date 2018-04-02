@@ -22,7 +22,6 @@ groups:
   - log-cache-tests
   - log-cache-cli-tests
   - log-cache-bump-submodule
-  - log-cache-cats
   - log-cache-release-elect-promotion
   - log-cache-master-promotion
   - log-cache-cli-promotion
@@ -69,7 +68,6 @@ groups:
   - log-cache-bump-submodule
   - cfar-lats
   - cf-deploy
-  - log-cache-cats
   - log-cache-release-elect-promotion
   - log-cache-master-promotion
   - log-cache-cli-promotion
@@ -101,23 +99,11 @@ resources:
   source:
     interval: 10m
 
-- name: cats-concourse-task
-  type: git
-  source:
-    branch: master
-    uri: https://github.com/cloudfoundry/cats-concourse-task.git
-
 - name: cf-acceptance-tests
   type: git
   source:
     branch: master
     uri: https://github.com/cloudfoundry/cf-acceptance-tests.git
-
-- name: log-cache-cf-acceptance-tests
-  type: git
-  source:
-    branch: cf-log-cache-tests
-    uri: https://github.com/loggregator/cf-acceptance-tests.git
 
 - name: cfar-logging-acceptance-tests
   type: git
@@ -155,17 +141,13 @@ resources:
   type: git
   source:
     uri: https://github.com/cloudfoundry/cf-deployment-concourse-tasks
-    branch: v6.0
+    branch: v6.5
 
 - name: bosh-bootloader
   type: git
   source:
     uri: https://github.com/loggregator/bosh-bootloader
     branch: master
-
-- name: integration-config
-  type: git
-  source: *deployments_loggregator
 
 - name: loggregator-release
   type: git
@@ -1161,8 +1143,8 @@ jobs:
   - bosh-cf-cats
   plan:
     - aggregate:
-      - get: cats-concourse-task
-      - get: integration-config
+      - get: cf-deployment-concourse-tasks
+      - get: deployments-loggregator
       - get: cf-acceptance-tests
       - get: loggregator-release
         trigger: true
@@ -1173,11 +1155,27 @@ jobs:
       - get: cf-syslog-drain-release
         passed: ["cf-deploy"]
         trigger: true
-    - task: run-cats
-      file: cats-concourse-task/task.yml
-      params:
-        CONFIG_FILE_PATH: gcp/coconut-bbl/cats-config.json
-        NODES: 9
+      - get: log-cache-cli
+        passed: ["log-cache-cli-tests"]
+        trigger: true
+      - get: log-cache-release
+        passed: ["cf-deploy"]
+        trigger: true
+    - aggregate:
+      - task: run-cats
+        file: cf-deployment-concourse-tasks/run-cats/task.yml
+        input_mapping:
+          integration-config: deployments-loggregator
+        params:
+          CONFIG_FILE_PATH: gcp/coconut-bbl/cats-config.json
+          NODES: 9
+      - task: run-cats-with-log-cache
+        file: cf-deployment-concourse-tasks/run-cats/task.yml
+        input_mapping:
+          integration-config: deployments-loggregator
+        params:
+          CONFIG_FILE_PATH: gcp/coconut-bbl/log-cache-cats-config.json
+          NODES: 9
 
 - name: cfar-lats
   serial: true
@@ -1206,144 +1204,6 @@ jobs:
         USERNAME: {{coconut-username}}
         PASSWORD: {{coconut-password}}
         API_ENDPOINT: api.coconut.cf-app.com
-
-- name: log-cache-cats
-  serial: true
-  serial_groups:
-  - bosh-cf-cats
-  plan:
-    - aggregate:
-      - get: cats-concourse-task
-      - get: integration-config
-      - get: cf-acceptance-tests
-        resource: log-cache-cf-acceptance-tests
-      - get: loggregator-release
-      - get: cf-syslog-drain-release
-      - get: log-cache-cli
-        passed: ["log-cache-cli-tests"]
-        trigger: true
-      - get: log-cache-release
-        passed: ["cf-deploy"]
-        trigger: true
-    - aggregate:
-      - task: run-cats
-        config:
-          platform: linux
-          image_resource:
-            type: docker-image
-            source:
-              repository: loggregator/cf-deployment-concourse-tasks
-          inputs:
-          - name: cats-concourse-task
-          - name: cf-acceptance-tests
-          - name: integration-config
-          outputs:
-          - name: cats-trace-output
-          params:
-            SKIP_REGEXP:
-            CAPTURE_LOGS: falses
-            CONFIG_FILE_PATH: gcp/coconut-bbl/cats-config.json
-            NODES: 9
-          run:
-            path: bash
-            args:
-            - -c
-            - |
-              #!/bin/bash
-              set -xeu
-
-              build_dir=${PWD}
-
-              export CONFIG
-              original_config="$PWD/integration-config/${CONFIG_FILE_PATH}"
-
-              if ${CAPTURE_LOGS}; then
-                CONFIG=$(mktemp)
-                jq ".artifacts_directory=\"${build_dir}/cats-trace-output\"" ${original_config} > ${CONFIG}
-              else
-                CONFIG=${original_config}
-              fi
-
-              CF_GOPATH=/go/src/github.com/cloudfoundry/
-
-              echo "Moving cf-acceptance-tests onto the gopath..."
-              mkdir -p $CF_GOPATH
-              cp -R cf-acceptance-tests $CF_GOPATH
-
-              cd /go/src/github.com/cloudfoundry/cf-acceptance-tests
-
-              export CF_DIAL_TIMEOUT=11
-
-              export CF_PLUGIN_HOME=$HOME
-
-              ./bin/test \
-              -keepGoing \
-              -randomizeAllSpecs \
-              -skipPackage=helpers \
-              -slowSpecThreshold=120 \
-              -nodes="${NODES}" \
-              -skip="${SKIP_REGEXP}" \
-              -flakeAttempts=2 \
-              -noisySkippings=false
-      - task: run-log-cache-cats
-        config:
-          platform: linux
-          image_resource:
-            type: docker-image
-            source:
-              repository: loggregator/cf-deployment-concourse-tasks
-          inputs:
-          - name: cats-concourse-task
-          - name: cf-acceptance-tests
-          - name: integration-config
-          outputs:
-          - name: cats-trace-output
-          params:
-            SKIP_REGEXP:
-            CAPTURE_LOGS: falses
-            CONFIG_FILE_PATH: gcp/coconut-bbl/log-cache-cats-config.json
-            NODES: 9
-          run:
-            path: bash
-            args:
-            - -c
-            - |
-              #!/bin/bash
-              set -xeu
-
-              build_dir=${PWD}
-
-              export CONFIG
-              original_config="$PWD/integration-config/${CONFIG_FILE_PATH}"
-
-              if ${CAPTURE_LOGS}; then
-                CONFIG=$(mktemp)
-                jq ".artifacts_directory=\"${build_dir}/cats-trace-output\"" ${original_config} > ${CONFIG}
-              else
-                CONFIG=${original_config}
-              fi
-
-              CF_GOPATH=/go/src/github.com/cloudfoundry/
-
-              echo "Moving cf-acceptance-tests onto the gopath..."
-              mkdir -p $CF_GOPATH
-              cp -R cf-acceptance-tests $CF_GOPATH
-
-              cd /go/src/github.com/cloudfoundry/cf-acceptance-tests
-
-              export CF_DIAL_TIMEOUT=11
-
-              export CF_PLUGIN_HOME=$HOME
-
-              ./bin/test \
-              -keepGoing \
-              -randomizeAllSpecs \
-              -skipPackage=helpers \
-              -slowSpecThreshold=120 \
-              -nodes="${NODES}" \
-              -skip="${SKIP_REGEXP}" \
-              -flakeAttempts=2 \
-              -noisySkippings=false
 
 - name: lats
   serial: true
@@ -1869,7 +1729,7 @@ jobs:
     - get: develop
       resource: log-cache-release
       trigger: true
-      passed: ["log-cache-cats", "cfar-lats"]
+      passed: ["cats", "cfar-lats"]
     - get: log-cache-release-elect
   - put: log-cache-release-elect
     params:
@@ -1880,7 +1740,7 @@ jobs:
   plan:
   - aggregate:
     - get: log-cache-cli
-      passed: ["log-cache-cats"]
+      passed: ["cats"]
       trigger: true
     - get: log-cache-cli-master
     - get: bumper-tool
