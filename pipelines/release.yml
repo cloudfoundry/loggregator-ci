@@ -773,7 +773,7 @@ jobs:
         S3_ACCESS_KEY: {{s3-access-key}}
         S3_SECRET_KEY: {{s3-secret-key}}
         SSH_KEY: {{loggregator-key}}
-        NEW_VERSION: 101.9
+        NEW_VERSION: "101.10"
         BRANCH_NAME: *backport-branch
       inputs:
       - name: loggregator-backport
@@ -810,7 +810,18 @@ jobs:
 
             # build final release on backport branchd
             pushd loggregator-backport
+              export GOPATH=$PWD
+              export PATH=$PATH:$GOPATH/bin
               git checkout "$backport_branch"
+
+              # Ensure sync-package-specs has been run
+              ./scripts/sync-package-specs
+
+              # Assert there is not diff
+              if [ ! test $(git diff-index --quiet HEAD --) ]; then
+                echo "Looks like sync-package-specs wasn't ran"
+                exit 1
+              fi
 
               # setup private.yml used by `create-release --final`
               cat << EOF > config/private.yml
