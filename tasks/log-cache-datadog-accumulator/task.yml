@@ -12,7 +12,7 @@ inputs:
 - name: loggregator-tools # - Log cache blackbox test app repo
 
 run:
-  path: loggregator-ci/tasks/datadog-accumulator/task
+  path: loggregator-ci/tasks/log-cache-datadog-accumulator/task
 
 params:
   # - Required
@@ -26,10 +26,6 @@ params:
   # - Required
   # - The API Key to send metrics to DataDog.
   DATADOG_API_KEY:
-
-  # - Optional
-  # - Tags for the datadog metrics: comma separated list.
-  DATADOG_TAGS:
 
   # - Required
   # - The CF organization that the app will run in.
@@ -53,11 +49,7 @@ params:
 
   # - Required
   # - The base address for log cache.
-  LOG_CACHE_HTTP_ADDR:
-
-  # - Required
-  # - The name of the log cache group.
-  LOG_CACHE_GROUP_NAME:
+  LOG_CACHE_ADDR:
 
   # - Required
   # - The UAA Client
