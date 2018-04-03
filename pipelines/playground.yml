@@ -315,7 +315,7 @@ jobs:
         BBL_STATE_DIR: gcp/playground
         DEPLOYMENT_NAME: cf-syslog-drain
 
-- name: datadog-accumulator
+- name: deploy-datadog-accumulator
   public: false
   serial: true
   plan:
