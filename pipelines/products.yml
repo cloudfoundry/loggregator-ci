@@ -987,6 +987,24 @@ jobs:
     file: cf-deployment-concourse-tasks/bosh-cleanup/task.yml
     params:
       BBL_STATE_DIR: gcp/coconut-bbl
+  - task: create-blackbox-space
+    file: loggregator-ci/tasks/create-org-and-space/task.yml
+    input_mapping:
+      vars-store: deployments-loggretator
+    params:
+      VARS_STORE_FILE: gcp/coconut-bbl/deployment-vars.yml
+      ORG: system
+      SPACE: blackbox-testing
+      SYSTEM_DOMAIN: coconut.cf-app.com
+  - task: create-blackbox-space
+    file: loggregator-ci/tasks/create-org-and-space/task.yml
+    input_mapping:
+      vars-store: deployments-loggretator
+    params:
+      VARS_STORE_FILE: gcp/coconut-bbl/deployment-vars.yml
+      ORG: system
+      SPACE: accumulators
+      SYSTEM_DOMAIN: coconut.cf-app.com
 
 - name: loggregator-deploy
   serial: true
