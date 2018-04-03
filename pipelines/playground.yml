@@ -2,7 +2,7 @@ groups:
 - name: main
   jobs:
   - cf-deploy
-  - datadog-accumulator
+  - deploy-datadog-accumulator
   - log-cache-blackbox
   - cf-destroy
 - name: director-lifecycle
