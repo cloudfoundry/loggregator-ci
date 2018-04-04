@@ -281,6 +281,7 @@ jobs:
     - get: loggregator-develop
     - get: loggregator-capacity-planning-release
     - get: loggregator-bench-release
+    - get: logging-acceptance-tests-release
     - get: cf-syslog-drain-release-develop
     - get: statsd-injector-release-develop
     - get: ouroboros-release
