@@ -1,0 +1,27 @@
+platform: linux
+image_resource:
+  type: docker-image
+  source:
+    repository: relintdockerhubpushbot/cf-deployment-concourse-tasks
+    tag: v5.7.0
+
+inputs:
+- name: loggregator-ci # This repo
+- name: bbl-state      # The BBL state repository
+
+run:
+  path: loggregator-ci/tasks/run-errand/task
+
+params:
+  # - Required
+  # - Directory where bbl state is stored.
+  # - Relative to bbl-state input.
+  BBL_STATE_DIR:
+
+  # - Required
+  # - Name of the deployment to run the errand on.
+  DEPLOYMENT_NAME:
+
+  # - Required
+  # - Name of the errand to run.
+  ERRAND:
