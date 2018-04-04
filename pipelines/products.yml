@@ -990,16 +990,16 @@ jobs:
   - task: create-blackbox-space
     file: loggregator-ci/tasks/create-org-and-space/task.yml
     input_mapping:
-      vars-store: deployments-loggretator
+      vars-store: bbl-state
     params:
       VARS_STORE_FILE: gcp/coconut-bbl/deployment-vars.yml
       ORG: system
       SPACE: blackbox-testing
       SYSTEM_DOMAIN: coconut.cf-app.com
-  - task: create-blackbox-space
+  - task: create-accumulators-space
     file: loggregator-ci/tasks/create-org-and-space/task.yml
     input_mapping:
-      vars-store: deployments-loggretator
+      vars-store: bbl-state
     params:
       VARS_STORE_FILE: gcp/coconut-bbl/deployment-vars.yml
       ORG: system
