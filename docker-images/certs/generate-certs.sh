@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 set -e
 
@@ -97,6 +97,7 @@ function main {
     mkdir -p "$1"
     cd "$1"
     create_ca
+    create_keypair log-cache log_cache log-cache logcache
     create_keypair router doppler
     create_keypair rlp reverselogproxy
     create_keypair agent metron localhost ip6-localhost 127.0.0.1 ::1
