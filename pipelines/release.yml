@@ -150,22 +150,26 @@ resources:
     access_token: {{access-token}}
     drafts: true
 
-- name: statsd-injector-release
+- name: statsd-injector-release-master
   type: git
   source:
     uri: git@github.com:cloudfoundry/statsd-injector-release
     branch: master
     private_key: {{cf-loggregator-oauth-bot-key}}
 
-- name: statsd-injector-final-release
+- name: statsd-injector-release-develop
   type: git
   source:
     uri: git@github.com:cloudfoundry/statsd-injector-release
-    branch: master
+    branch: develop
     private_key: {{cf-loggregator-oauth-bot-key}}
-    ignore_paths:
-    - .final_builds
-    - releases
+
+- name: statsd-injector-final-release-develop
+  type: git
+  source:
+    uri: git@github.com:cloudfoundry/statsd-injector-release
+    branch: develop
+    private_key: {{cf-loggregator-oauth-bot-key}}
 
 - name: statsd-injector-release-github-release-drafts
   type: github-release
@@ -817,79 +821,37 @@ jobs:
   serial: true
   plan:
   - aggregate:
-    - get: statsd-injector-release
+    - get: statsd-injector-release-develop
+    - get: statsd-injector-release-master
+    - get: loggregator-ci
   - task: create-final-release
-    config:
-      platform: linux
-      image_resource:
-        type: docker-image
-        source:
-          repository: loggregator/base
-      inputs:
-      - name: statsd-injector-release
-      outputs:
-      - name: final-statsd-injector-release
-      - name: github-release
+    file: loggregator-ci/tasks/create-final-release/task.yml
+    input_mapping:
+      develop: statsd-injector-release-develop
+      master: statsd-injector-release-master
+    params:
+      S3_ACCESS_KEY: {{s3-access-key-id}}
+      S3_SECRET_KEY: {{s3-secret-access-key}}
+      BLOBSTORE_BUCKET: statsd-injector-release-blobs
+      SSH_KEY: {{loggregator-key}}
+      NEW_VERSION: 1.3.0
+      RELEASE_NAME: statsd-injector-release
+  - aggregate:
+    - put: statsd-injector-release-master
       params:
-        NEW_VERSION: 1.3.0
-        RELEASE: statsd-injector-release
-        S3_BUCKET: statsd-injector-release-blobs
-        S3_ACCESS_KEY: {{s3-access-key-id}}
-        S3_SECRET_KEY: {{s3-secret-access-key}}
-        OUTPUT: final-statsd-injector-release
-      run:
-        path: bash
-        args:
-        - -c
-        - |
-          #!/bin/bash
-
-          set -e -x
-
-          tag_name="v$NEW_VERSION"
-          echo $tag_name > github-release/tag
-
-          # write out github release files
-          echo "Statsd Injector $NEW_VERSION" > github-release/name
-          echo $tag_name > github-release/tag
-          echo "TBD" > github-release/body
-
-          pushd $RELEASE
-            cat << EOF > config/private.yml
-          ---
-          blobstore:
-            provider: s3
-            options:
-              bucket_name: $S3_BUCKET
-              access_key_id: $S3_ACCESS_KEY
-              secret_access_key: $S3_SECRET_KEY
-          EOF
-
-            bosh -n create-release --sha2 --final \
-              --tarball ../github-release/release.tgz \
-              --version "$NEW_VERSION"
-            git config user.email "cf-loggregator@pivotal.io"
-            git config user.name "Loggregator CI"
-            git add .
-            git commit -m "Create final release\
-
-
-            [ci skip]"
-          popd
-
-          cp -r "${RELEASE}/." "${OUTPUT}/"
-  - put: statsd-injector-final-release
-    params:
-      repository: final-statsd-injector-release
-      rebase: false
-      tag: github-release/tag
-  - put: statsd-injector-release-github-release-drafts
-    params:
-      name: github-release/name
-      tag: github-release/tag
-      body: github-release/body
-      globs:
-      - github-release/*.tgz
+        repository: repos/master
+        rebase: false
+    - put: statsd-injector-release-develop
+      params:
+        repository: repos/develop
+        rebase: false
+    - put: statsd-injector-release-github-release-drafts
+      params:
+        name: github-release/name
+        tag: github-release/tag
+        body: github-release/body
+        globs:
+        - github-release/*.tgz
 
 - name: cf-drain-cli
   serial: true

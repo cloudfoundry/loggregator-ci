@@ -76,3 +76,5 @@ popd
 
 # copy repos into output
 cp -r develop master repos
+
+exit 1
