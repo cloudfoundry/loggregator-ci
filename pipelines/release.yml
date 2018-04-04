@@ -30,7 +30,7 @@ resources:
     branch: &backport-branch v101.x
     private_key: {{loggregator-key}}
 
-- name: loggregator-final-release-develop
+- name: loggregator-release-develop
   type: git
   source:
     uri: git@github.com:cloudfoundry/loggregator-release.git
@@ -40,7 +40,7 @@ resources:
     - .final_builds
     - releases
 
-- name: loggregator-final-release-master
+- name: loggregator-release-master
   type: git
   source:
     uri: git@github.com:cloudfoundry/loggregator-release.git
@@ -50,7 +50,7 @@ resources:
     - .final_builds
     - releases
 
-- name: loggregator-final-release-backport
+- name: loggregator-release-backport
   type: git
   source:
     uri: git@github.com:cloudfoundry/loggregator-release.git
@@ -78,27 +78,7 @@ resources:
     - .final_builds
     - releases
 
-- name: cf-syslog-drain-release-final-develop
-  type: git
-  source:
-    uri: git@github.com:cloudfoundry/cf-syslog-drain-release
-    branch: develop
-    private_key: {{cf-loggregator-oauth-bot-key}}
-    ignore_paths:
-    - .final_builds
-    - releases
-
 - name: cf-syslog-drain-release-master
-  type: git
-  source:
-    uri: git@github.com:cloudfoundry/cf-syslog-drain-release
-    branch: master
-    private_key: {{cf-loggregator-oauth-bot-key}}
-    ignore_paths:
-    - .final_builds
-    - releases
-
-- name: cf-syslog-drain-release-final-master
   type: git
   source:
     uri: git@github.com:cloudfoundry/cf-syslog-drain-release
@@ -116,40 +96,6 @@ resources:
     access_token: {{access-token}}
     drafts: true
 
-- name: bosh-hm-forwarder-version
-  type: semver
-  source:
-    initial_version: 1.0.0
-    bucket: bosh-hm-forwarder-release-blobs
-    key: version
-    access_key_id: {{s3-access-key-id}}
-    secret_access_key: {{s3-secret-access-key}}
-
-- name: bosh-hm-forwarder-release
-  type: git
-  source:
-    uri: git@github.com:cloudfoundry/bosh-hm-forwarder-release
-    branch: master
-    private_key: {{bosh-hm-forwarder-key}}
-
-- name: bosh-hm-forwarder-final-release
-  type: git
-  source:
-    uri: git@github.com:cloudfoundry/bosh-hm-forwarder-release
-    branch: master
-    private_key: {{bosh-hm-forwarder-key}}
-    ignore_paths:
-    - .final_builds
-    - releases
-
-- name: bosh-hm-forwarder-release-github-release-drafts
-  type: github-release
-  source:
-    user: cloudfoundry
-    repository: bosh-hm-forwarder-release
-    access_token: {{access-token}}
-    drafts: true
-
 - name: statsd-injector-release-master
   type: git
   source:
@@ -158,13 +104,6 @@ resources:
     private_key: {{cf-loggregator-oauth-bot-key}}
 
 - name: statsd-injector-release-develop
-  type: git
-  source:
-    uri: git@github.com:cloudfoundry/statsd-injector-release
-    branch: develop
-    private_key: {{cf-loggregator-oauth-bot-key}}
-
-- name: statsd-injector-final-release-develop
   type: git
   source:
     uri: git@github.com:cloudfoundry/statsd-injector-release
@@ -205,13 +144,6 @@ resources:
   source:
     uri: git@github.com:cloudfoundry-incubator/reference-nozzle-release
     branch: master
-    private_key: {{cf-loggregator-oauth-bot-key}}
-
-- name: log-cache-release-develop
-  type: git
-  source:
-    uri: git@github.com:cloudfoundry/log-cache-release
-    branch: develop
     private_key: {{cf-loggregator-oauth-bot-key}}
 
 - name: cf-drain-cli
@@ -296,14 +228,14 @@ resources:
     branch: master
     private_key: {{cf-loggregator-oauth-bot-key}}
 
-- name: log-cache-final-release-develop
+- name: log-cache-release-develop
   type: git
   source:
     uri: git@github.com:cloudfoundry/log-cache-release
     branch: develop
     private_key: {{cf-loggregator-oauth-bot-key}}
 
-- name: log-cache-final-release-master
+- name: log-cache-release-master
   type: git
   source:
     uri: git@github.com:cloudfoundry/log-cache-release
@@ -318,28 +250,14 @@ resources:
     access_token: {{access-token}}
     drafts: true
 
-- name: loggregator-agent-develop
+- name: loggregator-agent-release-develop
   type: git
   source:
     uri: git@github.com:cloudfoundry/loggregator-agent-release
     branch: develop
     private_key: {{cf-loggregator-oauth-bot-key}}
 
-- name: loggregator-agent-master
-  type: git
-  source:
-    uri: git@github.com:cloudfoundry/loggregator-agent-release
-    branch: master
-    private_key: {{cf-loggregator-oauth-bot-key}}
-
-- name: loggregator-agent-final-release-develop
-  type: git
-  source:
-    uri: git@github.com:cloudfoundry/loggregator-agent-release
-    branch: develop
-    private_key: {{cf-loggregator-oauth-bot-key}}
-
-- name: loggregator-agent-final-release-master
+- name: loggregator-agent-release-master
   type: git
   source:
     uri: git@github.com:cloudfoundry/loggregator-agent-release
@@ -364,9 +282,8 @@ jobs:
     - get: loggregator-capacity-planning-release
     - get: loggregator-bench-release
     - get: cf-syslog-drain-release-develop
-    - get: statsd-injector-release
+    - get: statsd-injector-release-develop
     - get: ouroboros-release
-    - get: bosh-hm-forwarder-release
     - get: reference-nozzle-release
     - get: noisy-neighbor-nozzle-release
     - get: log-cache-release-develop
@@ -476,7 +393,7 @@ jobs:
       - task: bump-statsd-injector-release
         file: loggregator-ci/tasks/bump-golang/task.yml
         input_mapping:
-          release-repo: statsd-injector-release
+          release-repo: statsd-injector-release-develop
         output_mapping:
           updated-release-repo: updated-statsd-injector-release
         params:
@@ -492,7 +409,7 @@ jobs:
           committed-repo: committed-statsd-injector-release
         params:
           COMMIT_MESSAGE: "Bump golang version"
-      - put: statsd-injector-release
+      - put: statsd-injector-release-develop
         params:
           repository: committed-statsd-injector-release
           rebase: false
@@ -519,30 +436,6 @@ jobs:
       - put: ouroboros-release
         params:
           repository: committed-ouroboros-release
-          rebase: false
-    - do:
-      - task: bump-bosh-hm-forwarder-release
-        file: loggregator-ci/tasks/bump-golang/task.yml
-        input_mapping:
-          release-repo: bosh-hm-forwarder-release
-        output_mapping:
-          updated-release-repo: updated-bosh-hm-forwarder-release
-        params:
-          VERSION: *golang-version
-          ACCESS_KEY_ID: {{s3-access-key-id}}
-          SECRET_ACCESS_KEY: {{s3-secret-access-key}}
-          BUCKET_NAME: bosh-hm-forwarder-release-blobs
-      - task: commit-bosh-hm-forwarder-release
-        file: loggregator-ci/tasks/commit/task.yml
-        input_mapping:
-          release-repo: updated-bosh-hm-forwarder-release
-        output_mapping:
-          committed-repo: committed-bosh-hm-forwarder-release
-        params:
-          COMMIT_MESSAGE: "Bump golang version"
-      - put: bosh-hm-forwarder-release
-        params:
-          repository: committed-bosh-hm-forwarder-release
           rebase: false
     - do:
       - task: bump-reference-nozzle-release
@@ -641,7 +534,7 @@ jobs:
           repository: committed-logging-acceptance-tests-release
           rebase: false
 
-- name: loggregator-create-final-release
+- name: loggregator-create-release
   serial: true
   plan:
   - aggregate:
@@ -662,11 +555,11 @@ jobs:
       SSH_KEY: {{loggregator-key}}
       NEW_VERSION: "102.2"
       RELEASE_NAME: Loggregator
-  - put: loggregator-final-release-master
+  - put: loggregator-release-master
     params:
       repository: repos/master
       rebase: false
-  - put: loggregator-final-release-develop
+  - put: loggregator-release-develop
     params:
       repository: repos/develop
       rebase: false
@@ -770,7 +663,7 @@ jobs:
 
             # copy repos into output
             cp -r loggregator-backport create-final-release
-  - put: loggregator-final-release-backport
+  - put: loggregator-release-backport
     params:
       repository: create-final-release/loggregator-backport
       rebase: false
@@ -801,11 +694,11 @@ jobs:
       SSH_KEY: {{loggregator-key}}
       NEW_VERSION: "6.1"
       RELEASE_NAME: "CF Syslog Drain Release"
-  - put: cf-syslog-drain-release-final-master
+  - put: cf-syslog-drain-release-master
     params:
       repository: repos/master
       rebase: false
-  - put: cf-syslog-drain-release-final-develop
+  - put: cf-syslog-drain-release-develop
     params:
       repository: repos/develop
       rebase: false
@@ -1121,11 +1014,11 @@ jobs:
       SSH_KEY: {{loggregator-key}}
       NEW_VERSION: "0.2"
       RELEASE_NAME: "Log Cache"
-  - put: log-cache-final-release-master
+  - put: log-cache-release-master
     params:
       repository: repos/master
       rebase: false
-  - put: log-cache-final-release-develop
+  - put: log-cache-release-develop
     params:
       repository: repos/develop
       rebase: false
@@ -1141,16 +1034,15 @@ jobs:
   serial: true
   plan:
   - aggregate:
-    - get: loggregator-agent-develop
+    - get: loggregator-agent-release-develop
       trigger: false
-    - get: loggregator-agent-master
-      resource: loggregator-agent-mastera
+    - get: loggregator-agent-release-master
     - get: loggregator-ci
   - task: create-final-release
     file: loggregator-ci/tasks/create-final-release/task.yml
     input_mapping:
-      develop: loggregator-agent-develop
-      master: loggregator-agent-master
+      develop: loggregator-agent-release-develop
+      master: loggregator-agent-release-master
     params:
       S3_ACCESS_KEY: {{s3-access-key}}
       S3_SECRET_KEY: {{s3-secret-key}}
@@ -1158,11 +1050,11 @@ jobs:
       SSH_KEY: {{loggregator-key}}
       NEW_VERSION: "1.0"
       RELEASE_NAME: "Loggreagor Agent"
-  - put: loggregator-agent-final-release-master
+  - put: loggregator-agent-release-master
     params:
       repository: repos/master
       rebase: false
-  - put: loggregator-agent-final-release-develop
+  - put: loggregator-agent-release-develop
     params:
       repository: repos/develop
       rebase: false
