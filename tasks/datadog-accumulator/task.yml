@@ -59,6 +59,16 @@ params:
   # - The name of the log cache group.
   LOG_CACHE_GROUP_NAME:
 
+  # - Optional
+  # - Source ID blacklist.
+  # - It cannot be used with LOG_CACHE_SOURCE_ID_WHITELIST.
+  LOG_CACHE_SOURCE_ID_BLACKLIST:
+
+  # - Optional
+  # - Source ID whitelist
+  # - It cannot be used with LOG_CACHE_SOURCE_ID_BLACKLIST.
+  LOG_CACHE_SOURCE_ID_WHITELIST:
+
   # - Required
   # - The UAA Client
   UAA_CLIENT:
