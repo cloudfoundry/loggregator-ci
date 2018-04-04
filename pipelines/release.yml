@@ -645,109 +645,26 @@ jobs:
       trigger: false
     - get: loggregator-master
       resource: loggregator-master
+    - get: loggregator-ci
   - task: create-final-release
-    config:
-      image_resource:
-        type: docker-image
-        source:
-          repository: loggregator/base
-      platform: linux
-      params:
-        S3_ACCESS_KEY: {{s3-access-key}}
-        S3_SECRET_KEY: {{s3-secret-key}}
-        SSH_KEY: {{loggregator-key}}
-        NEW_VERSION: "102.1"
-      inputs:
-      - name: loggregator-develop
-      - name: loggregator-master
-      outputs:
-      - name: github-release
-      - name: create-final-release
-      run:
-        path: bash
-        args:
-          - -c
-          - |
-            #!/bin/bash
-            set -ex
-
-            # establish version/tag strings
-            new_version="$NEW_VERSION"
-            tag_name="v$new_version"
-
-            # write out github release files
-            echo "Loggregator $new_version" > github-release/name
-            echo $tag_name > github-release/tag
-            echo "TBD" > github-release/body
-
-            # setup git for committing
-            git config --global user.email "cf-loggregator@pivotal.io"
-            git config --global user.name "Loggregator CI"
-
-            # setup ssh for reading from github
-            eval "$(ssh-agent -s)"
-            mkdir -p ~/.ssh
-            echo -e "Host github.com\n\tStrictHostKeyChecking no\n" >> ~/.ssh/config
-            ssh-add <(echo "$SSH_KEY")
-
-            # build final release on master
-            pushd loggregator-master
-              # this is needed to land commits on master since the commit for
-              # master is checked out as a detatched head when the git
-              # resource clones it down
-              git checkout master
-
-              # setup private.yml used by `create-release --final`
-              cat << EOF > config/private.yml
-            ---
-            blobstore:
-              provider: s3
-              options:
-                bucket_name: loggregator-release-blobs
-                access_key_id: $S3_ACCESS_KEY
-                secret_access_key: $S3_SECRET_KEY
-                credentials_source: static
-            EOF
-
-              # create final release and commit artifcats
-              bosh -n create-release --sha2 --final \
-                --tarball ../github-release/release.tgz \
-                --version $new_version
-              git add .
-              git commit -m "Create final release\
-
-
-            [ci skip]"
-
-              final_release_abbrev=$(git rev-parse --abbrev-ref HEAD)
-              final_release_sha=$(git rev-parse HEAD)
-              git tag "$tag_name" $final_release_sha
-            popd
-
-            # merge final release artifacts with develop
-            pushd loggregator-develop
-              # this is needed to land commits on develop since the commit for
-              # develop is checked out as a detatched head when the git
-              # resource clones it down
-              git checkout develop
-
-              git remote add -f master-repo ../loggregator-master
-              git pull
-              git merge -v -m "Merge final release artifacts\
-
-
-            [ci skip]" "master-repo/$final_release_abbrev"
-            popd
-
-            # copy repos into output
-            cp -r loggregator-develop loggregator-master create-final-release
+    file: loggregator-ci/tasks/create-final-release/task.yml
+    input_mapping:
+      develop: loggregator-develop
+      master: loggregator-master
+    params:
+      S3_ACCESS_KEY: {{s3-access-key}}
+      S3_SECRET_KEY: {{s3-secret-key}}
+      BLOBSTORE_BUCKET: loggregator-release-blobs
+      SSH_KEY: {{loggregator-key}}
+      NEW_VERSION: "102.2"
+      RELEASE_NAME: Loggregator
   - put: loggregator-final-release-master
     params:
-      repository: create-final-release/loggregator-master
+      repository: repos/master
       rebase: false
   - put: loggregator-final-release-develop
     params:
-      repository: create-final-release/loggregator-develop
+      repository: repos/develop
       rebase: false
   - put: loggregator-github-release-drafts
     params:
@@ -867,197 +784,28 @@ jobs:
   - aggregate:
     - get: cf-syslog-drain-release-develop
     - get: cf-syslog-drain-release-master
+    - get: loggregator-ci
   - task: create-final-release
-    config:
-      image_resource:
-        type: docker-image
-        source:
-          repository: loggregator/base
-      platform: linux
-      params:
-        S3_ACCESS_KEY: {{s3-access-key-id}}
-        S3_SECRET_KEY: {{s3-secret-access-key}}
-        SSH_KEY: {{cf-loggregator-oauth-bot-key}}
-        NEW_VERSION: "6.1"
-      inputs:
-      - name: cf-syslog-drain-release-develop
-      - name: cf-syslog-drain-release-master
-      outputs:
-      - name: github-release
-      - name: create-final-release
-      run:
-        path: bash
-        args:
-          - -c
-          - |
-            #!/bin/bash
-            set -ex
-
-            # establish version/tag strings
-            new_version="$NEW_VERSION"
-            tag_name="v$new_version"
-
-            # write out github release files
-            echo "CF Syslog Drain Release $new_version" > github-release/name
-            echo $tag_name > github-release/tag
-            echo "TBD" > github-release/body
-
-            # setup git for committing
-            git config --global user.email "cf-loggregator@pivotal.io"
-            git config --global user.name "Loggregator CI"
-
-            # setup ssh for reading from github
-            eval "$(ssh-agent -s)"
-            mkdir -p ~/.ssh
-            echo -e "Host github.com\n\tStrictHostKeyChecking no\n" >> ~/.ssh/config
-            ssh-add <(echo "$SSH_KEY")
-
-            # build final release on master
-            pushd cf-syslog-drain-release-master
-              # this is needed to land commits on master since the commit for
-              # master is checked out as a detatched head when the git
-              # resource clones it down
-              git checkout master
-
-              # setup private.yml used by `create-release --final`
-              cat << EOF > config/private.yml
-            ---
-            blobstore:
-              provider: s3
-              options:
-                bucket_name: cf-syslog-drain-release-blobs
-                access_key_id: $S3_ACCESS_KEY
-                secret_access_key: $S3_SECRET_KEY
-                credentials_source: static
-            EOF
-
-              # create final release and commit artifcats
-              bosh -n create-release --sha2 --final \
-                --tarball ../github-release/release.tgz \
-                --version $new_version
-              git add .
-              git commit -m "Create final release\
-
-
-            [ci skip]"
-
-              final_release_abbrev=$(git rev-parse --abbrev-ref HEAD)
-              final_release_sha=$(git rev-parse HEAD)
-              git tag "$tag_name" $final_release_sha
-            popd
-
-            # merge final release artifacts with develop
-            pushd cf-syslog-drain-release-develop
-              # this is needed to land commits on develop since the commit for
-              # develop is checked out as a detatched head when the git
-              # resource clones it down
-              git checkout develop
-
-              git remote add -f master-repo ../cf-syslog-drain-release-master
-              git pull
-              git merge -v -m "Merge final release artifacts\
-
-
-            [ci skip]" "master-repo/$final_release_abbrev"
-            popd
-
-            # copy repos into output
-            cp -r cf-syslog-drain-release-develop cf-syslog-drain-release-master create-final-release
+    file: loggregator-ci/tasks/create-final-release/task.yml
+    input_mapping:
+      develop: cf-syslog-drain-release-develop
+      master: cf-syslog-drain-release-master
+    params:
+      S3_ACCESS_KEY: {{s3-access-key}}
+      S3_SECRET_KEY: {{s3-secret-key}}
+      BLOBSTORE_BUCKET: cf-syslog-drain-release-blobs
+      SSH_KEY: {{loggregator-key}}
+      NEW_VERSION: "6.1"
+      RELEASE_NAME: "CF Syslog Drain Release"
   - put: cf-syslog-drain-release-final-master
     params:
-      repository: create-final-release/cf-syslog-drain-release-master
+      repository: repos/master
       rebase: false
   - put: cf-syslog-drain-release-final-develop
     params:
-      repository: create-final-release/cf-syslog-drain-release-develop
+      repository: repos/develop
       rebase: false
   - put: cf-syslog-drain-release-github-release-drafts
-    params:
-      name: github-release/name
-      tag: github-release/tag
-      body: github-release/body
-      globs:
-      - github-release/*.tgz
-
-- name: bosh-hm-forwarder-create-final-release
-  serial: true
-  public: true
-  plan:
-  - aggregate:
-    - get: bosh-hm-forwarder-version
-      params:
-        bump: patch
-    - get: bosh-hm-forwarder-release
-  - task: create-final-release
-    config:
-      platform: linux
-      image_resource:
-        type: docker-image
-        source:
-          repository: loggregator/base
-      inputs:
-      - name: bosh-hm-forwarder-version
-      - name: bosh-hm-forwarder-release
-      outputs:
-      - name: final-bosh-hm-forwarder-release
-      - name: github-release
-      params:
-        RELEASE: bosh-hm-forwarder-release
-        S3_BUCKET: bosh-hm-forwarder-release-blobs
-        S3_ACCESS_KEY: {{s3-access-key-id}}
-        S3_SECRET_KEY: {{s3-secret-access-key}}
-        OUTPUT: final-bosh-hm-forwarder-release
-      run:
-        path: bash
-        args:
-        - -c
-        - |
-          #!/bin/bash
-
-          set -e -x
-
-          new_version=$(cat bosh-hm-forwarder-version/version)
-          tag_name="v$new_version"
-
-          # write out github release files
-          echo "Bosh HM Forwarder $new_version" > github-release/name
-          echo $tag_name > github-release/tag
-          echo "TBD" > github-release/body
-
-          pushd $RELEASE
-            cat << EOF > config/private.yml
-          ---
-          blobstore:
-            provider: s3
-            options:
-              bucket_name: $S3_BUCKET
-              access_key_id: $S3_ACCESS_KEY
-              secret_access_key: $S3_SECRET_KEY
-          EOF
-
-            bosh -n create-release --sha2 --final \
-              --tarball ../github-release/release.tgz \
-              --version "$new_version"
-            git config user.email "cf-loggregator@pivotal.io"
-            git config user.name "Loggregator CI"
-            git add .
-            git commit -m "Create final release\
-
-
-            [ci skip]"
-          popd
-
-          cp -r "${RELEASE}/." "${OUTPUT}/"
-  - put: bosh-hm-forwarder-version
-    params:
-      file: bosh-hm-forwarder-version/version
-  - put: bosh-hm-forwarder-final-release
-    params:
-      repository: final-bosh-hm-forwarder-release
-      rebase: false
-      tag: bosh-hm-forwarder-version/version
-      tag_prefix: v
-  - put: bosh-hm-forwarder-release-github-release-drafts
     params:
       name: github-release/name
       tag: github-release/tag
@@ -1398,109 +1146,26 @@ jobs:
       trigger: false
     - get: log-cache-master
       resource: log-cache-master
+    - get: loggregator-ci
   - task: create-final-release
-    config:
-      image_resource:
-        type: docker-image
-        source:
-          repository: loggregator/base
-      platform: linux
-      params:
-        S3_ACCESS_KEY: {{loggregator-team-s3-access-key}}
-        S3_SECRET_KEY: {{loggregator-team-s3-secret-key}}
-        SSH_KEY: {{loggregator-key}}
-        NEW_VERSION: "0.2"
-      inputs:
-      - name: log-cache-develop
-      - name: log-cache-master
-      outputs:
-      - name: github-release
-      - name: create-final-release
-      run:
-        path: bash
-        args:
-          - -c
-          - |
-            #!/bin/bash
-            set -ex
-
-            # establish version/tag strings
-            new_version="$NEW_VERSION"
-            tag_name="v$new_version"
-
-            # write out github release files
-            echo "Log Cache v$new_version" > github-release/name
-            echo $tag_name > github-release/tag
-            echo "TBD" > github-release/body
-
-            # setup git for committing
-            git config --global user.email "cf-loggregator@pivotal.io"
-            git config --global user.name "Loggregator CI"
-
-            # setup ssh for reading from github
-            eval "$(ssh-agent -s)"
-            mkdir -p ~/.ssh
-            echo -e "Host github.com\n\tStrictHostKeyChecking no\n" >> ~/.ssh/config
-            ssh-add <(echo "$SSH_KEY")
-
-            # build final release on master
-            pushd log-cache-master
-              # this is needed to land commits on master since the commit for
-              # master is checked out as a detatched head when the git
-              # resource clones it down
-              git checkout master
-
-              # setup private.yml used by `create-release --final`
-              cat << EOF > config/private.yml
-            ---
-            blobstore:
-              provider: s3
-              options:
-                bucket_name: log-cache-release-blobs
-                access_key_id: $S3_ACCESS_KEY
-                secret_access_key: $S3_SECRET_KEY
-                credentials_source: static
-            EOF
-
-              # create final release and commit artifcats
-              bosh -n create-release --sha2 --final \
-                --tarball ../github-release/release.tgz \
-                --version $new_version
-              git add .
-              git commit -m "Create final release\
-
-
-            [ci skip]"
-
-              final_release_abbrev=$(git rev-parse --abbrev-ref HEAD)
-              final_release_sha=$(git rev-parse HEAD)
-              git tag "$tag_name" $final_release_sha
-            popd
-
-            # merge final release artifacts with develop
-            pushd log-cache-develop
-              # this is needed to land commits on develop since the commit for
-              # develop is checked out as a detatched head when the git
-              # resource clones it down
-              git checkout develop
-
-              git remote add -f master-repo ../log-cache-master
-              git pull
-              git merge -v -m "Merge final release artifacts\
-
-
-            [ci skip]" "master-repo/$final_release_abbrev"
-            popd
-
-            # copy repos into output
-            cp -r log-cache-develop log-cache-master create-final-release
+    file: loggregator-ci/tasks/create-final-release/task.yml
+    input_mapping:
+      develop: log-cache-develop
+      master: log-cache-master
+    params:
+      S3_ACCESS_KEY: {{s3-access-key}}
+      S3_SECRET_KEY: {{s3-secret-key}}
+      BLOBSTORE_BUCKET: log-cache-release-blobs
+      SSH_KEY: {{loggregator-key}}
+      NEW_VERSION: "0.2"
+      RELEASE_NAME: "Log Cache"
   - put: log-cache-final-release-master
     params:
-      repository: create-final-release/log-cache-master
+      repository: repos/master
       rebase: false
   - put: log-cache-final-release-develop
     params:
-      repository: create-final-release/log-cache-develop
+      repository: repos/develop
       rebase: false
   - put: log-cache-github-release-drafts
     params:
@@ -1517,110 +1182,27 @@ jobs:
     - get: loggregator-agent-develop
       trigger: false
     - get: loggregator-agent-master
-      resource: loggregator-agent-master
+      resource: loggregator-agent-mastera
+    - get: loggregator-ci
   - task: create-final-release
-    config:
-      image_resource:
-        type: docker-image
-        source:
-          repository: loggregator/base
-      platform: linux
-      params:
-        S3_ACCESS_KEY: {{loggregator-team-s3-access-key}}
-        S3_SECRET_KEY: {{loggregator-team-s3-secret-key}}
-        SSH_KEY: {{loggregator-key}}
-        NEW_VERSION: "1.0"
-      inputs:
-      - name: loggregator-agent-develop
-      - name: loggregator-agent-master
-      outputs:
-      - name: github-release
-      - name: create-final-release
-      run:
-        path: bash
-        args:
-          - -c
-          - |
-            #!/bin/bash
-            set -ex
-
-            # establish version/tag strings
-            new_version="$NEW_VERSION"
-            tag_name="v$new_version"
-
-            # write out github release files
-            echo "Loggregator Agent v$new_version" > github-release/name
-            echo $tag_name > github-release/tag
-            echo "TBD" > github-release/body
-
-            # setup git for committing
-            git config --global user.email "cf-loggregator@pivotal.io"
-            git config --global user.name "Loggregator CI"
-
-            # setup ssh for reading from github
-            eval "$(ssh-agent -s)"
-            mkdir -p ~/.ssh
-            echo -e "Host github.com\n\tStrictHostKeyChecking no\n" >> ~/.ssh/config
-            ssh-add <(echo "$SSH_KEY")
-
-            # build final release on master
-            pushd loggregator-agent-master
-              # this is needed to land commits on master since the commit for
-              # master is checked out as a detatched head when the git
-              # resource clones it down
-              git checkout master
-
-              # setup private.yml used by `create-release --final`
-              cat << EOF > config/private.yml
-            ---
-            blobstore:
-              provider: s3
-              options:
-                bucket_name: loggregator-agent-release-blobs
-                access_key_id: $S3_ACCESS_KEY
-                secret_access_key: $S3_SECRET_KEY
-                credentials_source: static
-            EOF
-
-              # create final release and commit artifcats
-              bosh -n create-release --sha2 --final \
-                --tarball ../github-release/release.tgz \
-                --version $new_version
-              git add .
-              git commit -m "Create final release\
-
-
-            [ci skip]"
-
-              final_release_abbrev=$(git rev-parse --abbrev-ref HEAD)
-              final_release_sha=$(git rev-parse HEAD)
-              git tag "$tag_name" $final_release_sha
-            popd
-
-            # merge final release artifacts with develop
-            pushd loggregator-agent-develop
-              # this is needed to land commits on develop since the commit for
-              # develop is checked out as a detatched head when the git
-              # resource clones it down
-              git checkout develop
-
-              git remote add -f master-repo ../loggregator-agent-master
-              git pull
-              git merge -v -m "Merge final release artifacts\
-
-
-            [ci skip]" "master-repo/$final_release_abbrev"
-            popd
-
-            # copy repos into output
-            cp -r loggregator-agent-develop loggregator-agent-master create-final-release
+    file: loggregator-ci/tasks/create-final-release/task.yml
+    input_mapping:
+      develop: loggregator-agent-develop
+      master: loggregator-agent-master
+    params:
+      S3_ACCESS_KEY: {{s3-access-key}}
+      S3_SECRET_KEY: {{s3-secret-key}}
+      BLOBSTORE_BUCKET: loggregator-agent-release-blobs
+      SSH_KEY: {{loggregator-key}}
+      NEW_VERSION: "1.0"
+      RELEASE_NAME: "Loggreagor Agent"
   - put: loggregator-agent-final-release-master
     params:
-      repository: create-final-release/loggregator-agent-master
+      repository: repos/master
       rebase: false
   - put: loggregator-agent-final-release-develop
     params:
-      repository: create-final-release/loggregator-agent-develop
+      repository: repos/develop
       rebase: false
   - put: loggregator-agent-github-release-drafts
     params:
