@@ -1010,6 +1010,7 @@ jobs:
   - bosh-loggregator
   plan:
   - aggregate:
+    - get: loggregator-ci
     - get: deployments-loggregator
     - get: logging-acceptance-tests-release
       trigger: true
