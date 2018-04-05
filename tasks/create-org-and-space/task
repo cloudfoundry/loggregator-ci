@@ -2,7 +2,9 @@
 set -ex
 password=$(bosh int vars-store/$VARS_STORE_FILE --path=/cf_admin_password)
 
-cf login -a api.$SYSTEM_DOMAIN -u admin -p $password -o system --skip-ssl-validation
+cf api api.$SYSTEM_DOMAIN --skip-ssl-validation
+cf auth admin $password
+cf target -o system
 
 set +e
 cf org $ORG
