@@ -1905,15 +1905,32 @@ jobs:
         type: docker-image
         source:
           repository: relintdockerhubpushbot/cf-deployment-concourse-tasks
-          tag: v3.19.0
+          tag: v5.7.0
+      inputs:
+      - name: deployments-loggregator
       outputs:
       - name: ops-files
+      - name: vars-files
       run:
         path: /bin/bash
         args:
         - "-c"
         - |
-          set -e
+          set -exu
+
+          pushd deployments-loggregator/gcp/coconut-bbl
+            eval $(bbl print-env)
+            export BOSH_CA_CERT=$(bbl director-ca-cert)
+          popd
+
+          service_metrics_version=$(bosh releases | grep service-metrics | grep -v service-metrics-adapter | head -n1 | awk '{print $2}')
+
+          cp deployments-loggregator/gcp/coconut-bbl/deployment-vars.yml vars-files
+          cp deployments-loggregator/gcp/coconut-bbl/service-metrics-broker-vars.yml vars-files
+
+          cat <<EOT >> vars-files/service-metrics-version.yml
+          service-metrics-release-version: $service_metrics_version
+          EOT
 
           cat <<EOT >> ops-files/on-the-fly.yml
           - type: replace
@@ -1923,27 +1940,56 @@ jobs:
             path: /instance_groups/name=service-metrics/jobs/name=service-metrics/properties/service_metrics/source_id?
             value: dummy-source-id
           EOT
-  - task: deploy
-    file: loggregator-ci/tasks/bosh-deploy/task.yml
-    input_mapping:
-      bbl-state: deployments-loggregator
-      vars-store: deployments-loggregator
-      vars-files: deployments-loggregator
-      ops-files: ops-files
-      bosh-release: service-metrics-injector
-    output_mapping:
-      updated-vars-store: updated-deployments-loggregator
-    params:
-      BBL_STATE_DIR: gcp/coconut-bbl
-      DEPLOYMENT_NAME: service-metrics-injector
-      MANIFEST_FILE: manifests/manifest.yml
-      VARS_STORE_FILE: gcp/coconut-bbl/service-metrics-injector-vars.yml
-      VARS_FILES: gcp/coconut-bbl/deployment-vars.yml
-      OPS_FILES: on-the-fly.yml
-  - put: deployments-loggregator
-    params:
-      repository: updated-deployments-loggregator
-      rebase: true
+  - aggregate:
+    - do:
+      - task: deploy-standalone
+        file: loggregator-ci/tasks/bosh-deploy/task.yml
+        input_mapping:
+          bbl-state: deployments-loggregator
+          vars-store: deployments-loggregator
+          ops-files: ops-files
+          bosh-release: service-metrics-injector
+        output_mapping:
+          updated-vars-store: updated-deployments-loggregator
+        params:
+          BBL_STATE_DIR: gcp/coconut-bbl
+          DEPLOYMENT_NAME: service-metrics-injector
+          MANIFEST_FILE: manifests/manifest.yml
+          VARS_STORE_FILE: gcp/coconut-bbl/service-metrics-injector-vars.yml
+          VARS_FILES: deployment-vars.yml
+          OPS_FILES: on-the-fly.yml
+      - put: deployments-loggregator
+        params:
+          repository: updated-deployments-loggregator
+          rebase: true
+    - do:
+      - task: deploy-odb
+        file: loggregator-ci/tasks/bosh-deploy/task.yml
+        input_mapping:
+          bbl-state: deployments-loggregator
+          vars-store: deployments-loggregator
+          ops-files: ops-files
+          bosh-release: service-metrics-injector
+        output_mapping:
+          updated-vars-store: updated-deployments-loggregator
+        params:
+          BBL_STATE_DIR: gcp/coconut-bbl
+          DEPLOYMENT_NAME: sample-service-metrics
+          MANIFEST_FILE: manifests/sample-service-metrics.yml
+          VARS_STORE_FILE: gcp/coconut-bbl/service-metrics-odb-vars.yml
+          VARS_FILES: deployment-vars.yml service-metrics-version.yml service-metrics-broker-vars.yml
+      - put: deployments-loggregator
+        params:
+          repository: updated-deployments-loggregator
+          rebase: true
+      - task: upgrade-all-service-instances
+        file: loggregator-ci/tasks/run-errand/task.yml
+        input_mapping:
+          bbl-state: deployments-loggregator
+        params:
+          BBL_STATE_DIR: gcp/coconut-bbl
+          DEPLOYMENT_NAME: sample-service-metrics
+          ERRAND: upgrade-all-service-instances
 
 - name: service-metrics-injector-system-tests
   public: false
