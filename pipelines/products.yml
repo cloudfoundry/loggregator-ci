@@ -624,12 +624,10 @@ jobs:
     - get: loggregator-ci
     - get: loggregator-src
       trigger: true
-      passed:
-      - loggregator-tests
+      passed: ["loggregator-tests"]
     - get: loggregator-agent
       trigger: true
-      passed:
-      - loggregator-agent-tests
+      passed: ["loggregator-agent-tests"]
   - aggregate:
     - task: build-agent-image
       file: loggregator-ci/tasks/build-docker-image/task.yml
@@ -690,12 +688,10 @@ jobs:
       trigger: true
     - get: loggregator-src
       trigger: true
-      passed:
-      - loggregator-tests
+      passed: ["loggregator-tests"]
     - get: loggregator-agent
       trigger: true
-      passed:
-        - loggregator-agent-tests
+      passed: ["loggregator-agent-tests"]
   - task: update-loggregator-agent
     file: loggregator-ci/tasks/bump-submodule/task.yml
     input_mapping:
@@ -779,8 +775,7 @@ jobs:
       trigger: true
     - get: loggregator-agent
       trigger: true
-      passed:
-      - loggregator-agent-tests
+      passed: ["loggregator-agent-tests"]
   - task: update-submodule
     file: loggregator-ci/tasks/bump-submodule/task.yml
     input_mapping:
@@ -846,12 +841,10 @@ jobs:
     - get: consul-release
     - get: loggregator-release
       trigger: true
-      passed:
-      - loggregator-bump-submodule
+      passed: ["loggregator-bump-submodule"]
     - get: loggregator-agent-release
       trigger: true
-      passed:
-      - loggregator-agent-bump-submodule
+      passed: ["loggregator-agent-bump-submodule"]
     - get: deployments-loggregator
     - get: loggregator-ci
     - get: logging-acceptance-tests-release
@@ -915,8 +908,7 @@ jobs:
     - get: loggregator-release
       resource: loggregator-release
       trigger: true
-      passed:
-      - cf-deploy
+      passed: ["cf-deploy"]
   - task: bump-loggregator-release
     file: loggregator-ci/tasks/bump-submodule/task.yml
     input_mapping:
@@ -1022,12 +1014,10 @@ jobs:
     - get: logging-acceptance-tests-release
       trigger: true
     - get: loggregator-release
-      passed:
-      - loggregator-deploy
+      passed: ["loggregator-deploy"]
       trigger: true
     - get: loggregator-agent-release
-      passed:
-      - loggregator-deploy
+      passed: ["loggregator-deploy"]
       trigger: true
   - task: run-lats
     config:
@@ -1098,8 +1088,7 @@ jobs:
       trigger: true
     - get: log-cache
       trigger: true
-      passed:
-      - log-cache-tests
+      passed: ["log-cache-tests"]
     - get: go-log-cache
       trigger: true
     - get: go-loggregator
@@ -1316,8 +1305,7 @@ jobs:
     - get: cf-syslog-drain-release
       trigger: true
     - get: scalable-syslog
-      passed:
-      - cf-syslog-drain-tests
+      passed: ["cf-syslog-drain-tests"]
       trigger: true
   - task: update-submodule
     file: loggregator-ci/tasks/bump-submodule/task.yml
@@ -1433,8 +1421,7 @@ jobs:
     - get: statsd-injector-release
       trigger: true
     - get: statsd-injector
-      passed:
-      - statsd-injector-tests
+      passed: ["statsd-injector-tests"]
       trigger: true
   - task: update-submodule
     file: loggregator-ci/tasks/bump-submodule/task.yml
@@ -1496,8 +1483,7 @@ jobs:
   - aggregate:
     - get: statsd-injector-release
       trigger: true
-      passed:
-      - statsd-injector-bump-submodule
+      passed: ["statsd-injector-bump-submodule"]
     - get: deployments-loggregator
     - get: loggregator-ci
   - task: deploy
@@ -1614,8 +1600,7 @@ jobs:
   - aggregate:
     - get: noisy-neighbor-nozzle-release
       trigger: true
-      passed:
-      - noisy-neighbor-nozzle-bump-submodule
+      passed: ["noisy-neighbor-nozzle-bump-submodule"]
     - get: deployments-loggregator
     - get: loggregator-ci
   - task: upload-noisy-neighbor-nozzle-release
@@ -1804,20 +1789,16 @@ jobs:
     - get: cf-deployment-concourse-tasks
     - get: loggregator-release
       trigger: true
-      passed:
-      - loggregator-bump-submodule
+      passed: ["loggregator-bump-submodule"]
     - get: loggregator-agent-release
       trigger: true
-      passed:
-      - loggregator-agent-bump-submodule
+      passed: ["loggregator-agent-bump-submodule"]
     - get: cf-syslog-drain-release
       trigger: true
-      passed:
-      - cf-syslog-drain-bump-submodule
+      passed: ["cf-syslog-drain-bump-submodule"]
     - get: log-cache-release
       trigger: true
-      passed:
-      - log-cache-bump-submodule
+      passed: ["log-cache-bump-submodule"]
     - get: vars-store
       resource: deployments-loggregator
     - get: vars-files
