@@ -172,6 +172,7 @@ jobs:
     - get: statsd-injector-release
     - get: log-cache-release
     - get: loggregator-agent-release
+    - get: loggregator-ci
   - task: upload-stemcell
     file: cf-deployment-concourse-tasks/bosh-upload-stemcell-from-cf-deployment/task.yml
     params:
@@ -285,6 +286,24 @@ jobs:
     params:
       SYSTEM_DOMAIN: playground.loggr.cf-app.com
       VARS_STORE_FILE: gcp/playground/deployment-vars.yml
+  - task: create-blackbox-space
+    file: loggregator-ci/tasks/create-org-and-space/task.yml
+    input_mapping:
+      vars-store: bbl-state
+    params:
+      VARS_STORE_FILE: gcp/playground/deployment-vars.yml
+      ORG: system
+      SPACE: blackbox-testing
+      SYSTEM_DOMAIN: playground.loggr.cf-app.com
+  - task: create-accumulators-space
+    file: loggregator-ci/tasks/create-org-and-space/task.yml
+    input_mapping:
+      vars-store: bbl-state
+    params:
+      VARS_STORE_FILE: gcp/playground/deployment-vars.yml
+      ORG: system
+      SPACE: accumulators
+      SYSTEM_DOMAIN: playground.loggr.cf-app.com
   - put: deployments-loggregator
     params:
       repository: updated-vars-store
