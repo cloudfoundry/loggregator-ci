@@ -34,8 +34,13 @@ groups:
   - noisy-neighbor-nozzle-bump-submodule
   - noisy-neighbor-nozzle-deploy
   - service-metrics-injector-tests
-  - deploy-service-metrics-injector
+  - service-metrics-injector-deploy
   - service-metrics-injector-system-tests
+- name: director-lifecycle
+  jobs:
+  - coconut-bbl-up
+  - coconut-bbl-destroy
+
 - name: loggregator
   jobs:
   - loggregator-tests
@@ -44,23 +49,13 @@ groups:
   - loggregator-bump-submodule
   - loggregator-agent-bump-submodule
   - loggregator-deploy
-  - cf-deploy
-  - lats
-  - cats
-  - cfar-lats
   - loggregator-benchmarks
   - loggregator-promotion
   - loggregator-agent-promotion
-- name: cf-syslog-drain
-  jobs:
-  - cf-syslog-drain-tests
-  - cf-drain-cli-tests
-  - cf-drain-cli-promotion
-  - cf-syslog-drain-bump-submodule
+  - lats
   - cf-deploy
   - cats
   - cfar-lats
-  - cf-syslog-drain-promotion
 - name: log-cache
   jobs:
   - log-cache-tests
@@ -72,6 +67,16 @@ groups:
   - log-cache-master-promotion
   - log-cache-cli-promotion
   - bump-cf-deployment-log-cache-ops-file
+- name: cf-syslog-drain
+  jobs:
+  - cf-syslog-drain-tests
+  - cf-drain-cli-tests
+  - cf-syslog-drain-bump-submodule
+  - cf-deploy
+  - cf-syslog-drain-promotion
+  - cf-drain-cli-promotion
+  - cats
+  - cfar-lats
 - name: statsd-injector
   jobs:
   - statsd-injector-tests
@@ -86,12 +91,8 @@ groups:
 - name: service-metrics-injector
   jobs:
   - service-metrics-injector-tests
-  - deploy-service-metrics-injector
+  - service-metrics-injector-deploy
   - service-metrics-injector-system-tests
-- name: director-lifecycle
-  jobs:
-  - coconut-bbl-up
-  - coconut-bbl-destroy
 
 resources:
 - name: 10m
@@ -396,6 +397,9 @@ resources:
     password: {{docker-hub-password}}
 
 jobs:
+###############################################################################
+# DIRECTOR LIFECYCLE
+###############################################################################
 - name: coconut-bbl-up
   public: false
   plan:
@@ -450,6 +454,9 @@ jobs:
       repository: updated-bbl-state
       rebase: true
 
+###############################################################################
+# LOGGREGATOR
+###############################################################################
 - name: loggregator-tests
   serial: true
   public: true
@@ -524,7 +531,6 @@ jobs:
                   -ginkgo.slowSpecThreshold 20
               popd
             popd
-
     - do:
       - task: build-windows-test-binary
         config:
@@ -568,7 +574,6 @@ jobs:
                 popd
               popd
               wait
-
       - task: run-windows-tests
         config:
           platform: windows
@@ -595,6 +600,21 @@ jobs:
                   throw "test failed"
                 }
               }
+
+- name: loggregator-agent-tests
+  serial: true
+  public: true
+  plan:
+  - aggregate:
+    - get: loggregator-ci
+    - get: loggregator-agent
+      trigger: true
+  - task: run-tests
+    file: loggregator-ci/tasks/go-test-with-latest-packages/task.yml
+    input_mapping:
+      source-repo: loggregator-agent
+    params:
+      IMPORT_PATH: code.cloudfoundry.org/loggregator-agent
 
 - name: loggregator-docker-images
   serial: true
@@ -750,21 +770,6 @@ jobs:
       repository: committed-loggregator-release
       rebase: true
 
-- name: loggregator-agent-tests
-  serial: true
-  public: true
-  plan:
-  - aggregate:
-    - get: loggregator-ci
-    - get: loggregator-agent
-      trigger: true
-  - task: run-tests
-    file: loggregator-ci/tasks/go-test-with-latest-packages/task.yml
-    input_mapping:
-      source-repo: loggregator-agent
-    params:
-      IMPORT_PATH: code.cloudfoundry.org/loggregator-agent
-
 - name: loggregator-agent-bump-submodule
   serial: true
   plan:
@@ -831,186 +836,6 @@ jobs:
     params:
       repository: committed-loggregator-agent-release
       rebase: true
-
-- name: cf-deploy
-  serial: true
-  serial_groups:
-  - cf-deploy
-  - bosh-cf-cats
-  - bosh-cfar-lats
-  plan:
-  - aggregate:
-    - get: loggregator-ci
-    - get: bbl-state
-      resource: deployments-loggregator
-    - get: cf-deployment
-      trigger: true
-    - get: cf-deployment-concourse-tasks
-    - get: loggregator-release
-      trigger: true
-      passed:
-      - loggregator-bump-submodule
-    - get: loggregator-agent-release
-      trigger: true
-      passed:
-      - loggregator-agent-bump-submodule
-    - get: cf-syslog-drain-release
-      trigger: true
-      passed:
-      - cf-syslog-drain-bump-submodule
-    - get: log-cache-release
-      trigger: true
-      passed:
-      - log-cache-bump-submodule
-    - get: vars-store
-      resource: deployments-loggregator
-    - get: vars-files
-      resource: deployments-loggregator
-  - aggregate:
-    - task: upload-loggregator-release
-      file: loggregator-ci/tasks/upload-release/task.yml
-      input_mapping:
-        bosh-release-dir: loggregator-release
-      params:
-        BBL_STATE_DIR: gcp/coconut-bbl
-    - task: upload-loggregator-agent-release
-      file: loggregator-ci/tasks/upload-release/task.yml
-      input_mapping:
-        bosh-release-dir: loggregator-agent-release
-      params:
-        BBL_STATE_DIR: gcp/coconut-bbl
-    - task: upload-cf-syslog-drain-release
-      file: loggregator-ci/tasks/upload-release/task.yml
-      input_mapping:
-        bosh-release-dir: cf-syslog-drain-release
-      params:
-        BBL_STATE_DIR: gcp/coconut-bbl
-    - task: upload-log-cache-release
-      file: loggregator-ci/tasks/upload-release/task.yml
-      input_mapping:
-        bosh-release-dir: log-cache-release
-      params:
-        BBL_STATE_DIR: gcp/coconut-bbl
-  - task: copy-ops-files
-    config:
-      platform: linux
-      image_resource:
-        type: docker-image
-        source:
-          repository: relintdockerhubpushbot/cf-deployment-concourse-tasks
-          tag: v3.19.0
-      inputs:
-      - name: bbl-state
-      - name: cf-deployment
-      - name: log-cache-release
-      - name: loggregator-agent-release
-      outputs:
-      - name: ops-files
-      run:
-        path: /bin/bash
-        args:
-        - "-c"
-        - |
-          set -e
-
-          cp cf-deployment/operations/windows-cell.yml ops-files/
-          cp cf-deployment/operations/scale-to-one-az.yml ops-files/
-          cp cf-deployment/operations/experimental/use-bosh-dns.yml ops-files/
-          cp cf-deployment/operations/experimental/use-bosh-dns-for-containers.yml ops-files/
-          cp cf-deployment/operations/use-compiled-releases.yml ops-files/
-          cp cf-deployment/operations/test/add-persistent-isolation-segment-router.yml ops-files/
-          cp cf-deployment/operations/test/add-persistent-isolation-segment-diego-cell.yml ops-files/
-          cp bbl-state/gcp/coconut-bbl/ops-files/*.yml ops-files/
-          cp log-cache-release/manifests/operations/deploy-in-cf-doppler-collocated.yml ops-files/add-log-cache.yml
-          cp loggregator-agent-release/manifests/operations/cf-deployment-addon.yml ops-files/use-loggregator-agent.yml
-          cp loggregator-agent-release/manifests/operations/cf-deployment-windows-addon.yml ops-files/use-loggregator-agent-windows.yml
-
-
-          cat <<EOT >> ops-files/on-the-fly.yml
-          - type: replace
-            path: /releases/name=loggregator
-            value:
-              name: loggregator
-              version: latest
-          - type: replace
-            path: /releases/name=diego
-            value:
-              name: diego
-              version: $(bosh int cf-deployment/cf-deployment.yml --path=/releases/name=diego/version)
-              url: $(bosh int cf-deployment/cf-deployment.yml --path=/releases/name=diego/url)
-              sha1: $(bosh int cf-deployment/cf-deployment.yml --path=/releases/name=diego/sha1)
-          - type: replace
-            path: /releases/name=cf-syslog-drain
-            value:
-              name: cf-syslog-drain
-              version: latest
-          - type: replace
-            path: /instance_groups/name=doppler/instances
-            value: 2
-          - path: /releases/name=consul/url
-            type: replace
-            value: https://bosh.io/d/github.com/cloudfoundry-incubator/consul-release?v=192
-          - path: /releases/name=consul/sha1
-            type: replace
-            value: 399894e3b4f5d4ba7ea5abe4ab89190ec2d4ad56
-          EOT
-  - task: upload-stemcell
-    file: cf-deployment-concourse-tasks/bosh-upload-stemcell-from-cf-deployment/task.yml
-    params:
-      BBL_STATE_DIR: gcp/coconut-bbl
-  - task: cf-deploy
-    file: cf-deployment-concourse-tasks/bosh-deploy/task.yml
-    params:
-      BBL_STATE_DIR: gcp/coconut-bbl
-      SYSTEM_DOMAIN: coconut.cf-app.com
-      VARS_STORE_FILE: gcp/coconut-bbl/deployment-vars.yml
-      OPS_FILES: |
-        clients.yml
-        scale-to-one-az.yml
-        diego.yml
-        use-compiled-releases.yml
-        add-persistent-isolation-segment-router.yml
-        add-persistent-isolation-segment-diego-cell.yml
-        on-the-fly.yml
-        windows-cell.yml
-        add-log-cache.yml
-        use-bosh-dns.yml
-        use-bosh-dns-for-containers.yml
-        use-loggregator-agent.yml
-        use-loggregator-agent-windows.yml
-
-  - task: enable-feature-flags
-    file: cf-deployment-concourse-tasks/set-feature-flags/task.yml
-    params:
-      SYSTEM_DOMAIN: coconut.cf-app.com
-      VARS_STORE_FILE: gcp/coconut-bbl/deployment-vars.yml
-      ENABLED_FEATURE_FLAGS: diego_docker
-  - put: deployments-loggregator
-    params:
-      repository: updated-vars-store
-      rebase: true
-  - task: cleanup
-    file: cf-deployment-concourse-tasks/bosh-cleanup/task.yml
-    params:
-      BBL_STATE_DIR: gcp/coconut-bbl
-  - task: create-blackbox-space
-    file: loggregator-ci/tasks/create-org-and-space/task.yml
-    input_mapping:
-      vars-store: bbl-state
-    params:
-      VARS_STORE_FILE: gcp/coconut-bbl/deployment-vars.yml
-      ORG: system
-      SPACE: blackbox-testing
-      SYSTEM_DOMAIN: coconut.cf-app.com
-  - task: create-accumulators-space
-    file: loggregator-ci/tasks/create-org-and-space/task.yml
-    input_mapping:
-      vars-store: bbl-state
-    params:
-      VARS_STORE_FILE: gcp/coconut-bbl/deployment-vars.yml
-      ORG: system
-      SPACE: accumulators
-      SYSTEM_DOMAIN: coconut.cf-app.com
 
 - name: loggregator-deploy
   serial: true
@@ -1161,73 +986,31 @@ jobs:
       repository: updated-loggregator-bench-results
       rebase: true
 
-- name: cats
+- name: loggregator-promotion
   serial: true
-  serial_groups:
-  - bosh-cf-cats
   plan:
-    - aggregate:
-      - get: cf-deployment-concourse-tasks
-      - get: deployments-loggregator
-      - get: cf-acceptance-tests
-      - get: loggregator-release
-        trigger: true
-        passed: ["cf-deploy"]
-      - get: loggregator-agent-release
-        trigger: true
-        passed: ["cf-deploy"]
-      - get: cf-syslog-drain-release
-        passed: ["cf-deploy"]
-        trigger: true
-      - get: log-cache-cli
-        passed: ["log-cache-cli-tests"]
-        trigger: true
-      - get: log-cache-release
-        passed: ["cf-deploy"]
-        trigger: true
-    - aggregate:
-      - task: run-cats
-        file: cf-deployment-concourse-tasks/run-cats/task.yml
-        input_mapping:
-          integration-config: deployments-loggregator
-        params:
-          CONFIG_FILE_PATH: gcp/coconut-bbl/cats-config.json
-          NODES: 9
-      - task: run-cats-with-log-cache
-        file: cf-deployment-concourse-tasks/run-cats/task.yml
-        input_mapping:
-          integration-config: deployments-loggregator
-        params:
-          CONFIG_FILE_PATH: gcp/coconut-bbl/log-cache-cats-config.json
-          NODES: 9
+  - aggregate:
+    - get: develop
+      resource: loggregator-release
+      trigger: true
+      passed: ["lats", "cats", "loggregator-benchmarks", "cfar-lats"]
+    - get: loggregator-release-elect
+  - put: loggregator-release-elect
+    params:
+      repository: develop
 
-- name: cfar-lats
+- name: loggregator-agent-promotion
   serial: true
-  serial_groups:
-  - bosh-cfar-lats
   plan:
-    - aggregate:
-      - get: cfar-logging-acceptance-tests
-        trigger: true
-      - get: loggregator-release
-        trigger: true
-        passed: ["cf-deploy"]
-      - get: loggregator-agent-release
-        trigger: true
-        passed: ["cf-deploy"]
-      - get: cf-syslog-drain-release
-        trigger: true
-        passed: ["cf-deploy"]
-      - get: log-cache-release
-        trigger: true
-        passed: ["cf-deploy"]
-      - get: loggregator-ci
-    - task: run-cfar-lats
-      file: loggregator-ci/tasks/cfar-lats/task.yml
-      params:
-        USERNAME: {{coconut-username}}
-        PASSWORD: {{coconut-password}}
-        API_ENDPOINT: api.coconut.cf-app.com
+  - aggregate:
+    - get: develop
+      resource: loggregator-agent-release
+      trigger: true
+      passed: ["cats", "cfar-lats", "lats"]
+    - get: loggregator-agent-release-elect
+  - put: loggregator-agent-release-elect
+    params:
+      repository: develop
 
 - name: lats
   serial: true
@@ -1271,387 +1054,23 @@ jobs:
 
             bosh -d lats run-errand lats --keep-alive
 
-- name: loggregator-promotion
-  serial: true
-  plan:
-  - aggregate:
-    - get: develop
-      resource: loggregator-release
-      trigger: true
-      passed: ["lats", "cats", "loggregator-benchmarks", "cfar-lats"]
-    - get: loggregator-release-elect
-  - put: loggregator-release-elect
-    params:
-      repository: develop
-
-- name: loggregator-agent-promotion
-  serial: true
-  plan:
-  - aggregate:
-    - get: develop
-      resource: loggregator-agent-release
-      trigger: true
-      passed: ["cats", "cfar-lats", "lats"]
-    - get: loggregator-agent-release-elect
-  - put: loggregator-agent-release-elect
-    params:
-      repository: develop
-
-- name: cf-syslog-drain-tests
+###############################################################################
+# LOG CACHE
+###############################################################################
+- name: log-cache-tests
   serial: true
   public: true
   plan:
   - aggregate:
     - get: loggregator-ci
-    - get: scalable-syslog
+    - get: log-cache
       trigger: true
   - task: run-tests
     file: loggregator-ci/tasks/go-test-with-latest-packages/task.yml
     input_mapping:
-      source-repo: scalable-syslog
+      source-repo: log-cache
     params:
-      IMPORT_PATH: code.cloudfoundry.org/scalable-syslog
-
-- name: cf-drain-cli-tests
-  serial: true
-  public: true
-  plan:
-  - aggregate:
-    - get: loggregator-ci
-    - get: cf-drain-cli
-      trigger: true
-  - task: run-tests
-    file: loggregator-ci/tasks/go-test-with-latest-packages/task.yml
-    input_mapping:
-      source-repo: cf-drain-cli
-    params:
-      IMPORT_PATH: code.cloudfoundry.org/cf-drain-cli
-
-- name: cf-drain-cli-promotion
-  serial: true
-  plan:
-  - aggregate:
-    - get: cf-drain-cli
-      passed: ["cf-drain-cli-tests"]
-      trigger: true
-    - get: cf-drain-cli-master
-    - get: bumper-tool
-    - get: loggregator-ci
-  - task: bumper
-    file: loggregator-ci/tasks/bumper/task.yml
-    input_mapping:
-      source: cf-drain-cli
-      dest: cf-drain-cli-master
-    params:
-      SOURCE_BRANCH: develop
-      DEST_BRANCH: master
-  - put: cf-drain-cli-master
-    params:
-      repository: merged-dest
-
-- name: cf-syslog-drain-bump-submodule
-  serial: true
-  plan:
-  - aggregate:
-    - get: loggregator-ci
-    - get: cf-syslog-drain-release
-      trigger: true
-    - get: scalable-syslog
-      passed:
-      - cf-syslog-drain-tests
-      trigger: true
-  - task: update-submodule
-    file: loggregator-ci/tasks/bump-submodule/task.yml
-    input_mapping:
-      release-repo: cf-syslog-drain-release
-      source-repo: scalable-syslog
-    output_mapping:
-      bumped-release-repo: updated-cf-syslog-drain-release
-    params:
-      SUBMODULE_PATH: src/code.cloudfoundry.org/scalable-syslog
-  - task: sync-package-specs
-    file: loggregator-ci/tasks/run-release-script/task.yml
-    input_mapping:
-      release-repo: updated-cf-syslog-drain-release
-    output_mapping:
-      updated-release-repo: synced-cf-syslog-drain-release
-    params:
-      SCRIPT: scripts/sync-package-specs
-  - task: run-tests
-    config:
-      platform: linux
-      image_resource:
-        type: docker-image
-        source:
-          repository: loggregator/base
-      inputs:
-      - name: synced-cf-syslog-drain-release
-      run:
-        path: bash
-        args:
-        - -c
-        - |
-          #!/bin/bash
-
-          set -ex
-
-          pushd synced-cf-syslog-drain-release
-            export GOPATH="$PWD"
-            export PATH="$GOPATH/bin:$PATH"
-            go test -race code.cloudfoundry.org/scalable-syslog/...
-          popd
-  - task: commit
-    file: loggregator-ci/tasks/commit-with-shortlog/task.yml
-    input_mapping:
-      release-repo: synced-cf-syslog-drain-release
-    output_mapping:
-      committed-repo: committed-cf-syslog-drain-release
-    params:
-      PATHS: "src/code.cloudfoundry.org/scalable-syslog packages"
-  - put: cf-syslog-drain-release
-    params:
-      repository: committed-cf-syslog-drain-release
-      rebase: true
-
-- name: cf-syslog-drain-promotion
-  serial: true
-  plan:
-  - aggregate:
-    - get: develop
-      resource: cf-syslog-drain-release
-      trigger: true
-      passed: ["cats", "cfar-lats"]
-    - get: cf-syslog-drain-release-release-elect
-  - put: cf-syslog-drain-release-release-elect
-    params:
-      repository: develop
-
-- name: statsd-injector-tests
-  serial: true
-  public: true
-  plan:
-  - aggregate:
-    - get: loggregator-ci
-    - get: statsd-injector
-      trigger: true
-  - task: run-tests
-    file: loggregator-ci/tasks/go-test-with-latest-packages/task.yml
-    input_mapping:
-      source-repo: statsd-injector
-    params:
-      IMPORT_PATH: github.com/cloudfoundry/statsd-injector
-
-- name: statsd-injector-bump-submodule
-  serial: true
-  plan:
-  - aggregate:
-    - get: loggregator-ci
-    - get: statsd-injector-release
-      trigger: true
-    - get: statsd-injector
-      passed:
-      - statsd-injector-tests
-      trigger: true
-  - task: update-submodule
-    file: loggregator-ci/tasks/bump-submodule/task.yml
-    input_mapping:
-      release-repo: statsd-injector-release
-      source-repo: statsd-injector
-    output_mapping:
-      bumped-release-repo: bumped-statsd-injector-release
-    params:
-      SUBMODULE_PATH: src/github.com/cloudfoundry/statsd-injector
-  - task: sync-package-specs
-    file: loggregator-ci/tasks/run-release-script/task.yml
-    input_mapping:
-      release-repo: bumped-statsd-injector-release
-    output_mapping:
-      updated-release-repo: synced-statsd-injector-release
-    params:
-      SCRIPT: scripts/sync-package-specs
-  - task: run-tests
-    config:
-      platform: linux
-      image_resource:
-        type: docker-image
-        source:
-          repository: loggregator/base
-      inputs:
-        - name: synced-statsd-injector-release
-      run:
-        path: bash
-        args:
-        - -c
-        - |
-          #!/bin/bash
-
-          set -ex
-
-          pushd synced-statsd-injector-release
-            export GOPATH="$PWD"
-            export PATH="$GOPATH/bin:$PATH"
-            go test -race github.com/cloudfoundry/statsd-injector/...
-          popd
-  - task: commit
-    file: loggregator-ci/tasks/commit/task.yml
-    input_mapping:
-      release-repo: synced-statsd-injector-release
-    output_mapping:
-      committed-repo: committed-statsd-injector-release
-    params:
-      COMMIT_MESSAGE: "Bump statsd-injector"
-  - put: statsd-injector-release
-    params:
-      repository: committed-statsd-injector-release
-      rebase: true
-
-- name: statsd-injector-deploy
-  serial: true
-  public: false
-  plan:
-  - aggregate:
-    - get: statsd-injector-release
-      trigger: true
-      passed:
-      - statsd-injector-bump-submodule
-    - get: deployments-loggregator
-    - get: loggregator-ci
-  - task: deploy
-    file: loggregator-ci/tasks/bosh-deploy/task.yml
-    input_mapping:
-      bbl-state: deployments-loggregator
-      vars-store: deployments-loggregator
-      ops-files: deployments-loggregator
-      vars-files: deployments-loggregator
-      bosh-release: statsd-injector-release
-    output_mapping:
-      updated-vars-store: updated-deployments-loggregator
-    params:
-      BBL_STATE_DIR: gcp/coconut-bbl
-      DEPLOYMENT_NAME: statsd-injector
-      MANIFEST_FILE: manifests/statsd-injector.yml
-      VARS_STORE_FILE: gcp/coconut-bbl/statsd-injector-vars.yml
-      VARS_FILES: "gcp/coconut-bbl/deployment-vars.yml"
-  - put: deployments-loggregator
-    params:
-      repository: updated-deployments-loggregator
-      rebase: true
-
-- name: noisy-neighbor-nozzle-tests
-  serial: true
-  public: true
-  plan:
-  - aggregate:
-    - get: loggregator-ci
-    - get: noisy-neighbor-nozzle
-      trigger: true
-  - task: run-tests
-    file: loggregator-ci/tasks/go-test-with-latest-packages/task.yml
-    input_mapping:
-      source-repo: noisy-neighbor-nozzle
-    params:
-      IMPORT_PATH: code.cloudfoundry.org/noisy-neighbor-nozzle
-
-- name: noisy-neighbor-nozzle-promotion
-  serial: true
-  plan:
-  - aggregate:
-    - get: noisy-neighbor-nozzle
-      passed: ["noisy-neighbor-nozzle-tests"]
-      trigger: true
-    - get: noisy-neighbor-nozzle-master
-    - get: bumper-tool
-    - get: loggregator-ci
-  - task: bumper
-    file: loggregator-ci/tasks/bumper/task.yml
-    input_mapping:
-      source: noisy-neighbor-nozzle
-      dest: noisy-neighbor-nozzle-master
-    params:
-      SOURCE_BRANCH: develop
-      DEST_BRANCH: master
-  - put: noisy-neighbor-nozzle-master
-    params:
-      repository: merged-dest
-
-- name: noisy-neighbor-nozzle-bump-submodule
-  serial: true
-  plan:
-  - aggregate:
-    - get: loggregator-ci
-    - get: noisy-neighbor-nozzle-release
-      trigger: true
-    - get: noisy-neighbor-nozzle-master
-      trigger: true
-      passed: ["noisy-neighbor-nozzle-promotion"]
-  - task: update-submodule
-    file: loggregator-ci/tasks/bump-submodule/task.yml
-    input_mapping:
-      release-repo: noisy-neighbor-nozzle-release
-      source-repo: noisy-neighbor-nozzle-master
-    output_mapping:
-      bumped-release-repo: bumped-noisy-neighbor-nozzle-release
-    params:
-      SUBMODULE_PATH: src/code.cloudfoundry.org/noisy-neighbor-nozzle
-  - task: sync-package-specs
-    file: loggregator-ci/tasks/run-release-script/task.yml
-    input_mapping:
-      release-repo: bumped-noisy-neighbor-nozzle-release
-    output_mapping:
-      updated-release-repo: synced-noisy-neighbor-nozzle-release
-    params:
-      SCRIPT: scripts/sync-package-specs
-  - task: run-tests
-    file: loggregator-ci/tasks/run-release-script/task.yml
-    input_mapping:
-      release-repo: synced-noisy-neighbor-nozzle-release
-    params:
-      SCRIPT: scripts/test
-  - task: commit
-    file: loggregator-ci/tasks/commit-with-shortlog/task.yml
-    input_mapping:
-      release-repo: synced-noisy-neighbor-nozzle-release
-    output_mapping:
-      committed-repo: committed-noisy-neighbor-nozzle-release
-    params:
-      PATHS: "src/code.cloudfoundry.org/noisy-neighbor-nozzle packages"
-  - put: noisy-neighbor-nozzle-release
-    params:
-      repository: committed-noisy-neighbor-nozzle-release
-      rebase: true
-
-- name: noisy-neighbor-nozzle-deploy
-  serial: true
-  public: false
-  plan:
-  - aggregate:
-    - get: noisy-neighbor-nozzle-release
-      trigger: true
-      passed:
-      - noisy-neighbor-nozzle-bump-submodule
-    - get: deployments-loggregator
-    - get: loggregator-ci
-  - task: upload-noisy-neighbor-nozzle-release
-    file: loggregator-ci/tasks/upload-release/task.yml
-    input_mapping:
-      bbl-state: deployments-loggregator
-      bosh-release-dir: noisy-neighbor-nozzle-release
-    params:
-      BBL_STATE_DIR: gcp/coconut-bbl
-  - task: deploy
-    file: loggregator-ci/tasks/bosh-deploy/task.yml
-    input_mapping:
-      bbl-state: deployments-loggregator
-      vars-store: deployments-loggregator
-      ops-files: deployments-loggregator
-      vars-files: deployments-loggregator
-      bosh-release: noisy-neighbor-nozzle-release
-    params:
-      BBL_STATE_DIR: gcp/coconut-bbl
-      DEPLOYMENT_NAME: noisy-neighbor-nozzle
-      MANIFEST_FILE: manifests/noisy-neighbor-nozzle.yml
-      VARS_STORE_FILE: gcp/coconut-bbl/throw-away.yml # We do not want to save this vars store.
-      VARS_FILES: "gcp/coconut-bbl/noisy-neighbor-nozzle-vars.yml"
+      IMPORT_PATH: code.cloudfoundry.org/log-cache
 
 - name: log-cache-cli-tests
   serial: true
@@ -1669,21 +1088,6 @@ jobs:
       source-repo: log-cache-cli
     params:
       IMPORT_PATH: code.cloudfoundry.org/log-cache-cli
-
-- name: log-cache-tests
-  serial: true
-  public: true
-  plan:
-  - aggregate:
-    - get: loggregator-ci
-    - get: log-cache
-      trigger: true
-  - task: run-tests
-    file: loggregator-ci/tasks/go-test-with-latest-packages/task.yml
-    input_mapping:
-      source-repo: log-cache
-    params:
-      IMPORT_PATH: code.cloudfoundry.org/log-cache
 
 - name: log-cache-bump-submodule
   serial: true
@@ -1871,6 +1275,374 @@ jobs:
     params:
       repository: committed-cf-deployment
 
+###############################################################################
+# CF SYSLOG DRAIN
+###############################################################################
+- name: cf-syslog-drain-tests
+  serial: true
+  public: true
+  plan:
+  - aggregate:
+    - get: loggregator-ci
+    - get: scalable-syslog
+      trigger: true
+  - task: run-tests
+    file: loggregator-ci/tasks/go-test-with-latest-packages/task.yml
+    input_mapping:
+      source-repo: scalable-syslog
+    params:
+      IMPORT_PATH: code.cloudfoundry.org/scalable-syslog
+
+- name: cf-drain-cli-tests
+  serial: true
+  public: true
+  plan:
+  - aggregate:
+    - get: loggregator-ci
+    - get: cf-drain-cli
+      trigger: true
+  - task: run-tests
+    file: loggregator-ci/tasks/go-test-with-latest-packages/task.yml
+    input_mapping:
+      source-repo: cf-drain-cli
+    params:
+      IMPORT_PATH: code.cloudfoundry.org/cf-drain-cli
+
+- name: cf-syslog-drain-bump-submodule
+  serial: true
+  plan:
+  - aggregate:
+    - get: loggregator-ci
+    - get: cf-syslog-drain-release
+      trigger: true
+    - get: scalable-syslog
+      passed:
+      - cf-syslog-drain-tests
+      trigger: true
+  - task: update-submodule
+    file: loggregator-ci/tasks/bump-submodule/task.yml
+    input_mapping:
+      release-repo: cf-syslog-drain-release
+      source-repo: scalable-syslog
+    output_mapping:
+      bumped-release-repo: updated-cf-syslog-drain-release
+    params:
+      SUBMODULE_PATH: src/code.cloudfoundry.org/scalable-syslog
+  - task: sync-package-specs
+    file: loggregator-ci/tasks/run-release-script/task.yml
+    input_mapping:
+      release-repo: updated-cf-syslog-drain-release
+    output_mapping:
+      updated-release-repo: synced-cf-syslog-drain-release
+    params:
+      SCRIPT: scripts/sync-package-specs
+  - task: run-tests
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source:
+          repository: loggregator/base
+      inputs:
+      - name: synced-cf-syslog-drain-release
+      run:
+        path: bash
+        args:
+        - -c
+        - |
+          #!/bin/bash
+
+          set -ex
+
+          pushd synced-cf-syslog-drain-release
+            export GOPATH="$PWD"
+            export PATH="$GOPATH/bin:$PATH"
+            go test -race code.cloudfoundry.org/scalable-syslog/...
+          popd
+  - task: commit
+    file: loggregator-ci/tasks/commit-with-shortlog/task.yml
+    input_mapping:
+      release-repo: synced-cf-syslog-drain-release
+    output_mapping:
+      committed-repo: committed-cf-syslog-drain-release
+    params:
+      PATHS: "src/code.cloudfoundry.org/scalable-syslog packages"
+  - put: cf-syslog-drain-release
+    params:
+      repository: committed-cf-syslog-drain-release
+      rebase: true
+
+- name: cf-syslog-drain-promotion
+  serial: true
+  plan:
+  - aggregate:
+    - get: develop
+      resource: cf-syslog-drain-release
+      trigger: true
+      passed: ["cats", "cfar-lats"]
+    - get: cf-syslog-drain-release-release-elect
+  - put: cf-syslog-drain-release-release-elect
+    params:
+      repository: develop
+
+- name: cf-drain-cli-promotion
+  serial: true
+  plan:
+  - aggregate:
+    - get: cf-drain-cli
+      passed: ["cf-drain-cli-tests"]
+      trigger: true
+    - get: cf-drain-cli-master
+    - get: bumper-tool
+    - get: loggregator-ci
+  - task: bumper
+    file: loggregator-ci/tasks/bumper/task.yml
+    input_mapping:
+      source: cf-drain-cli
+      dest: cf-drain-cli-master
+    params:
+      SOURCE_BRANCH: develop
+      DEST_BRANCH: master
+  - put: cf-drain-cli-master
+    params:
+      repository: merged-dest
+
+###############################################################################
+# STATSD INJECTOR
+###############################################################################
+- name: statsd-injector-tests
+  serial: true
+  public: true
+  plan:
+  - aggregate:
+    - get: loggregator-ci
+    - get: statsd-injector
+      trigger: true
+  - task: run-tests
+    file: loggregator-ci/tasks/go-test-with-latest-packages/task.yml
+    input_mapping:
+      source-repo: statsd-injector
+    params:
+      IMPORT_PATH: github.com/cloudfoundry/statsd-injector
+
+- name: statsd-injector-bump-submodule
+  serial: true
+  plan:
+  - aggregate:
+    - get: loggregator-ci
+    - get: statsd-injector-release
+      trigger: true
+    - get: statsd-injector
+      passed:
+      - statsd-injector-tests
+      trigger: true
+  - task: update-submodule
+    file: loggregator-ci/tasks/bump-submodule/task.yml
+    input_mapping:
+      release-repo: statsd-injector-release
+      source-repo: statsd-injector
+    output_mapping:
+      bumped-release-repo: bumped-statsd-injector-release
+    params:
+      SUBMODULE_PATH: src/github.com/cloudfoundry/statsd-injector
+  - task: sync-package-specs
+    file: loggregator-ci/tasks/run-release-script/task.yml
+    input_mapping:
+      release-repo: bumped-statsd-injector-release
+    output_mapping:
+      updated-release-repo: synced-statsd-injector-release
+    params:
+      SCRIPT: scripts/sync-package-specs
+  - task: run-tests
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source:
+          repository: loggregator/base
+      inputs:
+        - name: synced-statsd-injector-release
+      run:
+        path: bash
+        args:
+        - -c
+        - |
+          #!/bin/bash
+
+          set -ex
+
+          pushd synced-statsd-injector-release
+            export GOPATH="$PWD"
+            export PATH="$GOPATH/bin:$PATH"
+            go test -race github.com/cloudfoundry/statsd-injector/...
+          popd
+  - task: commit
+    file: loggregator-ci/tasks/commit/task.yml
+    input_mapping:
+      release-repo: synced-statsd-injector-release
+    output_mapping:
+      committed-repo: committed-statsd-injector-release
+    params:
+      COMMIT_MESSAGE: "Bump statsd-injector"
+  - put: statsd-injector-release
+    params:
+      repository: committed-statsd-injector-release
+      rebase: true
+
+- name: statsd-injector-deploy
+  serial: true
+  public: false
+  plan:
+  - aggregate:
+    - get: statsd-injector-release
+      trigger: true
+      passed:
+      - statsd-injector-bump-submodule
+    - get: deployments-loggregator
+    - get: loggregator-ci
+  - task: deploy
+    file: loggregator-ci/tasks/bosh-deploy/task.yml
+    input_mapping:
+      bbl-state: deployments-loggregator
+      vars-store: deployments-loggregator
+      ops-files: deployments-loggregator
+      vars-files: deployments-loggregator
+      bosh-release: statsd-injector-release
+    output_mapping:
+      updated-vars-store: updated-deployments-loggregator
+    params:
+      BBL_STATE_DIR: gcp/coconut-bbl
+      DEPLOYMENT_NAME: statsd-injector
+      MANIFEST_FILE: manifests/statsd-injector.yml
+      VARS_STORE_FILE: gcp/coconut-bbl/statsd-injector-vars.yml
+      VARS_FILES: "gcp/coconut-bbl/deployment-vars.yml"
+  - put: deployments-loggregator
+    params:
+      repository: updated-deployments-loggregator
+      rebase: true
+
+###############################################################################
+# NOISY NEIGHBOR NOZZLE
+###############################################################################
+- name: noisy-neighbor-nozzle-tests
+  serial: true
+  public: true
+  plan:
+  - aggregate:
+    - get: loggregator-ci
+    - get: noisy-neighbor-nozzle
+      trigger: true
+  - task: run-tests
+    file: loggregator-ci/tasks/go-test-with-latest-packages/task.yml
+    input_mapping:
+      source-repo: noisy-neighbor-nozzle
+    params:
+      IMPORT_PATH: code.cloudfoundry.org/noisy-neighbor-nozzle
+
+- name: noisy-neighbor-nozzle-promotion
+  serial: true
+  plan:
+  - aggregate:
+    - get: noisy-neighbor-nozzle
+      passed: ["noisy-neighbor-nozzle-tests"]
+      trigger: true
+    - get: noisy-neighbor-nozzle-master
+    - get: bumper-tool
+    - get: loggregator-ci
+  - task: bumper
+    file: loggregator-ci/tasks/bumper/task.yml
+    input_mapping:
+      source: noisy-neighbor-nozzle
+      dest: noisy-neighbor-nozzle-master
+    params:
+      SOURCE_BRANCH: develop
+      DEST_BRANCH: master
+  - put: noisy-neighbor-nozzle-master
+    params:
+      repository: merged-dest
+
+- name: noisy-neighbor-nozzle-bump-submodule
+  serial: true
+  plan:
+  - aggregate:
+    - get: loggregator-ci
+    - get: noisy-neighbor-nozzle-release
+      trigger: true
+    - get: noisy-neighbor-nozzle-master
+      trigger: true
+      passed: ["noisy-neighbor-nozzle-promotion"]
+  - task: update-submodule
+    file: loggregator-ci/tasks/bump-submodule/task.yml
+    input_mapping:
+      release-repo: noisy-neighbor-nozzle-release
+      source-repo: noisy-neighbor-nozzle-master
+    output_mapping:
+      bumped-release-repo: bumped-noisy-neighbor-nozzle-release
+    params:
+      SUBMODULE_PATH: src/code.cloudfoundry.org/noisy-neighbor-nozzle
+  - task: sync-package-specs
+    file: loggregator-ci/tasks/run-release-script/task.yml
+    input_mapping:
+      release-repo: bumped-noisy-neighbor-nozzle-release
+    output_mapping:
+      updated-release-repo: synced-noisy-neighbor-nozzle-release
+    params:
+      SCRIPT: scripts/sync-package-specs
+  - task: run-tests
+    file: loggregator-ci/tasks/run-release-script/task.yml
+    input_mapping:
+      release-repo: synced-noisy-neighbor-nozzle-release
+    params:
+      SCRIPT: scripts/test
+  - task: commit
+    file: loggregator-ci/tasks/commit-with-shortlog/task.yml
+    input_mapping:
+      release-repo: synced-noisy-neighbor-nozzle-release
+    output_mapping:
+      committed-repo: committed-noisy-neighbor-nozzle-release
+    params:
+      PATHS: "src/code.cloudfoundry.org/noisy-neighbor-nozzle packages"
+  - put: noisy-neighbor-nozzle-release
+    params:
+      repository: committed-noisy-neighbor-nozzle-release
+      rebase: true
+
+- name: noisy-neighbor-nozzle-deploy
+  serial: true
+  public: false
+  plan:
+  - aggregate:
+    - get: noisy-neighbor-nozzle-release
+      trigger: true
+      passed:
+      - noisy-neighbor-nozzle-bump-submodule
+    - get: deployments-loggregator
+    - get: loggregator-ci
+  - task: upload-noisy-neighbor-nozzle-release
+    file: loggregator-ci/tasks/upload-release/task.yml
+    input_mapping:
+      bbl-state: deployments-loggregator
+      bosh-release-dir: noisy-neighbor-nozzle-release
+    params:
+      BBL_STATE_DIR: gcp/coconut-bbl
+  - task: deploy
+    file: loggregator-ci/tasks/bosh-deploy/task.yml
+    input_mapping:
+      bbl-state: deployments-loggregator
+      vars-store: deployments-loggregator
+      ops-files: deployments-loggregator
+      vars-files: deployments-loggregator
+      bosh-release: noisy-neighbor-nozzle-release
+    params:
+      BBL_STATE_DIR: gcp/coconut-bbl
+      DEPLOYMENT_NAME: noisy-neighbor-nozzle
+      MANIFEST_FILE: manifests/noisy-neighbor-nozzle.yml
+      VARS_STORE_FILE: gcp/coconut-bbl/throw-away.yml # We do not want to save this vars store.
+      VARS_FILES: "gcp/coconut-bbl/noisy-neighbor-nozzle-vars.yml"
+
+###############################################################################
+# SERVICE METRICS INJECTOR
+###############################################################################
 - name: service-metrics-injector-tests
   serial: true
   plan:
@@ -1882,7 +1654,7 @@ jobs:
   - task: run-tests
     file: loggregator-ci/tasks/service-metrics-release/unit-integration-tests.yml
 
-- name: deploy-service-metrics-injector
+- name: service-metrics-injector-deploy
   serial: true
   plan:
   - aggregate:
@@ -1998,7 +1770,7 @@ jobs:
   plan:
   - get: service-metrics-release
     resource: service-metrics-injector
-    passed: ["deploy-service-metrics-injector"]
+    passed: ["service-metrics-injector-deploy"]
     trigger: true
   - get: loggregator-ci
   - get: 10m
@@ -2012,3 +1784,253 @@ jobs:
       DEPLOYMENT_NAME: service-metrics-injector
       DOPPLER_ADDR: wss://doppler.coconut.cf-app.com:443
       ORIGIN: service-metrics-injector
+
+###############################################################################
+# SHARED
+###############################################################################
+- name: cf-deploy
+  serial: true
+  serial_groups:
+  - cf-deploy
+  - bosh-cf-cats
+  - bosh-cfar-lats
+  plan:
+  - aggregate:
+    - get: loggregator-ci
+    - get: bbl-state
+      resource: deployments-loggregator
+    - get: cf-deployment
+      trigger: true
+    - get: cf-deployment-concourse-tasks
+    - get: loggregator-release
+      trigger: true
+      passed:
+      - loggregator-bump-submodule
+    - get: loggregator-agent-release
+      trigger: true
+      passed:
+      - loggregator-agent-bump-submodule
+    - get: cf-syslog-drain-release
+      trigger: true
+      passed:
+      - cf-syslog-drain-bump-submodule
+    - get: log-cache-release
+      trigger: true
+      passed:
+      - log-cache-bump-submodule
+    - get: vars-store
+      resource: deployments-loggregator
+    - get: vars-files
+      resource: deployments-loggregator
+  - aggregate:
+    - task: upload-loggregator-release
+      file: loggregator-ci/tasks/upload-release/task.yml
+      input_mapping:
+        bosh-release-dir: loggregator-release
+      params:
+        BBL_STATE_DIR: gcp/coconut-bbl
+    - task: upload-loggregator-agent-release
+      file: loggregator-ci/tasks/upload-release/task.yml
+      input_mapping:
+        bosh-release-dir: loggregator-agent-release
+      params:
+        BBL_STATE_DIR: gcp/coconut-bbl
+    - task: upload-cf-syslog-drain-release
+      file: loggregator-ci/tasks/upload-release/task.yml
+      input_mapping:
+        bosh-release-dir: cf-syslog-drain-release
+      params:
+        BBL_STATE_DIR: gcp/coconut-bbl
+    - task: upload-log-cache-release
+      file: loggregator-ci/tasks/upload-release/task.yml
+      input_mapping:
+        bosh-release-dir: log-cache-release
+      params:
+        BBL_STATE_DIR: gcp/coconut-bbl
+  - task: copy-ops-files
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source:
+          repository: relintdockerhubpushbot/cf-deployment-concourse-tasks
+          tag: v3.19.0
+      inputs:
+      - name: bbl-state
+      - name: cf-deployment
+      - name: log-cache-release
+      - name: loggregator-agent-release
+      outputs:
+      - name: ops-files
+      run:
+        path: /bin/bash
+        args:
+        - "-c"
+        - |
+          set -e
+
+          cp cf-deployment/operations/windows-cell.yml ops-files/
+          cp cf-deployment/operations/scale-to-one-az.yml ops-files/
+          cp cf-deployment/operations/experimental/use-bosh-dns.yml ops-files/
+          cp cf-deployment/operations/experimental/use-bosh-dns-for-containers.yml ops-files/
+          cp cf-deployment/operations/use-compiled-releases.yml ops-files/
+          cp cf-deployment/operations/test/add-persistent-isolation-segment-router.yml ops-files/
+          cp cf-deployment/operations/test/add-persistent-isolation-segment-diego-cell.yml ops-files/
+          cp bbl-state/gcp/coconut-bbl/ops-files/*.yml ops-files/
+          cp log-cache-release/manifests/operations/deploy-in-cf-doppler-collocated.yml ops-files/add-log-cache.yml
+          cp loggregator-agent-release/manifests/operations/cf-deployment-addon.yml ops-files/use-loggregator-agent.yml
+          cp loggregator-agent-release/manifests/operations/cf-deployment-windows-addon.yml ops-files/use-loggregator-agent-windows.yml
+
+
+          cat <<EOT >> ops-files/on-the-fly.yml
+          - type: replace
+            path: /releases/name=loggregator
+            value:
+              name: loggregator
+              version: latest
+          - type: replace
+            path: /releases/name=diego
+            value:
+              name: diego
+              version: $(bosh int cf-deployment/cf-deployment.yml --path=/releases/name=diego/version)
+              url: $(bosh int cf-deployment/cf-deployment.yml --path=/releases/name=diego/url)
+              sha1: $(bosh int cf-deployment/cf-deployment.yml --path=/releases/name=diego/sha1)
+          - type: replace
+            path: /releases/name=cf-syslog-drain
+            value:
+              name: cf-syslog-drain
+              version: latest
+          - type: replace
+            path: /instance_groups/name=doppler/instances
+            value: 2
+          - path: /releases/name=consul/url
+            type: replace
+            value: https://bosh.io/d/github.com/cloudfoundry-incubator/consul-release?v=192
+          - path: /releases/name=consul/sha1
+            type: replace
+            value: 399894e3b4f5d4ba7ea5abe4ab89190ec2d4ad56
+          EOT
+  - task: upload-stemcell
+    file: cf-deployment-concourse-tasks/bosh-upload-stemcell-from-cf-deployment/task.yml
+    params:
+      BBL_STATE_DIR: gcp/coconut-bbl
+  - task: cf-deploy
+    file: cf-deployment-concourse-tasks/bosh-deploy/task.yml
+    params:
+      BBL_STATE_DIR: gcp/coconut-bbl
+      SYSTEM_DOMAIN: coconut.cf-app.com
+      VARS_STORE_FILE: gcp/coconut-bbl/deployment-vars.yml
+      OPS_FILES: |
+        clients.yml
+        scale-to-one-az.yml
+        diego.yml
+        use-compiled-releases.yml
+        add-persistent-isolation-segment-router.yml
+        add-persistent-isolation-segment-diego-cell.yml
+        on-the-fly.yml
+        windows-cell.yml
+        add-log-cache.yml
+        use-bosh-dns.yml
+        use-bosh-dns-for-containers.yml
+        use-loggregator-agent.yml
+        use-loggregator-agent-windows.yml
+  - task: enable-feature-flags
+    file: cf-deployment-concourse-tasks/set-feature-flags/task.yml
+    params:
+      SYSTEM_DOMAIN: coconut.cf-app.com
+      VARS_STORE_FILE: gcp/coconut-bbl/deployment-vars.yml
+      ENABLED_FEATURE_FLAGS: diego_docker
+  - put: deployments-loggregator
+    params:
+      repository: updated-vars-store
+      rebase: true
+  - task: cleanup
+    file: cf-deployment-concourse-tasks/bosh-cleanup/task.yml
+    params:
+      BBL_STATE_DIR: gcp/coconut-bbl
+  - task: create-blackbox-space
+    file: loggregator-ci/tasks/create-org-and-space/task.yml
+    input_mapping:
+      vars-store: bbl-state
+    params:
+      VARS_STORE_FILE: gcp/coconut-bbl/deployment-vars.yml
+      ORG: system
+      SPACE: blackbox-testing
+      SYSTEM_DOMAIN: coconut.cf-app.com
+  - task: create-accumulators-space
+    file: loggregator-ci/tasks/create-org-and-space/task.yml
+    input_mapping:
+      vars-store: bbl-state
+    params:
+      VARS_STORE_FILE: gcp/coconut-bbl/deployment-vars.yml
+      ORG: system
+      SPACE: accumulators
+      SYSTEM_DOMAIN: coconut.cf-app.com
+
+- name: cats
+  serial: true
+  serial_groups:
+  - bosh-cf-cats
+  plan:
+    - aggregate:
+      - get: cf-deployment-concourse-tasks
+      - get: deployments-loggregator
+      - get: cf-acceptance-tests
+      - get: loggregator-release
+        trigger: true
+        passed: ["cf-deploy"]
+      - get: loggregator-agent-release
+        trigger: true
+        passed: ["cf-deploy"]
+      - get: cf-syslog-drain-release
+        passed: ["cf-deploy"]
+        trigger: true
+      - get: log-cache-cli
+        passed: ["log-cache-cli-tests"]
+        trigger: true
+      - get: log-cache-release
+        passed: ["cf-deploy"]
+        trigger: true
+    - aggregate:
+      - task: run-cats
+        file: cf-deployment-concourse-tasks/run-cats/task.yml
+        input_mapping:
+          integration-config: deployments-loggregator
+        params:
+          CONFIG_FILE_PATH: gcp/coconut-bbl/cats-config.json
+          NODES: 9
+      - task: run-cats-with-log-cache
+        file: cf-deployment-concourse-tasks/run-cats/task.yml
+        input_mapping:
+          integration-config: deployments-loggregator
+        params:
+          CONFIG_FILE_PATH: gcp/coconut-bbl/log-cache-cats-config.json
+          NODES: 9
+
+- name: cfar-lats
+  serial: true
+  serial_groups:
+  - bosh-cfar-lats
+  plan:
+    - aggregate:
+      - get: cfar-logging-acceptance-tests
+        trigger: true
+      - get: loggregator-release
+        trigger: true
+        passed: ["cf-deploy"]
+      - get: loggregator-agent-release
+        trigger: true
+        passed: ["cf-deploy"]
+      - get: cf-syslog-drain-release
+        trigger: true
+        passed: ["cf-deploy"]
+      - get: log-cache-release
+        trigger: true
+        passed: ["cf-deploy"]
+      - get: loggregator-ci
+    - task: run-cfar-lats
+      file: loggregator-ci/tasks/cfar-lats/task.yml
+      params:
+        USERNAME: {{coconut-username}}
+        PASSWORD: {{coconut-password}}
+        API_ENDPOINT: api.coconut.cf-app.com
