@@ -14,7 +14,7 @@ RUN go build \
 
 FROM alpine:latest
 
-ENV ADDR=localhost:8080 \
+ENV ADDR=:8080 \
     CA_PATH="/srv/log-cache/certs/ca.crt" \
     CERT_PATH="/srv/log-cache/certs/log-cache.crt" \
     KEY_PATH="/srv/log-cache/certs/log-cache.key"
