@@ -20,7 +20,7 @@ export GOPATH="$PWD/go"
 mkdir -p "$GOPATH/src/code.cloudfoundry.org"
 cp -r loggregator-tools/ "$GOPATH/src/code.cloudfoundry.org/"
 
-pushd "$GOPATH/src/code.cloudfoundry.org/loggregator-tools/log-cache-forwarders/datadog"
+pushd "$GOPATH/src/code.cloudfoundry.org/loggregator-tools/log-cache-forwarders/cmd/datadog"
   go get -d ./...
   go build
 
