@@ -33,16 +33,16 @@ groups:
   - noisy-neighbor-nozzle-promotion
   - noisy-neighbor-nozzle-bump-submodule
   - noisy-neighbor-nozzle-deploy
-  - service-metrics-injector-tests
-  - service-metrics-injector-deploy
-  - service-metrics-injector-system-tests
+  - service-metrics-tests
+  - service-metrics-bump-submodule
+  - service-metrics-deploy
+  - service-metrics-system-tests
   - leadership-election-tests
   - leadership-election-bump-submodule
 - name: director-lifecycle
   jobs:
   - coconut-bbl-up
   - coconut-bbl-destroy
-
 - name: loggregator
   jobs:
   - loggregator-tests
@@ -92,9 +92,10 @@ groups:
   - noisy-neighbor-nozzle-deploy
 - name: service-metrics-injector
   jobs:
-  - service-metrics-injector-tests
-  - service-metrics-injector-deploy
-  - service-metrics-injector-system-tests
+  - service-metrics-tests
+  - service-metrics-bump-submodule
+  - service-metrics-deploy
+  - service-metrics-system-tests
 - name: leadership-election
   jobs:
   - leadership-election-tests
@@ -375,10 +376,18 @@ resources:
   source:
     uri: https://github.com/cloudfoundry/bosh-deployment
 
-- name: service-metrics-injector
+- name: service-metrics
   type: git
   source:
-    uri: https://github.com/cloudfoundry/service-metrics-release
+    uri: https://github.com/cloudfoundry/service-metrics
+    branch: master
+
+- name: service-metrics-release
+  type: git
+  source:
+    uri: git@github.com:cloudfoundry/service-metrics-release
+    branch: develop
+    private_key: {{cf-loggregator-oauth-bot-key}}
 
 - name: leadership-election
   type: git
@@ -1634,31 +1643,98 @@ jobs:
 ###############################################################################
 # SERVICE METRICS INJECTOR
 ###############################################################################
-- name: service-metrics-injector-tests
+- name: service-metrics-tests
+  serial: true
+  plan:
+  - aggregate:
+    - get: service-metrics
+      trigger: true
+    - get: loggregator-ci
+  - task: run-tests
+    file: loggregator-ci/tasks/go-test-with-latest-packages/task.yml
+    params:
+      IMPORT_PATH: github.com/cloudfoundry/service-metrics
+    input_mapping:
+      source-repo: service-metrics
+
+- name: service-metrics-bump-submodule
+  serial: true
+  plan:
+  - aggregate:
+    - get: loggregator-ci
+    - get: service-metrics-release
+      trigger: true
+    - get: service-metrics
+      passed: ["service-metrics-tests"]
+      trigger: true
+  - task: update-submodule
+    file: loggregator-ci/tasks/bump-submodule/task.yml
+    input_mapping:
+      release-repo: service-metrics-release
+      source-repo: service-metrics
+    output_mapping:
+      bumped-release-repo: bumped-service-metrics-release
+    params:
+      SUBMODULE_PATH: src/github.com/cloudfoundry/service-metrics
+  - task: sync-package-specs
+    file: loggregator-ci/tasks/run-release-script/task.yml
+    input_mapping:
+      release-repo: bumped-service-metrics-release
+    output_mapping:
+      updated-release-repo: synced-service-metrics-release
+    params:
+      SCRIPT: scripts/sync-package-specs
+  - task: run-tests
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source:
+          repository: loggregator/base
+      inputs:
+        - name: synced-service-metrics-release
+      run:
+        path: bash
+        args:
+        - -c
+        - |
+          #!/bin/bash
+
+          set -ex
+
+          pushd synced-service-metrics-release
+            export GOPATH="$PWD"
+            export PATH="$GOPATH/bin:$PATH"
+            go test -race github.com/cloudfoundry/service-metrics/...
+          popd
+  - task: commit
+    file: loggregator-ci/tasks/commit/task.yml
+    input_mapping:
+      release-repo: synced-service-metrics-release
+
+    output_mapping:
+      committed-repo: committed-service-metrics-release
+    params:
+      COMMIT_MESSAGE: "Bump service metrics"
+  - put: service-metrics-release
+    params:
+      repository: committed-service-metrics-release
+      rebase: true
+
+- name: service-metrics-deploy
   serial: true
   plan:
   - aggregate:
     - get: service-metrics-release
-      resource: service-metrics-injector
       trigger: true
-    - get: loggregator-ci
-  - task: run-tests
-    file: loggregator-ci/tasks/service-metrics-release/unit-integration-tests.yml
-
-- name: service-metrics-injector-deploy
-  serial: true
-  plan:
-  - aggregate:
-    - get: service-metrics-injector
-      trigger: true
-      passed: ["service-metrics-injector-tests"]
+      passed: ["service-metrics-bump-submodule"]
     - get: deployments-loggregator
     - get: loggregator-ci
   - task: upload-service-metrics-release
     file: loggregator-ci/tasks/upload-release/task.yml
     input_mapping:
       bbl-state: deployments-loggregator
-      bosh-release-dir: service-metrics-injector
+      bosh-release-dir: service-metrics-release
     params:
       BBL_STATE_DIR: gcp/coconut-bbl
   - task: copy-ops-files
@@ -1711,7 +1787,7 @@ jobs:
           bbl-state: deployments-loggregator
           vars-store: deployments-loggregator
           ops-files: ops-files
-          bosh-release: service-metrics-injector
+          bosh-release: service-metrics-release
         output_mapping:
           updated-vars-store: updated-deployments-loggregator
         params:
@@ -1732,7 +1808,7 @@ jobs:
           bbl-state: deployments-loggregator
           vars-store: deployments-loggregator
           ops-files: ops-files
-          bosh-release: service-metrics-injector
+          bosh-release: service-metrics-release
         output_mapping:
           updated-vars-store: updated-deployments-loggregator
         params:
@@ -1754,14 +1830,13 @@ jobs:
           DEPLOYMENT_NAME: sample-service-metrics
           ERRAND: upgrade-all-service-instances
 
-- name: service-metrics-injector-system-tests
+- name: service-metrics-system-tests
   public: false
   serial: true
   serial_groups: ["cf-deploy"]
   plan:
   - get: service-metrics-release
-    resource: service-metrics-injector
-    passed: ["service-metrics-injector-deploy"]
+    passed: ["service-metrics-deploy"]
     trigger: true
   - get: loggregator-ci
   - get: 10m
