@@ -11,7 +11,6 @@ groups:
   - lats
   - cfar-lats
   - cats
-  - iso-cats
   - loggregator-benchmarks
   - loggregator-promotion
   - loggregator-agent-promotion
@@ -1993,46 +1992,6 @@ jobs:
           integration-config: deployments-loggregator
         params:
           CONFIG_FILE_PATH: gcp/coconut-bbl/log-cache-cats-config.json
-          NODES: 9
-
-- name: iso-cats
-  serial: true
-  serial_groups:
-  - bosh-cf-cats
-  plan:
-    - aggregate:
-      - get: cf-deployment-concourse-tasks
-      - get: deployments-loggregator
-      - get: cf-acceptance-tests
-      - get: loggregator-release
-        trigger: true
-        passed: ["cf-deploy"]
-      - get: loggregator-agent-release
-        trigger: true
-        passed: ["cf-deploy"]
-      - get: cf-syslog-drain-release
-        passed: ["cf-deploy"]
-        trigger: true
-      - get: log-cache-cli
-        passed: ["log-cache-cli-tests"]
-        trigger: true
-      - get: log-cache-release
-        passed: ["cf-deploy"]
-        trigger: true
-    - aggregate:
-      - task: run-cats
-        file: cf-deployment-concourse-tasks/run-cats/task.yml
-        input_mapping:
-          integration-config: deployments-loggregator
-        params:
-          CONFIG_FILE_PATH: gcp/coconut-bbl/cats-config.json
-          NODES: 9
-      - task: run-cats-with-log-cache
-        file: cf-deployment-concourse-tasks/run-cats/task.yml
-        input_mapping:
-          integration-config: deployments-loggregator
-        params:
-          CONFIG_FILE_PATH: gcp/coconut-bbl/log-cache-iso-cats-config.json
           NODES: 9
 
 - name: cfar-lats
