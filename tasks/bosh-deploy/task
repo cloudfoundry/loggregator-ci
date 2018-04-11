@@ -31,3 +31,5 @@ pushd vars-store
 popd
 
 rsync -ac vars-store/ updated-vars-store
+
+bosh -n clean-up --all
