@@ -1988,7 +1988,6 @@ jobs:
       OPS_FILES: |
         clients.yml
         scale-to-one-az.yml
-        diego.yml
         use-compiled-releases.yml
         add-persistent-isolation-segment-router.yml
         add-persistent-isolation-segment-diego-cell.yml
@@ -1999,16 +1998,18 @@ jobs:
         use-bosh-dns-for-containers.yml
         use-loggregator-agent.yml
         use-loggregator-agent-windows.yml
-  - task: enable-feature-flags
-    file: cf-deployment-concourse-tasks/set-feature-flags/task.yml
-    params:
-      SYSTEM_DOMAIN: coconut.cf-app.com
-      VARS_STORE_FILE: gcp/coconut-bbl/deployment-vars.yml
-      ENABLED_FEATURE_FLAGS: diego_docker
   - put: deployments-loggregator
     params:
       repository: updated-vars-store
       rebase: true
+  - task: enable-feature-flags
+    file: cf-deployment-concourse-tasks/set-feature-flags/task.yml
+    input_mapping:
+      vars-store: updated-vars-store
+    params:
+      SYSTEM_DOMAIN: coconut.cf-app.com
+      VARS_STORE_FILE: gcp/coconut-bbl/deployment-vars.yml
+      ENABLED_FEATURE_FLAGS: diego_docker
   - task: cleanup
     file: cf-deployment-concourse-tasks/bosh-cleanup/task.yml
     params:
