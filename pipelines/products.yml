@@ -1821,7 +1821,7 @@ jobs:
         params:
           repository: updated-deployments-loggregator
           rebase: true
-      - task: upgrade-all-service-instances
+      - task: register-service-broker
         file: loggregator-ci/tasks/run-errand/task.yml
         input_mapping:
           bbl-state: deployments-loggregator
