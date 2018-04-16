@@ -44,8 +44,16 @@ popd
 sizes=(1 10 1000)
 
 for s in ${sizes[*]}; do
-    echo "Reliability test - group size: ${s}"
+    echo "Latency test - group size: ${s}"
+    response=$(curl "${APP_ADDR}/group?size=${s}" -d='')
 
+    latency=$(echo "$response" | jq .latency)
+    avg_query_time=$(echo "$response" | jq .averageQueryTime)
+
+    fail_on_empty "$latency"
+    fail_on_empty "$avg_query_time"
+
+    echo "Reliability test - group size: ${s}"
     response=$(curl "${APP_ADDR}/group/reliability?size=${s}" -d='')
 
     logs_sent=$(echo "$response" | jq .logsSent)
