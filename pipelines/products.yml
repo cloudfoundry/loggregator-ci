@@ -1828,6 +1828,14 @@ jobs:
         params:
           BBL_STATE_DIR: gcp/coconut-bbl
           DEPLOYMENT_NAME: sample-service-metrics
+          ERRAND: register-broker
+      - task: upgrade-all-service-instances
+        file: loggregator-ci/tasks/run-errand/task.yml
+        input_mapping:
+          bbl-state: deployments-loggregator
+        params:
+          BBL_STATE_DIR: gcp/coconut-bbl
+          DEPLOYMENT_NAME: sample-service-metrics
           ERRAND: upgrade-all-service-instances
 
 - name: service-metrics-system-tests
