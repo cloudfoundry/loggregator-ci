@@ -337,6 +337,20 @@ jobs:
         PASSWORD: {{coconut-password}}
         UAA_CLIENT: {{coconut-uaa-client}}
         UAA_CLIENT_SECRET: {{coconut-uaa-client-secret}}
+    - task: log-cache-group-blackbox-tests
+      file: loggregator-ci/tasks/log-cache-group-blackbox/task.yml
+      params:
+        APP_NAME: "log-cache-blackbox"
+        APP_ADDR: "log-cache-blackbox.coconut.cf-app.com"
+        SYSTEM_DOMAIN: "coconut.cf-app.com"
+        DATADOG_API_KEY: {{datadog-loggregator-api-key}}
+        LOG_CACHE_ADDR: http://log-cache.coconut.cf-app.com
+        ORG: system
+        SPACE: blackbox-testing
+        USERNAME: {{coconut-username}}
+        PASSWORD: {{coconut-password}}
+        UAA_CLIENT: {{coconut-uaa-client}}
+        UAA_CLIENT_SECRET: {{coconut-uaa-client-secret}}
     - task: log-cache-siege
       config:
         platform: linux
