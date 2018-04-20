@@ -4,13 +4,13 @@ resources:
   type: git
   source:
     branch: master
-    uri: https://github.com/cloudfoundry/loggregator-ci.git
+    uri: https://github.com/cloudfoundry/loggregator-ci
 
 - name: logging-acceptance-tests
   type: git
   source:
     branch: master
-    uri: https://github.com/cloudfoundry/logging-acceptance-tests.git
+    uri: https://github.com/cloudfoundry/logging-acceptance-tests
 
 jobs:
 - name: compile-tests
