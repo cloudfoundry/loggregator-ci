@@ -1949,17 +1949,15 @@ jobs:
           cp cf-deployment/operations/test/add-persistent-isolation-segment-diego-cell.yml ops-files/
           cp bbl-state/gcp/coconut-bbl/ops-files/*.yml ops-files/
           cp log-cache-release/manifests/operations/deploy-in-cf-doppler-collocated.yml ops-files/add-log-cache.yml
+          cp loggregator-agent-release/manifests/operations/cf-deployment-addon.yml ops-files/use-loggregator-agent.yml
+          cp loggregator-agent-release/manifests/operations/cf-deployment-windows-addon.yml ops-files/use-loggregator-agent-windows.yml
+
 
           cat <<EOT >> ops-files/on-the-fly.yml
           - type: replace
             path: /releases/name=loggregator
             value:
               name: loggregator
-              version: latest
-          - type: replace
-            path: /releases/name=loggregator-agent
-            value:
-              name: loggregator-agent
               version: latest
           - type: replace
             path: /releases/name=diego
@@ -2007,6 +2005,8 @@ jobs:
         add-log-cache.yml
         use-bosh-dns.yml
         use-bosh-dns-for-containers.yml
+        use-loggregator-agent.yml
+        use-loggregator-agent-windows.yml
   - put: deployments-loggregator
     params:
       repository: updated-vars-store
