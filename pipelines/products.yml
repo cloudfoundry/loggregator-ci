@@ -1317,6 +1317,7 @@ jobs:
   plan:
   - aggregate:
     - get: loggregator-ci
+    - get: go-loggregator
     - get: cf-syslog-drain-release
       trigger: true
     - get: scalable-syslog
@@ -1331,10 +1332,19 @@ jobs:
       bumped-release-repo: updated-cf-syslog-drain-release
     params:
       SUBMODULE_PATH: src/code.cloudfoundry.org/scalable-syslog
+  - task: update-go-loggregator-submodule
+    file: loggregator-ci/tasks/bump-submodule/task.yml
+    input_mapping:
+      release-repo: updated-cf-syslog-drain-release
+      source-repo: go-loggregator
+    output_mapping:
+      bumped-release-repo: bumped-go-loggregator-release
+    params:
+      SUBMODULE_PATH: src/code.cloudfoundry.org/go-loggregator
   - task: sync-package-specs
     file: loggregator-ci/tasks/run-release-script/task.yml
     input_mapping:
-      release-repo: updated-cf-syslog-drain-release
+      release-repo: bumped-go-loggregator-release
     output_mapping:
       updated-release-repo: synced-cf-syslog-drain-release
     params:
