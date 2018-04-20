@@ -20,7 +20,7 @@ jobs:
     - get: logging-acceptance-tests
       trigger: true
   - task: compile-tests
-    file: loggregator-ci/tasks/go-compile
+    file: loggregator-ci/tasks/go-compile/task.yml
     input_mapping:
       package-src: logging-acceptance-tests
     params:
