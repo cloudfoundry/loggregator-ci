@@ -1,0 +1,15 @@
+#!/bin/bash
+
+set -eu
+
+if [ -z "$SOURCE_IMPORT_PATH" ]; then
+  echo please provide an import path for the package you are trying to compile
+  exit 1
+fi
+
+mkdir -p "go-workspace/src/$SOURCE_IMPORT_PATH"
+cd go-workspace
+export GOPATH=$PWD
+cp -a ../package-src/. "src/$SOURCE_IMPORT_PATH/"
+go build "$SOURCE_IMPORT_PATH/..."
+go test -run=XXXXXXXXXX "$SOURCE_IMPORT_PATH/..."

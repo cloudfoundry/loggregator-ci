@@ -1,0 +1,27 @@
+
+resources:
+- name: loggregator-ci
+  type: git
+  source:
+    branch: master
+    uri: https://github.com/cloudfoundry/loggregator-ci.git
+
+- name: logging-acceptance-tests
+  type: git
+  source:
+    branch: master
+    uri: https://github.com/cloudfoundry/logging-acceptance-tests.git
+
+jobs:
+- name: compile-tests
+  plan:
+  - aggregate:
+    - get: loggregator-ci
+    - get: logging-acceptance-tests
+      trigger: true
+  - task: compile-tests
+    file: loggregator-ci/tasks/go-compile
+    input_mapping:
+      package-src: logging-acceptance-tests
+    params:
+      SOURCE_IMPORT_PATH: code.cloudfoundry.org/logging-acceptance-tests
