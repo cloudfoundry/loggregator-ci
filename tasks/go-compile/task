@@ -11,5 +11,10 @@ mkdir -p "go-workspace/src/$SOURCE_IMPORT_PATH"
 cd go-workspace
 export GOPATH=$PWD
 cp -a ../package-src/. "src/$SOURCE_IMPORT_PATH/"
-go build "$SOURCE_IMPORT_PATH/..."
-go test -run=XXXXXXXXXX "$SOURCE_IMPORT_PATH/..."
+
+if [ "$BUILD_NON_TEST" = "true" ]; then
+  go build "$SOURCE_IMPORT_PATH/..."
+fi
+if [ "$BUILD_TEST" = "true" ]; then
+  go test -run=XXXXXXXXXX "$SOURCE_IMPORT_PATH/..."
+fi

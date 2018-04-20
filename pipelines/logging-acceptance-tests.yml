@@ -25,3 +25,4 @@ jobs:
       package-src: logging-acceptance-tests
     params:
       SOURCE_IMPORT_PATH: code.cloudfoundry.org/logging-acceptance-tests
+      BUILD_NON_TEST: false

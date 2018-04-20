@@ -16,3 +16,11 @@ params:
   # - Required
   # - The import path to move the source code in the workspace.
   SOURCE_IMPORT_PATH:
+
+  # - Optional
+  # - Compile the regular (non-test) package.
+  BUILD_NON_TEST: true
+
+  # - Optional
+  # - Compile the test package.
+  BUILD_TEST: true
