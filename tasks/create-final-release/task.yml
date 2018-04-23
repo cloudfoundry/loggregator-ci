@@ -5,12 +5,12 @@ image_resource:
 platform: linux
 inputs:
   # - Required
-  # - The release repo checked out to the develop branch
-- name: develop
+  # - The repo to which the final releases will be merged
+- name: to-repo
 
   # - Required
-  # - The release repo checked out to the develop master
-- name: master
+  # - The repo from which the final release will be created
+- name: from-repo
 
   # - Required
   # - The task repository
@@ -53,3 +53,13 @@ params:
   # - Required
   # - Human readable name of the created release (e.g. Loggregator)
   RELEASE_NAME:
+
+  # - Required
+  # - Branch from which the final release will be created
+  FROM_BRANCH:
+
+  # - Required
+  # - Branch to which the final release will be merged
+  TO_BRANCH:
+
+
