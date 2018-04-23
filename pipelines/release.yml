@@ -745,68 +745,14 @@ jobs:
   serial: true
   plan:
   - aggregate:
+    - get: loggregator-ci
     - get: cf-drain-cli
   - task: create-binaries
-    config:
-      image_resource:
-        type: docker-image
-        source:
-          repository: loggregator/base
-      platform: linux
-      params:
-        VERSION_MAJOR: 0
-        VERSION_MINOR: 6
-      inputs:
-      - name: cf-drain-cli
-      outputs:
-      - name: output-repo
-      - name: github-release
-      run:
-        path: bash
-        args:
-          - -c
-          - |
-            #!/bin/bash
-            set -ex
+    file: loggregator-ci/tasks/release-cf-drain-cli/task.yml
+    params:
+      VERSION_MAJOR: 0
+      VERSION_MINOR: 6
 
-            # establish version/tag strings
-            version="{\"Major\":$VERSION_MAJOR,\"Minor\":$VERSION_MINOR}"
-            semver="v$VERSION_MAJOR.$VERSION_MINOR"
-
-            # write out github release files
-            echo "CF Drain CLI $semver" > github-release/name
-            echo $semver> github-release/tag
-            echo "TBD" > github-release/body
-
-            # setup go path
-            cfdrain=$PWD/cf-drain-cli
-            mkdir -p go
-            pushd go
-              export GOPATH=$PWD
-              go get -d code.cloudfoundry.org/cf-drain-cli/...
-              rm -rf src/code.cloudfoundry.org/cf-drain-cli
-              cp -r $cfdrain src/code.cloudfoundry.org/cf-drain-cli
-            popd
-
-            # build binaries
-            mkdir -p github-release/builds
-            output=$PWD/github-release/builds
-            pushd $GOPATH/src/code.cloudfoundry.org/cf-drain-cli
-              GOOS=linux go build -ldflags "-X main.version=$version" -o $output/cf-drain-cli-linux
-              GOOS=darwin go build -ldflags "-X main.version=$version" -o $output/cf-drain-cli-darwin
-              GOOS=windows go build -ldflags "-X main.version=$version" -o $output/cf-drain-cli-windows
-            popd
-
-            # build the space drain app
-            pushd $GOPATH/src/code.cloudfoundry.org/cf-drain-cli/space_drain
-              GOOS=linux go build -o $output/space_drain
-            popd
-
-            pushd $cfdrain
-              # add git tag
-              git tag "$semver"
-            popd
-            cp -r $cfdrain output-repo/
   - put: cf-drain-cli
     params:
       repository: output-repo/cf-drain-cli

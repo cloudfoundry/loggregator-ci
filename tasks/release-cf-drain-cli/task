@@ -1,0 +1,41 @@
+#!/bin/bash
+set -ex
+
+# establish version/tag strings
+version="{\"Major\":$VERSION_MAJOR,\"Minor\":$VERSION_MINOR}"
+semver="v$VERSION_MAJOR.$VERSION_MINOR"
+
+# write out github release files
+echo "CF Drain CLI $semver" > github-release/name
+echo $semver> github-release/tag
+echo "TBD" > github-release/body
+
+# setup go path
+cfdrain=$PWD/cf-drain-cli
+mkdir -p go
+pushd go
+  export GOPATH=$PWD
+  go get -d code.cloudfoundry.org/cf-drain-cli/...
+  rm -rf src/code.cloudfoundry.org/cf-drain-cli
+  cp -r $cfdrain src/code.cloudfoundry.org/cf-drain-cli
+popd
+
+# build binaries
+mkdir -p github-release/builds
+output=$PWD/github-release/builds
+pushd $GOPATH/src/code.cloudfoundry.org/cf-drain-cli
+  GOOS=linux go build -ldflags "-X main.version=$version" -o $output/cf-drain-cli-linux
+  GOOS=darwin go build -ldflags "-X main.version=$version" -o $output/cf-drain-cli-darwin
+  GOOS=windows go build -ldflags "-X main.version=$version" -o $output/cf-drain-cli-windows
+popd
+
+# build the space drain app
+pushd $GOPATH/src/code.cloudfoundry.org/cf-drain-cli/space_drain
+  GOOS=linux go build -o $output/space_drain
+popd
+
+pushd $cfdrain
+  # add git tag
+  git tag "$semver"
+popd
+cp -r $cfdrain output-repo/
