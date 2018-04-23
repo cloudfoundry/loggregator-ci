@@ -1,0 +1,9 @@
+#!/usr/bin/env ruby
+require_relative './cf_plugin_pull_requester'
+
+if $PROGRAM_NAME == __FILE__
+  cfg = CFPluginPRConfig.new
+  pr = CFPluginPullRequester.new(cfg)
+
+  pr.manifest
+end
