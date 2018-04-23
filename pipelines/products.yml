@@ -1986,7 +1986,7 @@ jobs:
             value: 2
           - type: replace
             path: /instance_groups/name=diego-cell/instances
-            value: 5
+            value: 6
           - path: /releases/name=consul/url
             type: replace
             value: https://bosh.io/d/github.com/cloudfoundry-incubator/consul-release?v=192
