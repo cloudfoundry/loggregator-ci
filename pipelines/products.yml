@@ -1322,7 +1322,10 @@ jobs:
     output_mapping:
       committed-repo: committed-cf-syslog-drain-release
     params:
-      PATHS: "src/code.cloudfoundry.org/scalable-syslog packages"
+      PATHS: |
+        src/code.cloudfoundry.org/scalable-syslog
+        src/code.cloudfoundry.org/go-loggregator
+        packages
   - put: cf-syslog-drain-release
     params:
       repository: committed-cf-syslog-drain-release
