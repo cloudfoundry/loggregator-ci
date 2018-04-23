@@ -6,8 +6,9 @@ image_resource:
     repository: loggregator/base
 
 inputs:
-- name: loggregator-ci # - This repo
-- name: cf-drain-cli   # - The plugin repo
+- name: loggregator-ci    # - This repo
+- name: cf-drain-cli      # - The plugin repo
+- name: loggregator-tools # - Tools repo needed for syslog forwarder app
 
 outputs:
 - name: output-repo    # - The released version of the repo

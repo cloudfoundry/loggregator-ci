@@ -12,12 +12,18 @@ echo "TBD" > github-release/body
 
 # setup go path
 cfdrain=$PWD/cf-drain-cli
+tools=$PWD/loggregator-tools
 mkdir -p go
 pushd go
   export GOPATH=$PWD
+
   go get -d code.cloudfoundry.org/cf-drain-cli/...
   rm -rf src/code.cloudfoundry.org/cf-drain-cli
   cp -r $cfdrain src/code.cloudfoundry.org/cf-drain-cli
+
+  go get -d code.cloudfoundry.org/loggregator-tools/log-cache-forwarders/cmd/syslog/...
+  rm -rf src/code.cloudfoundry.org/loggregator-tools
+  cp -r $tools src/code.cloudfoundry.org/loggregator-tools
 popd
 
 # build binaries
@@ -32,6 +38,11 @@ popd
 # build the space drain app
 pushd $GOPATH/src/code.cloudfoundry.org/cf-drain-cli/space_drain
   GOOS=linux go build -o $output/space_drain
+popd
+
+# build the syslog forwarder app
+pushd $GOPATH/src/code.cloudfoundry.org/loggregator-tools/log-cache-forwarders/cmd/syslog
+  GOOS=linux go build -o $output/syslog_forwarder
 popd
 
 pushd $cfdrain
