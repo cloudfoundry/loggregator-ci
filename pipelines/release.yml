@@ -88,6 +88,13 @@ resources:
     - .final_builds
     - releases
 
+- name: cf-syslog-drain-release-backport
+  type: git
+  source:
+    branch: &cf-syslog-backport-branch v3.x
+    uri: git@github.com:cloudfoundry/cf-syslog-drain-release
+    private_key: {{cf-loggregator-oauth-bot-key}}
+
 - name: cf-syslog-drain-release-github-release-drafts
   type: github-release
   source:
@@ -553,8 +560,8 @@ jobs:
   - task: create-final-release
     file: loggregator-ci/tasks/create-final-release/task.yml
     input_mapping:
-      develop: loggregator-develop
-      master: loggregator-master
+      to-repo: loggregator-develop
+      from-repo: loggregator-master
     params:
       S3_ACCESS_KEY: {{s3-access-key}}
       S3_SECRET_KEY: {{s3-secret-key}}
@@ -562,13 +569,15 @@ jobs:
       SSH_KEY: {{loggregator-key}}
       NEW_VERSION: "102.1"
       RELEASE_NAME: Loggregator
+      TO_BRANCH: develop
+      FROM_BRANCH: master
   - put: loggregator-release-master
     params:
-      repository: repos/master
+      repository: repos/from-repo
       rebase: false
   - put: loggregator-release-develop
     params:
-      repository: repos/develop
+      repository: repos/to-repo
       rebase: false
   - put: loggregator-github-release-drafts
     params:
@@ -687,22 +696,129 @@ jobs:
   - task: create-final-release
     file: loggregator-ci/tasks/create-final-release/task.yml
     input_mapping:
-      develop: cf-syslog-drain-release-develop
-      master: cf-syslog-drain-release-master
+      to-repo: cf-syslog-drain-release-develop
+      from-repo: cf-syslog-drain-release-master
     params:
-      S3_ACCESS_KEY: {{s3-access-key}}
-      S3_SECRET_KEY: {{s3-secret-key}}
+      S3_ACCESS_KEY: {{s3-access-key-id}}
+      S3_SECRET_KEY: {{s3-secret-access-key}}
       BLOBSTORE_BUCKET: cf-syslog-drain-release-blobs
       SSH_KEY: {{loggregator-key}}
-      NEW_VERSION: "6.1"
+      NEW_VERSION: "6.3"
       RELEASE_NAME: "CF Syslog Drain Release"
+      TO_BRANCH: develop
+      FROM_BRANCH: master
   - put: cf-syslog-drain-release-master
     params:
-      repository: repos/master
+      repository: repos/from-repo
       rebase: false
   - put: cf-syslog-drain-release-develop
     params:
-      repository: repos/develop
+      repository: repos/to-repo
+      rebase: false
+  - put: cf-syslog-drain-release-github-release-drafts
+    params:
+      name: github-release/name
+      tag: github-release/tag
+      body: github-release/body
+      globs:
+      - github-release/*.tgz
+
+- name: cf-syslog-release-create-backport
+  serial: true
+  plan:
+  - get: cf-syslog-drain-release-backport
+    trigger: false
+  - task: create-backport
+    config:
+      image_resource:
+        type: docker-image
+        source:
+          repository: loggregator/base
+      platform: linux
+      params:
+        S3_ACCESS_KEY: {{s3-access-key-id}}
+        S3_SECRET_KEY: {{s3-secret-access-key}}
+        SSH_KEY: {{loggregator-key}}
+        BLOBSTORE_BUCKET: cf-syslog-drain-release-blobs
+        NEW_VERSION: "3.2"
+        BRANCH_NAME: *cf-syslog-backport-branch
+      inputs:
+      - name: cf-syslog-drain-release-backport
+      outputs:
+      - name: github-release
+      - name: create-final-release
+      run:
+        path: bash
+        args:
+          - -c
+          - |
+            #!/bin/bash
+            set -ex
+
+            # establish version/tag strings
+            new_version="$NEW_VERSION"
+            tag_name="v$new_version"
+            backport_branch="$BRANCH_NAME"
+
+            # write out github release files
+            echo "CF Syslog Drain Release $new_version" > github-release/name
+            echo $tag_name > github-release/tag
+            echo "TBD" > github-release/body
+
+            # setup git for committing
+            git config --global user.email "cf-loggregator@pivotal.io"
+            git config --global user.name "Loggregator CI"
+
+            # setup ssh for reading from github
+            eval "$(ssh-agent -s)"
+            mkdir -p ~/.ssh
+            echo -e "Host github.com\n\tStrictHostKeyChecking no\n" >> ~/.ssh/config
+            ssh-add <(echo "$SSH_KEY")
+
+            # build final release on backport branchd
+            pushd cf-syslog-drain-release-backport
+              export GOPATH=$PWD
+              export PATH=$PATH:$GOPATH/bin
+              git checkout "$backport_branch"
+
+              # Ensure sync-package-specs has been run
+              ./scripts/sync-package-specs
+
+              # Assert there is not diff
+              if [ ! test $(git diff-index --quiet HEAD --) ]; then
+                echo "Looks like sync-package-specs wasn't ran"
+                exit 1
+              fi
+
+              # setup private.yml used by `create-release --final`
+              cat << EOF > config/private.yml
+            ---
+            blobstore:
+              provider: s3
+              options:
+                bucket_name: $BLOBSTORE_BUCKET
+                access_key_id: $S3_ACCESS_KEY
+                secret_access_key: $S3_SECRET_KEY
+                credentials_source: static
+            EOF
+
+              # create final release and commit artifcats
+              bosh -n create-release --sha2 --final \
+                --tarball ../github-release/release.tgz \
+                --version $new_version
+              git add .
+              git commit -m "Create final release"
+
+              final_release_abbrev=$(git rev-parse --abbrev-ref HEAD)
+              final_release_sha=$(git rev-parse HEAD)
+              git tag "$tag_name" $final_release_sha
+            popd
+
+            # copy repos into output
+            cp -r cf-syslog-drain-release-backport create-final-release
+  - put: cf-syslog-drain-release-backport
+    params:
+      repository: create-final-release/cf-syslog-drain-release-backport
       rebase: false
   - put: cf-syslog-drain-release-github-release-drafts
     params:
@@ -722,8 +838,8 @@ jobs:
   - task: create-final-release
     file: loggregator-ci/tasks/create-final-release/task.yml
     input_mapping:
-      develop: statsd-injector-release-develop
-      master: statsd-injector-release-master
+      to-repo: statsd-injector-release-develop
+      from-repo: statsd-injector-release-master
     params:
       S3_ACCESS_KEY: {{s3-access-key-id}}
       S3_SECRET_KEY: {{s3-secret-access-key}}
@@ -731,14 +847,16 @@ jobs:
       SSH_KEY: {{loggregator-key}}
       NEW_VERSION: 1.3.0
       RELEASE_NAME: statsd-injector-release
+      TO_BRANCH: develop
+      FROM_BRANCH: master
   - aggregate:
     - put: statsd-injector-release-master
       params:
-        repository: repos/master
+        repository: repos/from-repo
         rebase: false
     - put: statsd-injector-release-develop
       params:
-        repository: repos/develop
+        repository: repos/to-repo
         rebase: false
     - put: statsd-injector-release-github-release-drafts
       params:
@@ -759,7 +877,7 @@ jobs:
     file: loggregator-ci/tasks/release-cf-drain-cli/task.yml
     params:
       VERSION_MAJOR: 0
-      VERSION_MINOR: 6
+      VERSION_MINOR: 7
     input_mapping:
       loggregator-tools: loggregator-tools-master
   - put: cf-drain-cli
@@ -951,8 +1069,8 @@ jobs:
   - task: create-final-release
     file: loggregator-ci/tasks/create-final-release/task.yml
     input_mapping:
-      develop: log-cache-develop
-      master: log-cache-master
+      to-repo: log-cache-develop
+      from-repo: log-cache-master
     params:
       S3_ACCESS_KEY: {{loggregator-team-s3-access-key}}
       S3_SECRET_KEY: {{loggregator-team-s3-secret-key}}
@@ -960,13 +1078,15 @@ jobs:
       SSH_KEY: {{loggregator-key}}
       NEW_VERSION: "0.2"
       RELEASE_NAME: "Log Cache"
+      TO_BRANCH: develop
+      FROM_BRANCH: master
   - put: log-cache-release-master
     params:
-      repository: repos/master
+      repository: repos/from-repo
       rebase: false
   - put: log-cache-release-develop
     params:
-      repository: repos/develop
+      repository: repos/to-repo
       rebase: false
   - put: log-cache-github-release-drafts
     params:
@@ -986,8 +1106,8 @@ jobs:
   - task: create-final-release
     file: loggregator-ci/tasks/create-final-release/task.yml
     input_mapping:
-      develop: loggregator-agent-release-develop
-      master: loggregator-agent-release-master
+      to-repo: loggregator-agent-release-develop
+      from-repo: loggregator-agent-release-master
     params:
       S3_ACCESS_KEY: {{s3-access-key}}
       S3_SECRET_KEY: {{s3-secret-key}}
@@ -995,13 +1115,15 @@ jobs:
       SSH_KEY: {{loggregator-key}}
       NEW_VERSION: "1.0"
       RELEASE_NAME: "Loggreagor Agent"
+      TO_BRANCH: develop
+      FROM_BRANCH: master
   - put: loggregator-agent-release-master
     params:
-      repository: repos/master
+      repository: repos/from-repo
       rebase: false
   - put: loggregator-agent-release-develop
     params:
-      repository: repos/develop
+      repository: repos/to-repo
       rebase: false
   - put: loggregator-agent-github-release-drafts
     params:
