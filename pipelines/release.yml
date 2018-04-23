@@ -921,6 +921,7 @@ jobs:
       params:
         VERSION_MAJOR: 1
         VERSION_MINOR: 5
+        VERSION_PATCH: 1
       inputs:
       - name: noisy-neighbor-nozzle-repo
       outputs:
@@ -936,8 +937,8 @@ jobs:
             set -ex
 
             # establish version/tag strings
-            version="{\"Major\":$VERSION_MAJOR,\"Minor\":$VERSION_MINOR}"
-            semver="v$VERSION_MAJOR.$VERSION_MINOR"
+            version="{\"Major\":$VERSION_MAJOR,\"Minor\":$VERSION_MINOR,\"Build\":$VERSION_PATCH}"
+            semver="v$VERSION_MAJOR.$VERSION_MINOR.$VERSION_PATCH"
 
             # write out github release files
             echo "noisy-neighbor-nozzle $semver" > github-release/name
