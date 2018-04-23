@@ -71,9 +71,6 @@ bump_submodule: |
 
     if ! git diff-index --quiet HEAD; then
       git add $SUBMODULE_PATH_WITHIN_PARENT
-
-      git config user.email "cf-loggregator@pivotal.io"
-      git config user.name "Loggregator CI"
       git commit -m "bump `basename $LOCAL_REMOTE_URL`
 
   $SUBMODULE_LOG

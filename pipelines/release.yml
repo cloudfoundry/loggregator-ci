@@ -611,10 +611,6 @@ jobs:
             echo $tag_name > github-release/tag
             echo "TBD" > github-release/body
 
-            # setup git for committing
-            git config --global user.email "cf-loggregator@pivotal.io"
-            git config --global user.name "Loggregator CI"
-
             # setup ssh for reading from github
             eval "$(ssh-agent -s)"
             mkdir -p ~/.ssh
@@ -808,8 +804,6 @@ jobs:
 
             pushd $cfdrain
               # add git tag
-              git config --global user.email "cf-loggregator@pivotal.io"
-              git config --global user.name "Loggregator CI"
               git tag "$semver"
             popd
             cp -r $cfdrain output-repo/

@@ -379,9 +379,6 @@ jobs:
 
           ./generate-go.sh
 
-          git config user.name "Loggregator CI"
-          git config user.email "cf-loggregator@pivotal.io"
-
           git add events definitions
 
           set +e
