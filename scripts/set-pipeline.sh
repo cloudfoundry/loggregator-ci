@@ -2,6 +2,7 @@
 
 function set_globals {
     pipeline=$1
+    TARGET="${TARGET:-loggregator}"
 }
 
 function validate {
@@ -13,14 +14,14 @@ function validate {
 
 function set_pipeline {
     echo setting pipeline for "$1"
-    fly -t loggregator set-pipeline -p "$1" \
+    fly -t $TARGET set-pipeline -p "$1" \
         -c "pipelines/$1.yml" \
         -l ~/workspace/deployments-loggregator/shared-secrets.yml \
         -l ~/workspace/loggregator-ci/scripts.yml
 }
 
 function sync_fly {
-    fly -t loggregator sync
+    fly -t $TARGET sync
 }
 
 function set_pipelines {
