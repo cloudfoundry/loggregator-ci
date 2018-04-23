@@ -25,7 +25,6 @@ groups:
   - log-cache-release-elect-promotion
   - log-cache-master-promotion
   - log-cache-cli-promotion
-  - bump-cf-deployment-log-cache-ops-file
   - statsd-injector-tests
   - statsd-injector-bump-submodule
   - statsd-injector-deploy
@@ -68,7 +67,6 @@ groups:
   - log-cache-release-elect-promotion
   - log-cache-master-promotion
   - log-cache-cli-promotion
-  - bump-cf-deployment-log-cache-ops-file
 - name: cf-syslog-drain
   jobs:
   - cf-syslog-drain-tests
@@ -1223,61 +1221,6 @@ jobs:
   - put: log-cache-release-master
     params:
       repository: merged-dest
-
-- name: bump-cf-deployment-log-cache-ops-file
-  serial: true
-  plan:
-  - aggregate:
-    - get: loggregator-ci
-    - get: log-cache-release-master
-      trigger: true
-      passed: ["log-cache-master-promotion"]
-    - get: cf-deployment
-      resource: cf-deployment-develop
-  - task: generate-ops-file
-    file: loggregator-ci/tasks/run-release-script/task.yml
-    input_mapping:
-      release-repo: log-cache-release-master
-    output_mapping:
-      updated-release-repo: log-cache-release-updated-ops-file
-    params:
-      SCRIPT: scripts/generate-deploy-in-cf-ops
-  - task: copy-ops-file
-    config:
-      platform: linux
-      image_resource:
-        type: docker-image
-        source:
-          repository: loggregator/base
-      inputs:
-        - name: log-cache-release-updated-ops-file
-        - name: cf-deployment
-      outputs:
-        - name: updated-cf-deployment
-      run:
-        path: bash
-        args:
-        - -c
-        - |
-          #!/bin/bash
-          set -eux
-
-          cp log-cache-release-updated-ops-file/manifests/operations/deploy-in-cf.yml \
-            cf-deployment/operations/experimental/use-log-cache.yml
-
-          cp -R cf-deployment/. updated-cf-deployment/.
-  - task: commit
-    file: loggregator-ci/tasks/commit/task.yml
-    input_mapping:
-      release-repo: updated-cf-deployment
-    output_mapping:
-      committed-repo: committed-cf-deployment
-    params:
-      COMMIT_MESSAGE: "Update experimental use-log-cache ops-file"
-      CI_SKIP: false
-  - put: cf-deployment-develop
-    params:
-      repository: committed-cf-deployment
 
 ###############################################################################
 # CF SYSLOG DRAIN
