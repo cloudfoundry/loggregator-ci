@@ -540,7 +540,6 @@ jobs:
   plan:
   - aggregate:
     - get: loggregator-develop
-      trigger: false
     - get: loggregator-master
       resource: loggregator-master
     - get: loggregator-ci
@@ -576,7 +575,6 @@ jobs:
   serial: true
   plan:
   - get: loggregator-backport
-    trigger: false
   - task: create-backport
     config:
       image_resource:
@@ -752,7 +750,6 @@ jobs:
   plan:
   - aggregate:
     - get: cf-drain-cli
-      trigger: false
   - task: create-binaries
     config:
       image_resource:
@@ -833,7 +830,6 @@ jobs:
   plan:
   - aggregate:
     - get: log-cache-cli
-      trigger: false
     - get: log-cache-cli-version
       params: {bump: minor}
   - task: create-binaries
@@ -1000,7 +996,6 @@ jobs:
   plan:
   - aggregate:
     - get: log-cache-develop
-      trigger: false
     - get: log-cache-master
       resource: log-cache-master
     - get: loggregator-ci
@@ -1037,7 +1032,6 @@ jobs:
   plan:
   - aggregate:
     - get: loggregator-agent-release-develop
-      trigger: false
     - get: loggregator-agent-release-master
     - get: loggregator-ci
   - task: create-final-release

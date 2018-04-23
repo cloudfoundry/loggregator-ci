@@ -101,13 +101,10 @@ jobs:
   public: false
   plan:
   - get: cf-deployment-concourse-tasks
-    trigger: false
   - get: bbl-state
     resource: deployments-loggregator
-    trigger: false
   - get: ops-files
     resource: bosh-deployment
-    trigger: false
   - task: bbl-up
     file: cf-deployment-concourse-tasks/bbl-up/task.yml
     input_mapping:
@@ -133,10 +130,8 @@ jobs:
   public: false
   plan:
   - get: cf-deployment-concourse-tasks
-    trigger: false
   - get: bbl-state
     resource: deployments-loggregator
-    trigger: false
   - get: loggregator-ci
   - task: delete-deployments
     file: loggregator-ci/tasks/bosh-delete-all-deployments/task.yml

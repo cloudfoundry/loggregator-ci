@@ -477,7 +477,6 @@ jobs:
   - cf-deploy-start-incidents
   plan:
   - get: 2h
-    trigger: false
   - aggregate:
     - get: vars-store
       resource: deployments-loggregator

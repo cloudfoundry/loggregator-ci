@@ -29,7 +29,6 @@ jobs:
   plan:
   - aggregate:
     - get: bosh-hm-forwarder-release
-      trigger: false
     - get: bosh-hm-forwarder
       trigger: true
   - task: run-units
@@ -54,9 +53,7 @@ jobs:
   plan:
   - aggregate:
     - get: loggregator-ci
-      trigger: false
     - get: bosh-hm-forwarder-release
-      trigger: false
     - get: bosh-hm-forwarder
       passed:
       - unit-tests

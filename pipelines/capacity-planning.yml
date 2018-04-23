@@ -60,10 +60,8 @@ jobs:
   public: false
   plan:
   - get: cf-deployment-concourse-tasks
-    trigger: false
   - get: bbl-state
     resource: deployments-loggregator
-    trigger: false
   - get: ops-files
     resource: bosh-deployment
   - task: bbl-up
@@ -89,10 +87,8 @@ jobs:
   public: false
   plan:
   - get: cf-deployment-concourse-tasks
-    trigger: false
   - get: bbl-state
     resource: deployments-loggregator
-    trigger: false
   - get: loggregator-ci
   - aggregate:
     - task: delete-datadog-firehose-nozzle
@@ -287,9 +283,7 @@ jobs:
   plan:
   - aggregate:
     - get: datadog-firehose-nozzle-release
-      trigger: false
     - get: deployments-loggregator
-      trigger: false
   - task: deploy
     config:
       image_resource:

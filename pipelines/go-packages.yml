@@ -330,10 +330,8 @@ jobs:
     - get: dropsonde-protocol
       trigger: true
     - get: sonde-go
-      trigger: false
     - get: loggregator
       resource: loggregator-develop
-      trigger: false
   - task: generate
     config:
       platform: linux
@@ -405,9 +403,7 @@ jobs:
       repository: bumped-sonde-go
   - aggregate:
     - get: dropsonde
-      trigger: false
     - get: noaa
-      trigger: false
   - aggregate:
     - task: dropsonde-unit-tests
       config:

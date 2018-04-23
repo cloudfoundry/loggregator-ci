@@ -18,9 +18,7 @@ jobs:
   plan:
   - aggregate:
     - get: datadog-firehose-nozzle-release
-      trigger: false
     - get: deployments-loggregator
-      trigger: false
   - task: deploy
     config:
       image_resource:
