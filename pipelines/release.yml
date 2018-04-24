@@ -256,13 +256,6 @@ resources:
     branch: master
     private_key: {{cf-loggregator-oauth-bot-key}}
 
-- name: log-cache-release-v1
-  type: git
-  source:
-    uri: git@github.com:cloudfoundry/log-cache-release
-    branch: v1
-    private_key: {{cf-loggregator-oauth-bot-key}}
-
 - name: log-cache-github-release-drafts
   type: github-release
   source:
@@ -1071,19 +1064,19 @@ jobs:
   - aggregate:
     - get: log-cache-develop
     - get: log-cache-master
-    - get: log-cache-release-v1
+      resource: log-cache-master
     - get: loggregator-ci
   - task: create-final-release
     file: loggregator-ci/tasks/create-final-release/task.yml
     input_mapping:
-      from-repo: log-cache-release-v1
       to-repo: log-cache-develop
+      from-repo: log-cache-master
     params:
       S3_ACCESS_KEY: {{loggregator-team-s3-access-key}}
       S3_SECRET_KEY: {{loggregator-team-s3-secret-key}}
       BLOBSTORE_BUCKET: log-cache-release-blobs
       SSH_KEY: {{loggregator-key}}
-      NEW_VERSION: 1.0.0
+      NEW_VERSION: "0.2"
       RELEASE_NAME: "Log Cache"
       TO_BRANCH: develop
       FROM_BRANCH: v1
