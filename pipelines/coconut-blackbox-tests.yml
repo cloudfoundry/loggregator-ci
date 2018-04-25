@@ -210,7 +210,7 @@ jobs:
   public: false
   serial: true
   plan:
-  - get: loggregator
+  - get: loggregator-tools
   - get: loggregator-ci
   - get: 15m
     trigger: true
