@@ -298,7 +298,7 @@ jobs:
   public: false
   serial: true
   plan:
-  - get: loggregator
+  - get: loggregator-tools
   - get: loggregator-ci
   - get: 20m
     trigger: true
