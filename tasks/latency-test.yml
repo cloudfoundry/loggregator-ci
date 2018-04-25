@@ -28,7 +28,7 @@ run:
       cd build-workspace
       export GOPATH=$PWD
 
-      cd build-workspace/src/code.cloudfoundry.org/loggregator-tools/latency
+      cd src/code.cloudfoundry.org/loggregator-tools/latency
       go get -d -u ./...
       go build
 
