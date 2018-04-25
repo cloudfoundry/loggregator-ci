@@ -25,7 +25,6 @@ run:
       export GOPATH=$PWD/loggregator-tools
 
       cd loggregator-tools/latency
-      go get ./...
 
       go build
 
