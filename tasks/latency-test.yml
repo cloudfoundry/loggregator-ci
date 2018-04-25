@@ -4,7 +4,7 @@ image_resource:
   source:
     repository: loggregator/base
 inputs:
-  - name: loggregator
+  - name: loggregator-tools
 run:
   path: bash
   args:
@@ -22,9 +22,9 @@ run:
         -s "$SPACE" \
         -o "$ORG"
 
-      export GOPATH=$PWD/loggregator
+      export GOPATH=$PWD/loggregator-tools
 
-      cd loggregator/src/tools/latency
+      cd loggregator-tools/latency
 
       go build
 
