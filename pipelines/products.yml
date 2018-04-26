@@ -63,6 +63,7 @@ groups:
   - log-cache-cli-tests
   - log-cache-bump-submodule
   - cfar-lats
+  - cats
   - cf-deploy
   - log-cache-release-elect-promotion
   - log-cache-master-promotion
