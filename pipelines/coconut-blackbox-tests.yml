@@ -322,52 +322,52 @@ jobs:
         PASSWORD: {{coconut-password}}
         UAA_CLIENT: {{coconut-uaa-client}}
         UAA_CLIENT_SECRET: {{coconut-uaa-client-secret}}
-  - task: log-cache-blackbox-tests
-    file: loggregator-ci/tasks/log-cache-blackbox/task.yml
-    params:
-      APP_NAME: "log-cache-blackbox"
-      APP_ADDR: "log-cache-blackbox.coconut.cf-app.com"
-      SYSTEM_DOMAIN: "coconut.cf-app.com"
-      DATADOG_API_KEY: {{datadog-loggregator-api-key}}
-      LOG_CACHE_ADDR: http://log-cache.coconut.cf-app.com
-      ORG: system
-      SPACE: blackbox-testing
-      USERNAME: {{coconut-username}}
-      PASSWORD: {{coconut-password}}
-      UAA_CLIENT: {{coconut-uaa-client}}
-      UAA_CLIENT_SECRET: {{coconut-uaa-client-secret}}
-  - task: log-cache-group-blackbox-tests
-    file: loggregator-ci/tasks/log-cache-group-blackbox/task.yml
-    params:
-      APP_NAME: "log-cache-blackbox"
-      APP_ADDR: "log-cache-blackbox.coconut.cf-app.com"
-      SYSTEM_DOMAIN: "coconut.cf-app.com"
-      DATADOG_API_KEY: {{datadog-loggregator-api-key}}
-      LOG_CACHE_ADDR: http://log-cache.coconut.cf-app.com
-      ORG: system
-      SPACE: blackbox-testing
-      USERNAME: {{coconut-username}}
-      PASSWORD: {{coconut-password}}
-      UAA_CLIENT: {{coconut-uaa-client}}
-      UAA_CLIENT_SECRET: {{coconut-uaa-client-secret}}
-  - task: log-cache-siege
-    config:
-      platform: linux
-      image_resource:
-        type: docker-image
-        source:
-          repository: relintdockerhubpushbot/cf-deployment-concourse-tasks
+  - aggregate:
+    - task: log-cache-blackbox-tests
+      file: loggregator-ci/tasks/log-cache-blackbox/task.yml
       params:
-        LOG_CACHE_SIEGE_ADDR: http://log-cache-siege.coconut.cf-app.com
-      run:
-        path: bash
-        args:
-        - -c
-        - |
-          #!/bin/bash
-          set -ex
-
-          curl -d '' -X POST $LOG_CACHE_SIEGE_ADDR/v1/siege
+        APP_NAME: "log-cache-blackbox"
+        APP_ADDR: "log-cache-blackbox.coconut.cf-app.com"
+        SYSTEM_DOMAIN: "coconut.cf-app.com"
+        DATADOG_API_KEY: {{datadog-loggregator-api-key}}
+        LOG_CACHE_ADDR: http://log-cache.coconut.cf-app.com
+        ORG: system
+        SPACE: blackbox-testing
+        USERNAME: {{coconut-username}}
+        PASSWORD: {{coconut-password}}
+        UAA_CLIENT: {{coconut-uaa-client}}
+        UAA_CLIENT_SECRET: {{coconut-uaa-client-secret}}
+    - task: log-cache-group-blackbox-tests
+      file: loggregator-ci/tasks/log-cache-group-blackbox/task.yml
+      params:
+        APP_NAME: "log-cache-blackbox"
+        APP_ADDR: "log-cache-blackbox.coconut.cf-app.com"
+        SYSTEM_DOMAIN: "coconut.cf-app.com"
+        DATADOG_API_KEY: {{datadog-loggregator-api-key}}
+        LOG_CACHE_ADDR: http://log-cache.coconut.cf-app.com
+        ORG: system
+        SPACE: blackbox-testing
+        USERNAME: {{coconut-username}}
+        PASSWORD: {{coconut-password}}
+        UAA_CLIENT: {{coconut-uaa-client}}
+        UAA_CLIENT_SECRET: {{coconut-uaa-client-secret}}
+    - task: log-cache-siege
+      config:
+        platform: linux
+        image_resource:
+          type: docker-image
+          source:
+            repository: relintdockerhubpushbot/cf-deployment-concourse-tasks
+        params:
+          LOG_CACHE_SIEGE_ADDR: http://log-cache-siege.coconut.cf-app.com
+        run:
+          path: bash
+          args:
+          - -c
+          - |
+            #!/bin/bash
+            set -ex
+            curl -d '' -X POST $LOG_CACHE_SIEGE_ADDR/v1/siege
 
 - name: event-reliability-deploy
   public: false
