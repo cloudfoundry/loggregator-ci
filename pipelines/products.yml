@@ -121,7 +121,7 @@ resources:
   type: git
   source:
     uri: https://github.com/cloudfoundry/cf-deployment
-    branch: develop
+    branch: master
     private_key: {{loggregator-key}}
 
 - name: consul-release
@@ -1929,6 +1929,15 @@ jobs:
           - path: /releases/name=consul/sha1
             type: replace
             value: 399894e3b4f5d4ba7ea5abe4ab89190ec2d4ad56
+          - type: replace
+            path: /instance_groups/name=doppler/jobs/-
+            value:
+              name: log-cache-blackbox
+              release: log-cache
+              properties:
+                datadog:
+                  api_key: {{datadog-dev-api-key}}
+                  origin_host: coconut.cf-app.com
           EOT
   - task: upload-stemcell
     file: cf-deployment-concourse-tasks/bosh-upload-stemcell-from-cf-deployment/task.yml
