@@ -45,7 +45,7 @@ sizes=(1 2 10)
 
 for s in ${sizes[*]}; do
     echo "Latency test - group size: ${s}"
-    response=$(curl "${APP_ADDR}/group?size=${s}" -d='')
+    response=$(curl -vvv "${APP_ADDR}/group?size=${s}" -d='')
 
     latency=$(echo "$response" | jq .latency)
     avg_query_time=$(echo "$response" | jq .averageQueryTime)
@@ -54,7 +54,7 @@ for s in ${sizes[*]}; do
     fail_on_empty "$avg_query_time"
 
     echo "Reliability test - group size: ${s}"
-    response=$(curl "${APP_ADDR}/group/reliability?size=${s}" -d='')
+    response=$(curl -vvv "${APP_ADDR}/group/reliability?size=${s}" -d='')
 
     logs_sent=$(echo "$response" | jq .logsSent)
     logs_received=$(echo "$response" | jq .logsReceived)
@@ -62,7 +62,7 @@ for s in ${sizes[*]}; do
     fail_on_empty "$logs_received"
 
     currenttime=$(date +%s)
-    curl --fail -X POST -H "Content-type: application/json" \
+    curl -vvv --fail -X POST -H "Content-type: application/json" \
     -d "{ \"series\" :
       [
         {
