@@ -53,8 +53,8 @@ params:
   PASSWORD:
 
   # - Required
-  # - The base address for log cache.
-  LOG_CACHE_ADDR:
+  # - The URL for log cache.
+  LOG_CACHE_URL:
 
   # - Required
   # - The UAA Client
