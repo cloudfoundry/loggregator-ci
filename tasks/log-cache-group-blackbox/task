@@ -41,7 +41,7 @@ pushd loggregator-tools/log-cache-blackbox
   cf start "$APP_NAME"
 popd
 
-sizes=(1 10 1000)
+sizes=(1 2 10)
 
 for s in ${sizes[*]}; do
     echo "Latency test - group size: ${s}"
