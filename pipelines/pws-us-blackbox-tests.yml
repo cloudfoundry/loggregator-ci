@@ -373,7 +373,7 @@ jobs:
         APP_NAME: "log-cache-blackbox"
         SYSTEM_DOMAIN: "run.pivotal.io"
         DATADOG_API_KEY: {{datadog-prod-api-key}}
-        LOG_CACHE_ADDR: https://log-cache.run.pivotal.io
+        LOG_CACHE_URL: https://log-cache.run.pivotal.io
         ORG: cf-lamb
         SPACE: development
         USERNAME: {{pws-username}}

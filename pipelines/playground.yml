@@ -369,7 +369,7 @@ jobs:
       APP_NAME: "log-cache-blackbox"
       SYSTEM_DOMAIN: "playground.loggr.cf-app.com"
       DATADOG_API_KEY: {{datadog-loggregator-api-key}}
-      LOG_CACHE_ADDR: http://log-cache.playground.loggr.cf-app.com
+      LOG_CACHE_URL: http://log-cache.playground.loggr.cf-app.com
       ORG: system
       SPACE: blackbox-testing
       SKIP_SSL_VALIDATION: true
