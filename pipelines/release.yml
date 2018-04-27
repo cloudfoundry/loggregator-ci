@@ -1114,7 +1114,7 @@ jobs:
       BLOBSTORE_BUCKET: loggregator-agent-release-blobs
       SSH_KEY: {{loggregator-key}}
       NEW_VERSION: "1.0"
-      RELEASE_NAME: "Loggreagor Agent"
+      RELEASE_NAME: "Loggregator Agent"
       TO_BRANCH: develop
       FROM_BRANCH: master
   - put: loggregator-agent-release-master
