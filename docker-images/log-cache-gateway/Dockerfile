@@ -17,13 +17,13 @@ FROM alpine:latest
 ENV ADDR=:8081 \
     LOG_CACHE_ADDR=log-cache:8080 \
     GROUP_READER_ADDR=log-cache-group-reader:8080 \
-    CA_PATH="/srv/log-cache-gateway/certs/ca.crt" \
-    CERT_PATH="/srv/log-cache-gateway/certs/log-cache.crt" \
-    KEY_PATH="/srv/log-cache-gateway/certs/log-cache.key"
+    CA_PATH="/srv/certs/ca.crt" \
+    CERT_PATH="/srv/certs/log-cache.crt" \
+    KEY_PATH="/srv/certs/log-cache.key"
 
 EXPOSE 8081
 
-RUN mkdir -p /srv/log-cache-gateway/bin
-COPY --from=builder /log-cache-gateway /srv/log-cache-gateway/bin/log-cache-gateway
-WORKDIR /srv/log-cache-gateway/
-CMD [ "/srv/log-cache-gateway/bin/log-cache-gateway" ]
+RUN mkdir -p /srv
+COPY --from=builder /log-cache-gateway /srv/log-cache-gateway
+WORKDIR /srv
+CMD [ "/srv/log-cache-gateway" ]

@@ -9,19 +9,20 @@ ENV CGO_ENABLED=0 \
 RUN go build \
     -a \
     -installsuffix nocgo \
-    -o /logcache \
-    code.cloudfoundry.org/log-cache/cmd/logcache
+    -o /log-cache \
+    code.cloudfoundry.org/log-cache/cmd/log-cache
 
 FROM alpine:latest
 
 ENV ADDR=:8080 \
-    CA_PATH="/srv/log-cache/certs/ca.crt" \
-    CERT_PATH="/srv/log-cache/certs/log-cache.crt" \
-    KEY_PATH="/srv/log-cache/certs/log-cache.key"
+    CA_PATH="/srv/certs/ca.crt" \
+    CERT_PATH="/srv/certs/log-cache.crt" \
+    KEY_PATH="/srv/certs/log-cache.key" \
+    ENV_DIR="/srv/conf.d"
 
 EXPOSE 8080
 
-RUN mkdir -p /srv/log-cache/bin
-COPY --from=builder /logcache /srv/log-cache/bin/logcache
-WORKDIR /srv/log-cache/
-CMD [ "/srv/log-cache/bin/logcache" ]
+RUN mkdir -p /srv/
+COPY --from=builder /log-cache /srv/log-cache
+WORKDIR /srv
+CMD [ "/bin/sh", "-c", "cat $ENV_DIR/* 2> /dev/null > /tmp/env; source /tmp/env; /srv/log-cache" ]

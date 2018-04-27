@@ -15,11 +15,11 @@ RUN go build \
 FROM alpine:latest
 
 ENV LOG_CACHE_ADDR=log-cache:8080 \
-    CA_PATH="/srv/log-cache-emitter/certs/ca.crt" \
-    CERT_PATH="/srv/log-cache-emitter/certs/log-cache.crt" \
-    KEY_PATH="/srv/log-cache-emitter/certs/log-cache.key"
+    CA_PATH="/srv/certs/ca.crt" \
+    CERT_PATH="/srv/certs/log-cache.crt" \
+    KEY_PATH="/srv/certs/log-cache.key"
 
-RUN mkdir -p /srv/log-cache-emitter/bin
-COPY --from=builder /log-cache-emitter /srv/log-cache-emitter/bin/log-cache-emitter
-WORKDIR /srv/log-cache-emitter/
-CMD [ "/srv/log-cache-emitter/bin/log-cache-emitter" ]
+RUN mkdir -p /srv
+COPY --from=builder /log-cache-emitter /srv/log-cache-emitter
+WORKDIR /srv
+CMD [ "/srv/log-cache-emitter" ]

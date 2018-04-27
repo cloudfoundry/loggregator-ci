@@ -16,11 +16,12 @@ FROM alpine:latest
 
 ENV NODE_ADDRS=log-cache:8080 \
     GROUP_READER_NODE_ADDRS=log-cache:8080 \
-    CA_PATH="/srv/log-cache-scheduler/certs/ca.crt" \
-    CERT_PATH="/srv/log-cache-scheduler/certs/log-cache.crt" \
-    KEY_PATH="/srv/log-cache-scheduler/certs/log-cache.key"
+    CA_PATH="/srv/certs/ca.crt" \
+    CERT_PATH="/srv/certs/log-cache.crt" \
+    KEY_PATH="/srv/certs/log-cache.key" \
+    ENV_DIR="/srv/conf.d"
 
-RUN mkdir -p /srv/log-cache-scheduler/bin
-COPY --from=builder /log-cache-scheduler /srv/log-cache-scheduler/bin/log-cache-scheduler
-WORKDIR /srv/log-cache-scheduler/
-CMD [ "/srv/log-cache-scheduler/bin/log-cache-scheduler" ]
+RUN mkdir -p /srv
+COPY --from=builder /log-cache-scheduler /srv/log-cache-scheduler
+WORKDIR /srv
+CMD [ "/bin/sh", "-c", "cat $ENV_DIR/* 2> /dev/null > /tmp/env; source /tmp/env; /srv/log-cache-scheduler" ]
