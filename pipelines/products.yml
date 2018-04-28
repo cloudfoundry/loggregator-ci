@@ -2020,21 +2020,20 @@ jobs:
       - get: log-cache-release
         passed: ["cf-deploy"]
         trigger: true
-    - aggregate:
-      - task: run-cats
-        file: cf-deployment-concourse-tasks/run-cats/task.yml
-        input_mapping:
-          integration-config: deployments-loggregator
-        params:
-          CONFIG_FILE_PATH: gcp/coconut-bbl/cats-config.json
-          NODES: 9
-      - task: run-cats-with-log-cache
-        file: cf-deployment-concourse-tasks/run-cats/task.yml
-        input_mapping:
-          integration-config: deployments-loggregator
-        params:
-          CONFIG_FILE_PATH: gcp/coconut-bbl/log-cache-cats-config.json
-          NODES: 9
+    - task: run-cats
+      file: cf-deployment-concourse-tasks/run-cats/task.yml
+      input_mapping:
+        integration-config: deployments-loggregator
+      params:
+        CONFIG_FILE_PATH: gcp/coconut-bbl/cats-config.json
+        NODES: 9
+    - task: run-cats-with-log-cache
+      file: cf-deployment-concourse-tasks/run-cats/task.yml
+      input_mapping:
+        integration-config: deployments-loggregator
+      params:
+        CONFIG_FILE_PATH: gcp/coconut-bbl/log-cache-cats-config.json
+        NODES: 9
 
 - name: cfar-lats
   serial: true
