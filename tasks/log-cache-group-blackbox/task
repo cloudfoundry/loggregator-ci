@@ -103,6 +103,9 @@ for s in ${sizes[*]}; do
     'https://app.datadoghq.com/api/v1/series?api_key='"$DATADOG_API_KEY"
 done
 
+# allow subscriptions to expire
+sleep 120
+
 if [ "$fail" = true ]; then
     echo one of the reliability tests did not meet our SLO
     exit 123
