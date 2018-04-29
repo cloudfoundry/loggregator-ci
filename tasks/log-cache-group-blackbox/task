@@ -41,7 +41,7 @@ pushd loggregator-tools/log-cache-blackbox
   cf start "$APP_NAME"
 popd
 
-sizes=(1 2 10)
+sizes=(10 2 1)
 
 fail=false
 
