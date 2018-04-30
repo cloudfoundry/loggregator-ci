@@ -109,6 +109,6 @@ for s in ${sizes[*]}; do
 done
 
 if [ "$fail" = true ]; then
-    echo "$errMsg"
+    echo -e "$errMsg"
     exit 123
 fi
