@@ -1,0 +1,25 @@
+platform: linux
+
+image_resource:
+  type: docker-image
+  source:
+    repository: relintdockerhubpushbot/cf-deployment-concourse-tasks
+
+inputs:
+- name: loggregator-ci
+- name: from-repo
+
+outputs:
+  - name: to-repo
+  - name: create-final-release
+
+params:
+  BRANCH_NAME:
+  NEW_VERSION:
+  SSH_KEY:
+  S3_BUCKET_NAME:
+  S3_ACCESS_KEY:
+  S3_SECRET_KEY:
+
+run:
+  path: loggregator-ci/tasks/loggregator-create-release/task

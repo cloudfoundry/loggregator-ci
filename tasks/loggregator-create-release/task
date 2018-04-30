@@ -1,0 +1,55 @@
+#!/bin/bash -ex
+# vi:syntax=sh
+
+# establish version/tag strings
+tag_name="v$NEW_VERSION"
+
+# write out github release files
+echo "Loggregator $NEW_VERSION" > to-repo/name
+echo "$tag_name" > to-repo/tag
+echo "TBD" > to-repo/body
+
+# set up ssh for reading from github
+eval "$(ssh-agent -s)"
+mkdir -p ~/.ssh
+echo -e "Host github.com\n\tStrictHostKeyChecking no\n" >> ~/.ssh/config
+ssh-add <(echo "$SSH_KEY")
+
+# build final release on backport branch
+pushd from-repo
+  export GOPATH=$PWD
+  export PATH=$PATH:$GOPATH/bin
+  git checkout "$BRANCH_NAME"
+
+  # Ensure sync-package-specs has been run
+  ./scripts/sync-package-specs
+  if ! git diff-index --quiet HEAD --; then
+    echo "Looks like sync-package-specs wasn't run"
+    exit 1
+  fi
+
+  # set up private.yml used by `create-release --final`
+  cat << EOF > config/private.yml
+---
+blobstore:
+  provider: s3
+  options:
+    bucket_name: $S3_BUCKET_NAME
+    access_key_id: $S3_ACCESS_KEY
+    secret_access_key: $S3_SECRET_KEY
+    credentials_source: static
+EOF
+
+  # create final release and commit artifcats
+  bosh -n create-release --sha2 --final \
+    --tarball ../to-repo/release.tgz \
+    --version "$NEW_VERSION"
+  git add .
+  echo git commit -m "Create final release"
+
+  final_release_sha=$(git rev-parse HEAD)
+  echo git tag "$tag_name" "$final_release_sha"
+popd
+
+# copy repos into output
+cp -r from-repo create-final-release

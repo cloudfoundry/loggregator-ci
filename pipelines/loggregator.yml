@@ -1,0 +1,71 @@
+resources:
+- name: loggregator-ci
+  type: git
+  source:
+    uri: git@github.com:cloudfoundry/loggregator-ci.git
+    private_key: {{loggregator-key}}
+
+- name: loggregator-backport
+  type: git
+  source:
+    uri: git@github.com:cloudfoundry/loggregator-release.git
+    branch: &backport-branch v101.x
+    private_key: {{loggregator-key}}
+
+- name: loggregator-release-backport
+  type: git
+  source:
+    uri: git@github.com:cloudfoundry/loggregator-release.git
+    branch: *backport-branch
+    private_key: {{loggregator-key}}
+    ignore_paths:
+    - .final_builds
+    - releases
+
+- name: loggregator-github-release-drafts
+  type: github-release
+  source:
+    user: cloudfoundry
+    repository: loggregator-release
+    access_token: {{access-token}}
+    drafts: true
+
+jobs:
+- name: loggregator-create-backport-release
+  serial: true
+  plan:
+  - get: loggregator-backport
+  - task: create-backport
+    config:
+      image_resource:
+        type: docker-image
+        source:
+          repository: loggregator/base
+      platform: linux
+      params:
+        S3_BUCKET_NAME: loggregator-release-blobs
+        S3_ACCESS_KEY: {{s3-access-key}}
+        S3_SECRET_KEY: {{s3-secret-key}}
+        SSH_KEY: {{loggregator-key}}
+        NEW_VERSION: "101.11"
+        BRANCH_NAME: *backport-branch
+      inputs:
+      - name: loggregator-backport
+      outputs:
+      - name: github-release
+      - name: create-final-release
+      run:
+        path: bash
+        file: loggregator-ci/tasks/loggregator-create-release/task.yml
+  - put: loggregator-release-backport
+    params:
+      repository: create-final-release/loggregator-backport
+      rebase: false
+  - put: loggregator-github-release-drafts
+    params:
+      name: github-release/name
+      tag: github-release/tag
+      body: github-release/body
+      globs:
+      - github-release/*.tgz
+
