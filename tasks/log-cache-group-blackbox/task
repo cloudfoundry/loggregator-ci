@@ -44,6 +44,7 @@ popd
 sizes=(10 2 1)
 
 fail=false
+errMsg=""
 
 for s in ${sizes[*]}; do
     # ensure any previous subscriptions have expired
@@ -64,6 +65,7 @@ for s in ${sizes[*]}; do
     logs_sent=$(echo "$response" | jq .logsSent)
     logs_received=$(echo "$response" | jq .logsReceived)
     if [ "$logs_received" -lt 9900 ]; then
+        errMsg="${errMsg}${logs_received} out of ${logs_sent} logs received is below our 99% SLO\n"
         fail=true
     fi
 
@@ -107,6 +109,6 @@ for s in ${sizes[*]}; do
 done
 
 if [ "$fail" = true ]; then
-    echo one of the reliability tests did not meet our SLO
+    echo "$errMsg"
     exit 123
 fi
