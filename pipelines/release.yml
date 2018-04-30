@@ -643,8 +643,8 @@ jobs:
               ./scripts/sync-package-specs
 
               # Assert there is not diff
-              if [ ! test $(git diff-index --quiet HEAD --) ]; then
-                echo "Looks like sync-package-specs wasn't ran"
+              if ! git diff-index --quiet HEAD --; then
+                echo "Looks like sync-package-specs wasn't run"
                 exit 1
               fi
 
