@@ -1,40 +1,43 @@
-#!/bin/bash -ex
+#!/bin/bash
+
 # vi:syntax=sh
+
+# -------------------
+# Create a release from a repo and branch: from-repo and
+# FROM_BRANCH. Merge the result back to another repo and branch:
+# to-repo, TO_BRANCH
+
+
+set -ex
 
 # establish version/tag strings
 tag_name="v$NEW_VERSION"
 
 # write out github release files
-echo "Loggregator $NEW_VERSION" > to-repo/name
-echo "$tag_name" > to-repo/tag
-echo "TBD" > to-repo/body
+echo "$RELEASE_NAME $NEW_VERSION" > github-release/name
+echo $tag_name > github-release/tag
+echo "TBD" > github-release/body
 
-# set up ssh for reading from github
+# setup ssh for reading from github
 eval "$(ssh-agent -s)"
 mkdir -p ~/.ssh
 echo -e "Host github.com\n\tStrictHostKeyChecking no\n" >> ~/.ssh/config
 ssh-add <(echo "$SSH_KEY")
 
-# build final release on backport branch
+# build final release on FROM_BRANCH
 pushd from-repo
-  export GOPATH=$PWD
-  export PATH=$PATH:$GOPATH/bin
-  git checkout "$BRANCH_NAME"
+  # this is needed to land commits on master since the commit for
+  # master is checked out as a detatched head when the git
+  # resource clones it down
+  git checkout $FROM_BRANCH
 
-  # Ensure sync-package-specs has been run
-  ./scripts/sync-package-specs
-  if ! git diff-index --quiet HEAD --; then
-    echo "Looks like sync-package-specs wasn't run"
-    exit 1
-  fi
-
-  # set up private.yml used by `create-release --final`
+  # setup private.yml used by `create-release --final`
   cat << EOF > config/private.yml
 ---
 blobstore:
   provider: s3
   options:
-    bucket_name: $S3_BUCKET_NAME
+    bucket_name: $BLOBSTORE_BUCKET
     access_key_id: $S3_ACCESS_KEY
     secret_access_key: $S3_SECRET_KEY
     credentials_source: static
@@ -42,14 +45,37 @@ EOF
 
   # create final release and commit artifcats
   bosh -n create-release --sha2 --final \
-    --tarball ../to-repo/release.tgz \
+    --tarball ../github-release/release.tgz \
     --version "$NEW_VERSION"
   git add .
-  echo git commit -m "Create final release"
+  echo git commit -m "Create final release\
 
+
+[ci skip]"
+
+  final_release_abbrev=$(git rev-parse --abbrev-ref HEAD)
   final_release_sha=$(git rev-parse HEAD)
-  echo git tag "$tag_name" "$final_release_sha"
+  echo git tag "$tag_name" $final_release_sha
+popd
+
+# merge final release artifacts with develop
+pushd to-repo
+  # this is needed to land commits on develop since the commit for
+  # develop is checked out as a detatched head when the git
+  # resource clones it down
+  git checkout $TO_BRANCH
+
+  # pull from the default remote over the network
+  git pull
+
+  # add local remote for merge
+  git remote add -f from ../from-repo
+  echo git merge -v -m "Merge final release artifacts\
+
+
+[ci skip]" "from/$final_release_abbrev"
 popd
 
 # copy repos into output
-cp -r from-repo create-final-release
+cp -r to-repo from-repo repos
+
