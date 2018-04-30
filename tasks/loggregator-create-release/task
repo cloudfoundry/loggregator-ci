@@ -4,8 +4,7 @@
 
 # -------------------
 # Create a release from a repo and branch: from-repo and
-# FROM_BRANCH. Merge the result back to another repo and branch:
-# to-repo, TO_BRANCH
+# FROM_BRANCH.
 
 
 set -ex
@@ -27,7 +26,7 @@ ssh-add <(echo "$SSH_KEY")
 # build final release on FROM_BRANCH
 pushd from-repo
   # this is needed to land commits on master since the commit for
-  # master is checked out as a detatched head when the git
+  # master is checked out as a detached head when the git
   # resource clones it down
   git checkout $FROM_BRANCH
 
@@ -58,24 +57,5 @@ EOF
   echo git tag "$tag_name" $final_release_sha
 popd
 
-# merge final release artifacts with develop
-pushd to-repo
-  # this is needed to land commits on develop since the commit for
-  # develop is checked out as a detatched head when the git
-  # resource clones it down
-  git checkout $TO_BRANCH
-
-  # pull from the default remote over the network
-  git pull
-
-  # add local remote for merge
-  git remote add -f from ../from-repo
-  echo git merge -v -m "Merge final release artifacts\
-
-
-[ci skip]" "from/$final_release_abbrev"
-popd
-
-# copy repos into output
-cp -r to-repo from-repo repos
-
+# copy repo into output
+cp -r from-repo repos

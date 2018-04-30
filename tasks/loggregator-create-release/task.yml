@@ -5,10 +5,6 @@ image_resource:
 platform: linux
 inputs:
   # - Required
-  # - The repo to which the final releases will be merged
-- name: to-repo
-
-  # - Required
   # - The repo from which the final release will be created
 - name: from-repo
 
