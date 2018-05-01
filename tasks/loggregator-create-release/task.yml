@@ -17,7 +17,7 @@ outputs:
 - name: github-release
 
   # - The modified repos that need to be pushed back to github
-- name: repos
+- name: merge-result
 
 run:
   path: loggregator-ci/tasks/loggregator-create-release/task

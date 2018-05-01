@@ -43,7 +43,7 @@ blobstore:
 EOF
 
   # create final release and commit artifcats
-  bosh -n create-release --sha2 --final \
+  bosh -n create-release --sha2 --rebase --force \
     --tarball ../github-release/release.tgz \
     --version "$NEW_VERSION"
   git add .
@@ -58,4 +58,4 @@ EOF
 popd
 
 # copy repo into output
-cp -r from-repo repos
+cp -a from-repo/. merge-result/
