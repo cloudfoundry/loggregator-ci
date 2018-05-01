@@ -39,7 +39,7 @@ jobs:
       NEW_VERSION: "101.11"
       RELEASE_NAME: "Loggregator"
       FROM_BRANCH: *backport-branch
-  - put: loggregator-release-backport
+  - put: loggregator-backport
     params:
       repository: release-repo
       rebase: false
