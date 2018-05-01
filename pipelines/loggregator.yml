@@ -12,16 +12,6 @@ resources:
     branch: &backport-branch v101.x
     private_key: {{loggregator-key}}
 
-- name: loggregator-release-backport
-  type: git
-  source:
-    uri: git@github.com:cloudfoundry/loggregator-release.git
-    branch: *backport-branch
-    private_key: {{loggregator-key}}
-    ignore_paths:
-    - .final_builds
-    - releases
-
 - name: loggregator-github-release-drafts
   type: github-release
   source:
@@ -36,7 +26,6 @@ jobs:
   plan:
   - aggregate:
     - get: loggregator-backport
-    - get: loggregator-release-backport
     - get: loggregator-ci
   - task: create-backport
     file: loggregator-ci/tasks/loggregator-create-release/task.yml
