@@ -1,15 +1,10 @@
 #!/bin/bash
-
 # vi:syntax=sh
 
 # -------------------
-# Create a release from a repo and branch: from-repo and
-# FROM_BRANCH.
-
-
+# Create a release from a repo and branch: from-repo and FROM_BRANCH.
 set -ex
 
-# establish version/tag strings
 tag_name="v$NEW_VERSION"
 
 # write out github release files
@@ -17,20 +12,12 @@ echo "$RELEASE_NAME $NEW_VERSION" > github-release/name
 echo $tag_name > github-release/tag
 echo "TBD" > github-release/body
 
-# setup ssh for reading from github
-eval "$(ssh-agent -s)"
-mkdir -p ~/.ssh
-echo -e "Host github.com\n\tStrictHostKeyChecking no\n" >> ~/.ssh/config
-ssh-add <(echo "$SSH_KEY")
-
 # build final release on FROM_BRANCH
 pushd from-repo
-  # this is needed to land commits on master since the commit for
-  # master is checked out as a detached head when the git
-  # resource clones it down
+  # Make sure we're not on a detached HEAD
   git checkout $FROM_BRANCH
 
-  # setup private.yml used by `create-release --final`
+  # set up private.yml used by `create-release --final`
   cat << EOF > config/private.yml
 ---
 blobstore:
@@ -43,19 +30,17 @@ blobstore:
 EOF
 
   # create final release and commit artifcats
-  bosh -n create-release --sha2 --force \
+  bosh -n create-release --sha2 --final \
     --tarball ../github-release/release.tgz \
     --version "$NEW_VERSION"
   git add .
-  echo git commit -m "Create final release\
-
+  git commit -m "Create final release
 
 [ci skip]"
 
-  final_release_abbrev=$(git rev-parse --abbrev-ref HEAD)
   final_release_sha=$(git rev-parse HEAD)
-  echo git tag "$tag_name" $final_release_sha
+  git tag "$tag_name" $final_release_sha
 popd
 
 # copy repo into output
-cp -a from-repo/. merge-result/
+cp -a from-repo/. release-repo/

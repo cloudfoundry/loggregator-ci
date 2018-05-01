@@ -52,7 +52,7 @@ jobs:
       FROM_BRANCH: *backport-branch
   - put: loggregator-release-backport
     params:
-      repository: create-final-release/loggregator-backport
+      repository: release-repo
       rebase: false
   - put: loggregator-github-release-drafts
     params:
