@@ -144,8 +144,7 @@ def move_tools_to_gopath():
     gopath = os.environ["GOPATH"]
     dest = os.path.join(gopath, "src/code.cloudfoundry.org")
 
-    os.mkdir(dest)
-    shutil.move(os.path.join(cwd, "loggregator-tools"), dest)
+    shutil.copytree(os.path.join(cwd, "loggregator-tools"), dest)
     tools = os.path.join(dest, "loggregator-tools")
 
     exit_code = subprocess.Popen([
