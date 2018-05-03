@@ -6,6 +6,7 @@ image_resource:
 inputs:
 - name: loggregator
 - name: loggregator-ci
+- name: loggregator-tools
 params:
   SKIP_CERT_VERIFY: false
   WORKER_INSTANCE_COUNT: 1

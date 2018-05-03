@@ -3,6 +3,7 @@
 import subprocess
 import os
 import json
+import shutil
 
 
 def run_cf(*args, **env):
@@ -41,15 +42,14 @@ def cf_login(api, username, password, space, org, skip_cert_verify):
 
 
 def push_worker(app_name, instance_count, **kwargs):
+    gopath = os.environ["GOPATH"]
+    cwd=os.path.join(gopath, "src/code.cloudfoundry.org/loggregator-tools/reliability/worker")
+
     # build the worker bin
-    gopath=os.path.join(os.getcwd(), "loggregator")
-    cwd=os.path.join(gopath, "src/tools/reliability/worker")
     exit_code = subprocess.Popen([
         "/usr/local/go/bin/go",
         "build",
-    ], cwd=cwd, env={
-        "GOPATH": gopath,
-    }).wait()
+    ], cwd=cwd).wait()
     if exit_code != 0:
         raise subprocess.CalledProcessError(exit_code, args)
 
@@ -73,15 +73,14 @@ def push_worker(app_name, instance_count, **kwargs):
 
 
 def push_server(app_name):
-    # build the worker bin
-    gopath=os.path.join(os.getcwd(), "loggregator")
-    cwd=os.path.join(gopath, "src/tools/reliability/server")
+    gopath = os.environ["GOPATH"]
+    cwd=os.path.join(gopath, "src/code.cloudfoundry.org/loggregator-tools/reliability/server")
+
+    # build the server bin
     exit_code = subprocess.Popen([
         "/usr/local/go/bin/go",
         "build",
-    ], cwd=cwd, env={
-        "GOPATH": gopath,
-    }).wait()
+    ], cwd=cwd).wait()
     if exit_code != 0:
         raise subprocess.CalledProcessError(exit_code, args)
 
@@ -139,7 +138,28 @@ def get_cf_password():
         return os.environ['PASSWORD']
 
 
+def move_tools_to_gopath():
+    cwd = os.getcwd()
+
+    gopath = os.environ["GOPATH"]
+    dest = os.path.join(gopath, "src/code.cloudfoundry.org")
+
+    os.mkdir(dest)
+    shutil.move(os.path.join(cwd, "loggregator-tools"), dest)
+    tools = os.path.join(dest, "loggregator-tools")
+
+    exit_code = subprocess.Popen([
+        "/usr/local/go/bin/go",
+        "get",
+        "./...",
+    ], cwd=tools).wait()
+    if exit_code != 0:
+        raise subprocess.CalledProcessError(exit_code, args)
+
+
 def main():
+    move_tools_to_gopath()
+
     cf_password = get_cf_password()
     cf_login(
         os.environ['CF_API'],
