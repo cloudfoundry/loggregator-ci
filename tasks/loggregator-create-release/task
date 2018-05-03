@@ -1,21 +1,18 @@
-#!/bin/bash
-# vi:syntax=sh
-
+#!/bin/bash -ex
 # -------------------
 # Create a release from a repo and branch: from-repo and FROM_BRANCH.
-set -ex
 
 tag_name="v$NEW_VERSION"
 
 # write out github release files
 echo "$RELEASE_NAME $NEW_VERSION" > github-release/name
-echo $tag_name > github-release/tag
+echo "$tag_name" > github-release/tag
 echo "TBD" > github-release/body
 
 # build final release on FROM_BRANCH
 pushd from-repo
   # Make sure we're not on a detached HEAD
-  git checkout $FROM_BRANCH
+  git checkout "$FROM_BRANCH"
 
   # set up private.yml used by `create-release --final`
   cat << EOF > config/private.yml
@@ -29,7 +26,7 @@ blobstore:
     credentials_source: static
 EOF
 
-  # create final release and commit artifcats
+  # create final release and commit artifacts
   bosh -n create-release --sha2 --final \
     --tarball ../github-release/release.tgz \
     --version "$NEW_VERSION"
@@ -39,8 +36,26 @@ EOF
 [ci skip]"
 
   final_release_sha=$(git rev-parse HEAD)
-  git tag "$tag_name" $final_release_sha
+  git tag "$tag_name" "$final_release_sha"
 popd
 
-# copy repo into output
-cp -a from-repo/. release-repo/
+cp -a from-repo repos/
+
+# Merge changes from source-repo to another repo and branch
+if [[ ! -z "$CHERRY_PICK_BRANCH" ]]; then
+  pushd dest-repo
+    # this is needed to land commits since the repo is checked out
+    # as a detached head when the git resource clones it down
+    git checkout "$CHERRY_PICK_BRANCH"
+
+    git pull
+
+    # add local remote for merge
+    git remote add -f from ../source-repo
+    git cherry-pick -x "from/$final_release_sha"
+  popd
+
+  cp -a dest-repo repos/
+fi
+
+# vi:syntax=sh

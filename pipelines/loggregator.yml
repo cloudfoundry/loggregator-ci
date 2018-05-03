@@ -2,44 +2,54 @@ resources:
 - name: loggregator-ci
   type: git
   source:
+    branch: product-pipelines
     uri: git@github.com:cloudfoundry/loggregator-ci.git
-    private_key: {{loggregator-key}}
+    private_key: "{{loggregator-key}}"
 
-- name: loggregator-backport
+- name: loggregator-release
   type: git
   source:
     uri: git@github.com:cloudfoundry/loggregator-release.git
-    branch: &backport-branch v101.x
-    private_key: {{loggregator-key}}
+    branch: &release-branch master
+    private_key: "{{loggregator-key}}"
+
+- name: loggregator-release-develop
+  type: git
+  source:
+    uri: git@github.com:cloudfoundry/loggregator-release.git
+    branch: develop
+    private_key: "{{loggregator-key}}"
 
 - name: loggregator-github-release-drafts
   type: github-release
   source:
     user: cloudfoundry
     repository: loggregator-release
-    access_token: {{access-token}}
+    access_token: "{{access-token}}"
     drafts: true
 
 jobs:
-- name: loggregator-create-backport-release
+- name: loggregator-create-release
   serial: true
   plan:
   - aggregate:
-    - get: loggregator-backport
+    - get: loggregator-release
     - get: loggregator-ci
-  - task: create-backport
+  - task: create-release
     file: loggregator-ci/tasks/loggregator-create-release/task.yml
     input_mapping:
-      from-repo: loggregator-backport
+      from-repo: loggregator-release
+      dest-repo: loggregator-release-develop
     params:
-      S3_ACCESS_KEY: {{s3-access-key-id}}
-      S3_SECRET_KEY: {{s3-secret-access-key}}
+      S3_ACCESS_KEY: "{{s3-access-key-id}}"
+      S3_SECRET_KEY: "{{s3-secret-access-key}}"
       BLOBSTORE_BUCKET: loggregator-release-blobs
-      SSH_KEY: {{loggregator-key}}
-      NEW_VERSION: "101.11"
+      SSH_KEY: "{{loggregator-key}}"
+      NEW_VERSION: "102.1"
       RELEASE_NAME: "Loggregator"
-      FROM_BRANCH: *backport-branch
-  - put: loggregator-backport
+      FROM_BRANCH: *release-branch
+      CHERRY_PICK_BRANCH: develop
+  - put: loggregator-release
     params:
       repository: release-repo
       rebase: false
@@ -50,4 +60,3 @@ jobs:
       body: github-release/body
       globs:
       - github-release/*.tgz
-

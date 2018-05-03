@@ -17,7 +17,7 @@ outputs:
 - name: github-release
 
   # - The modified repos that need to be pushed back to github
-- name: release-repo
+- name: repos
 
 run:
   path: loggregator-ci/tasks/loggregator-create-release/task
@@ -53,3 +53,7 @@ params:
   # - Required
   # - Branch from which the final release will be created
   FROM_BRANCH:
+
+  # - Optional
+  # - If set, the branch onto which to cherry-pick the release artifacts
+  CHERRY_PICK_BRANCH:
