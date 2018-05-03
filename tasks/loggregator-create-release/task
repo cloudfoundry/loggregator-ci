@@ -27,7 +27,7 @@ blobstore:
 EOF
 
   # create final release and commit artifacts
-  bosh -n create-release --sha2 --force \
+  bosh -n create-release --sha2 --final \
     --tarball ../github-release/release.tgz \
     --version "$NEW_VERSION"
   git add .
