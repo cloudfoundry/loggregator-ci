@@ -9,6 +9,12 @@ echo "$RELEASE_NAME $NEW_VERSION" > github-release/name
 echo "$tag_name" > github-release/tag
 echo "TBD" > github-release/body
 
+# github.com's host key won't be cached
+eval "$(ssh-agent -s)"
+mkdir -p ~/.ssh
+echo -e "Host github.com\n\tStrictHostKeyChecking no\n" >> ~/.ssh/config
+ssh-add <(echo "$SSH_KEY")
+
 # build final release on FROM_BRANCH
 pushd from-repo
   # Make sure we're not on a detached HEAD
