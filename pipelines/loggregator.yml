@@ -34,6 +34,7 @@ jobs:
   plan:
   - aggregate:
     - get: loggregator-release
+    - get: loggregator-release-develop
     - get: loggregator-ci
   - task: create-release
     file: loggregator-ci/tasks/loggregator-create-release/task.yml
@@ -45,13 +46,15 @@ jobs:
       S3_SECRET_KEY: ((s3-secret-access-key))
       BLOBSTORE_BUCKET: loggregator-release-blobs
       SSH_KEY: ((loggregator-key))
-      NEW_VERSION: "102.1"
+      NEW_VERSION: "102.2"
       RELEASE_NAME: "Loggregator"
       FROM_BRANCH: *release-branch
       CHERRY_PICK_BRANCH: develop
+  - put: loggregator-release-develop
+    params:
+      rebase: false
   - put: loggregator-release
     params:
-      repository: release-repo
       rebase: false
   - put: loggregator-github-release-drafts
     params:
