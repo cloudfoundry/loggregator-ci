@@ -57,7 +57,7 @@ if [[ ! -z "$CHERRY_PICK_BRANCH" ]]; then
     git pull
 
     # add local remote for merge
-    git remote add -f from ../source-repo
+    git remote add -f from ../from-repo
     git cherry-pick -x "from/$final_release_sha"
   popd
 
