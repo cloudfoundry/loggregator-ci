@@ -9,6 +9,10 @@ inputs:
 - name: from-repo
 
   # - Required
+  # - The repo to which to cherry-pick the final release
+- name: dest-repo
+
+  # - Required
   # - The task repository
 - name: loggregator-ci
 

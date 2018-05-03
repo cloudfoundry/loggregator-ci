@@ -4,28 +4,28 @@ resources:
   source:
     branch: product-pipelines
     uri: git@github.com:cloudfoundry/loggregator-ci.git
-    private_key: "{{loggregator-key}}"
+    private_key: ((loggregator-key))
 
 - name: loggregator-release
   type: git
   source:
     uri: git@github.com:cloudfoundry/loggregator-release.git
     branch: &release-branch master
-    private_key: "{{loggregator-key}}"
+    private_key: ((loggregator-key))
 
 - name: loggregator-release-develop
   type: git
   source:
     uri: git@github.com:cloudfoundry/loggregator-release.git
     branch: develop
-    private_key: "{{loggregator-key}}"
+    private_key: ((loggregator-key))
 
 - name: loggregator-github-release-drafts
   type: github-release
   source:
     user: cloudfoundry
     repository: loggregator-release
-    access_token: "{{access-token}}"
+    access_token: ((access-token))
     drafts: true
 
 jobs:
@@ -41,10 +41,10 @@ jobs:
       from-repo: loggregator-release
       dest-repo: loggregator-release-develop
     params:
-      S3_ACCESS_KEY: "{{s3-access-key-id}}"
-      S3_SECRET_KEY: "{{s3-secret-access-key}}"
+      S3_ACCESS_KEY: ((s3-access-key-id))
+      S3_SECRET_KEY: ((s3-secret-access-key))
       BLOBSTORE_BUCKET: loggregator-release-blobs
-      SSH_KEY: "{{loggregator-key}}"
+      SSH_KEY: ((loggregator-key))
       NEW_VERSION: "102.1"
       RELEASE_NAME: "Loggregator"
       FROM_BRANCH: *release-branch
