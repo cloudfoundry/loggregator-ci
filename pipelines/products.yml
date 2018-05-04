@@ -714,6 +714,8 @@ jobs:
     - get: loggregator-agent
       trigger: true
       passed: ["loggregator-agent-tests"]
+    - get: go-loggregator
+      trigger: true
   - task: update-loggregator-agent
     file: loggregator-ci/tasks/bump-submodule/task.yml
     input_mapping:
@@ -732,10 +734,19 @@ jobs:
       bumped-release-repo: bumped-loggregator-release
     params:
       SUBMODULE_PATH: src/code.cloudfoundry.org/loggregator
+  - task: update-go-loggregator
+    file: loggregator-ci/tasks/bump-submodule/task.yml
+    input_mapping:
+      release-repo: bumped-loggregator-release
+      source-repo: go-loggregator
+    output_mapping:
+      bumped-release-repo: bumped-go-loggregator
+    params:
+      SUBMODULE_PATH: src/code.cloudfoundry.org/go-loggregator
   - task: sync-package-specs
     file: loggregator-ci/tasks/run-release-script/task.yml
     input_mapping:
-      release-repo: bumped-loggregator-release
+      release-repo: bumped-go-loggregator
     output_mapping:
       updated-release-repo: synced-loggregator-release
     params:
@@ -781,6 +792,7 @@ jobs:
     params:
       PATHS: |
         src/code.cloudfoundry.org/loggregator
+        src/code.cloudfoundry.org/go-loggregator
         src/code.cloudfoundry.org/loggregator-agent
         packages
   - put: loggregator-release
