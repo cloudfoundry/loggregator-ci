@@ -191,6 +191,15 @@ resources:
     branch: master
     private_key: {{cf-loggregator-oauth-bot-key}}
 
+- name: loggregator-ci-docker-images
+  type: git
+  source:
+    uri: git@github.com:cloudfoundry/loggregator-ci
+    branch: master
+    private_key: {{cf-loggregator-oauth-bot-key}}
+    paths:
+    - docker-images
+
 - name: loggregator-bench-release
   type: git
   source:
@@ -674,6 +683,8 @@ jobs:
   plan:
   - aggregate:
     - get: loggregator-ci
+      resource: loggregator-ci-docker-images
+      trigger: true
     - get: loggregator-src
       trigger: true
       passed: ["loggregator-tests"]
@@ -1134,6 +1145,8 @@ jobs:
   plan:
   - aggregate:
     - get: loggregator-ci
+      resource: loggregator-ci-docker-images
+      trigger: true
     - get: log-cache
       trigger: true
       passed: ["log-cache-tests"]
