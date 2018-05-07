@@ -343,8 +343,8 @@ jobs:
   - task: log-cache-group-blackbox-tests
     file: loggregator-ci/tasks/log-cache-group-blackbox/task.yml
     params:
-      APP_NAME: "log-cache-blackbox"
-      APP_ADDR: "log-cache-blackbox.coconut.cf-app.com"
+      APP_NAME: "log-cache-blackbox-groups"
+      APP_ADDR: "log-cache-blackbox-groups.coconut.cf-app.com"
       SYSTEM_DOMAIN: "coconut.cf-app.com"
       DATADOG_API_KEY: {{datadog-loggregator-api-key}}
       LOG_CACHE_URL: http://log-cache.coconut.cf-app.com
