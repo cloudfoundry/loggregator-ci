@@ -11,7 +11,7 @@ For example:
 
 ```bash
 docker run \
-    --volume "$PWD/loggregator-certs:/srv/emitter/certs:ro" \
+    --volume "$PWD/loggregator-certs:/srv/certs:ro" \
     loggregator/emitter
 ```
 

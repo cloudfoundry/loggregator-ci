@@ -1,12 +1,26 @@
+FROM golang:latest as builder
+
+COPY / /go/
+
+ENV CGO_ENABLED=0 \
+    GOOS=linux \
+    GOARCH=amd64
+
+RUN go build \
+    -a \
+    -installsuffix nocgo \
+    -o /emitter \
+    code.cloudfoundry.org/loggregator-tools/emitter
+
 FROM alpine:latest
 
-ENV CERT="/srv/emitter/certs/agent.crt" \
-    KEY="/srv/emitter/certs/agent.key" \
-    CA="/srv/emitter/certs/ca.crt" \
+ENV CERT="/srv/certs/agent.crt" \
+    KEY="/srv/certs/agent.key" \
+    CA="/srv/certs/ca.crt" \
     TARGET="localhost:3458" \
     RATE="1s"
 
-RUN mkdir -p /srv/emitter/bin
-COPY emitter /srv/emitter/bin/emitter
-WORKDIR /srv/emitter/
-CMD [ "/srv/emitter/bin/emitter" ]
+RUN mkdir -p /srv
+COPY --from=builder /emitter /srv/
+WORKDIR /srv/
+CMD [ "/srv/emitter" ]
