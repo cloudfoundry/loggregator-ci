@@ -22,5 +22,15 @@ RUN go get github.com/onsi/ginkgo/ginkgo
 RUN git config --global user.email "cf-loggregator@pivotal.io" && git config --global user.name "Loggregator CI"
 
 RUN cd /tmp \
-  && wget https://github.com/cloudfoundry/bosh-bootloader/releases/download/v4.10.4/bbl-v4.10.4_linux_x86-64 -O /usr/local/bin/bbl \
+  && wget https://github.com/cloudfoundry/bosh-bootloader/releases/download/v6.6.7/bbl-v6.6.7_linux_x86-64 -O /usr/local/bin/bbl \
   && chmod +x /usr/local/bin/bbl
+
+RUN cd /tmp \
+    && wget https://releases.hashicorp.com/terraform/0.11.7/terraform_0.11.7_linux_amd64.zip -O terraform.zip \
+    && unzip terraform.zip -d /usr/local/bin
+
+RUN cd /tmp \
+  && wget https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-sdk-200.0.0-linux-x86_64.tar.gz -O google-cloud-sdk.tar.gz \
+  && tar xzvf google-cloud-sdk.tar.gz -C /usr/local/share \
+  && /usr/local/share/google-cloud-sdk/install.sh \
+  && ln -s /usr/local/share/google-cloud-sdk/bin/gcloud /usr/local/bin/gcloud
