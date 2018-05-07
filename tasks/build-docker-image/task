@@ -1,12 +1,12 @@
 #!/bin/bash
 set -ex
 
-if [ "$BASE_PACKAGE" = "" ]; then
+if [ -z "$BASE_PACKAGE" ]; then
     echo BASE_PACKAGE was not set
     exit 1
 fi
 
-if [ "$IMAGE_NAME" = "" ]; then
+if [ -z "$IMAGE_NAME" ]; then
     echo IMAGE_NAME was not set
     exit 1
 fi
@@ -21,9 +21,8 @@ export GOPATH="$PWD/workspace"
 go get -d -v $BASE_PACKAGE/...
 
 pushd "loggregator-ci/docker-images/$IMAGE_NAME" > /dev/null
-    ./build_bin.sh
-
     mkdir -p "$ciroot/build-image/build"
-    cp Dockerfile "$IMAGE_NAME" "$ciroot/build-image/build/"
+    cp -r "$GOPATH/." "$ciroot/build-image/build/"
+    cp Dockerfile "$ciroot/build-image/build/"
     echo "$sha" > "$ciroot/build-image/tag"
 popd > /dev/null

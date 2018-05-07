@@ -20,7 +20,6 @@ ENV CERT="/srv/certs/agent.crt" \
     TARGET="localhost:3458" \
     RATE="1s"
 
-RUN mkdir -p /srv
 COPY --from=builder /emitter /srv/
-WORKDIR /srv/
+WORKDIR /srv
 CMD [ "/srv/emitter" ]

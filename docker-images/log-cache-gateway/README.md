@@ -14,7 +14,7 @@ For example:
 docker run \
     --detach \
     --publish 8081:8081 \
-    --volume "$PWD/loggregator-certs:/srv/log-cache-gateway/certs:ro" \
+    --volume "$PWD/loggregator-certs:/srv/certs:ro" \
     loggregator/log-cache-gateway
 ```
 

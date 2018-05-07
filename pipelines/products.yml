@@ -21,6 +21,7 @@ groups:
   - cf-syslog-drain-promotion
   - log-cache-tests
   - log-cache-cli-tests
+  - log-cache-docker-images
   - log-cache-bump-submodule
   - log-cache-release-elect-promotion
   - log-cache-master-promotion
@@ -61,6 +62,7 @@ groups:
   jobs:
   - log-cache-tests
   - log-cache-cli-tests
+  - log-cache-docker-images
   - log-cache-bump-submodule
   - cfar-lats
   - cats
@@ -415,6 +417,34 @@ resources:
   type: docker-image
   source:
     repository: loggregator/rlp
+    username: {{docker-hub-username}}
+    password: {{docker-hub-password}}
+
+- name: log-cache-image
+  type: docker-image
+  source:
+    repository: loggregator/log-cache
+    username: {{docker-hub-username}}
+    password: {{docker-hub-password}}
+
+- name: nozzle-image
+  type: docker-image
+  source:
+    repository: loggregator/log-cache-nozzle
+    username: {{docker-hub-username}}
+    password: {{docker-hub-password}}
+
+- name: gateway-image
+  type: docker-image
+  source:
+    repository: loggregator/log-cache-gateway
+    username: {{docker-hub-username}}
+    password: {{docker-hub-password}}
+
+- name: scheduler-image
+  type: docker-image
+  source:
+    repository: loggregator/log-cache-scheduler
     username: {{docker-hub-username}}
     password: {{docker-hub-password}}
 
@@ -1097,6 +1127,82 @@ jobs:
       source-repo: log-cache-cli
     params:
       IMPORT_PATH: code.cloudfoundry.org/log-cache-cli
+
+- name: log-cache-docker-images
+  serial: true
+  public: true
+  plan:
+  - aggregate:
+    - get: loggregator-ci
+    - get: log-cache
+      trigger: true
+      passed: ["log-cache-tests"]
+  - aggregate:
+    - task: build-log-cache-image
+      file: loggregator-ci/tasks/build-docker-image/task.yml
+      input_mapping:
+        source-repo: log-cache
+      output_mapping:
+        build-image: build-log-cache-image
+      params:
+        BASE_PACKAGE: code.cloudfoundry.org/log-cache
+        IMAGE_NAME: log-cache
+    - task: build-nozzle-image
+      file: loggregator-ci/tasks/build-docker-image/task.yml
+      input_mapping:
+        source-repo: log-cache
+      output_mapping:
+        build-image: build-nozzle-image
+      params:
+        BASE_PACKAGE: code.cloudfoundry.org/log-cache
+        IMAGE_NAME: log-cache-nozzle
+    - task: build-gateway-image
+      file: loggregator-ci/tasks/build-docker-image/task.yml
+      input_mapping:
+        source-repo: log-cache
+      output_mapping:
+        build-image: build-gateway-image
+      params:
+        BASE_PACKAGE: code.cloudfoundry.org/log-cache
+        IMAGE_NAME: log-cache-gateway
+    - task: build-scheduler-image
+      file: loggregator-ci/tasks/build-docker-image/task.yml
+      input_mapping:
+        source-repo: log-cache
+      output_mapping:
+        build-image: build-scheduler-image
+      params:
+        BASE_PACKAGE: code.cloudfoundry.org/log-cache
+        IMAGE_NAME: log-cache-scheduler
+  - aggregate:
+    - put: log-cache-image
+      params:
+        build: build-log-cache-image/build
+        tag: build-log-cache-image/tag
+        tag_as_latest: true
+        cache: true
+        cache_tag: latest
+    - put: nozzle-image
+      params:
+        build: build-nozzle-image/build
+        tag: build-nozzle-image/tag
+        tag_as_latest: true
+        cache: true
+        cache_tag: latest
+    - put: gateway-image
+      params:
+        build: build-gateway-image/build
+        tag: build-gateway-image/tag
+        tag_as_latest: true
+        cache: true
+        cache_tag: latest
+    - put: scheduler-image
+      params:
+        build: build-scheduler-image/build
+        tag: build-scheduler-image/tag
+        tag_as_latest: true
+        cache: true
+        cache_tag: latest
 
 - name: log-cache-bump-submodule
   serial: true

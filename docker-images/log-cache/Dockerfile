@@ -22,7 +22,6 @@ ENV ADDR=:8080 \
 
 EXPOSE 8080
 
-RUN mkdir -p /srv/
-COPY --from=builder /log-cache /srv/log-cache
+COPY --from=builder /log-cache /srv/
 WORKDIR /srv
 CMD [ "/bin/sh", "-c", "cat $ENV_DIR/* 2> /dev/null > /tmp/env; source /tmp/env; /srv/log-cache" ]

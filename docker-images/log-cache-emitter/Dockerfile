@@ -19,7 +19,6 @@ ENV LOG_CACHE_ADDR=log-cache:8080 \
     CERT_PATH="/srv/certs/log-cache.crt" \
     KEY_PATH="/srv/certs/log-cache.key"
 
-RUN mkdir -p /srv
-COPY --from=builder /log-cache-emitter /srv/log-cache-emitter
+COPY --from=builder /log-cache-emitter /srv/
 WORKDIR /srv
 CMD [ "/srv/log-cache-emitter" ]

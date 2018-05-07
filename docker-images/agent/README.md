@@ -15,7 +15,7 @@ For example:
 docker run \
     --detach \
     --env "ROUTER_ADDR=router:8082" \
-    --volume "$PWD/loggregator-certs:/srv/agent/certs:ro" \
+    --volume "$PWD/loggregator-certs:/srv/certs:ro" \
     loggregator/agent
 ```
 

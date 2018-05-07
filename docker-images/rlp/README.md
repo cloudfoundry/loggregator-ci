@@ -17,7 +17,7 @@ docker run \
     --detach \
     --publish 8082:8082 \
     --env "ROUTER_ADDRS=router:8082" \
-    --volume "$PWD/loggregator-certs:/srv/rlp/certs:ro" \
+    --volume "$PWD/loggregator-certs:/srv/certs:ro" \
     loggregator/rlp
 ```
 

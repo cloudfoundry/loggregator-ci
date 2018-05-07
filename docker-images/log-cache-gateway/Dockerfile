@@ -23,7 +23,6 @@ ENV ADDR=:8081 \
 
 EXPOSE 8081
 
-RUN mkdir -p /srv
-COPY --from=builder /log-cache-gateway /srv/log-cache-gateway
+COPY --from=builder /log-cache-gateway /srv/
 WORKDIR /srv
 CMD [ "/srv/log-cache-gateway" ]

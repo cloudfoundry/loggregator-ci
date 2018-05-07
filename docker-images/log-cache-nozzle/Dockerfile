@@ -24,7 +24,6 @@ ENV LOGS_PROVIDER_ADDR="rlp:8082" \
     KEY_PATH="/srv/certs/log-cache.key" \
     ENV_DIR="/srv/conf.d"
 
-RUN mkdir -p /srv
-COPY --from=builder /log-cache-nozzle /srv/log-cache-nozzle
+COPY --from=builder /log-cache-nozzle /srv/
 WORKDIR /srv
 CMD [ "/bin/sh", "-c", "cat $ENV_DIR/* 2> /dev/null > /tmp/env; source /tmp/env; /srv/log-cache-nozzle" ]

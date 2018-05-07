@@ -1,8 +1,22 @@
+FROM golang:latest as builder
+
+COPY / /go/
+
+ENV CGO_ENABLED=0 \
+    GOOS=linux \
+    GOARCH=amd64
+
+RUN go build \
+    -a \
+    -installsuffix nocgo \
+    -o /router \
+    code.cloudfoundry.org/loggregator/router
+
 FROM alpine:latest
 
-ENV ROUTER_CERT_FILE="/srv/router/certs/router.crt" \
-    ROUTER_KEY_FILE="/srv/router/certs/router.key" \
-    ROUTER_CA_FILE="/srv/router/certs/ca.crt" \
+ENV ROUTER_CERT_FILE="/srv/certs/router.crt" \
+    ROUTER_KEY_FILE="/srv/certs/router.key" \
+    ROUTER_CA_FILE="/srv/certs/ca.crt" \
     ROUTER_MAX_RETAINED_LOG_MESSAGES="10000" \
     ROUTER_CONTAINER_METRIC_TTL_SECONDS="120" \
     ROUTER_SINK_INACTIVITY_TIMEOUT_SECONDS="3600" \
@@ -16,7 +30,6 @@ EXPOSE 8082 \
        6060 \
        6061
 
-RUN mkdir -p /srv/router/bin
-COPY router /srv/router/bin/router
-WORKDIR /srv/router/
-CMD [ "/srv/router/bin/router" ]
+COPY --from=builder /router /srv/
+WORKDIR /srv
+CMD [ "/srv/router" ]
