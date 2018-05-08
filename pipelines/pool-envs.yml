@@ -1,0 +1,132 @@
+resources:
+- name: cf-deployment-concourse-tasks
+  type: git
+  source:
+    uri: https://github.com/cloudfoundry/cf-deployment-concourse-tasks
+    branch: v6.1
+
+- name: deployments-loggregator
+  type: git
+  source:
+    uri: git@github.com:cloudfoundry/deployments-loggregator.git
+    branch: master
+    private_key: {{deployments-loggregator-key}}
+
+- name: create-pool
+  type: pool
+  source:
+    uri: git@github.com:cloudfoundry/loggregator-locks.git
+    branch: master
+    pool: create
+    private_key: {{cf-loggregator-oauth-bot-key}}
+
+- name: pipeline-pool
+  type: pool
+  source:
+    uri: git@github.com:cloudfoundry/loggregator-locks.git
+    branch: master
+    pool: pipelines
+    private_key: {{cf-loggregator-oauth-bot-key}}
+
+jobs:
+- name: bbl-create
+  public: false
+  serial: true
+  plan:
+  - put: create-pool
+    params: {acquire: true}
+  - aggregate:
+    - get: cf-deployment-concourse-tasks
+    - get: deployments-loggregator
+  - task: create-director
+    input_mapping:
+      bbl-state: deployments-loggregator
+      bbl-config: deployments-loggregator
+    output_mapping:
+      updated-bbl-state: updated-deployments-loggregator
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source:
+          repository: relintdockerhubpushbot/cf-deployment-concourse-tasks
+      inputs:
+      - name: cf-deployment-concourse-tasks
+      - name: create-pool
+      - name: bbl-state
+      - name: bbl-config
+      outputs:
+      - name: updated-bbl-state
+      params:
+        BBL_GCP_SERVICE_ACCOUNT_KEY: gcp/service-account.key.json
+        BBL_GCP_PROJECT_ID: cff-loggregator
+        BBL_GCP_ZONE: us-central1-a
+        BBL_GCP_REGION: us-central1
+        BBL_IAAS: gcp
+        BBL_LB_CERT: {{coconut_bbl_lb_cert}}
+        BBL_LB_KEY: {{coconut_bbl_lb_key}}
+        SKIP_LB_CREATION: false
+        BBL_STATE_DIR: bbl-state
+        BBL_LB_CERT_CHAIN:
+        BBL_CONFIG_DIR:
+        GIT_COMMIT_EMAIL:
+        GIT_COMMIT_USERNAME:
+      run:
+        path: /bin/bash
+        args:
+        - "-c"
+        - |
+          #!/bin/bash
+
+          export BBL_STATE_DIR=$(cat create-pool/metadata)
+          export BBL_ENV_NAME=$(cat create-pool/name)
+          export LB_DOMAIN="$BBL_ENV_NAME.loggr.cf-app.com"
+
+          mkdir -p "bbl-state/$BBL_STATE_DIR"
+
+          ./cf-deployment-concourse-tasks/bbl-up/task
+  - put: deployments-loggregator
+    params:
+      repository: updated-deployments-loggregator
+  - task: configure-dns
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source:
+          repository: loggregator/base
+      inputs:
+      - name: updated-deployments-loggregator
+      - name: create-pool
+      params:
+        BBL_GCP_SERVICE_ACCOUNT_KEY: gcp/service-account.key.json
+      run:
+        path: /bin/bash
+        args:
+        - "-c"
+        - |
+          #!/bin/bash
+
+          set -ex
+
+          export workspace=$PWD
+
+          export BBL_STATE_DIR=$(cat create-pool/metadata)
+          export BBL_ENV_NAME=$(cat create-pool/name)
+          export LB_DOMAIN="$BBL_ENV_NAME.loggr.cf-app.com"
+          export SERVICE_ACCOUNT_KEY=$workspace/updated-deployments-loggregator/$BBL_GCP_SERVICE_ACCOUNT_KEY
+
+          gcloud auth activate-service-account --key-file=$SERVICE_ACCOUNT_KEY
+
+          pushd "updated-deployments-loggregator/$BBL_STATE_DIR"
+              NS=$(bbl --gcp-service-account-key=$SERVICE_ACCOUNT_KEY lbs | grep "System Domain" | cut -d':' -f2)
+          popd
+
+          gcloud dns record-sets transaction start -z loggr
+          gcloud dns record-sets transaction add $(echo $NS) --zone loggr --name "$LB_DOMAIN" --ttl 300 --type NS
+          gcloud dns record-sets transaction execute -z loggr
+  - put: pipeline-pool
+    params: {add: create-pool}
+  - put: create-pool
+    params: {remove: create-pool}
+
