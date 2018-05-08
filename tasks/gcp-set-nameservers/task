@@ -7,11 +7,11 @@ export workspace=$PWD
 export BBL_STATE_DIR=$(cat environment/metadata)
 export BBL_ENV_NAME=$(cat environment/name)
 export LB_DOMAIN="$BBL_ENV_NAME.$GCP_LB_DOMAIN"
-export SERVICE_ACCOUNT_KEY=$workspace/updated-deployments-loggregator/$BBL_GCP_SERVICE_ACCOUNT_KEY
+export SERVICE_ACCOUNT_KEY=$workspace/bbl-state/$BBL_GCP_SERVICE_ACCOUNT_KEY
 
 gcloud auth activate-service-account --key-file=$SERVICE_ACCOUNT_KEY
 
-pushd "updated-deployments-loggregator/$BBL_STATE_DIR"
+pushd "bbl-state/$BBL_STATE_DIR"
   NS=$(bbl --gcp-service-account-key=$SERVICE_ACCOUNT_KEY lbs | grep "System Domain" | cut -d':' -f2)
 popd
 
