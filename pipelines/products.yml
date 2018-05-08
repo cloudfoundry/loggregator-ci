@@ -323,6 +323,7 @@ resources:
     uri: git@github.com:cloudfoundry/log-cache-release
     branch: master
     private_key: {{cf-loggregator-oauth-bot-key}}
+    disable_ci_skip: true
 
 - name: log-cache
   type: git
