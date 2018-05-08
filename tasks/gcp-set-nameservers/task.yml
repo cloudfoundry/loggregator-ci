@@ -4,8 +4,7 @@ platform: linux
 image_resource:
   type: docker-image
   source:
-    repository: relintdockerhubpushbot/cf-deployment-concourse-tasks
-    tag: v5.9.0
+    repository: loggregator/base
 
 inputs:
 - name: loggregator-ci # - This repo
