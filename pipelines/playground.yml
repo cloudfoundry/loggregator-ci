@@ -1,6 +1,7 @@
 groups:
 - name: main
   jobs:
+  - cfcr-deploy
   - cf-deploy
   - deploy-datadog-accumulator
   - log-cache-blackbox
@@ -25,6 +26,12 @@ resources:
   type: git
   source:
     uri: https://github.com/cloudfoundry/bosh-deployment
+
+- name: cfcr-compiled-deployment
+  type: git
+  source:
+    uri: https://github.com/starkandwayne/cfcr-compiled-deployment
+    branch: master
 
 - name: cf-deployment
   type: git
@@ -146,6 +153,56 @@ jobs:
     params:
       repository: updated-bbl-state
       rebase: true
+
+- name: cfcr-deploy
+  public: false
+  serial: true
+  plan:
+  - aggregate:
+    - get: cf-deployment-concourse-tasks
+    - get: cfcr-compiled-deployment
+      trigger: true
+    - get: bbl-state
+      resource: deployments-loggregator
+    - get: vars-store
+      resource: deployments-loggregator
+    - get: ops-files
+      resource: cfcr-compiled-deployment
+    - get: vars-files
+      resource: deployments-loggregator
+  - task: upload-stemcell
+    params:
+      BBL_STATE_DIR: gcp/playground
+      STEMCELL_VERSION: "3541.10"
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source:
+          repository: relintdockerhubpushbot/cf-deployment-concourse-tasks
+      inputs:
+      - name: bbl-state
+      run:
+        path: /bin/bash
+        args:
+        - "-c"
+        - |
+          #!/bin/bash
+          pushd bbl-state/${BBL_STATE_DIR}
+            eval "$(bbl print-env)"
+          popd
+          set -ex
+          bosh upload-stemcell \
+            https://bosh.io/d/stemcells/bosh-google-kvm-ubuntu-trusty-go_agent?v=${STEMCELL_VERSION}
+  - task: cfcr-deploy
+    file: cf-deployment-concourse-tasks/bosh-deploy/task.yml
+    input_mapping:
+      cf-deployment: cfcr-compiled-deployment
+    params:
+      BBL_STATE_DIR: gcp/playground
+      SYSTEM_DOMAIN: playground.loggr.cf-app.com
+      USE_VARS_STORE: false
+      MANIFEST_FILE: cfcr.yml
 
 - name: cf-deploy
   public: false
