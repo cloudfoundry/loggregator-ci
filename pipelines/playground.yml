@@ -5,6 +5,7 @@ groups:
   - cf-deploy
   - deploy-datadog-accumulator
   - log-cache-blackbox
+  - cfcr-destroy
   - cf-destroy
 - name: director-lifecycle
   jobs:
@@ -158,6 +159,8 @@ jobs:
   public: false
   serial: true
   plan:
+  - get: weekday-before-work
+    trigger: true
   - aggregate:
     - get: cf-deployment-concourse-tasks
     - get: cfcr-compiled-deployment
@@ -364,6 +367,24 @@ jobs:
     file: cf-deployment-concourse-tasks/bosh-cleanup/task.yml
     params:
       BBL_STATE_DIR: gcp/playground
+
+- name: cfcr-destroy
+  serial_groups: ["deployment"]
+  public: false
+  plan:
+  - get: weekday-after-work
+    trigger: true
+  - aggregate:
+    - get: bbl-state
+      resource: deployments-loggregator
+    - get: cf-deployment-concourse-tasks
+  - aggregate:
+    - task: cfcr-deployment-destroy
+      file: cf-deployment-concourse-tasks/bosh-delete-deployment/task.yml
+      params:
+        BBL_STATE_DIR: gcp/playground
+        DEPLOYMENT_NAME: cfcr
+
 - name: cf-destroy
   serial_groups: ["deployment"]
   public: false
