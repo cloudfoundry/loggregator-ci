@@ -947,9 +947,8 @@ jobs:
             #!/bin/bash
             set -ex
 
-
             # establish version/tag strings
-            semver=$(cat log-cache-cli-version/version)
+            semver="$(cat log-cache-cli-version/version)"
             cp log-cache-cli-version/version version
 
             # build version to inject into build with ldflags
@@ -958,25 +957,30 @@ jobs:
 
             # write out github release files
             echo "log cache cli $semver" > github-release/name
-            echo $semver > github-release/tag
+            echo "v$semver" > github-release/tag
             echo "TBD" > github-release/body
             cp -R log-cache-cli/. output-repo
 
-            export WORKSPACE=$PWD
+            export WORKSPACE="$PWD"
 
             mkdir -p go
             pushd go
-              export GOPATH=$PWD
+              export GOPATH="$PWD"
               mkdir -p src/code.cloudfoundry.org
-              cp -R $WORKSPACE/log-cache-cli/ src/code.cloudfoundry.org
+              cp -R "$WORKSPACE/log-cache-cli/ src/code.cloudfoundry.org"
               go get ./...
             popd
 
             mkdir github-release/builds
-            pushd $GOPATH/src/code.cloudfoundry.org/log-cache-cli/
-              GOOS=linux go build -ldflags "-X main.version=$version" -o $WORKSPACE/github-release/builds/log-cache-cli-plugin-linux
-              GOOS=darwin go build -ldflags "-X main.version=$version" -o $WORKSPACE/github-release/builds/log-cache-cli-plugin-darwin
-              GOOS=windows go build -ldflags "-X main.version=$version" -o $WORKSPACE/github-release/builds/log-cache-cli-plugin-windows
+            pushd "$GOPATH/src/code.cloudfoundry.org/cmd/cf-lc-plugin"
+              GOOS=linux go build -ldflags "-X main.version=$version" -o $WORKSPACE/github-release/builds/log-cache-cf-plugin-linux
+              GOOS=darwin go build -ldflags "-X main.version=$version" -o $WORKSPACE/github-release/builds/log-cache-cf-plugin-darwin
+              GOOS=windows go build -ldflags "-X main.version=$version" -o $WORKSPACE/github-release/builds/log-cache-cf-plugin-windows
+            popd
+            pushd "$GOPATH/src/code.cloudfoundry.org/cmd/lc"
+              GOOS=linux go build -ldflags "-X main.version=$version" -o $WORKSPACE/github-release/builds/log-cache-linux
+              GOOS=darwin go build -ldflags "-X main.version=$version" -o $WORKSPACE/github-release/builds/log-cache-darwin
+              GOOS=windows go build -ldflags "-X main.version=$version" -o $WORKSPACE/github-release/builds/log-cache-windows
             popd
 
   - put: log-cache-cli
