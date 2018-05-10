@@ -47,9 +47,6 @@ fail=false
 errMsg=""
 
 for s in ${sizes[*]}; do
-    # ensure any previous subscriptions have expired
-    sleep 70
-
     echo "Latency test - group size: ${s}"
     response=$(curl -vvv "${APP_ADDR}/group?size=${s}" -d='')
 
