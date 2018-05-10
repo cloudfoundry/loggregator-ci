@@ -44,8 +44,8 @@ def exec(env, cmd, dir=nil, silent: false)
   output.chomp
 end
 
-def datadog_api_key
-  dir = ENV['BBL_STATE_DIR']
+def datadog_api_ke
+  dir = ENV['DATADOG_VARS_DIR']
   cmd = ['bosh', 'int', 'datadog-vars.yml', '--path', '/datadog_key']
 
   @datadog_api_key ||= exec(bosh_env, cmd, dir, silent: true)
