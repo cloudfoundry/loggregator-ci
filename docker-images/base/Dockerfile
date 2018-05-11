@@ -11,9 +11,9 @@ RUN apt-get update; apt-get install -y \
 
 # get v3 protoc from github, it was in beta at the time of writing
 RUN cd /tmp \
- && wget https://github.com/google/protobuf/releases/download/v3.0.0-beta-2/protoc-3.0.0-beta-2-linux-x86_64.zip \
- && unzip *.zip \
- && cp ./protoc /usr/local/bin/
+  && wget https://github.com/google/protobuf/releases/download/v3.0.0-beta-2/protoc-3.0.0-beta-2-linux-x86_64.zip \
+  && unzip *.zip \
+  && cp ./protoc /usr/local/bin/
 
 RUN go get -d github.com/cloudfoundry/bosh-cli && go build -o $GOPATH/bin/bosh github.com/cloudfoundry/bosh-cli
 RUN curl -L "https://cli.run.pivotal.io/stable?release=debian64&source=github" > cf.deb && dpkg -i ./cf.deb
@@ -37,3 +37,8 @@ RUN cd /tmp \
 
 RUN wget -O /usr/local/bin/kubectl https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl \
   && chmod +x /usr/local/bin/kubectl
+
+RUN cd /tmp \
+  && wget https://github.com/cloudfoundry-incubator/credhub-cli/releases/download/1.7.5/credhub-linux-1.7.5.tgz \
+  && tar xzvf credhub*.tgz ./credhub \
+  && cp ./credhub /usr/local/bin/
