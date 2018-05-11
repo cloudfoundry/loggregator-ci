@@ -34,6 +34,12 @@ resources:
     uri: https://github.com/starkandwayne/cfcr-compiled-deployment
     branch: master
 
+- name: loggregator-k8s-deployment
+  type: git
+  source:
+    uri: https://github.com/cloudfoundry-incubator/loggregator-k8s-deployment
+    branch: master
+
 - name: cf-deployment
   type: git
   source:
@@ -159,12 +165,14 @@ jobs:
   public: false
   serial: true
   plan:
-  - get: weekday-before-work
-    trigger: true
   - aggregate:
-    - get: cf-deployment-concourse-tasks
+    - get: weekday-before-work
+      trigger: true
     - get: cfcr-compiled-deployment
       trigger: true
+    - get: loggregator-k8s-deployment
+      trigger: true
+    - get: cf-deployment-concourse-tasks
     - get: bbl-state
       resource: deployments-loggregator
     - get: vars-store
@@ -173,6 +181,7 @@ jobs:
       resource: cfcr-compiled-deployment
     - get: vars-files
       resource: deployments-loggregator
+    - get: deployments-loggregator
   - task: upload-stemcell
     params:
       BBL_STATE_DIR: gcp/playground
@@ -191,12 +200,36 @@ jobs:
         - "-c"
         - |
           #!/bin/bash
+          set -e
+
           pushd bbl-state/${BBL_STATE_DIR}
             eval "$(bbl print-env)"
           popd
           set -ex
           bosh upload-stemcell \
             https://bosh.io/d/stemcells/bosh-google-kvm-ubuntu-trusty-go_agent?v=${STEMCELL_VERSION}
+  - task: upload-vars-to-credhub
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source:
+          repository: loggregator/base
+      inputs:
+      - name: deployments-loggregator
+      run:
+        path: /bin/bash
+        args:
+        - "-c"
+        - |
+          #!/bin/bash
+          set -e
+
+          eval "$(ssh-agent)"
+          cd deployments-loggregator/gcp/playground
+          source .envrc
+          credhub import --file k8s-cloud-provider-credhub-vars.yml
+          killall ssh-agent
   - task: cfcr-deploy
     file: cf-deployment-concourse-tasks/bosh-deploy/task.yml
     input_mapping:
@@ -206,14 +239,100 @@ jobs:
       SYSTEM_DOMAIN: playground.loggr.cf-app.com
       USE_VARS_STORE: false
       MANIFEST_FILE: cfcr.yml
+      OPS_FILES: |
+        ops-files/allow-privileged-containers.yml
+        ops-files/iaas/gcp/cloud-provider.yml
+        ops-files/iaas/gcp/add-service-key-master.yml
+        ops-files/iaas/gcp/add-service-key-worker.yml
+  - task: prepare-certs
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source:
+          repository: loggregator/certs
+      inputs:
+      - name: deployments-loggregator
+      outputs:
+      - name: updated-deployments-loggregator
+      run:
+        path: /bin/bash
+        args:
+        - "-c"
+        - |
+          #!/bin/bash
+          set -e
+
+          cp -R deployments-loggregator/. updated-deployments-loggregator/
+          if [ ! -f updated-deployments-loggregator/gcp/playground/k8s-certs.yml ]; then
+            generate-certs.sh output
+            tls_certs_header='
+          apiVersion: v1
+          kind: Secret
+          metadata:
+            name: loggregator-tls-certs
+            namespace: loggregator
+          type: Opaque
+          data:'
+
+            echo "$tls_certs_header" > k8s-certs.yml
+            ls output |
+                while read line
+                    do echo "  $line: $(cat output/$line | base64 -w 0)"
+                done >> k8s-certs.yml
+            mv k8s-certs.yml updated-deployments-loggregator/gcp/playground/
+            pushd updated-deployments-loggregator
+              apt-get update --yes
+              apt-get install --yes git
+              git config --global user.email "cf-loggregator@pivotal.io"
+              git config --global user.name "Loggregator CI"
+              git add gcp/playground/k8s-certs.yml
+              git commit -m "Add loggregator certs for kubernetes
+
+          [ci-skip]"
+            popd
+          fi
+  - put: deployments-loggregator
+    params:
+      repository: updated-deployments-loggregator
+      rebase: true
+  - task: loggregator-deploy
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source:
+          repository: loggregator/base
+      inputs:
+      - name: loggregator-k8s-deployment
+      - name: updated-deployments-loggregator
+      run:
+        path: /bin/bash
+        args:
+        - "-c"
+        - |
+          #!/bin/bash
+          set -e
+
+          pushd updated-deployments-loggregator/gcp/playground
+            eval "$(ssh-agent)"
+            source .envrc
+            ./k8s_login
+          popd
+          cp updated-deployments-loggregator/gcp/playground/k8s-certs.yml loggregator-k8s-deployment/secrets/
+          pushd loggregator-k8s-deployment
+            ./deploy.sh
+          popd
+          killall ssh
+          killall ssh-agent
 
 - name: cf-deploy
   public: false
   serial_groups: ["deployment"]
   plan:
-  - get: weekday-before-work
-    trigger: true
   - aggregate:
+    - get: weekday-before-work
+      trigger: true
     - get: bbl-state
       resource: deployments-loggregator
     - get: cf-deployment
