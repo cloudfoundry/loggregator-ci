@@ -972,12 +972,12 @@ jobs:
             popd
 
             mkdir github-release/builds
-            pushd "$GOPATH/src/code.cloudfoundry.org/cmd/cf-lc-plugin"
+            pushd "$GOPATH/src/code.cloudfoundry.org/log-cache-cli/cmd/cf-lc-plugin"
               GOOS=linux go build -ldflags "-X main.version=$version" -o $WORKSPACE/github-release/builds/log-cache-cf-plugin-linux
               GOOS=darwin go build -ldflags "-X main.version=$version" -o $WORKSPACE/github-release/builds/log-cache-cf-plugin-darwin
               GOOS=windows go build -ldflags "-X main.version=$version" -o $WORKSPACE/github-release/builds/log-cache-cf-plugin-windows
             popd
-            pushd "$GOPATH/src/code.cloudfoundry.org/cmd/lc"
+            pushd "$GOPATH/src/code.cloudfoundry.org/log-cache-cli/cmd/lc"
               GOOS=linux go build -ldflags "-X main.version=$version" -o $WORKSPACE/github-release/builds/log-cache-linux
               GOOS=darwin go build -ldflags "-X main.version=$version" -o $WORKSPACE/github-release/builds/log-cache-darwin
               GOOS=windows go build -ldflags "-X main.version=$version" -o $WORKSPACE/github-release/builds/log-cache-windows
