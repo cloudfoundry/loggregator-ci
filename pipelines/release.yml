@@ -967,7 +967,7 @@ jobs:
             pushd go
               export GOPATH="$PWD"
               mkdir -p src/code.cloudfoundry.org
-              cp -R "$WORKSPACE/log-cache-cli/ src/code.cloudfoundry.org"
+              cp -R "$WORKSPACE/log-cache-cli/" src/code.cloudfoundry.org
               go get ./...
             popd
 
