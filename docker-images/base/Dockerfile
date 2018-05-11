@@ -2,11 +2,12 @@ FROM golang:1.10
 
 RUN go version
 
-RUN apt-get update; apt-get install -y \
+RUN apt-get update; apt-get install --yes \
     bundler \
     jq \
     rsync \
     unzip \
+    psmisc \
     vim
 
 # get v3 protoc from github, it was in beta at the time of writing
