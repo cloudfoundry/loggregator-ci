@@ -276,6 +276,7 @@ jobs:
     params:
       DEPLOYMENT_NAME: cfcr
       ERRAND_NAME: apply-addons
+      BBL_STATE_DIR: gcp/playground
   - task: prepare-certs
     config:
       platform: linux
