@@ -54,4 +54,9 @@ sleep "$WAIT" # wait for a bit to collect logs
 
 MSG_COUNT=$(grep APP output.txt | grep -c "$MESSAGE")
 
+if [ "$MSG_COUNT" -lt $(($CYCLES * 99 / 100)) ]; then
+    echo the reliability test did not meet our SLO
+    exit 123
+fi
+
 # Trap will send metrics to datadog
