@@ -21,7 +21,7 @@ resources:
   type: git
   source:
     uri: https://github.com/cloudfoundry/cf-deployment-concourse-tasks
-    branch: v6.0
+    branch: v6.8
 
 - name: bosh-deployment
   type: git
@@ -230,20 +230,52 @@ jobs:
           source .envrc
           credhub import --file k8s-cloud-provider-credhub-vars.yml
           killall ssh-agent
+  - task: custom-ops-files
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source:
+          repository: loggregator/base
+      inputs:
+      - name: ops-files
+      outputs:
+      - name: custom-ops-files
+      run:
+        path: /bin/bash
+        args:
+        - "-c"
+        - |
+          #!/bin/bash
+          set -e
+
+          cp -R ops-files/ops-files/. custom-ops-files/
+          echo '
+          - type: replace
+            path: /stemcells/alias=trusty/version
+            value: "3541.10"
+          ' > custom-ops-files/fix-stemcell-version.yml
   - task: cfcr-deploy
     file: cf-deployment-concourse-tasks/bosh-deploy/task.yml
     input_mapping:
       cf-deployment: cfcr-compiled-deployment
+      ops-files: custom-ops-files
     params:
       BBL_STATE_DIR: gcp/playground
       SYSTEM_DOMAIN: playground.loggr.cf-app.com
       USE_VARS_STORE: false
       MANIFEST_FILE: cfcr.yml
       OPS_FILES: |
-        ops-files/allow-privileged-containers.yml
-        ops-files/iaas/gcp/cloud-provider.yml
-        ops-files/iaas/gcp/add-service-key-master.yml
-        ops-files/iaas/gcp/add-service-key-worker.yml
+        fix-stemcell-version.yml
+        allow-privileged-containers.yml
+        iaas/gcp/cloud-provider.yml
+        iaas/gcp/add-service-key-master.yml
+        iaas/gcp/add-service-key-worker.yml
+  - task: run-apply-addons-errand
+    file: cf-deployment-concourse-tasks/run-errand/task.yml
+    params:
+      DEPLOYMENT_NAME: cfcr
+      ERRAND_NAME: apply-addons
   - task: prepare-certs
     config:
       platform: linux
