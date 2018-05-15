@@ -2,7 +2,7 @@
 
 set -exu
 
-export BBL_STATE_DIR=$(cat bbl-state/metadata)
+export BBL_STATE_DIR=$(cat environment/metadata)
 
 pushd "bbl-state/$BBL_STATE_DIR"
   eval $(bbl print-env)
