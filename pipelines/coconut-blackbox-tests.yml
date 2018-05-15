@@ -251,17 +251,17 @@ jobs:
       CLIENT_ID: {{coconut-firehose-reliability-client-id}}
       CLIENT_SECRET: {{coconut-firehose-reliability-client-secret}}
 
-- name: deploy-datadog-accumulator
+- name: deploy-datadog-forwarder
   public: false
   serial: true
   plan:
   - aggregate:
     - get: loggregator-tools
     - get: loggregator-ci
-  - task: deploy-datadog-accumulator
-    file: loggregator-ci/tasks/datadog-accumulator/task.yml
+  - task: deploy-datadog-forwarder
+    file: loggregator-ci/tasks/datadog-forwarder/task.yml
     params:
-      APP_NAME: "datadog-accumulator"
+      APP_NAME: "datadog-forwarder"
       SYSTEM_DOMAIN: "coconut.cf-app.com"
       DATADOG_API_KEY: {{datadog-loggregator-api-key}}
       DATADOG_TAGS: accumulator-coconut
@@ -270,7 +270,7 @@ jobs:
       USERNAME: {{coconut-username}}
       PASSWORD: {{coconut-password}}
       LOG_CACHE_HTTP_ADDR: https://log-cache.coconut.cf-app.com
-      LOG_CACHE_GROUP_NAME: coconut-datadog-accumulator
+      LOG_CACHE_GROUP_NAME: coconut-datadog-forwarder
       UAA_CLIENT: {{coconut-uaa-client}}
       UAA_CLIENT_SECRET: {{coconut-uaa-client-secret}}
 
