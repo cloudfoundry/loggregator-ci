@@ -590,8 +590,8 @@ jobs:
     - get: loggregator-ci
     - get: 10m
       trigger: true
-  - task: log-cache-blackbox-tests
-    file: loggregator-ci/tasks/log-cache-blackbox/task.yml
+  - task: cf-log-cache-blackbox-tests
+    file: loggregator-ci/tasks/cf-log-cache-blackbox/task.yml
     params:
       APP_ADDR: "log-cache-blackbox.playground.loggr.cf-app.com"
       APP_NAME: "log-cache-blackbox"

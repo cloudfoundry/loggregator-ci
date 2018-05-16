@@ -370,7 +370,7 @@ jobs:
   #     timeout: 5m
   - aggregate:
     - task: log-cache-blackbox-tests
-      file: loggregator-ci/tasks/log-cache-blackbox/task.yml
+      file: loggregator-ci/tasks/cf-log-cache-blackbox/task.yml
       params:
         APP_ADDR: "log-cache-blackbox.cfapps.io"
         APP_NAME: "log-cache-blackbox"

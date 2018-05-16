@@ -312,7 +312,7 @@ jobs:
   # Note: all log-cache testing tasks should run serially to prevent test
   # result pollution
   - task: log-cache-blackbox-tests
-    file: loggregator-ci/tasks/log-cache-blackbox/task.yml
+    file: loggregator-ci/tasks/cf-log-cache-blackbox/task.yml
     params:
       APP_NAME: "log-cache-blackbox"
       APP_ADDR: "log-cache-blackbox.coconut.cf-app.com"
