@@ -2,8 +2,6 @@
 
 set -exu
 
-export BBL_STATE_DIR=$(cat environment/metadata)
-
 pushd "bbl-state/$BBL_STATE_DIR"
   eval $(bbl print-env)
   export BOSH_CA_CERT=$(bbl director-ca-cert)
