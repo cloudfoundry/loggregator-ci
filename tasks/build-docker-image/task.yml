@@ -13,6 +13,9 @@ params:
   # - The base package for the Go source repo
   BASE_PACKAGE:
 
+  # - The sub-package, relative to the BASE_PACKAGE that is being built.
+  SUB_PACKAGE:
+
   # - Required
   # - The name of the directory in docker-images that contains the Dockerfile
   #   and the build_bin.sh

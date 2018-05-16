@@ -18,7 +18,7 @@ workspace_code_path=workspace/src/$BASE_PACKAGE
 mkdir -p "$workspace_code_path"
 cp -r source-repo/. "$workspace_code_path/"
 export GOPATH="$PWD/workspace"
-go get -d -v $BASE_PACKAGE/...
+go get -d -v $BASE_PACKAGE/$SUB_PACKAGE/...
 
 pushd "loggregator-ci/docker-images/$IMAGE_NAME" > /dev/null
     mkdir -p "$ciroot/build-image/build"
