@@ -14,7 +14,7 @@ inputs:
 - name: environment
 
 run:
-  path: loggreagor-ci/tasks/env-pool-tasks/bosh-cleanup
+  path: loggregator-ci/tasks/env-pool-tasks/bosh-cleanup
 
 params:
   BBL_STATE_DIR: bbl-state
