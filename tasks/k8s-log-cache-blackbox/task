@@ -1,0 +1,136 @@
+#!/bin/bash
+
+set -ex
+
+function fail_on_empty {
+    if [ "$1" = "" ]; then
+        exit 1
+    fi
+}
+
+eval "$(ssh-agent)"
+
+pushd deployments-loggregator/gcp/playground
+    source .envrc
+    ./k8s_login
+    echo "
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: log-cache-blackbox
+  labels:
+    run: log-cache-blackbox
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      run: log-cache-blackbox
+  template:
+    metadata:
+      labels:
+        run: log-cache-blackbox
+    spec:
+      containers:
+      - name: log-cache-blackbox
+        image: loggregator/log-cache-blackbox
+        env:
+        - name: LOG_CACHE_URL
+          value: http://log-cache-reads.loggregator.svc.cluster.local:8081
+        - name: SOURCE_ID
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: PORT
+          value: \"12345\"
+        - name: SKIP_SSL_VALIDATION
+          value: \"$SKIP_SSL_VALIDATION\"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: log-cache-blackbox
+  labels:
+    run: log-cache-blackbox
+spec:
+  selector:
+    run: log-cache-blackbox
+  type: LoadBalancer
+  ports:
+  - port: 12345
+    protocol: TCP
+" | kubectl apply -f -
+popd
+
+while true; do
+  ip="$(
+    kubectl get service log-cache-blackbox --output=json | \
+      jq --raw-output .status.loadBalancer.ingress[0].ip
+  )"
+  if [ "$ip" != "" ] && [ "$ip" != "null" ]; then
+    echo "Retrieved the log-cache-blackbox IP: $ip"
+    break
+  fi
+  sleep 5
+done
+
+killall ssh
+killall ssh-agent
+response="$(curl -X POST "$ip:12345")"
+latency="$(echo "$response" | jq .latency)"
+avg_query_time="$(echo "$response" | jq .averageQueryTime)"
+
+fail_on_empty "$latency"
+fail_on_empty "$avg_query_time"
+
+response="$(curl -X POST "$ip:12345/reliability")"
+logs_sent="$(echo "$response" | jq .logsSent)"
+logs_received="$(echo "$response" | jq .logsReceived)"
+fail=false
+if [ "$logs_received" -lt 9900 ]; then
+    fail=true
+fi
+
+fail_on_empty "$logs_received"
+
+currenttime="$(date +%s)"
+SYSTEM_DOMAIN=k8s-playground
+APP_NAME=k8s-playground-log-cache-blackbox
+curl --fail -X POST -H "Content-type: application/json" \
+-d "{ \"series\" :
+  [
+    {
+      \"metric\":\"log-cache-blackbox.k8s_latency\",
+      \"points\":[[${currenttime}, ${latency}]],
+      \"type\":\"gauge\",
+      \"host\":\"${SYSTEM_DOMAIN}\",
+      \"tags\":[\"${APP_NAME}\"]
+    },
+    {
+      \"metric\":\"log-cache-blackbox.k8s_avg_query_time\",
+      \"points\":[[${currenttime}, ${avg_query_time}]],
+      \"type\":\"gauge\",
+      \"host\":\"${SYSTEM_DOMAIN}\",
+      \"tags\":[\"${APP_NAME}\"]
+    },
+    {
+      \"metric\":\"log-cache-blackbox.k8s_logs_sent\",
+      \"points\":[[${currenttime}, ${logs_sent}]],
+      \"type\":\"gauge\",
+      \"host\":\"${SYSTEM_DOMAIN}\",
+      \"tags\":[\"${APP_NAME}\"]
+    },
+    {
+      \"metric\":\"log-cache-blackbox.k8s_logs_received\",
+      \"points\":[[${currenttime}, ${logs_received}]],
+      \"type\":\"gauge\",
+      \"host\":\"${SYSTEM_DOMAIN}\",
+      \"tags\":[\"${APP_NAME}\"]
+    }
+  ]
+}" \
+'https://app.datadoghq.com/api/v1/series?api_key='"$DATADOG_API_KEY"
+
+if [ "$fail" = true ]; then
+    echo the reliability test did not meet our SLO
+    exit 123
+fi
