@@ -1,0 +1,41 @@
+---
+platform: linux
+
+image_resource:
+  type: docker-image
+  source:
+    repository: relintdockerhubpushbot/cf-deployment-concourse-tasks
+    tag: v5.9
+
+inputs:
+- name: loggregator-ci    # - This repo
+- name: cf-drain-cli      # - The repo that contains the tests
+
+run:
+  path: loggregator-ci/tasks/drain-cli-acceptance-tests/task
+
+params:
+  # - Required
+  # - The CF admin username.
+  # - This is usually admin.
+  ADMIN_USER:
+
+  # - Required
+  # - The CF admin password.
+  ADMIN_PASSWORD:
+
+  # - Required
+  # - The CF system domain
+  SYSTEM_DOMAIN:
+
+  # - Optional
+  # - Skip SSL validation when logging into CF.
+  SKIP_SSL_VALIDATION: false
+
+  # - Optional
+  # - Length of time to wait for cf command to execute.
+  DEFAULT_TIMEOUT:
+
+  # - Optional
+  # - Length of time to wait for app to push.
+  APP_PUSH_TIMEOUT:

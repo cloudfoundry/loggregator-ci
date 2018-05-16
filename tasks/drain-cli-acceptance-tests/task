@@ -1,0 +1,29 @@
+#!/bin/bash
+
+set -ex
+
+IMPORT_PATH=code.cloudfoundry.org/cf-drain-cli
+
+export CF_ADMIN_USER=$ADMIN_USER
+export CF_ADMIN_PASSWORD=$ADMIN_PASSWORD
+export CF_DOMAIN=$SYSTEM_DOMAIN
+export SKIP_CERT_VERIFY=$SKIP_SSL_VALIDATION
+
+mkdir -p "workspace/src/$IMPORT_PATH"
+cp -r cf-drain-cli/. "workspace/src/$IMPORT_PATH"
+
+pushd workspace
+  export GOPATH="$PWD"
+  export PATH="$GOPATH/bin:$PATH"
+
+  # acceptance tests rely on cf tail command
+  go get code.cloudfoundry.org/log-cache-cli/cmd/cf-lc-plugin
+  cf install-plugin $GOPATH/bin/cf-lc-plugin -f
+
+  go get -v github.com/onsi/ginkgo/ginkgo
+  go get $IMPORT_PATH/...
+
+  pushd "src/$IMPORT_PATH/acceptance"
+    ginkgo
+  popd
+popd

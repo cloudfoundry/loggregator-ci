@@ -1413,6 +1413,22 @@ jobs:
     params:
       IMPORT_PATH: code.cloudfoundry.org/cf-drain-cli
 
+- name: cf-drain-cli-acceptance-tests
+  serial: true
+  public: true
+  plan:
+  - aggregate:
+    - get: loggregator-ci
+    - get: cf-drain-cli
+      trigger: true
+      passed: ["cf-drain-cli-tests"]
+  - task: run-tests
+    file: loggregator-ci/tasks/drain-cli-acceptance-tests/task.yml
+    params:
+      ADMIN_USER: {{coconut-username}}
+      ADMIN_PASSWORD: {{coconut-password}}
+      SYSTEM_DOMAIN: coconut.cf-app.com
+
 - name: cf-syslog-drain-bump-submodule
   serial: true
   plan:
@@ -1507,7 +1523,7 @@ jobs:
   plan:
   - aggregate:
     - get: cf-drain-cli
-      passed: ["cf-drain-cli-tests"]
+      passed: ["cf-drain-cli-acceptance-tests"]
       trigger: true
     - get: cf-drain-cli-master
     - get: bumper-tool
