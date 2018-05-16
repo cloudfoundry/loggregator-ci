@@ -605,3 +605,8 @@ jobs:
       PASSWORD: {{playground-password}}
       UAA_CLIENT: {{playground-uaa-client}}
       UAA_CLIENT_SECRET: {{playground-uaa-client-secret}}
+  - task: k8s-log-cache-blackbox-tests
+    file: loggregator-ci/tasks/k8s-log-cache-blackbox/task.yml
+    params:
+      DATADOG_API_KEY: {{datadog-loggregator-api-key}}
+      SKIP_SSL_VALIDATION: true
