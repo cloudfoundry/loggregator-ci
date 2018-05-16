@@ -1,0 +1,9 @@
+#!/bin/bash
+
+set -ex
+
+export BBL_STATE_DIR=$(cat environment/metadata)
+export BBL_ENV_NAME=$(cat environment/name)
+export SYSTEM_DOMAIN="$BBL_ENV_NAME.$SYSTEM_DOMAIN"
+
+./cf-deployment-concourse-tasks/bosh-deploy/task
