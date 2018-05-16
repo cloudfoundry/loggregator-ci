@@ -16,6 +16,7 @@ groups:
   - loggregator-agent-promotion
   - cf-syslog-drain-tests
   - cf-drain-cli-tests
+  - cf-drain-cli-acceptance-tests
   - cf-drain-cli-promotion
   - cf-syslog-drain-bump-submodule
   - cf-syslog-drain-promotion
