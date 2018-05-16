@@ -2088,6 +2088,12 @@ jobs:
           - type: replace
             path: /instance_groups/name=diego-cell/instances
             value: 6
+          - type: replace
+            path: /instance_groups/name=uaa/instances
+            value: 2
+          - type: replace
+            path: /instance_groups/name=api/instances
+            value: 2
           - path: /releases/name=consul/url
             type: replace
             value: https://bosh.io/d/github.com/cloudfoundry-incubator/consul-release?v=192
@@ -2103,6 +2109,9 @@ jobs:
                 datadog:
                   api_key: {{datadog-dev-api-key}}
                   origin_host: coconut.cf-app.com
+          - type: replace
+            path: /instance_groups/name=doppler/vm_type
+            value: small-highmem
           EOT
   - task: upload-stemcell
     file: cf-deployment-concourse-tasks/bosh-upload-stemcell-from-cf-deployment/task.yml
