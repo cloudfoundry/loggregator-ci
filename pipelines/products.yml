@@ -403,7 +403,7 @@ resources:
   type: git
   source:
     branch: master
-    uri: https://github.com/cloudfoundry/loggregator-tools
+    uri: https://github.com/cloudfoundry-incubator/loggregator-tools
 
 - name: leadership-election-release
   type: git
@@ -1210,7 +1210,8 @@ jobs:
       output_mapping:
         build-image: build-blackbox-image
       params:
-        BASE_PACKAGE: code.cloudfoundry.org/loggregator-tools/log-cache-blackbox
+        BASE_PACKAGE: code.cloudfoundry.org/loggregator-tools
+        SUB_PACKAGE: log-cache-blackbox
         IMAGE_NAME: log-cache-blackbox
   - aggregate:
     - put: log-cache-image
