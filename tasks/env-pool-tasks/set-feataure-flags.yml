@@ -32,4 +32,4 @@ params:
   # - Space seperated list of feature flag names to disable
 
 run:
-  path: loggreagor-ci/tasks/set-feature-flags
+  path: loggreagor-ci/tasks/env-pool-tasks/set-feature-flags

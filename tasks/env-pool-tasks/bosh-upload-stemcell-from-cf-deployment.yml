@@ -15,7 +15,7 @@ inputs:
 - name: environment
 
 run:
-  path: loggregator-ci/tasks/bosh-upload-stemcell-from-cf-deployment
+  path: loggregator-ci/tasks/env-pool-tasks/bosh-upload-stemcell-from-cf-deployment
 
 params:
   BBL_STATE_DIR: bbl-state
