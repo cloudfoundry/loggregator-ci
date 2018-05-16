@@ -1,0 +1,35 @@
+---
+platform: linux
+
+image_resource:
+  type: docker-image
+  source:
+    repository: relintdockerhubpushbot/cf-deployment-concourse-tasks
+    tag: v5.9.0
+
+inputs:
+- name: cf-deployment-concourse-tasks # - This repo
+- name: vars-store # - The BOSH deployment's vars-store yaml file
+- name: loggregator-ci
+- name: environment
+
+params:
+  SYSTEM_DOMAIN:
+  # - Required
+  # - CF system base domain e.g. `my-cf.com`
+
+  VARS_STORE_FILE: deployment-vars.yml
+  # - Required
+  # - Filepath to the BOSH deployment vars-store yaml file
+  # - The path is relative to root of the `vars-store` input
+
+  ENABLED_FEATURE_FLAGS:
+  # - Optional
+  # - Space seperated list of feature flag names to enable
+
+  DISABLED_FEATURE_FLAGS:
+  # - Optional
+  # - Space seperated list of feature flag names to disable
+
+run:
+  path: loggreagor-ci/tasks/set-feature-flags
