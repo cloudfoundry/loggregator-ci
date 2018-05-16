@@ -70,7 +70,19 @@ while true; do
     echo "Retrieved the log-cache-blackbox IP: $ip"
     break
   fi
-  sleep 5
+  sleep 10
+done
+
+while true; do
+  health_ip="$(
+    kubectl get service log-cache-health --namespace loggregator --output=json | \
+      jq --raw-output .status.loadBalancer.ingress[0].ip
+  )"
+  if [ "$health_ip" != "" ] && [ "$health_ip" != "null" ]; then
+    echo "Retrieved the log-cache-health IP: $health_ip"
+    break
+  fi
+  sleep 10
 done
 
 killall ssh
@@ -92,12 +104,21 @@ fi
 
 fail_on_empty "$logs_received"
 
+cache_period="$(curl -s $health_ip:6060/debug/vars | jq .LogCache.CachePeriod)"
+
 currenttime="$(date +%s)"
 SYSTEM_DOMAIN=k8s-playground
 APP_NAME=k8s-playground-log-cache-blackbox
 curl --fail -X POST -H "Content-type: application/json" \
 -d "{ \"series\" :
   [
+    {
+      \"metric\":\"log-cache-blackbox.k8s_cache_duration\",
+      \"points\":[[${currenttime}, ${cache_period}]],
+      \"type\":\"gauge\",
+      \"host\":\"${SYSTEM_DOMAIN}\",
+      \"tags\":[\"${APP_NAME}\"]
+    },
     {
       \"metric\":\"log-cache-blackbox.k8s_latency\",
       \"points\":[[${currenttime}, ${latency}]],
