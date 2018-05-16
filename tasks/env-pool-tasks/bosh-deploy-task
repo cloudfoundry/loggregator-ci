@@ -8,4 +8,4 @@ export VARS_STORE_FILE=$BBL_STATE_DIR/deployment-vars.yml
 
 export SYSTEM_DOMAIN="$BBL_ENV_NAME.$SYSTEM_DOMAIN"
 
-./cf-deployment-concourse-tasks/bosh-deploy/task
+./loggregator-ci/tasks/bosh-deploy/task
