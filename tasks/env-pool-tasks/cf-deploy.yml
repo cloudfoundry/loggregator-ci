@@ -14,7 +14,7 @@ inputs:
 - name: ops-files  # - Operations files to be made available
 - name: vars-files  # - Variable files to be made available
 - name: cf-deployment-concourse-tasks  # - This repo
-- name: loggreagtor-ci
+- name: loggregator-ci
 - name: environment
 
 outputs:
