@@ -23,7 +23,7 @@ outputs:
 #   ready to be `put` to a git resource.
 
 run:
-  path: cf-deployment-concourse-tasks/bosh-deploy/task
+  path: loggregator-ci/tasks/env-pool-tasks/bosh-deploy
 
 params:
   BBL_STATE_DIR: bbl-state
