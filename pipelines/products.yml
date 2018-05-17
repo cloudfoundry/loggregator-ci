@@ -75,6 +75,7 @@ groups:
   jobs:
   - cf-syslog-drain-tests
   - cf-drain-cli-tests
+  - cf-drain-cli-acceptance-tests
   - cf-syslog-drain-bump-submodule
   - cf-deploy
   - cf-syslog-drain-promotion
