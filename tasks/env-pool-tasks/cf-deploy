@@ -15,4 +15,4 @@ done
 
 export VARS_FILES=$arguments
 
-./loggregator-ci/tasks/env-pool-tasks/cf-deploy
+./cf-deployment-concourse-tasks/bosh-deploy/task
