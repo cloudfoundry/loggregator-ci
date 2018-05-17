@@ -8,4 +8,10 @@ export VARS_STORE_FILE=$BBL_STATE_DIR/deployment-vars.yml
 
 export SYSTEM_DOMAIN="$BBL_ENV_NAME.$SYSTEM_DOMAIN"
 
+for v in $VARS_FILES; do
+  #Enable BBL_STATE_DIR in yml config
+  f=echo ${v/'$BBL_STATE_DIR'/$BBL_STATE_DIR}
+  arguments="$arguments --vars-file vars-files/$f"
+done
+
 ./loggregator-ci/tasks/bosh-deploy/task
