@@ -5,6 +5,13 @@ set -ex
 mkdir -p "workspace/src/$IMPORT_PATH"
 cp -r source-repo/. "workspace/src/$IMPORT_PATH/"
 
+go_test_args="./... -race"
+
+if [[ -n "$EXCLUDE_PACKAGES" ]]; then
+  pushd "workspace/src/$IMPORT_PATH"
+  go_test_args=$( go list ./... | sed 's/^\_\(.*\)src\///' | grep -v $EXCLUDE_PACKAGES )
+  popd
+fi
 
 pushd workspace
   export GOPATH="$PWD"
@@ -12,6 +19,6 @@ pushd workspace
 
   pushd "src/$IMPORT_PATH"
     go get -t -d ./...
-    go test ./... -race
+    go test $go_test_args
   popd
 popd

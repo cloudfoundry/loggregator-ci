@@ -1413,6 +1413,7 @@ jobs:
       source-repo: cf-drain-cli
     params:
       IMPORT_PATH: code.cloudfoundry.org/cf-drain-cli
+      EXCLUDE_PACKAGES: acceptance
 
 - name: cf-drain-cli-acceptance-tests
   serial: true

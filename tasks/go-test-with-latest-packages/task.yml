@@ -17,3 +17,7 @@ params:
   # - Required
   # - The import path of the package to test.
   IMPORT_PATH:
+
+  # - Optional
+  # - Comma-delimited string of packages to exclude from testing
+  EXCLUDE_PACKAGES:
