@@ -16,4 +16,4 @@ outputs:
 params:
   DATADOG_VARS_DIR:
 run:
-  path: loggregator-ci/tasks/loggregator-bench/task
+  path: loggregator-ci/tasks/env-pool-tasks/loggregator-bench

@@ -3,5 +3,5 @@
 set -ex
 
 export BBL_STATE_DIR=$(cat environment/metadata)
-./loggregator-ci/tasks/loggregator-bench/task
 
+./loggregator-ci/tasks/loggregator-bench/task
