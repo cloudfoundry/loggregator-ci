@@ -3,5 +3,5 @@
 set -ex
 
 export BBL_STATE_DIR=$(cat environment/metadata)
-./loggregator-ci/tasks/env-pool-tasks/bosh-cleanup
+./loggregator-ci/tasks/loggregator-bench/task
 
