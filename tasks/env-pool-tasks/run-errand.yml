@@ -21,3 +21,7 @@ params:
   # - Required
   # - Name of the errand to run.
   ERRAND:
+
+  # - Optional
+  # - Keep errand alive after run
+  KEEP_ALIVE: false

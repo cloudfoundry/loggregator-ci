@@ -6,4 +6,9 @@ pushd bbl-state/$BBL_STATE_DIR
   export BOSH_CA_CERT=$(bbl director-ca-cert)
 popd
 
-bosh -d $DEPLOYMENT_NAME run-errand $ERRAND
+
+if [ "$KEEP_ALIVE" = true ]; then
+  bosh -d $DEPLOYMENT_NAME run-errand $ERRAND --keep-alive
+else
+  bosh -d $DEPLOYMENT_NAME run-errand $ERRAND
+fi

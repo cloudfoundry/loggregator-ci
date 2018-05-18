@@ -25,3 +25,7 @@ params:
   # - Required
   # - Name of the errand to run.
   ERRAND:
+
+  # - Optional
+  # - Run errand with --keep-alive
+  KEEP_ALIVE: false
