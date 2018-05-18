@@ -13,4 +13,4 @@ params:
   DELAY: 20
   DELAY_UNIT: ms
 run:
-  path: loggregator-ci/tasks/blackbox/task.sh
+  path: loggregator-ci/tasks/cf-blackbox/task
