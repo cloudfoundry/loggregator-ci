@@ -8,6 +8,13 @@ function fail_on_empty {
     fi
 }
 
+function teardown {
+    killall kubectl
+    killall ssh
+    killall ssh-agent
+}
+trap teardown EXIT
+
 eval "$(ssh-agent)"
 
 pushd deployments-loggregator/gcp/playground
@@ -59,6 +66,12 @@ spec:
   - port: 12345
     protocol: TCP
 " | kubectl apply -f -
+
+    # Setup portforwarding to each log-cache's health port
+    kubectl -n loggregator port-forward log-cache-0 6060:6060 > /dev/null &
+    kubectl -n loggregator port-forward log-cache-1 6061:6060 > /dev/null &
+    kubectl -n loggregator port-forward log-cache-2 6062:6060 > /dev/null &
+    sleep 3
 popd
 
 while true; do
@@ -73,20 +86,6 @@ while true; do
   sleep 10
 done
 
-while true; do
-  health_ip="$(
-    kubectl get service log-cache-health --namespace loggregator --output=json | \
-      jq --raw-output .status.loadBalancer.ingress[0].ip
-  )"
-  if [ "$health_ip" != "" ] && [ "$health_ip" != "null" ]; then
-    echo "Retrieved the log-cache-health IP: $health_ip"
-    break
-  fi
-  sleep 10
-done
-
-killall ssh
-killall ssh-agent
 response="$(curl -X POST "$ip:12345")"
 latency="$(echo "$response" | jq .latency)"
 avg_query_time="$(echo "$response" | jq .averageQueryTime)"
@@ -104,7 +103,10 @@ fi
 
 fail_on_empty "$logs_received"
 
-cache_period="$(curl -s $health_ip:6060/debug/vars | jq .LogCache.CachePeriod)"
+cache_period_0="$(curl -s localhost:6060/debug/vars | jq --raw-output .LogCache.CachePeriod)"
+cache_period_1="$(curl -s localhost:6061/debug/vars | jq --raw-output .LogCache.CachePeriod)"
+cache_period_2="$(curl -s localhost:6062/debug/vars | jq --raw-output .LogCache.CachePeriod)"
+cache_period_avg="$(python -c "print ($cache_period_0 + $cache_period_1 + $cache_period_2) / 3.0")"
 
 currenttime="$(date +%s)"
 SYSTEM_DOMAIN=k8s-playground
@@ -114,7 +116,7 @@ curl --fail -X POST -H "Content-type: application/json" \
   [
     {
       \"metric\":\"log-cache-blackbox.k8s_cache_duration\",
-      \"points\":[[${currenttime}, ${cache_period}]],
+      \"points\":[[${currenttime}, ${cache_period_avg}]],
       \"type\":\"gauge\",
       \"host\":\"${SYSTEM_DOMAIN}\",
       \"tags\":[\"${APP_NAME}\"]
