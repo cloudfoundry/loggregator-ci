@@ -1,0 +1,15 @@
+#!/bin/bash
+
+set -ex
+
+BBL_STATE_DIR=$(cat environment/metadata)
+BBL_ENV_NAME=$(cat environment/name)
+
+pushd bbl-state/$BBL_STATE_DIR
+    export PASSWORD=$(bosh int --path /cf_admin_password deployment-vars.yml)
+    export USERNAME=admin
+    export API_ENDPOINT=api.$BBL_ENV_NAME.$SYSTEM_DOMAIN
+popd
+
+./loggregator-ci/tasks/cfar-lats/task
+
