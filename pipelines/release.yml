@@ -918,6 +918,12 @@ jobs:
       globs:
       - github-release/builds/*
 
+- name: log-cache-cli-bump-major
+  serial: true
+  plan:
+  - put: log-cache-cli-version
+    params: {bump: major}
+
 - name: log-cache-cli
   serial: true
   plan:
