@@ -98,6 +98,7 @@ spec:
         fi
     done
 
+    set +x
     certs="$(
         kubectl get secret loggregator-tls-certs -n loggregator --output=json | \
             jq .data
@@ -105,6 +106,9 @@ spec:
     echo "$certs" | jq --raw-output '.["rlp.crt"]' | base64 -d > /tmp/rlp.crt
     echo "$certs" | jq --raw-output '.["rlp.key"]' | base64 -d > /tmp/rlp.key
     echo "$certs" | jq --raw-output '.["ca.crt"]' | base64 -d > /tmp/ca.crt
+
+    set -x
+
     target="$(
         kubectl -n loggregator get service loggregator-rlp --output=json | \
             jq --raw-output .status.loadBalancer.ingress[0].ip
