@@ -386,7 +386,7 @@ jobs:
       DEPLOYMENT_NAME: event-reliability
       MANIFEST_FILE: manifests/event-reliability.yml
       VARS_STORE_FILE: gcp/coconut-bbl/event-reliability-vars.yml
-      VARS_FILES: "gcp/coconut-bbl/datadog-vars.yml gcp/coconut-bbl/deployment-vars.yml"
+      VARS_FILES: "datadog-vars.yml gcp/coconut-bbl/deployment-vars.yml"
   - put: deployments-loggregator
     params:
       repository: updated-vars-store

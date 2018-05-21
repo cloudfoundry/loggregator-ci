@@ -28,6 +28,13 @@ resources:
     pool: pipelines
     private_key: {{cf-loggregator-oauth-bot-key}}
 
+- name: loggregator-ci
+  type: git
+  source:
+    uri: git@github.com:cloudfoundry/loggregator-ci.git
+    branch: master
+    private_key: {{cf-loggregator-oauth-bot-key}}
+
 jobs:
 - name: bbl-create
   public: false
@@ -62,44 +69,12 @@ jobs:
     input_mapping:
       bbl-state: updated-deployments-loggregator
       environment: create-pool
-    config:
-      platform: linux
-      image_resource:
-        type: docker-image
-        source:
-          repository: loggregator/base
-      inputs:
-      - name: updated-deployments-loggregator
-      - name: environment
-      params:
-        BBL_GCP_SERVICE_ACCOUNT_KEY: gcp/service-account.key.json
-      run:
-        path: /bin/bash
-        args:
-        - "-c"
-        - |
-          #!/bin/bash
-
-          set -ex
-
-          export workspace=$PWD
-
-          export BBL_STATE_DIR=$(cat environment/metadata)
-          export BBL_ENV_NAME=$(cat environment/name)
-          export LB_DOMAIN="$BBL_ENV_NAME.loggr.cf-app.com"
-          export SERVICE_ACCOUNT_KEY=$workspace/updated-deployments-loggregator/$BBL_GCP_SERVICE_ACCOUNT_KEY
-
-          gcloud auth activate-service-account --key-file=$SERVICE_ACCOUNT_KEY
-
-          pushd "updated-deployments-loggregator/$BBL_STATE_DIR"
-              NS=$(bbl --gcp-service-account-key=$SERVICE_ACCOUNT_KEY lbs | grep "System Domain" | cut -d':' -f2)
-          popd
-
-          gcloud dns record-sets transaction start -z loggr
-          gcloud dns record-sets transaction add $(echo $NS) --zone loggr --name "$LB_DOMAIN" --ttl 300 --type NS
-          gcloud dns record-sets transaction execute -z loggr
+    params:
+      BBL_GCP_SERVICE_ACCOUNT_KEY: gcp/service-account.key.json
+      GCP_DNS_ZONE: loggr
+      GCP_LB_DOMAIN: loggr.cf-app.com
+    file: loggregator-ci/tasks/gcp-set-nameservers/task.yml
   - put: pipeline-pool
     params: {add: create-pool}
   - put: create-pool
     params: {remove: create-pool}
-
