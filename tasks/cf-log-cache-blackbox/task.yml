@@ -63,3 +63,7 @@ params:
   # - Required
   # - The UAA Client Secret
   UAA_CLIENT_SECRET:
+
+  # - Optional
+  # - The WALK_DELAY is relayed to the pushed app.
+  WALK_DELAY: 1s
