@@ -10,7 +10,7 @@ pushd integration-config/$BBL_STATE_DIR
   env_domain=$(grep system_domain vars/bbl.tfvars | cut -d "=" -f2 | tr -d '"')
 popd
 
-cat <<EOF > integration-config/cats-config.yml
+cat <<EOF > integration-config/cats-config.json
 {
   "api": "api.${env_domain}",
   "admin_user": "${env_username}",
