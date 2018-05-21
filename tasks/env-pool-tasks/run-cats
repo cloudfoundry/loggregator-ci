@@ -3,11 +3,12 @@
 set -ex
 
 export BBL_STATE_DIR=$(cat environment/metadata)
-export BBL_ENV_NAME=$(cat environment/name)
 
-env_username=admin
-env_password=$(bosh int deployment-vars.yml --path=/cf_admin_password | head -n 1)
-env_domain=$(grep system_domain vars/bbl.tfvars | cut -d "=" -f2 | tr -d '"')
+pushd integration-config/$BBL_STATE_DIR
+  env_username=admin
+  env_password=$(bosh int deployment-vars.yml --path=/cf_admin_password | head -n 1)
+  env_domain=$(grep system_domain vars/bbl.tfvars | cut -d "=" -f2 | tr -d '"')
+popd
 
 cat <<EOF > integration-config/cats-config.yml
 {
@@ -46,6 +47,6 @@ cat <<EOF > integration-config/cats-config.yml
 }
 EOF
 
-CONFIG_FILE_PATH=cats-config.json
+export CONFIG_FILE_PATH=cats-config.json
 
 ./cf-deployment-concourse-tasks/run-cats/task
