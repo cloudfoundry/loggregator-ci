@@ -1,0 +1,45 @@
+---
+platform: linux
+
+image_resource:
+  type: docker-image
+  source:
+    repository: relintdockerhubpushbot/cf-deployment-concourse-tasks
+    tag: v5.9.0
+
+inputs:
+- name: cf-deployment-concourse-tasks
+- name: cf-acceptance-tests
+- name: integration-config
+- name: loggregator-ci
+- name: environment
+
+outputs:
+- name: cats-trace-output
+
+run:
+  path: loggregator-ci/tasks/env-pool-tasks/run-cats
+
+params:
+  # - Optional
+  # - Number of parallel ginkgo nodes.
+  NODES: 12
+
+  # - Optional
+  # - A regular expression to be passed to the ginkgo's `-skip` flag.
+  # - If set, ginkgo will skip tests that match this regular experession.
+  SKIP_REGEXP:
+
+  # - Optional
+  # - If set to `true`, the task will capture logs and save them
+  #   to the output directory
+  CAPTURE_LOGS: false
+
+  # - Optional
+  # - The number of times to retry a single failed test
+  FLAKE_ATTEMPTS: 2
+
+  # - Optional
+  # - Whether or not to run the cats with `cf logs` or `cf-tail`
+  USE_LOG_CACHE: false
+
