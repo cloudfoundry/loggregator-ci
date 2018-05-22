@@ -40,6 +40,7 @@ groups:
   - service-metrics-system-tests
   - leadership-election-tests
   - leadership-election-bump-submodule
+  - log-cache-promql-bug
 - name: director-lifecycle
   jobs:
   - coconut-bbl-up
@@ -2186,6 +2187,59 @@ jobs:
       ORG: system
       SPACE: accumulators
       SYSTEM_DOMAIN: coconut.cf-app.com
+
+- name: log-cache-promql-bug
+  plan:
+  - aggregate:
+    - get: deployments-loggregator
+    - get: loggregator-release
+      trigger: true
+      passed: ["cf-deploy"]
+    - get: 10m
+      trigger: true
+  - task: run-test
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source:
+          repository: relintdockerhubpushbot/cf-deployment-concourse-tasks
+          tag: v3.19.0
+      params:
+        USERNAME: {{coconut-username}}
+        PASSWORD: {{coconut-password}}
+      run:
+        path: /bin/bash
+        args:
+        - "-c"
+        - |
+          set -e
+
+          cf login -a https://api.coconut.cf-app.com -u $USERNAME -p $PASSWORD -o system -s blackbox-testing
+
+          command() {
+            curl -s -G "http://log-cache.coconut.cf-app.com/v1/promql" \
+            --data-urlencode 'query=CapacityRemainingMemory{source_id="rep"}' \
+            -H"Authorization: $(cf oauth-token)"
+          }
+          start_result=`command`
+          echo $start_result > start.txt
+          begin=`echo $start_result | jq '.vector.samples | length'`
+          echo $begin
+
+          # Assume each iteration is ~1s
+          for i in $(seq 1 600)
+          do
+              end_result=`command`
+              now=`echo $end_result | jq '.vector.samples | length'`
+              if [ "$begin" != "$now" ]
+              then
+                  echo 'Vive la difference'
+                  echo $now
+                  echo $end_result > end.txt
+                  exit 1
+              fi
+          done
 
 - name: cats
   serial: true
