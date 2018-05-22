@@ -16,9 +16,5 @@ pushd bosh-release-dir
     bosh create-release --name=loggregator-backports-$(date +%s)
   fi
 
-  if [ "$NO_REBASE" = "true" ]; then
-    bosh upload-release
-  else
-    bosh upload-release --rebase
-  fi
+  bosh upload-release
 popd

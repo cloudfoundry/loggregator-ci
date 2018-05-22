@@ -28,7 +28,3 @@ params:
   # - Optional
   # - Ignore dirty state of release repo.
   FORCE: false
-
-  # - Optional
-  # - Do not rebase the release after upload
-  NO_REBASE: false
