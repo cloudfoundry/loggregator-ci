@@ -11,9 +11,9 @@ popd
 
 pushd bosh-release-dir
   if [ "$FORCE" == "true" ]; then
-    bosh create-release --force
+      bosh create-release --force --name=loggregator-backports-$(date +%s)
   else
-    bosh create-release
+    bosh create-release --name=loggregator-backports-$(date +%s)
   fi
 
   if [ "$NO_REBASE" = "true" ]; then
