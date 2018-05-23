@@ -55,6 +55,7 @@ jobs:
   - get: loggregator-tools
   - task: restage-logspinner
     file: loggregator-ci/tasks/restage-apps.yml
+    timeout: 15m
     params:
       APP_NAMES: "floodspinner dripspinner flowspinner"
       CF_API: "api.coconut.cf-app.com"
@@ -239,6 +240,7 @@ jobs:
     trigger: true
   - task: run-firehose-reliability
     file: loggregator-ci/tasks/firehose-reliability-test.yml
+    timeout: 15m
     params:
       APP_DOMAIN: "loggregator-firehose-reliability.coconut.cf-app.com"
       APP_NAME: "loggregator-firehose-reliability"
@@ -260,6 +262,7 @@ jobs:
     - get: loggregator-ci
   - task: deploy-datadog-forwarder
     file: loggregator-ci/tasks/datadog-forwarder/task.yml
+    timeout: 15m
     params:
       APP_NAME: "datadog-forwarder"
       SYSTEM_DOMAIN: "coconut.cf-app.com"
@@ -286,6 +289,7 @@ jobs:
   - aggregate:
     - task: push-request-spinner
       file: loggregator-ci/tasks/log-cache-request-spinner-push/task.yml
+      timeout: 15m
       params:
         APP_NAME: "request-spinner"
         SYSTEM_DOMAIN: "coconut.cf-app.com"
@@ -298,6 +302,7 @@ jobs:
         UAA_CLIENT_SECRET: {{coconut-uaa-client-secret}}
     - task: push-log-cache-siege
       file: loggregator-ci/tasks/log-cache-siege-push/task.yml
+      timeout: 15m
       params:
         APP_NAME: "log-cache-siege"
         SYSTEM_DOMAIN: "coconut.cf-app.com"
@@ -313,6 +318,7 @@ jobs:
   # result pollution
   - task: log-cache-blackbox-tests
     file: loggregator-ci/tasks/cf-log-cache-blackbox/task.yml
+    timeout: 15m
     params:
       APP_NAME: "log-cache-blackbox"
       APP_ADDR: "log-cache-blackbox.coconut.cf-app.com"
@@ -327,6 +333,7 @@ jobs:
       UAA_CLIENT_SECRET: {{coconut-uaa-client-secret}}
   - task: log-cache-group-blackbox-tests
     file: loggregator-ci/tasks/log-cache-group-blackbox/task.yml
+    timeout: 15m
     params:
       APP_NAME: "log-cache-blackbox-groups"
       APP_ADDR: "log-cache-blackbox-groups.coconut.cf-app.com"
