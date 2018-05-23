@@ -2197,6 +2197,49 @@ jobs:
       passed: ["cf-deploy"]
     - get: 10m
       trigger: true
+  - task: collect-data
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source:
+          repository: relintdockerhubpushbot/cf-deployment-concourse-tasks
+          tag: v3.19.0
+      params:
+        USERNAME: {{coconut-username}}
+        PASSWORD: {{coconut-password}}
+        DATADOG_API_KEY: {{datadog-dev-api-key}}
+      run:
+        path: /bin/bash
+        args:
+        - "-c"
+        - |
+          set -e
+
+          cf login -a https://api.coconut.cf-app.com -u $USERNAME -p $PASSWORD -o system -s blackbox-testing
+
+          for i in $(seq 1 100); do
+            count=$(curl \
+                 log-cache.coconut.cf-app.com/v1/promql \
+                 -s \
+                 -H"Authorization: $(cf oauth-token)" \
+                 -G \
+                 --data-urlencode 'query=CapacityRemainingMemory{source_id="rep",deployment="coconut.cf-app.com"}' |
+                 jq .vector.samples[]?.point | wc -l)
+
+                 currenttime=$(date +%s)
+                 curl  -X POST -H "Content-type: application/json" \
+                 -d "{ \"series\" :
+                          [{\"metric\":\"promql.bug.count\",
+                           \"points\":[[${currenttime}, ${count}]],
+                           \"type\":\"gauge\",
+                           \"host\":\"api.coconut.cf-app.com\"}
+                          ]
+                     }" \
+                 'https://app.datadoghq.com/api/v1/series?api_key='"$DATADOG_API_KEY"
+
+                 sleep 1
+          done
   - task: run-test
     config:
       platform: linux
