@@ -13,7 +13,7 @@ inputs:
 outputs:
 - name: updated-loggregator-bench-results
 params:
-  DATADOG_VARS_DIR:
+  DATADOG_VARS_DIR: deployments-loggregator
   BBL_STATE_DIR: deployments-loggregator/gcp/coconut-bbl
 run:
   path: loggregator-ci/tasks/loggregator-bench/task
