@@ -63,6 +63,7 @@ module Fluent
 
     def configure(conf)
       @client = KubernetesClient.new()
+      @cache = {}
     end
 
     def filter(tag, time, record)
@@ -71,7 +72,7 @@ module Fluent
         return record
       end
 
-      owner = resolve_owner(
+      owner = cached_owner(
         k8s.fetch("namespace_name", ""),
         "Pod",
         k8s.fetch("pod_name", ""),
@@ -81,8 +82,24 @@ module Fluent
       record
     end
 
+    def cached_owner(namespace_name, resource_type, resource_name)
+      cache_key = source_id(namespace_name, resource_type, resource_name)
+      cache_result = @cache[cache_key]
+      if cache_result != nil
+        return cache_result
+      end
+
+      result = resolve_owner(namespace_name, resource_type, resource_name)
+      @cache[cache_key] = result
+      return result
+    end
+
     def resolve_owner(namespace_name, resource_type, resource_name)
-      id_fmt = "%s/%s/%s"
+      input_source_id = source_id(
+        namespace_name,
+        resource_type,
+        resource_name,
+      )
 
       case resource_type
       when "Pod"
@@ -106,20 +123,12 @@ module Fluent
       end
 
       if obj == nil
-        return id_fmt % [
-          namespace_name,
-          resource_type.downcase,
-          resource_name,
-        ]
+        return input_source_id
       end
 
       ownerReferences = obj.fetch("metadata", {}).fetch("ownerReferences", [])
       if ownerReferences.length == 0
-        return id_fmt % [
-          namespace_name,
-          resource_type.downcase,
-          resource_name,
-        ]
+        return input_source_id
       end
 
       resolve_owner(
@@ -127,6 +136,14 @@ module Fluent
         ownerReferences[0]["kind"],
         ownerReferences[0]["name"],
       )
+    end
+
+    def source_id(namespace_name, resource_type, resource_name)
+      "%s/%s/%s" % [
+        namespace_name,
+        resource_type.downcase,
+        resource_name,
+      ]
     end
   end
 end
