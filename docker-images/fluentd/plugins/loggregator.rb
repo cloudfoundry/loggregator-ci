@@ -82,7 +82,7 @@ module Fluent
     end
 
     def resolve_owner(namespace_name, resource_type, resource_name)
-      id_fmt = "%s:%s:%s"
+      id_fmt = "%s/%s/%s"
 
       case resource_type
       when "Pod"
