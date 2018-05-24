@@ -1,0 +1,844 @@
+resources:
+- name: cf-acceptance-tests
+  type: git
+  source:
+    branch: master
+    uri: https://github.com/cloudfoundry/cf-acceptance-tests.git
+
+- name: cfar-logging-acceptance-tests
+  type: git
+  source:
+    branch: master
+    uri: https://github.com/cloudfoundry/cfar-logging-acceptance-tests.git
+
+- name: pipeline-pool
+  type: pool
+  source:
+    uri: git@github.com:cloudfoundry/loggregator-locks.git
+    branch: master
+    pool: pipelines
+    private_key: {{cf-loggregator-oauth-bot-key}}
+
+- name: loggregator-ci
+  type: git
+  source:
+    uri: git@github.com:cloudfoundry/loggregator-ci.git
+    private_key: {{loggregator-key}}
+
+- name: loggregator-release
+  type: git
+  source:
+    uri: git@github.com:cloudfoundry/loggregator-release.git
+    branch: v101.x
+    private_key: {{loggregator-key}}
+    ignore_paths:
+    - .final_builds
+    - releases
+
+- name: loggregator-github-release-drafts
+  type: github-release
+  source:
+    user: cloudfoundry
+    repository: loggregator-release
+    access_token: {{access-token}}
+    drafts: true
+
+- name: loggregator-src
+  type: git
+  source:
+    uri: git@github.com:cloudfoundry/loggregator.git
+    branch: v101.x
+    private_key: {{loggregator-key}}
+
+- name: loggregator-agent
+  type: git
+  source:
+    uri: git@github.com:cloudfoundry/loggregator-agent.git
+    branch: master
+    private_key: {{cf-loggregator-oauth-bot-key}}
+
+- name: loggregator-agent-release
+  type: git
+  source:
+    uri: git@github.com:cloudfoundry/loggregator-agent-release.git
+    branch: develop
+    private_key: {{cf-loggregator-oauth-bot-key}}
+
+- name: go-loggregator
+  type: git
+  source:
+    uri: https://github.com/cloudfoundry/go-loggregator
+    branch: master
+
+- name: consul-release
+  type: bosh-io-release
+  source:
+    repository: cloudfoundry-incubator/consul-release
+
+- name: deployments-loggregator
+  type: git
+  source: &deployments_loggregator
+    uri: git@github.com:cloudfoundry/deployments-loggregator.git
+    branch: master
+    private_key: {{deployments-loggregator-key}}
+
+- name: logging-acceptance-tests-release
+  type: git
+  source:
+    uri: https://github.com/cloudfoundry/logging-acceptance-tests-release
+    branch: master
+
+- name: loggregator-bench-release
+  type: git
+  source:
+    uri: https://github.com/cloudfoundry-incubator/loggregator-bench-release
+    branch: master
+
+- name: loggregator-bench-results
+  type: git
+  source:
+    uri: git@github.com:cloudfoundry-incubator/loggregator-bench-results.git
+    branch: master
+    private_key: {{cf-loggregator-oauth-bot-key}}
+
+- name: cf-deployment
+  type: git
+  source:
+    uri: https://github.com/cloudfoundry/cf-deployment
+    branch: master
+    private_key: {{loggregator-key}}
+
+- name: cf-deployment-concourse-tasks
+  type: git
+  source:
+    uri: https://github.com/cloudfoundry/cf-deployment-concourse-tasks
+    branch: v6.5
+
+jobs:
+- name: loggregator-tests
+  serial: true
+  public: true
+  plan:
+  - aggregate:
+    - get: loggregator-src
+      trigger: true
+  - aggregate:
+    - task: run-tests
+      timeout: 10m
+      config:
+        platform: linux
+        image_resource:
+          type: docker-image
+          source:
+            repository: loggregator/base
+        inputs:
+        - name: loggregator-src
+        run:
+          path: bash
+          args:
+          - -c
+          - |
+            #!/bin/bash
+            set -ex
+
+            mkdir -p workspace/src/code.cloudfoundry.org/loggregator
+            cp -r loggregator-src/. workspace/src/code.cloudfoundry.org/loggregator/
+
+            pushd workspace
+              export GOPATH="$PWD"
+              export PATH="$GOPATH/bin:$PATH"
+
+              pushd src/code.cloudfoundry.org/loggregator
+                go get -t -d ./...
+                go test -race $(go list ./... | grep -v integration_tests) \
+                  -ginkgo.randomizeAllSpecs \
+                  -ginkgo.slowSpecThreshold 20
+              popd
+            popd
+    - task: run-integration-tests
+      timeout: 10m
+      config:
+        platform: linux
+        image_resource:
+          type: docker-image
+          source:
+            repository: loggregator/base
+        inputs:
+        - name: loggregator-src
+        run:
+          path: bash
+          args:
+          - -c
+          - |
+            #!/bin/bash
+            set -ex
+
+            mkdir -p workspace/src/code.cloudfoundry.org/loggregator
+            cp -r loggregator-src/. workspace/src/code.cloudfoundry.org/loggregator/
+
+            pushd workspace
+              export GOPATH="$PWD"
+              export PATH="$GOPATH/bin:$PATH"
+
+              pushd src/code.cloudfoundry.org/loggregator
+                go get -t -d ./...
+                go test ./integration_tests/... -race \
+                  -ginkgo.randomizeAllSpecs \
+                  -ginkgo.slowSpecThreshold 20
+              popd
+            popd
+    - do:
+      - task: build-windows-test-binary
+        config:
+          platform: linux
+          image_resource:
+            type: docker-image
+            source:
+              repository: loggregator/base
+          inputs:
+          - name: loggregator-src
+          outputs:
+          - name: binaries
+          - name: test-binaries
+          run:
+            path: bash
+            args:
+            - -c
+            - |
+              #!/bin/bash
+              set -ex
+
+              ci_root=$PWD
+              mkdir -p workspace/src/code.cloudfoundry.org/loggregator
+              cp -r loggregator-src/. workspace/src/code.cloudfoundry.org/loggregator/
+
+              function munge {
+                echo $1 | tr '/' '_'
+              }
+
+              pushd workspace
+                export GOOS=windows
+                export GOPATH="$PWD"
+                export PATH="$GOPATH/bin:$PATH"
+
+                pushd src/code.cloudfoundry.org/loggregator
+                  go get -t -d ./...
+                  for pkg in $(go list ./agent/...); do
+                    go test -c -o $ci_root/test-binaries/$(munge $pkg)_test.exe $pkg &
+                  done
+                  go build -o $ci_root/binaries/agent.exe code.cloudfoundry.org/loggregator/agent &
+                popd
+              popd
+              wait
+      - task: run-windows-tests
+        config:
+          platform: windows
+          inputs:
+          - name: binaries
+          - name: test-binaries
+          run:
+            path: powershell
+            args:
+            - "-command"
+            - |
+              trap {
+                write-error $_
+                exit 1
+              }
+
+              $env:SKIP_BUILD = "true"
+              $env:AGENT_BUILD_PATH = "binaries\agent.exe"
+
+              # Run all test binaries
+              Get-ChildItem -Filter test-binaries\*.exe | ForEach {
+                &$_.Fullname /s
+                if ($LastExitCode -ne 0) {
+                  throw "test failed"
+                }
+              }
+
+- name: loggregator-agent-tests
+  serial: true
+  public: true
+  plan:
+  - aggregate:
+    - get: loggregator-ci
+    - get: loggregator-agent
+      trigger: true
+  - task: run-tests
+    file: loggregator-ci/tasks/go-test-with-latest-packages/task.yml
+    input_mapping:
+      source-repo: loggregator-agent
+    params:
+      IMPORT_PATH: code.cloudfoundry.org/loggregator-agent
+
+- name: loggregator-bump-submodule
+  serial: true
+  plan:
+  - aggregate:
+    - get: loggregator-ci
+    - get: loggregator-release
+      trigger: true
+    - get: loggregator-src
+      trigger: true
+      passed: ["loggregator-tests"]
+    - get: loggregator-agent
+      trigger: true
+      passed: ["loggregator-agent-tests"]
+    - get: go-loggregator
+      trigger: true
+  - task: update-loggregator
+    file: loggregator-ci/tasks/bump-submodule/task.yml
+    input_mapping:
+      release-repo: loggregator-release
+      source-repo: loggregator-src
+    output_mapping:
+      bumped-release-repo: bumped-loggregator-release
+    params:
+      SUBMODULE_PATH: src/code.cloudfoundry.org/loggregator
+  - task: sync-package-specs
+    file: loggregator-ci/tasks/run-release-script/task.yml
+    input_mapping:
+      release-repo: bumped-loggregator-release
+    output_mapping:
+      updated-release-repo: synced-loggregator-release
+    params:
+      SCRIPT: scripts/sync-package-specs
+  - aggregate:
+    - task: run-specs
+      config:
+        platform: linux
+        image_resource:
+          type: docker-image
+          source:
+            repository: ruby
+        inputs:
+        - name: synced-loggregator-release
+        run:
+          path: bash
+          args:
+            - -c
+            - |
+              #!/bin/bash
+              set -e
+              cd synced-loggregator-release
+              bundle install
+              rspec
+    - task: run-tests
+      file: loggregator-ci/tasks/run-release-script/task.yml
+      input_mapping:
+        release-repo: synced-loggregator-release
+      params:
+        SCRIPT: scripts/test ~integration
+    - task: run-integration-tests
+      file: loggregator-ci/tasks/run-release-script/task.yml
+      input_mapping:
+        release-repo: synced-loggregator-release
+      params:
+        SCRIPT: scripts/test integration
+  - task: commit
+    file: loggregator-ci/tasks/commit-with-shortlog/task.yml
+    input_mapping:
+      release-repo: synced-loggregator-release
+    output_mapping:
+      committed-repo: committed-loggregator-release
+    params:
+      PATHS: |
+        src/code.cloudfoundry.org/loggregator
+        packages
+  - put: loggregator-release
+    params:
+      repository: committed-loggregator-release
+      rebase: true
+
+- name: loggregator-agent-bump-submodule
+  serial: true
+  plan:
+  - aggregate:
+    - get: loggregator-ci
+    - get: loggregator-agent-release
+      trigger: true
+    - get: loggregator-agent
+      trigger: true
+      passed: ["loggregator-agent-tests"]
+  - task: update-submodule
+    file: loggregator-ci/tasks/bump-submodule/task.yml
+    input_mapping:
+      release-repo: loggregator-agent-release
+      source-repo: loggregator-agent
+    output_mapping:
+      bumped-release-repo: bumped-loggregator-agent-release
+    params:
+      SUBMODULE_PATH: src/code.cloudfoundry.org/loggregator-agent
+  - task: sync-package-specs
+    file: loggregator-ci/tasks/run-release-script/task.yml
+    input_mapping:
+      release-repo: bumped-loggregator-agent-release
+    output_mapping:
+      updated-release-repo: synced-loggregator-agent-release
+    params:
+      SCRIPT: scripts/sync-package-specs
+  - aggregate:
+    - task: run-specs
+      config:
+        platform: linux
+        image_resource:
+          type: docker-image
+          source:
+            repository: ruby
+        inputs:
+        - name: synced-loggregator-agent-release
+        run:
+          path: bash
+          args:
+            - -c
+            - |
+              #!/bin/bash
+              set -e
+              cd synced-loggregator-agent-release
+              bundle install
+              rspec
+    - task: run-tests
+      file: loggregator-ci/tasks/run-release-script/task.yml
+      input_mapping:
+        release-repo: synced-loggregator-agent-release
+      params:
+        SCRIPT: scripts/test
+  - task: commit
+    file: loggregator-ci/tasks/commit-with-shortlog/task.yml
+    input_mapping:
+      release-repo: synced-loggregator-agent-release
+    output_mapping:
+      committed-repo: committed-loggregator-agent-release
+    params:
+      PATHS: "src/code.cloudfoundry.org/loggregator-agent packages"
+  - put: loggregator-agent-release
+    params:
+      repository: committed-loggregator-agent-release
+      rebase: true
+
+- name: loggregator-deploy
+  serial: true
+  serial_groups:
+  - bosh-loggregator
+  plan:
+  - aggregate:
+    - get: consul-release
+    - get: pipeline-pool
+      passed: ["cf-deploy"]
+      trigger: true
+    - get: loggregator-release
+      passed: ["cf-deploy"]
+    - get: loggregator-agent-release
+      passed: ["cf-deploy"]
+    - get: deployments-loggregator
+    - get: loggregator-ci
+    - get: logging-acceptance-tests-release
+    - get: cf-deployment-concourse-tasks
+    - get: cf-deployment
+    - get: vars-store
+      resource: deployments-loggregator
+    - get: vars-files
+      resource: deployments-loggregator
+    - get: ops-files
+      resource: deployments-loggregator
+    - get: bbl-state
+      resource: deployments-loggregator
+  - do:
+    - task: upload-loggregator-release
+      file: loggregator-ci/tasks/env-pool-tasks/upload-release.yml
+      input_mapping:
+        bosh-release-dir: loggregator-release
+        environment: pipeline-pool
+    - task: loggregator-deploy
+      file: loggregator-ci/tasks/env-pool-tasks/bosh-deploy.yml
+      input_mapping:
+        bosh-release: loggregator-release
+        environment: pipeline-pool
+      output_mapping:
+        updated-vars-store: updated-deployments-loggregator
+      params:
+        SYSTEM_DOMAIN: loggr.cf-app.com
+        DEPLOYMENT_NAME: loggregator
+        MANIFEST_FILE: manifests/loggregator.yml
+        VARS_STORE_FILE: loggregator-vars.yml
+    - task: upload-lats
+      file: loggregator-ci/tasks/env-pool-tasks/upload-release.yml
+      input_mapping:
+        bosh-release-dir: loggregator-release
+        environment: pipeline-pool
+    - task: lats-deploy
+      file: loggregator-ci/tasks/env-pool-tasks/bosh-deploy.yml
+      input_mapping:
+        bbl-state: updated-deployments-loggregator
+        vars-files: updated-deployments-loggregator
+        bosh-release: logging-acceptance-tests-release
+        environment: pipeline-pool
+      params:
+        SYSTEM_DOMAIN: loggr.cf-app.com
+        DEPLOYMENT_NAME: lats
+        MANIFEST_FILE: manifests/lats.yml
+        VARS_FILES: $BBL_STATE_DIR/loggregator-vars.yml
+        VARS_STORE_FILE: lats-vars.yml
+    - put: deployments-loggregator
+      params:
+        repository: updated-deployments-loggregator
+        rebase: true
+    on_failure:
+      put: pipeline-pool
+      params: {release: pipeline-pool}
+
+- name: loggregator-benchmarks
+  serial: true
+  plan:
+  - aggregate:
+    - get: loggregator-bench-release
+    - get: loggregator-bench-results
+    - get: deployments-loggregator
+    - get: loggregator-ci
+    - get: bbl-state
+      resource: deployments-loggregator
+    - get: loggregator-release
+      trigger: true
+      passed: ["loggregator-deploy"]
+    - get: pipeline-pool
+      passed: ["loggregator-deploy"]
+      trigger: true
+  - do:
+    - task: bump-loggregator-release
+      file: loggregator-ci/tasks/bump-submodule/task.yml
+      input_mapping:
+        release-repo: loggregator-bench-release
+        source-repo: loggregator-release
+      output_mapping:
+        bumped-release-repo: bumped-loggregator-bench-release
+      params:
+        SUBMODULE_PATH: src/loggregator-release
+    - task: update-submodules
+      file: loggregator-ci/tasks/run-release-script/task.yml
+      input_mapping:
+        release-repo: bumped-loggregator-bench-release
+      output_mapping:
+        updated-release-repo: updated-loggregator-bench-release
+      params:
+        SCRIPT: git submodule update --init --recursive
+    - task: sync-package-specs
+      file: loggregator-ci/tasks/run-release-script/task.yml
+      input_mapping:
+        release-repo: updated-loggregator-bench-release
+      output_mapping:
+        updated-release-repo: synced-loggregator-bench-release
+      params:
+        SCRIPT: ./scripts/sync-package-specs-with-gopath
+    - task: upload-benchmark-release
+      file: loggregator-ci/tasks/env-pool-tasks/upload-release.yml
+      input_mapping:
+        environment: pipeline-pool
+        bosh-release-dir: synced-loggregator-bench-release
+      params:
+        FORCE: true
+    - task: deploy-benchmarks
+      file: loggregator-ci/tasks/env-pool-tasks/bosh-deploy.yml
+      input_mapping:
+        bosh-release: synced-loggregator-bench-release
+        vars-store: deployments-loggregator
+        ops-files: deployments-loggregator
+        vars-files: deployments-loggregator
+        environment: pipeline-pool
+      output_mapping:
+        updated-vars-store: updated-deployments-loggregator
+      params:
+        DEPLOYMENT_NAME: loggregator-bench
+        MANIFEST_FILE: manifests/loggregator-bench.yml
+        VARS_STORE_FILE: loggregator-bench-vars.yml
+    - task: commit
+      file: loggregator-ci/tasks/commit/task.yml
+      input_mapping:
+        release-repo: updated-deployments-loggregator
+      output_mapping:
+        committed-repo: committed-deployments-loggregator
+      params:
+        COMMIT_MESSAGE: "Update loggregator-bench vars store"
+    - put: deployments-loggregator
+      params:
+        repository: committed-deployments-loggregator
+        rebase: true
+    - task: run-benchmarks
+      file: loggregator-ci/tasks/env-pool-tasks/loggregator-bench.yml
+      input_mapping:
+        environment: pipeline-pool
+      params:
+        DATADOG_VARS_DIR: deployments-loggregator
+    - put: loggregator-bench-results
+      params:
+        repository: updated-loggregator-bench-results
+        rebase: true
+    on_failure:
+      put: pipeline-pool
+      params: {release: pipeline-pool}
+
+- name: lats
+  serial: true
+  serial_groups:
+  - bosh-loggregator
+  plan:
+  - aggregate:
+    - get: loggregator-ci
+    - get: deployments-loggregator
+    - get: logging-acceptance-tests-release
+      trigger: true
+    - get: loggregator-release
+      passed: ["loggregator-deploy"]
+      trigger: true
+    - get: loggregator-agent-release
+      passed: ["loggregator-deploy"]
+      trigger: true
+    - get: pipeline-pool
+      passed: ["loggregator-deploy"]
+      trigger: true
+  - do:
+    - task: run-lats
+      file: loggregator-ci/tasks/env-pool-tasks/run-errand.yml
+      params:
+        DEPLOYMENT_NAME: lats
+        ERRAND: lats
+        KEEP_ALIVE: true
+      input_mapping:
+        bbl-state: deployments-loggregator
+        environment: pipeline-pool
+    on_failure:
+      put: pipeline-pool
+      params: {release: pipeline-pool}
+
+- name: loggregator-create-release
+  serial: true
+  plan:
+  - aggregate:
+    - get: loggregator-release
+      passed: ["loggregator-benchmarks", "lats", "cats", "cfar-lats"]
+    - get: loggregator-ci
+
+  - task: create-final-release
+    file: loggregator-ci/tasks/env-pool-tasks/create-final-release.yml
+    input_mapping:
+      repo: loggregator-release
+    params:
+      S3_ACCESS_KEY: {{s3-access-key}}
+      S3_SECRET_KEY: {{s3-secret-key}}
+      BLOBSTORE_BUCKET: loggregator-release-blobs
+      SSH_KEY: {{loggregator-key}}
+      NEW_VERSION: "101.13"
+      RELEASE_NAME: Loggregator
+
+  - put: loggregator-release
+    params:
+      repository: repo
+      rebase: false
+  - put: loggregator-github-release-drafts
+    params:
+      name: github-release/name
+      tag: github-release/tag
+      body: github-release/body
+      globs:
+      - github-release/*.tgz
+
+- name: cf-deploy
+  serial: true
+  serial_groups:
+  - cf-deploy
+  - bosh-cf-cats
+  - bosh-cfar-lats
+  plan:
+  - put: pipeline-pool
+    params: {acquire: true}
+  - aggregate:
+    - get: loggregator-ci
+    - get: bbl-state
+      resource: deployments-loggregator
+    - get: cf-deployment
+      trigger: true
+    - get: cf-deployment-concourse-tasks
+    - get: loggregator-release
+      trigger: true
+      passed: ["loggregator-bump-submodule"]
+    - get: loggregator-agent-release
+      trigger: true
+      passed: ["loggregator-agent-bump-submodule"]
+    - get: vars-store
+      resource: deployments-loggregator
+    - get: vars-files
+      resource: deployments-loggregator
+  - aggregate:
+    - task: upload-loggregator-release
+      file: loggregator-ci/tasks/env-pool-tasks/upload-release.yml
+      input_mapping:
+        bosh-release-dir: loggregator-release
+        environment: pipeline-pool
+    - task: upload-loggregator-agent-release
+      file: loggregator-ci/tasks/env-pool-tasks/upload-release.yml
+      input_mapping:
+        bosh-release-dir: loggregator-agent-release
+        environment: pipeline-pool
+  - do:
+    - task: copy-ops-files
+      config:
+        platform: linux
+        image_resource:
+          type: docker-image
+          source:
+            repository: relintdockerhubpushbot/cf-deployment-concourse-tasks
+            tag: v3.19.0
+        inputs:
+        - name: bbl-state
+        - name: cf-deployment
+        - name: loggregator-agent-release
+        outputs:
+        - name: ops-files
+        run:
+          path: /bin/bash
+          args:
+          - "-c"
+          - |
+            set -e
+
+            cp cf-deployment/operations/windows-cell.yml ops-files/
+            cp cf-deployment/operations/scale-to-one-az.yml ops-files/
+            cp cf-deployment/operations/experimental/use-bosh-dns.yml ops-files/
+            cp cf-deployment/operations/experimental/use-bosh-dns-for-containers.yml ops-files/
+            cp cf-deployment/operations/use-compiled-releases.yml ops-files/
+
+            cat <<EOT >> ops-files/on-the-fly.yml
+            - type: replace
+              path: /releases/name=loggregator
+              value:
+                name: loggregator
+                version: latest
+            - type: replace
+              path: /update/max_in_flight
+              value: 5
+            - type: replace
+              path: /releases/name=diego
+              value:
+                name: diego
+                version: $(bosh int cf-deployment/cf-deployment.yml --path=/releases/name=diego/version)
+                url: $(bosh int cf-deployment/cf-deployment.yml --path=/releases/name=diego/url)
+                sha1: $(bosh int cf-deployment/cf-deployment.yml --path=/releases/name=diego/sha1)
+            - type: replace
+              path: /instance_groups/name=doppler/instances
+              value: 2
+            - path: /releases/name=consul/url
+              type: replace
+              value: https://bosh.io/d/github.com/cloudfoundry-incubator/consul-release?v=192
+            - path: /releases/name=consul/sha1
+              type: replace
+              value: 399894e3b4f5d4ba7ea5abe4ab89190ec2d4ad56
+            EOT
+    - task: upload-stemcell
+      file: loggregator-ci/tasks/env-pool-tasks/bosh-upload-stemcell-from-cf-deployment.yml
+      input_mapping:
+        environment: pipeline-pool
+    - task: cf-deploy
+      file: loggregator-ci/tasks/env-pool-tasks/cf-deploy.yml
+      input_mapping:
+        environment: pipeline-pool
+      params:
+        SYSTEM_DOMAIN: loggr.cf-app.com #TODO: this could be included in the lock file
+        OPS_FILES: |
+          scale-to-one-az.yml
+          use-compiled-releases.yml
+          on-the-fly.yml
+          windows-cell.yml
+          use-bosh-dns.yml
+          use-bosh-dns-for-containers.yml
+    - put: deployments-loggregator
+      input_mapping:
+        environment: pipeline-pool
+      params:
+        repository: updated-vars-store
+        rebase: true
+    - task: enable-feature-flags
+      file: loggregator-ci/tasks/env-pool-tasks/set-feature-flags.yml
+      input_mapping:
+        environment: pipeline-pool
+        vars-store: updated-vars-store
+      params:
+        SYSTEM_DOMAIN: loggr.cf-app.com
+        ENABLED_FEATURE_FLAGS: diego_docker
+    - task: cleanup
+      input_mapping:
+        environment: pipeline-pool
+      file: loggregator-ci/tasks/env-pool-tasks/bosh-cleanup.yml
+    on_failure:
+      put: pipeline-pool
+      params: {release: pipeline-pool}
+
+- name: cats
+  serial: true
+  serial_groups:
+  - bosh-cf-cats
+  plan:
+    - aggregate:
+      - get: cf-deployment-concourse-tasks
+      - get: deployments-loggregator
+      - get: cf-acceptance-tests
+      - get: loggregator-release
+        trigger: true
+        passed: ["cf-deploy"]
+      - get: loggregator-agent-release
+        trigger: true
+        passed: ["cf-deploy"]
+      - get: environment
+        resource: pipeline-pool
+        passed: ["cf-deploy"]
+        trigger: true
+      - get: loggregator-ci
+    - task: run-cats
+      file: loggregator-ci/tasks/env-pool-tasks/run-cats.yml
+      input_mapping:
+        integration-config: deployments-loggregator
+      params:
+        NODES: 9
+      on_failure:
+        put: pipeline-pool
+        params: {release: environment}
+
+- name: cfar-lats
+  serial: true
+  serial_groups:
+  - bosh-cfar-lats
+  plan:
+    - aggregate:
+      - get: cfar-logging-acceptance-tests
+        trigger: true
+      - get: loggregator-release
+        trigger: true
+        passed: ["cf-deploy"]
+      - get: loggregator-agent-release
+        trigger: true
+        passed: ["cf-deploy"]
+      - get: loggregator-ci
+      - get: environment
+        resource: pipeline-pool
+        passed: ["cf-deploy"]
+        trigger: true
+      - get: bbl-state
+        resource: deployments-loggregator
+        passed: ["cf-deploy"]
+    - task: run-cfar-lats
+      file: loggregator-ci/tasks/env-pool-tasks/cfar-lats.yml
+      params:
+        SYSTEM_DOMAIN: loggr.cf-app.com
+        SKIP_SSL_VALIDATION: true
+      on_failure:
+        put: pipeline-pool
+        params: {release: environment}
+
+- name: unclaim-environment
+  serial: true
+  plan:
+    - get: pipeline-pool
+      passed: ["loggregator-benchmarks", "lats", "cats", "cfar-lats"]
+      trigger: true
+    - put: pipeline-pool
+      params: {release: pipeline-pool}
+

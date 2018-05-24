@@ -3,9 +3,7 @@
 # vi:syntax=sh
 
 # -------------------
-# Create a release from a repo and branch: from-repo and
-# FROM_BRANCH. Merge the result back to another repo and branch:
-# to-repo, TO_BRANCH
+# Create a release from a repo and branch
 
 
 set -ex
@@ -24,13 +22,8 @@ mkdir -p ~/.ssh
 echo -e "Host github.com\n\tStrictHostKeyChecking no\n" >> ~/.ssh/config
 ssh-add <(echo "$SSH_KEY")
 
-# build final release on FROM_BRANCH
-pushd from-repo
-  # this is needed to land commits on master since the commit for
-  # master is checked out as a detatched head when the git
-  # resource clones it down
-  git checkout $FROM_BRANCH
-
+# build final release
+pushd repo
   # setup private.yml used by `create-release --final`
   cat << EOF > config/private.yml
 ---
@@ -57,32 +50,3 @@ EOF
   final_release_sha=$(git rev-parse HEAD)
   git tag "$tag_name" $final_release_sha
 popd
-
-cp -r from-branch repos
-
-# Backport releases don't automatically merge back to `to-repo`
-if [ "$IS_BACKPORT_RELEASE" = true ]; then
-    exit 0
-fi
-
-# merge final release artifacts with to-branch
-pushd to-repo
-  # this is needed to land commits on to-branch since the commit for
-  # to-branch is checked out as a detatched head when the git
-  # resource clones it down
-  git checkout $TO_BRANCH
-
-  # pull from the default remote over the network
-  git pull
-
-  # add local remote for merge
-  git remote add -f from ../from-repo
-  git merge -v -m "Merge final release artifacts\
-
-
-[ci skip]" "from/$final_release_abbrev"
-popd
-
-# copy repos into output
-cp -r to-repo repos
-

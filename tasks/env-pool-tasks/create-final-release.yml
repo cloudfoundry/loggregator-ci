@@ -6,11 +6,7 @@ platform: linux
 inputs:
   # - Required
   # - The repo to which the final releases will be merged
-- name: to-repo
-
-  # - Required
-  # - The repo from which the final release will be created
-- name: from-repo
+- name: repo
 
   # - Required
   # - The task repository
@@ -20,11 +16,11 @@ outputs:
   # - The artifacts used to create the github release
 - name: github-release
 
-  # - The modified repos that need to be pushed back to github
-- name: repos
+  # - The modified repo that need to be pushed back to github
+- name: repo
 
 run:
-  path: loggregator-ci/tasks/create-final-release/task
+  path: loggregator-ci/tasks/env-pool-tasks/create-final-release
 
 params:
   # - Required
@@ -53,17 +49,3 @@ params:
   # - Required
   # - Human readable name of the created release (e.g. Loggregator)
   RELEASE_NAME:
-
-  # - Required
-  # - Branch from which the final release will be created
-  FROM_BRANCH:
-
-  # - Optional
-  # - Branch to which the final release will be merged. Only needed if no
-  # - creating a backport release.
-  TO_BRANCH:
-
-  # - Optional
-  # - true if creating backport release. Backport releases are not
-  # - automatically merged back to `to-repo`
-  IS_BACKPORT_RELEASE: false

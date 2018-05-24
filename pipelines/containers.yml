@@ -30,12 +30,12 @@ resources:
     paths:
     - docker-images/base
 
-- name: golang-1.10-tarball
+- name: golang-1.9-tarball
   type: s3
   source:
     endpoint: storage.googleapis.com
     bucket: golang
-    regexp: 'go(1\.10(\.\d+)?)\.linux-amd64\.tar.gz'
+    regexp: 'go(1\.9(\.\d+)?)\.linux-amd64\.tar.gz'
 
 - name: bosh10-image-dockerfile
   type: git
@@ -72,7 +72,7 @@ jobs:
   public: true
   plan:
   - aggregate:
-    - get: golang-1.10-tarball
+    - get: golang-1.9-tarball
       trigger: true
     - get: image-dockerfile
       resource: base-image-dockerfile
