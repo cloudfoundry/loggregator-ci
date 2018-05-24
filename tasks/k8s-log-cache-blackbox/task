@@ -21,10 +21,16 @@ pushd deployments-loggregator/gcp/playground
     source .envrc
     ./k8s_login
     echo "
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: blackbox-tests
+---
 apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
   name: log-cache-blackbox
+  namespace: blackbox-tests
   labels:
     run: log-cache-blackbox
 spec:
@@ -44,9 +50,7 @@ spec:
         - name: LOG_CACHE_URL
           value: http://log-cache-reads.loggregator.svc.cluster.local:8081
         - name: SOURCE_ID
-          valueFrom:
-            fieldRef:
-              fieldPath: metadata.name
+          value: "blackbox-tests/deployment/log-cache-blackbox"
         - name: PORT
           value: \"12345\"
         - name: SKIP_SSL_VALIDATION
@@ -56,6 +60,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: log-cache-blackbox
+  namespace: blackbox-tests
   labels:
     run: log-cache-blackbox
 spec:
@@ -76,7 +81,9 @@ popd
 
 while true; do
   ip="$(
-    kubectl get service log-cache-blackbox --output=json | \
+    kubectl get service log-cache-blackbox \
+        --output=json \
+        --namespace blackbox-tests | \
       jq --raw-output .status.loadBalancer.ingress[0].ip
   )"
   if [ "$ip" != "" ] && [ "$ip" != "null" ]; then

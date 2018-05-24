@@ -61,10 +61,16 @@ pushd deployments-loggregator/gcp/playground
     source .envrc
     ./k8s_login
     echo "
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: blackbox-tests
+---
 apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
   name: logspinner
+  namespace: blackbox-tests
   labels:
     run: logspinner
 spec:
@@ -85,12 +91,16 @@ spec:
           value: \"8080\"
 " | kubectl apply -f -
     pod_name="$(
-        kubectl get pod -l run=logspinner --output=json | \
+        kubectl get pod -l run=logspinner \
+            --output=json \
+            --namespace blackbox-tests | \
             jq --raw-output .items[0].metadata.name
     )"
     while true; do
         status="$(
-            kubectl get pod "$pod_name" --output=json | \
+            kubectl get pod "$pod_name" \
+                --output=json \
+                --namespace blackbox-tests | \
                 jq --raw-output .status.phase
         )"
         if [ "$status" = "Running" ]; then
@@ -114,14 +124,15 @@ spec:
             jq --raw-output .status.loadBalancer.ingress[0].ip
     ):8082"
 
-    kubectl port-forward "$pod_name" 8080:8080 > /dev/null &
+    kubectl port-forward "$pod_name" 8080:8080 \
+        --namespace blackbox-tests > /dev/null &
     sleep 3
 popd
 
 echo "Collecting logs for $pod_name"
 
 rlpreader \
-    -app-id "$pod_name" \
+    -app-id "blackbox-tests/deployment/logspinner" \
     -target "$target" \
     -ca "/tmp/ca.crt" \
     -cert "/tmp/rlp.crt" \
@@ -140,6 +151,5 @@ if [ "$MSG_COUNT" -lt $(($CYCLES * 99 / 100)) ]; then
     echo the reliability test did not meet our SLO
     exit 123
 fi
-
 
 # Trap will send metrics to datadog
