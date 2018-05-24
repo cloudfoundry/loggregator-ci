@@ -106,6 +106,7 @@ spec:
         if [ "$status" = "Running" ]; then
             break
         fi
+        sleep 10
     done
 
     set +x
