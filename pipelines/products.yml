@@ -38,6 +38,7 @@ groups:
   - service-metrics-bump-submodule
   - service-metrics-deploy
   - service-metrics-system-tests
+  - service-metrics-promotion
   - leadership-election-tests
   - leadership-election-bump-submodule
   - log-cache-promql-bug
@@ -100,6 +101,7 @@ groups:
   - service-metrics-bump-submodule
   - service-metrics-deploy
   - service-metrics-system-tests
+  - service-metrics-promotion
 - name: leadership-election
   jobs:
   - leadership-election-tests
@@ -395,6 +397,16 @@ resources:
     uri: git@github.com:cloudfoundry/service-metrics-release
     branch: develop
     private_key: {{cf-loggregator-oauth-bot-key}}
+
+- name: service-metrics-release-release-elect
+  type: git
+  source:
+    uri: git@github.com:cloudfoundry/service-metrics-release
+    branch: release-elect
+    private_key: {{cf-loggregator-oauth-bot-key}}
+    ignore_paths:
+    - .final_builds
+    - releases
 
 - name: leadership-election
   type: git
@@ -1992,6 +2004,20 @@ jobs:
       DEPLOYMENT_NAME: service-metrics-injector
       DOPPLER_ADDR: wss://doppler.coconut.cf-app.com:443
       ORIGIN: service-metrics-injector
+
+
+- name: service-metrics-promotion
+  serial: true
+  plan:
+  - aggregate:
+    - get: develop
+      resource: service-metrics-release
+      trigger: true
+      passed: ["service-metrics-system-tests"]
+    - get: service-metrics-release-release-elect
+  - put: service-metrics-release-release-elect
+    params:
+      repository: develop
 
 ###############################################################################
 # SHARED
