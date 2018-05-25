@@ -24,6 +24,6 @@ pushd workspace
   go get $IMPORT_PATH/...
 
   pushd "src/$IMPORT_PATH/acceptance"
-    ginkgo
+    ginkgo --flakeAttempts=2
   popd
 popd
