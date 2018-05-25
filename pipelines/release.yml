@@ -327,6 +327,7 @@ jobs:
     - get: reference-nozzle-release
     - get: noisy-neighbor-nozzle-release
     - get: log-cache-release-develop
+    - get: service-metrics-release-develop
   - task: download-go
     file: loggregator-ci/tasks/download-golang/task.yml
     params:
@@ -596,6 +597,30 @@ jobs:
     - put: logging-acceptance-tests-release
       params:
         repository: committed-logging-acceptance-tests-release
+        rebase: false
+  - do:
+    - task: bump-service-metrics-release
+      file: loggregator-ci/tasks/bump-golang/task.yml
+      input_mapping:
+        release-repo: service-metrics-release-develop
+      output_mapping:
+        updated-release-repo: updated-service-metrics-release
+      params:
+        VERSION: *golang-version
+        ACCESS_KEY_ID: {{loggregator-team-s3-access-key}}
+        SECRET_ACCESS_KEY: {{loggregator-team-s3-secret-key}}
+        BUCKET_NAME: oss-service-metrics-release-blobs
+    - task: commit-service-metrics-release
+      file: loggregator-ci/tasks/commit/task.yml
+      input_mapping:
+        release-repo: updated-service-metrics-release
+      output_mapping:
+        committed-repo: committed-service-metrics-release
+      params:
+        COMMIT_MESSAGE: "Bump golang version"
+    - put: service-metrics-release-develop
+      params:
+        repository: committed-service-metrics-release
         rebase: false
 
 - name: loggregator-create-release
