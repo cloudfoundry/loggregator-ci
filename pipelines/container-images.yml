@@ -1,5 +1,5 @@
 groups:
-- name: ci
+- name: concourse
   jobs:
   - build-base-image
   - bosh10
@@ -8,7 +8,11 @@ groups:
 - name: tools
   jobs:
   - emitter
+  - logspinner
+  - log-cache-emitter
   - log-cache-blackbox
+  - certs
+  - fluentd
 
 resources:
 - name: loggregator-tools
@@ -120,6 +124,66 @@ resources:
     username: {{docker-hub-username}}
     password: {{docker-hub-password}}
 
+- name: logspinner-image-docker-build-context
+  type: git
+  source:
+    uri: https://github.com/cloudfoundry/loggregator-ci
+    branch: master
+    paths:
+    - docker-images/logspinner
+
+- name: logspinner-image
+  type: docker-image
+  source:
+    repository: loggregator/logspinner
+    username: {{docker-hub-username}}
+    password: {{docker-hub-password}}
+
+- name: log-cache-emitter-image-docker-build-context
+  type: git
+  source:
+    uri: https://github.com/cloudfoundry/loggregator-ci
+    branch: master
+    paths:
+    - docker-images/log-cache-emitter
+
+- name: log-cache-emitter-image
+  type: docker-image
+  source:
+    repository: loggregator/log-cache-emitter
+    username: {{docker-hub-username}}
+    password: {{docker-hub-password}}
+
+- name: certs-image-docker-build-context
+  type: git
+  source:
+    uri: https://github.com/cloudfoundry/loggregator-ci
+    branch: master
+    paths:
+    - docker-images/certs
+
+- name: certs-image
+  type: docker-image
+  source:
+    repository: loggregator/certs
+    username: {{docker-hub-username}}
+    password: {{docker-hub-password}}
+
+- name: fluentd-image-docker-build-context
+  type: git
+  source:
+    uri: https://github.com/cloudfoundry/loggregator-ci
+    branch: master
+    paths:
+    - docker-images/fluentd
+
+- name: fluentd-image
+  type: docker-image
+  source:
+    repository: loggregator/fluentd
+    username: {{docker-hub-username}}
+    password: {{docker-hub-password}}
+
 jobs:
 - name: build-base-image
   public: true
@@ -211,4 +275,72 @@ jobs:
       tag: build-image/tag
       tag_as_latest: true
       cache: true
+      cache_tag: latest
+
+- name: logspinner
+  plan:
+  - aggregate:
+    - get: logspinner-image-docker-build-context
+      trigger: true
+    - get: loggregator-tools
+      trigger: true
+    - get: loggregator-ci
+  - task: build-image
+    file: loggregator-ci/tasks/build-docker-image/task.yml
+    input_mapping:
+      source-repo: loggregator-tools
+    params:
+      BASE_PACKAGE: code.cloudfoundry.org/loggregator-tools
+      SUB_PACKAGE: logspinner
+      IMAGE_NAME: logspinner
+  - put: logspinner-image
+    params:
+      build: build-image/build
+      tag: build-image/tag
+      tag_as_latest: true
+      cache: true
+      cache_tag: latest
+
+- name: log-cache-emitter
+  plan:
+  - aggregate:
+    - get: log-cache-emitter-image-docker-build-context
+      trigger: true
+    - get: loggregator-tools
+      trigger: true
+    - get: loggregator-ci
+  - task: build-image
+    file: loggregator-ci/tasks/build-docker-image/task.yml
+    input_mapping:
+      source-repo: loggregator-tools
+    params:
+      BASE_PACKAGE: code.cloudfoundry.org/loggregator-tools
+      SUB_PACKAGE: log-cache-emitter
+      IMAGE_NAME: log-cache-emitter
+  - put: log-cache-emitter-image
+    params:
+      build: build-image/build
+      tag: build-image/tag
+      tag_as_latest: true
+      cache: true
+      cache_tag: latest
+
+- name: certs
+  plan:
+  - get: certs-image-docker-build-context
+    trigger: true
+  - put: certs-image
+    params:
+      build: certs-image-docker-build-context/docker-images/certs
+      tag_as_latest: true
+      cache_tag: latest
+
+- name: fluentd
+  plan:
+  - get: fluentd-image-docker-build-context
+    trigger: true
+  - put: fluentd-image
+    params:
+      build: fluentd-image-docker-build-context/docker-images/fluentd
+      tag_as_latest: true
       cache_tag: latest
