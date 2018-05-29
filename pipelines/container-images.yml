@@ -1,5 +1,12 @@
-resources:
+groups:
+- name: ci
+  jobs:
+  - build-base-image
+  - bosh10
+  - cf-deployment-concourse-tasks
+  - blackbox
 
+resources:
 - name: base-image
   type: docker-image
   source:
