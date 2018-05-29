@@ -3,7 +3,6 @@ groups:
   jobs:
   - build-base-image
   - bosh10
-  - cf-deployment-concourse-tasks
   - blackbox
 - name: tools
   jobs:
@@ -27,21 +26,6 @@ resources:
     repository: loggregator/base
     username: {{docker-hub-username}}
     password: {{docker-hub-password}}
-
-- name: cf-deployment-concourse-tasks-image
-  type: docker-image
-  source:
-    repository: loggregator/cf-deployment-concourse-tasks
-    username: {{docker-hub-username}}
-    password: {{docker-hub-password}}
-
-- name: cf-deployment-concourse-tasks
-  type: git
-  source:
-    uri: https://github.com/loggregator/cf-deployment-concourse-tasks
-    branch: master
-    paths:
-    - dockerfiles/cf-deployment-concourse-tasks
 
 - name: base-image-docker-build-context
   type: git
@@ -206,16 +190,6 @@ jobs:
   - put: bosh10-image
     params:
       build: bosh10-image-docker-build-context/docker-images/bosh10
-      tag_as_latest: true
-      cache_tag: latest
-
-- name: cf-deployment-concourse-tasks
-  plan:
-  - get: cf-deployment-concourse-tasks
-    trigger: true
-  - put: cf-deployment-concourse-tasks-image
-    params:
-      build: cf-deployment-concourse-tasks/dockerfiles/cf-deployment-concourse-tasks
       tag_as_latest: true
       cache_tag: latest
 
