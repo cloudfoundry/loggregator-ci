@@ -414,12 +414,6 @@ resources:
     branch: master
     uri: https://github.com/cloudfoundry/leadership-election
 
-- name: loggregator-tools
-  type: git
-  source:
-    branch: master
-    uri: https://github.com/cloudfoundry-incubator/loggregator-tools
-
 - name: leadership-election-release
   type: git
   source:
@@ -448,13 +442,6 @@ resources:
   type: docker-image
   source:
     repository: loggregator/rlp
-    username: {{docker-hub-username}}
-    password: {{docker-hub-password}}
-
-- name: log-cache-blackbox-image
-  type: docker-image
-  source:
-    repository: loggregator/log-cache-blackbox
     username: {{docker-hub-username}}
     password: {{docker-hub-password}}
 
@@ -1179,8 +1166,6 @@ jobs:
     - get: log-cache
       trigger: true
       passed: ["log-cache-tests"]
-    - get: loggregator-tools
-      trigger: true
   - aggregate:
     - task: build-log-cache-image
       file: loggregator-ci/tasks/build-docker-image/task.yml
@@ -1218,16 +1203,6 @@ jobs:
       params:
         BASE_PACKAGE: code.cloudfoundry.org/log-cache
         IMAGE_NAME: log-cache-scheduler
-    - task: build-blackbox-image
-      file: loggregator-ci/tasks/build-docker-image/task.yml
-      input_mapping:
-        source-repo: loggregator-tools
-      output_mapping:
-        build-image: build-blackbox-image
-      params:
-        BASE_PACKAGE: code.cloudfoundry.org/loggregator-tools
-        SUB_PACKAGE: log-cache-blackbox
-        IMAGE_NAME: log-cache-blackbox
   - aggregate:
     - put: log-cache-image
       params:
@@ -1254,13 +1229,6 @@ jobs:
       params:
         build: build-scheduler-image/build
         tag: build-scheduler-image/tag
-        tag_as_latest: true
-        cache: true
-        cache_tag: latest
-    - put: log-cache-blackbox-image
-      params:
-        build: build-blackbox-image/build
-        tag: build-blackbox-image/tag
         tag_as_latest: true
         cache: true
         cache_tag: latest

@@ -5,6 +5,9 @@ groups:
   - bosh10
   - cf-deployment-concourse-tasks
   - blackbox
+- name: tools
+  jobs:
+  - log-cache-blackbox
 
 resources:
 - name: base-image
@@ -44,6 +47,12 @@ resources:
     bucket: golang
     regexp: 'go(1\.10(\.\d+)?)\.linux-amd64\.tar.gz'
 
+- name: loggregator-ci
+  type: git
+  source:
+    uri: https://github.com/cloudfoundry/loggregator-ci
+    branch: master
+
 - name: bosh10-image-dockerfile
   type: git
   source:
@@ -73,6 +82,27 @@ resources:
     repository: loggregator/blackbox
     username: {{docker-hub-username}}
     password: {{docker-hub-password}}
+
+- name: log-cache-blackbox-image-dockerfile
+  type: git
+  source:
+    uri: https://github.com/cloudfoundry/loggregator-ci
+    branch: master
+    paths:
+    - docker-images/log-cache-blackbox
+
+- name: log-cache-blackbox-image
+  type: docker-image
+  source:
+    repository: loggregator/log-cache-blackbox
+    username: {{docker-hub-username}}
+    password: {{docker-hub-password}}
+
+- name: loggregator-tools
+  type: git
+  source:
+    branch: master
+    uri: https://github.com/cloudfoundry-incubator/loggregator-tools
 
 jobs:
 - name: build-base-image
@@ -139,3 +169,29 @@ jobs:
         build: blackbox-image-dockerfile/docker-images/blackbox
         tag_as_latest: true
         cache_tag: latest
+
+- name: log-cache-blackbox
+  plan:
+  - aggregate:
+    - get: log-cache-blackbox-image-dockerfile
+      trigger: true
+    - get: loggregator-tools
+      trigger: true
+    - get: loggregator-ci
+  - task: build-blackbox-image
+    file: loggregator-ci/tasks/build-docker-image/task.yml
+    input_mapping:
+      source-repo: loggregator-tools
+    output_mapping:
+      build-image: build-blackbox-image
+    params:
+      BASE_PACKAGE: code.cloudfoundry.org/loggregator-tools
+      SUB_PACKAGE: log-cache-blackbox
+      IMAGE_NAME: log-cache-blackbox
+  - put: log-cache-blackbox-image
+    params:
+      build: build-blackbox-image/build
+      tag: build-blackbox-image/tag
+      tag_as_latest: true
+      cache: true
+      cache_tag: latest
