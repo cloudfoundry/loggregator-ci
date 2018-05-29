@@ -370,7 +370,7 @@ jobs:
   plan:
   - aggregate:
     - get: loggregator-ci
-      resource: loggregator-ci-docker-images
+    - get: loggregator-ci-docker-images
       trigger: true
     - get: loggregator-src
       trigger: true
@@ -382,7 +382,7 @@ jobs:
     - task: build-agent-image
       file: loggregator-ci/tasks/build-go-docker-image/task.yml
       input_mapping:
-        context-repo: loggregator-ci
+        context-repo: loggregator-ci-docker-images
         source-repo: loggregator-agent
       output_mapping:
         build-image: build-agent-image
@@ -392,7 +392,7 @@ jobs:
     - task: build-router-image
       file: loggregator-ci/tasks/build-go-docker-image/task.yml
       input_mapping:
-        context-repo: loggregator-ci
+        context-repo: loggregator-ci-docker-images
         source-repo: loggregator-src
       output_mapping:
         build-image: build-router-image
@@ -402,7 +402,7 @@ jobs:
     - task: build-rlp-image
       file: loggregator-ci/tasks/build-go-docker-image/task.yml
       input_mapping:
-        context-repo: loggregator-ci
+        context-repo: loggregator-ci-docker-images
         source-repo: loggregator-src
       output_mapping:
         build-image: build-rlp-image

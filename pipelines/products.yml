@@ -699,7 +699,7 @@ jobs:
   plan:
   - aggregate:
     - get: loggregator-ci
-      resource: loggregator-ci-docker-images
+    - get: loggregator-ci-docker-images
       trigger: true
     - get: loggregator-src
       trigger: true
@@ -711,7 +711,7 @@ jobs:
     - task: build-agent-image
       file: loggregator-ci/tasks/build-go-docker-image/task.yml
       input_mapping:
-        context-repo: loggregator-ci
+        context-repo: loggregator-ci-docker-images
         source-repo: loggregator-agent
       output_mapping:
         build-image: build-agent-image
@@ -721,7 +721,7 @@ jobs:
     - task: build-router-image
       file: loggregator-ci/tasks/build-go-docker-image/task.yml
       input_mapping:
-        context-repo: loggregator-ci
+        context-repo: loggregator-ci-docker-images
         source-repo: loggregator-src
       output_mapping:
         build-image: build-router-image
@@ -731,7 +731,7 @@ jobs:
     - task: build-rlp-image
       file: loggregator-ci/tasks/build-go-docker-image/task.yml
       input_mapping:
-        context-repo: loggregator-ci
+        context-repo: loggregator-ci-docker-images
         source-repo: loggregator-src
       output_mapping:
         build-image: build-rlp-image
@@ -1164,7 +1164,7 @@ jobs:
   plan:
   - aggregate:
     - get: loggregator-ci
-      resource: loggregator-ci-docker-images
+    - get: loggregator-ci-docker-images
       trigger: true
     - get: log-cache
       trigger: true
@@ -1173,7 +1173,7 @@ jobs:
     - task: build-log-cache-image
       file: loggregator-ci/tasks/build-go-docker-image/task.yml
       input_mapping:
-        context-repo: loggregator-ci
+        context-repo: loggregator-ci-docker-images
         source-repo: log-cache
       output_mapping:
         build-image: build-log-cache-image
@@ -1183,7 +1183,7 @@ jobs:
     - task: build-nozzle-image
       file: loggregator-ci/tasks/build-go-docker-image/task.yml
       input_mapping:
-        context-repo: loggregator-ci
+        context-repo: loggregator-ci-docker-images
         source-repo: log-cache
       output_mapping:
         build-image: build-nozzle-image
@@ -1193,7 +1193,7 @@ jobs:
     - task: build-gateway-image
       file: loggregator-ci/tasks/build-go-docker-image/task.yml
       input_mapping:
-        context-repo: loggregator-ci
+        context-repo: loggregator-ci-docker-images
         source-repo: log-cache
       output_mapping:
         build-image: build-gateway-image
@@ -1203,7 +1203,7 @@ jobs:
     - task: build-scheduler-image
       file: loggregator-ci/tasks/build-go-docker-image/task.yml
       input_mapping:
-        context-repo: loggregator-ci
+        context-repo: loggregator-ci-docker-images
         source-repo: log-cache
       output_mapping:
         build-image: build-scheduler-image
