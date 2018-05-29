@@ -8,8 +8,8 @@ RUN apt-get --yes update && \
         build-essential \
         curl \
         git \
-        ruby2.3 \
-        ruby2.3-dev \
+        ruby2.5 \
+        ruby2.5-dev \
         unzip \
         wget &&\
     gem update --system && \
