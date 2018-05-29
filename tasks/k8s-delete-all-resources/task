@@ -2,6 +2,14 @@
 
 set -ex
 
+function teardown {
+  set +e
+  killall kubectl
+  killall ssh
+  killall ssh-agent
+}
+trap teardown EXIT
+
 eval "$(ssh-agent)"
 
 pushd deployments-loggregator/gcp/playground
@@ -24,5 +32,16 @@ pushd deployments-loggregator/gcp/playground
   done
 popd
 
-set +e
-killall ssh-agent
+echo waiting for delete requests to complete
+while true; do
+  echo -n .
+  count="$(
+    kubectl get all --all-namespaces --output json | \
+      jq --raw-output '.items | length'
+  )"
+  # kubernetes service might get recreated
+  if [ "$count" -lt 2 ]; then
+    break
+  fi
+  sleep 5
+done
