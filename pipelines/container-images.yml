@@ -7,9 +7,16 @@ groups:
   - blackbox
 - name: tools
   jobs:
+  - emitter
   - log-cache-blackbox
 
 resources:
+- name: loggregator-tools
+  type: git
+  source:
+    branch: master
+    uri: https://github.com/cloudfoundry-incubator/loggregator-tools
+
 - name: base-image
   type: docker-image
   source:
@@ -83,6 +90,14 @@ resources:
     username: {{docker-hub-username}}
     password: {{docker-hub-password}}
 
+- name: log-cache-blackbox-image-docker-build-context
+  type: git
+  source:
+    uri: https://github.com/cloudfoundry/loggregator-ci
+    branch: master
+    paths:
+    - docker-images/log-cache-blackbox
+
 - name: log-cache-blackbox-image
   type: docker-image
   source:
@@ -90,11 +105,20 @@ resources:
     username: {{docker-hub-username}}
     password: {{docker-hub-password}}
 
-- name: loggregator-tools
+- name: emitter-image-docker-build-context
   type: git
   source:
+    uri: https://github.com/cloudfoundry/loggregator-ci
     branch: master
-    uri: https://github.com/cloudfoundry-incubator/loggregator-tools
+    paths:
+    - docker-images/emitter
+
+- name: emitter-image
+  type: docker-image
+  source:
+    repository: loggregator/emitter
+    username: {{docker-hub-username}}
+    password: {{docker-hub-password}}
 
 jobs:
 - name: build-base-image
@@ -144,23 +168,47 @@ jobs:
 - name: log-cache-blackbox
   plan:
   - aggregate:
+    - get: log-cache-blackbox-image-docker-build-context
+      trigger: true
     - get: loggregator-tools
       trigger: true
     - get: loggregator-ci
-  - task: build-blackbox-image
+  - task: build-image
     file: loggregator-ci/tasks/build-docker-image/task.yml
     input_mapping:
       source-repo: loggregator-tools
-    output_mapping:
-      build-image: build-blackbox-image
     params:
       BASE_PACKAGE: code.cloudfoundry.org/loggregator-tools
       SUB_PACKAGE: log-cache-blackbox
       IMAGE_NAME: log-cache-blackbox
   - put: log-cache-blackbox-image
     params:
-      build: build-blackbox-image/build
-      tag: build-blackbox-image/tag
+      build: build-image/build
+      tag: build-image/tag
+      tag_as_latest: true
+      cache: true
+      cache_tag: latest
+
+- name: emitter
+  plan:
+  - aggregate:
+    - get: emitter-image-docker-build-context
+      trigger: true
+    - get: loggregator-tools
+      trigger: true
+    - get: loggregator-ci
+  - task: build-image
+    file: loggregator-ci/tasks/build-docker-image/task.yml
+    input_mapping:
+      source-repo: loggregator-tools
+    params:
+      BASE_PACKAGE: code.cloudfoundry.org/loggregator-tools
+      SUB_PACKAGE: emitter
+      IMAGE_NAME: emitter
+  - put: emitter-image
+    params:
+      build: build-image/build
+      tag: build-image/tag
       tag_as_latest: true
       cache: true
       cache_tag: latest
