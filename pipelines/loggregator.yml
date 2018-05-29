@@ -382,30 +382,33 @@ jobs:
     - task: build-agent-image
       file: loggregator-ci/tasks/build-go-docker-image/task.yml
       input_mapping:
+        context-repo: loggregator-ci
         source-repo: loggregator-agent
       output_mapping:
         build-image: build-agent-image
       params:
+        CONTEXT_PATH: docker-images/agent
         BASE_PACKAGE: code.cloudfoundry.org/loggregator-agent
-        IMAGE_NAME: agent
     - task: build-router-image
       file: loggregator-ci/tasks/build-go-docker-image/task.yml
       input_mapping:
+        context-repo: loggregator-ci
         source-repo: loggregator-src
       output_mapping:
         build-image: build-router-image
       params:
+        CONTEXT_PATH: docker-images/router
         BASE_PACKAGE: code.cloudfoundry.org/loggregator
-        IMAGE_NAME: router
     - task: build-rlp-image
       file: loggregator-ci/tasks/build-go-docker-image/task.yml
       input_mapping:
+        context-repo: loggregator-ci
         source-repo: loggregator-src
       output_mapping:
         build-image: build-rlp-image
       params:
+        CONTEXT_PATH: docker-images/rlp
         BASE_PACKAGE: code.cloudfoundry.org/loggregator
-        IMAGE_NAME: rlp
   - aggregate:
     - put: agent-image
       params:

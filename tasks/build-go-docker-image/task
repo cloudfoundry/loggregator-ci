@@ -2,27 +2,34 @@
 set -ex
 
 if [ -z "$BASE_PACKAGE" ]; then
-    echo BASE_PACKAGE was not set
-    exit 1
+  echo BASE_PACKAGE was not set
+  exit 1
 fi
 
-if [ -z "$IMAGE_NAME" ]; then
-    echo IMAGE_NAME was not set
-    exit 1
+if [ -z "$CONTEXT_PATH" ]; then
+  echo CONTEXT_PATH was not set
+  exit 1
 fi
 
+# record ci root for later use
 ciroot="$PWD"
+
+# compute sha for tagging the docker image
 sha="$(cd source-repo && git rev-parse @)"
 
+# create a go workspace and copy over all the source code
 workspace_code_path=workspace/src/$BASE_PACKAGE
 mkdir -p "$workspace_code_path"
 cp -r source-repo/. "$workspace_code_path/"
+
+# download all the dependencies
 export GOPATH="$PWD/workspace"
 go get -d -v $BASE_PACKAGE/$SUB_PACKAGE/...
 
-pushd "loggregator-ci/docker-images/$IMAGE_NAME" > /dev/null
-    mkdir -p "$ciroot/build-image/build"
-    cp -r "$GOPATH/." "$ciroot/build-image/build/"
-    cp Dockerfile "$ciroot/build-image/build/"
-    echo "$sha" > "$ciroot/build-image/tag"
+# copy over build context and tag
+pushd "context-repo/$CONTEXT_PATH" > /dev/null
+  mkdir -p "$ciroot/build-image/build"
+  cp -r "$GOPATH/." "$ciroot/build-image/build/"
+  cp Dockerfile "$ciroot/build-image/build/"
+  echo "$sha" > "$ciroot/build-image/tag"
 popd > /dev/null

@@ -214,11 +214,12 @@ jobs:
   - task: build-image
     file: loggregator-ci/tasks/build-go-docker-image/task.yml
     input_mapping:
+      context-repo: log-cache-blackbox-image-docker-build-context
       source-repo: loggregator-tools
     params:
+      CONTEXT_PATH: docker-images/log-cache-blackbox
       BASE_PACKAGE: code.cloudfoundry.org/loggregator-tools
       SUB_PACKAGE: log-cache-blackbox
-      IMAGE_NAME: log-cache-blackbox
   - put: log-cache-blackbox-image
     params:
       build: build-image/build
@@ -238,11 +239,12 @@ jobs:
   - task: build-image
     file: loggregator-ci/tasks/build-go-docker-image/task.yml
     input_mapping:
+      context-repo: emitter-image-docker-build-context
       source-repo: loggregator-tools
     params:
+      CONTEXT_PATH: docker-images/emitter
       BASE_PACKAGE: code.cloudfoundry.org/loggregator-tools
       SUB_PACKAGE: emitter
-      IMAGE_NAME: emitter
   - put: emitter-image
     params:
       build: build-image/build
@@ -262,11 +264,12 @@ jobs:
   - task: build-image
     file: loggregator-ci/tasks/build-go-docker-image/task.yml
     input_mapping:
+      context-repo: logspinner-image-docker-build-context
       source-repo: loggregator-tools
     params:
+      CONTEXT_PATH: docker-images/logspinner
       BASE_PACKAGE: code.cloudfoundry.org/loggregator-tools
       SUB_PACKAGE: logspinner
-      IMAGE_NAME: logspinner
   - put: logspinner-image
     params:
       build: build-image/build
@@ -286,11 +289,12 @@ jobs:
   - task: build-image
     file: loggregator-ci/tasks/build-go-docker-image/task.yml
     input_mapping:
+      context-repo: log-cache-emitter-image-docker-build-context
       source-repo: loggregator-tools
     params:
+      CONTEXT_PATH: docker-images/log-cache-emitter
       BASE_PACKAGE: code.cloudfoundry.org/loggregator-tools
       SUB_PACKAGE: log-cache-emitter
-      IMAGE_NAME: log-cache-emitter
   - put: log-cache-emitter-image
     params:
       build: build-image/build
