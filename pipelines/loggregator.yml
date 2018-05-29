@@ -380,7 +380,7 @@ jobs:
       passed: ["loggregator-agent-tests"]
   - aggregate:
     - task: build-agent-image
-      file: loggregator-ci/tasks/build-docker-image/task.yml
+      file: loggregator-ci/tasks/build-go-docker-image/task.yml
       input_mapping:
         source-repo: loggregator-agent
       output_mapping:
@@ -389,7 +389,7 @@ jobs:
         BASE_PACKAGE: code.cloudfoundry.org/loggregator-agent
         IMAGE_NAME: agent
     - task: build-router-image
-      file: loggregator-ci/tasks/build-docker-image/task.yml
+      file: loggregator-ci/tasks/build-go-docker-image/task.yml
       input_mapping:
         source-repo: loggregator-src
       output_mapping:
@@ -398,7 +398,7 @@ jobs:
         BASE_PACKAGE: code.cloudfoundry.org/loggregator
         IMAGE_NAME: router
     - task: build-rlp-image
-      file: loggregator-ci/tasks/build-docker-image/task.yml
+      file: loggregator-ci/tasks/build-go-docker-image/task.yml
       input_mapping:
         source-repo: loggregator-src
       output_mapping:

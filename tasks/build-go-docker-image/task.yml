@@ -21,4 +21,4 @@ params:
   #   and the build_bin.sh
   IMAGE_NAME:
 run:
-  path: loggregator-ci/tasks/build-docker-image/task
+  path: loggregator-ci/tasks/build-go-docker-image/task

@@ -212,7 +212,7 @@ jobs:
       trigger: true
     - get: loggregator-ci
   - task: build-image
-    file: loggregator-ci/tasks/build-docker-image/task.yml
+    file: loggregator-ci/tasks/build-go-docker-image/task.yml
     input_mapping:
       source-repo: loggregator-tools
     params:
@@ -236,7 +236,7 @@ jobs:
       trigger: true
     - get: loggregator-ci
   - task: build-image
-    file: loggregator-ci/tasks/build-docker-image/task.yml
+    file: loggregator-ci/tasks/build-go-docker-image/task.yml
     input_mapping:
       source-repo: loggregator-tools
     params:
@@ -260,7 +260,7 @@ jobs:
       trigger: true
     - get: loggregator-ci
   - task: build-image
-    file: loggregator-ci/tasks/build-docker-image/task.yml
+    file: loggregator-ci/tasks/build-go-docker-image/task.yml
     input_mapping:
       source-repo: loggregator-tools
     params:
@@ -284,7 +284,7 @@ jobs:
       trigger: true
     - get: loggregator-ci
   - task: build-image
-    file: loggregator-ci/tasks/build-docker-image/task.yml
+    file: loggregator-ci/tasks/build-go-docker-image/task.yml
     input_mapping:
       source-repo: loggregator-tools
     params:

@@ -709,7 +709,7 @@ jobs:
       passed: ["loggregator-agent-tests"]
   - aggregate:
     - task: build-agent-image
-      file: loggregator-ci/tasks/build-docker-image/task.yml
+      file: loggregator-ci/tasks/build-go-docker-image/task.yml
       input_mapping:
         source-repo: loggregator-agent
       output_mapping:
@@ -718,7 +718,7 @@ jobs:
         BASE_PACKAGE: code.cloudfoundry.org/loggregator-agent
         IMAGE_NAME: agent
     - task: build-router-image
-      file: loggregator-ci/tasks/build-docker-image/task.yml
+      file: loggregator-ci/tasks/build-go-docker-image/task.yml
       input_mapping:
         source-repo: loggregator-src
       output_mapping:
@@ -727,7 +727,7 @@ jobs:
         BASE_PACKAGE: code.cloudfoundry.org/loggregator
         IMAGE_NAME: router
     - task: build-rlp-image
-      file: loggregator-ci/tasks/build-docker-image/task.yml
+      file: loggregator-ci/tasks/build-go-docker-image/task.yml
       input_mapping:
         source-repo: loggregator-src
       output_mapping:
@@ -1168,7 +1168,7 @@ jobs:
       passed: ["log-cache-tests"]
   - aggregate:
     - task: build-log-cache-image
-      file: loggregator-ci/tasks/build-docker-image/task.yml
+      file: loggregator-ci/tasks/build-go-docker-image/task.yml
       input_mapping:
         source-repo: log-cache
       output_mapping:
@@ -1177,7 +1177,7 @@ jobs:
         BASE_PACKAGE: code.cloudfoundry.org/log-cache
         IMAGE_NAME: log-cache
     - task: build-nozzle-image
-      file: loggregator-ci/tasks/build-docker-image/task.yml
+      file: loggregator-ci/tasks/build-go-docker-image/task.yml
       input_mapping:
         source-repo: log-cache
       output_mapping:
@@ -1186,7 +1186,7 @@ jobs:
         BASE_PACKAGE: code.cloudfoundry.org/log-cache
         IMAGE_NAME: log-cache-nozzle
     - task: build-gateway-image
-      file: loggregator-ci/tasks/build-docker-image/task.yml
+      file: loggregator-ci/tasks/build-go-docker-image/task.yml
       input_mapping:
         source-repo: log-cache
       output_mapping:
@@ -1195,7 +1195,7 @@ jobs:
         BASE_PACKAGE: code.cloudfoundry.org/log-cache
         IMAGE_NAME: log-cache-gateway
     - task: build-scheduler-image
-      file: loggregator-ci/tasks/build-docker-image/task.yml
+      file: loggregator-ci/tasks/build-go-docker-image/task.yml
       input_mapping:
         source-repo: log-cache
       output_mapping:
