@@ -32,7 +32,7 @@ resources:
     paths:
     - dockerfiles/cf-deployment-concourse-tasks
 
-- name: base-image-dockerfile
+- name: base-image-docker-build-context
   type: git
   source:
     uri: https://github.com/cloudfoundry/loggregator-ci
@@ -53,7 +53,7 @@ resources:
     uri: https://github.com/cloudfoundry/loggregator-ci
     branch: master
 
-- name: bosh10-image-dockerfile
+- name: bosh10-image-docker-build-context
   type: git
   source:
     uri: https://github.com/cloudfoundry/loggregator-ci
@@ -68,7 +68,7 @@ resources:
     username: {{docker-hub-username}}
     password: {{docker-hub-password}}
 
-- name: blackbox-image-dockerfile
+- name: blackbox-image-docker-build-context
   type: git
   source:
     uri: https://github.com/cloudfoundry/loggregator-ci
@@ -82,14 +82,6 @@ resources:
     repository: loggregator/blackbox
     username: {{docker-hub-username}}
     password: {{docker-hub-password}}
-
-- name: log-cache-blackbox-image-dockerfile
-  type: git
-  source:
-    uri: https://github.com/cloudfoundry/loggregator-ci
-    branch: master
-    paths:
-    - docker-images/log-cache-blackbox
 
 - name: log-cache-blackbox-image
   type: docker-image
@@ -111,42 +103,21 @@ jobs:
   - aggregate:
     - get: golang-1.10-tarball
       trigger: true
-    - get: image-dockerfile
-      resource: base-image-dockerfile
+    - get: base-image-docker-build-context
       trigger: true
-  - task: prepare-image-build
-    config:
-      image_resource:
-        type: docker-image
-        source:
-          repository: golang
-          tag: latest
-      platform: linux
-      inputs:
-      - name: image-dockerfile
-      outputs:
-      - name: build-image
-      params:
-        IMAGE_NAME: base
-      run:
-        path: bash
-        args:
-        - -c
-        - {{prepare-docker-image}}
   - put: base-image
     params:
-      build: build-image/build
-      tag: build-image/tag
+      build: base-image-docker-build-context/docker-images/base
       tag_as_latest: true
       cache_tag: latest
 
 - name: bosh10
   plan:
-  - get: bosh10-image-dockerfile
+  - get: bosh10-image-docker-build-context
     trigger: true
   - put: bosh10-image
     params:
-      build: bosh10-image-dockerfile/docker-images/bosh10
+      build: bosh10-image-docker-build-context/docker-images/bosh10
       tag_as_latest: true
       cache_tag: latest
 
@@ -162,19 +133,17 @@ jobs:
 
 - name: blackbox
   plan:
-  - get: blackbox-image-dockerfile
+  - get: blackbox-image-docker-build-context
     trigger: true
   - put: blackbox-image
     params:
-      build: blackbox-image-dockerfile/docker-images/blackbox
+      build: blackbox-image-docker-build-context/docker-images/blackbox
       tag_as_latest: true
       cache_tag: latest
 
 - name: log-cache-blackbox
   plan:
   - aggregate:
-    - get: log-cache-blackbox-image-dockerfile
-      trigger: true
     - get: loggregator-tools
       trigger: true
     - get: loggregator-ci
