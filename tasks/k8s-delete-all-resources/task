@@ -19,7 +19,7 @@ pushd deployments-loggregator/gcp/playground
         tr 'A-Z' 'a-z' | \
         sort -u | \
         while read kind; do
-          kubectl delete "$kind" --all --cascade --now
+          kubectl --namespace "$ns" delete "$kind" --all --cascade --now
       done
   done
 popd
