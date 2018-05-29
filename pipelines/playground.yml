@@ -328,7 +328,9 @@ jobs:
           pushd updated-deployments-loggregator/gcp/playground
             eval "$(ssh-agent)"
             source .envrc
+            set +e
             source k8s_login
+            set -e
           popd
           cp updated-deployments-loggregator/gcp/playground/k8s-certs.yml loggregator-k8s-deployment/secrets/
           pushd loggregator-k8s-deployment

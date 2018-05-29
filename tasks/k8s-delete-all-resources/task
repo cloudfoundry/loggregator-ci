@@ -5,8 +5,11 @@ set -ex
 eval "$(ssh-agent)"
 
 pushd deployments-loggregator/gcp/playground
+  set +x
   source .envrc
+  set +e
   source k8s_login
+  set -ex
 
   kubectl get namespaces --output json | \
     jq --raw-output .items[].metadata.name | \

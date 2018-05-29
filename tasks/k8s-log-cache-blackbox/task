@@ -19,7 +19,9 @@ eval "$(ssh-agent)"
 
 pushd deployments-loggregator/gcp/playground
     source .envrc
+    set +e
     source k8s_login
+    set -e
     echo "
 apiVersion: v1
 kind: Namespace
