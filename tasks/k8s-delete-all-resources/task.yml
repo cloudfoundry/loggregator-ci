@@ -11,6 +11,4 @@ inputs:
 - name: deployments-loggregator # - Needed to have kubectl target env
 
 run:
-  path: loggregator-ci/tasks/k8s-delete-all-resources
-
-params:
+  path: loggregator-ci/tasks/k8s-delete-all-resources/task
