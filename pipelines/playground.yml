@@ -243,7 +243,7 @@ jobs:
       BBL_STATE_DIR: gcp/playground
       SYSTEM_DOMAIN: playground.loggr.cf-app.com
       USE_VARS_STORE: false
-      MANIFEST_FILE: cfcr.yml
+      MANIFEST_FILE: manifests/cfcr.yml
       OPS_FILES: |
         manifests/ops-files/allow-privileged-containers.yml
         manifests/ops-files/iaas/gcp/cloud-provider.yml
