@@ -142,33 +142,33 @@ jobs:
 
 - name: bosh10
   plan:
-    - get: bosh10-image-dockerfile
-      trigger: true
-    - put: bosh10-image
-      params:
-        build: bosh10-image-dockerfile/docker-images/bosh10
-        tag_as_latest: true
-        cache_tag: latest
+  - get: bosh10-image-dockerfile
+    trigger: true
+  - put: bosh10-image
+    params:
+      build: bosh10-image-dockerfile/docker-images/bosh10
+      tag_as_latest: true
+      cache_tag: latest
 
 - name: cf-deployment-concourse-tasks
   plan:
-    - get: cf-deployment-concourse-tasks
-      trigger: true
-    - put: cf-deployment-concourse-tasks-image
-      params:
-        build: cf-deployment-concourse-tasks/dockerfiles/cf-deployment-concourse-tasks
-        tag_as_latest: true
-        cache_tag: latest
+  - get: cf-deployment-concourse-tasks
+    trigger: true
+  - put: cf-deployment-concourse-tasks-image
+    params:
+      build: cf-deployment-concourse-tasks/dockerfiles/cf-deployment-concourse-tasks
+      tag_as_latest: true
+      cache_tag: latest
 
 - name: blackbox
   plan:
-    - get: blackbox-image-dockerfile
-      trigger: true
-    - put: blackbox-image
-      params:
-        build: blackbox-image-dockerfile/docker-images/blackbox
-        tag_as_latest: true
-        cache_tag: latest
+  - get: blackbox-image-dockerfile
+    trigger: true
+  - put: blackbox-image
+    params:
+      build: blackbox-image-dockerfile/docker-images/blackbox
+      tag_as_latest: true
+      cache_tag: latest
 
 - name: log-cache-blackbox
   plan:
