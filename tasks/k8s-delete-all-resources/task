@@ -1,0 +1,22 @@
+#!/bin/bash
+
+set -ex
+
+eval "$(ssh-agent)"
+
+pushd deployments-loggregator/gcp/playground
+  source .envrc
+  source k8s_login
+
+  kubectl get namespaces --output json | \
+    jq --raw-output .items[].metadata.name | \
+    while read ns; do
+      kubectl --namespace "$ns" get all --output json | \
+        jq --raw-output .items[].kind | \
+        tr 'A-Z' 'a-z' | \
+        sort -u | \
+        while read kind; do
+          kubectl delete "$kind" --all --cascade --now
+      done
+  done
+popd

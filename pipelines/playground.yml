@@ -23,10 +23,10 @@ resources:
   source:
     uri: https://github.com/cloudfoundry/bosh-deployment
 
-- name: cfcr-compiled-deployment
+- name: kubo-deployment
   type: git
   source:
-    uri: https://github.com/starkandwayne/cfcr-compiled-deployment
+    uri: https://github.com/cloudfoundry-incubator/kubo-deployment
     branch: master
 
 - name: loggregator-k8s-deployment
@@ -163,7 +163,7 @@ jobs:
   - aggregate:
     - get: weekday-before-work
       trigger: true
-    - get: cfcr-compiled-deployment
+    - get: kubo-deployment
       trigger: true
     - get: loggregator-k8s-deployment
       trigger: true
@@ -172,15 +172,12 @@ jobs:
       resource: deployments-loggregator
     - get: vars-store
       resource: deployments-loggregator
-    - get: ops-files
-      resource: cfcr-compiled-deployment
     - get: vars-files
       resource: deployments-loggregator
     - get: deployments-loggregator
   - task: upload-stemcell
     params:
       BBL_STATE_DIR: gcp/playground
-      STEMCELL_VERSION: "3541.10"
     config:
       platform: linux
       image_resource:
@@ -188,6 +185,7 @@ jobs:
         source:
           repository: relintdockerhubpushbot/cf-deployment-concourse-tasks
       inputs:
+      - name: kubo-deployment
       - name: bbl-state
       run:
         path: /bin/bash
@@ -195,14 +193,25 @@ jobs:
         - "-c"
         - |
           #!/bin/bash
-          set -e
-
-          pushd bbl-state/${BBL_STATE_DIR}
-            eval "$(bbl print-env)"
-          popd
           set -ex
+
+          # get stemcell version
+          pushd kubo-deployment > /dev/null
+            version="$(
+              bosh int manifests/cfcr.yml \
+                --path /stemcells/alias=trusty/version
+            )"
+          popd > /dev/null
+
+          # set bosh env vars
+          set +x
+          pushd "bbl-state/$BBL_STATE_DIR" > /dev/null
+            eval "$(bbl print-env)"
+          popd > /dev/null
+          set -x
+
           bosh upload-stemcell \
-            https://bosh.io/d/stemcells/bosh-google-kvm-ubuntu-trusty-go_agent?v=${STEMCELL_VERSION}
+            "https://bosh.io/d/stemcells/bosh-google-kvm-ubuntu-trusty-go_agent?v=$version"
   - task: upload-vars-to-credhub
     config:
       platform: linux
@@ -225,47 +234,21 @@ jobs:
           source .envrc
           credhub import --file k8s-cloud-provider-credhub-vars.yml
           killall ssh-agent
-  - task: custom-ops-files
-    config:
-      platform: linux
-      image_resource:
-        type: docker-image
-        source:
-          repository: loggregator/base
-      inputs:
-      - name: ops-files
-      outputs:
-      - name: custom-ops-files
-      run:
-        path: /bin/bash
-        args:
-        - "-c"
-        - |
-          #!/bin/bash
-          set -e
-
-          cp -R ops-files/ops-files/. custom-ops-files/
-          echo '
-          - type: replace
-            path: /stemcells/alias=trusty/version
-            value: "3541.10"
-          ' > custom-ops-files/fix-stemcell-version.yml
   - task: cfcr-deploy
     file: cf-deployment-concourse-tasks/bosh-deploy/task.yml
     input_mapping:
-      cf-deployment: cfcr-compiled-deployment
-      ops-files: custom-ops-files
+      cf-deployment: kubo-deployment
+      ops-files: kubo-deployment
     params:
       BBL_STATE_DIR: gcp/playground
       SYSTEM_DOMAIN: playground.loggr.cf-app.com
       USE_VARS_STORE: false
       MANIFEST_FILE: cfcr.yml
       OPS_FILES: |
-        fix-stemcell-version.yml
-        allow-privileged-containers.yml
-        iaas/gcp/cloud-provider.yml
-        iaas/gcp/add-service-key-master.yml
-        iaas/gcp/add-service-key-worker.yml
+        manifests/ops-files/allow-privileged-containers.yml
+        manifests/ops-files/iaas/gcp/cloud-provider.yml
+        manifests/ops-files/iaas/gcp/add-service-key-master.yml
+        manifests/ops-files/iaas/gcp/add-service-key-worker.yml
   - task: run-apply-addons-errand
     file: cf-deployment-concourse-tasks/run-errand/task.yml
     params:
@@ -345,7 +328,7 @@ jobs:
           pushd updated-deployments-loggregator/gcp/playground
             eval "$(ssh-agent)"
             source .envrc
-            ./k8s_login
+            source k8s_login
           popd
           cp updated-deployments-loggregator/gcp/playground/k8s-certs.yml loggregator-k8s-deployment/secrets/
           pushd loggregator-k8s-deployment
@@ -520,15 +503,18 @@ jobs:
   - get: weekday-after-work
     trigger: true
   - aggregate:
-    - get: bbl-state
-      resource: deployments-loggregator
+    - get: deployments-loggregator
     - get: cf-deployment-concourse-tasks
-  - aggregate:
-    - task: cfcr-deployment-destroy
-      file: cf-deployment-concourse-tasks/bosh-delete-deployment/task.yml
-      params:
-        BBL_STATE_DIR: gcp/playground
-        DEPLOYMENT_NAME: cfcr
+    - get: loggregator-ci
+  - task: delete-k8s-resources
+    file: loggregator-ci/tasks/k8s-delete-all-resources/task.yml
+  - task: cfcr-deployment-destroy
+    file: cf-deployment-concourse-tasks/bosh-delete-deployment/task.yml
+    input_mapping:
+      bbl-state: deployments-loggregator
+    params:
+      BBL_STATE_DIR: gcp/playground
+      DEPLOYMENT_NAME: cfcr
 
 - name: cf-destroy
   serial_groups: ["deployment"]
