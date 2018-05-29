@@ -29,6 +29,11 @@ resources:
     uri: https://github.com/cloudfoundry-incubator/kubo-deployment
     branch: master
 
+- name: kubo-release-bosh-io
+  type: bosh-io-release
+  source:
+    repository: cloudfoundry-incubator/kubo-release
+
 - name: loggregator-k8s-deployment
   type: git
   source:
@@ -175,9 +180,38 @@ jobs:
     - get: vars-files
       resource: deployments-loggregator
     - get: deployments-loggregator
+    - get: kubo-release-bosh-io
+      trigger: true
+  - task: upload-release
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source:
+          repository: relintdockerhubpushbot/cf-deployment-concourse-tasks
+      inputs:
+      - name: kubo-release-bosh-io
+      - name: bbl-state
+      params:
+        BBL_STATE_DIR: gcp/playground
+      run:
+        path: /bin/bash
+        args:
+        - "-c"
+        - |
+          #!/bin/bash
+          set -ex
+
+          # set bosh env vars
+          set +x
+          pushd "bbl-state/$BBL_STATE_DIR" > /dev/null
+            eval "$(bbl print-env)"
+          popd > /dev/null
+          set -x
+
+          bosh upload-release kubo-release-bosh-io/release.tgz
+
   - task: upload-stemcell
-    params:
-      BBL_STATE_DIR: gcp/playground
     config:
       platform: linux
       image_resource:
@@ -187,6 +221,8 @@ jobs:
       inputs:
       - name: kubo-deployment
       - name: bbl-state
+      params:
+        BBL_STATE_DIR: gcp/playground
       run:
         path: /bin/bash
         args:
