@@ -22,13 +22,7 @@ pushd deployments-loggregator/gcp/playground
   kubectl get namespaces --output json | \
     jq --raw-output .items[].metadata.name | \
     while read ns; do
-      kubectl --namespace "$ns" get all --output json | \
-        jq --raw-output .items[].kind | \
-        tr 'A-Z' 'a-z' | \
-        sort -u | \
-        while read kind; do
-          kubectl --namespace "$ns" delete "$kind" --all --cascade --now
-      done
+      kubectl --namespace "$ns" delete all --all --cascade --now
   done
 popd
 
