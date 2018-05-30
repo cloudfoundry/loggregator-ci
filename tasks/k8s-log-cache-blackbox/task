@@ -50,7 +50,7 @@ spec:
         image: loggregator/log-cache-blackbox
         env:
         - name: LOG_CACHE_URL
-          value: http://log-cache-reads.loggregator.svc.cluster.local:8081
+          value: http://log-cache-reads.oratos.svc.cluster.local:8081
         - name: SOURCE_ID
           value: "blackbox-tests/deployment/log-cache-blackbox"
         - name: PORT
@@ -75,9 +75,9 @@ spec:
 " | kubectl apply -f -
 
     # Setup portforwarding to each log-cache's health port
-    kubectl -n loggregator port-forward log-cache-0 6060:6060 > /dev/null &
-    kubectl -n loggregator port-forward log-cache-1 6061:6060 > /dev/null &
-    kubectl -n loggregator port-forward log-cache-2 6062:6060 > /dev/null &
+    kubectl --namespace oratos port-forward log-cache-0 6060:6060 > /dev/null &
+    kubectl --namespace oratos port-forward log-cache-1 6061:6060 > /dev/null &
+    kubectl --namespace oratos port-forward log-cache-2 6062:6060 > /dev/null &
     sleep 3
 popd
 

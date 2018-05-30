@@ -113,7 +113,7 @@ spec:
 
     set +x
     certs="$(
-        kubectl get secret loggregator-tls-certs -n loggregator --output=json | \
+        kubectl get secret loggregator-tls-certs --namespace oratos --output=json | \
             jq .data
     )"
     echo "$certs" | jq --raw-output '.["rlp.crt"]' | base64 -d > /tmp/rlp.crt
@@ -123,7 +123,7 @@ spec:
     set -x
 
     target="$(
-        kubectl -n loggregator get service loggregator-rlp --output=json | \
+        kubectl --namespace oratos get service loggregator-rlp --output=json | \
             jq --raw-output .status.loadBalancer.ingress[0].ip
     ):8082"
 
