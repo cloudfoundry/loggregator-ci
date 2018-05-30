@@ -4,7 +4,6 @@ set -ex
 
 function teardown {
   set +e
-  killall kubectl
   killall ssh
   killall ssh-agent
 }
