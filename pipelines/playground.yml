@@ -27,7 +27,7 @@ resources:
   type: git
   source:
     uri: https://github.com/cloudfoundry-incubator/kubo-deployment
-    branch: master
+    branch: v0.16.0
 
 - name: kubo-release-bosh-io
   type: bosh-io-release
