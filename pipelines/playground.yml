@@ -310,10 +310,15 @@ jobs:
           #!/bin/bash
           set -e
 
+          apt-get update --yes
+          apt-get install --yes git
+          git config --global user.email "cf-loggregator@pivotal.io"
+          git config --global user.name "Loggregator CI"
+
           cp -R deployments-loggregator/. updated-deployments-loggregator/
-          if [ ! -f updated-deployments-loggregator/gcp/playground/k8s-certs.yml ]; then
-            generate-certs.sh output
-            tls_certs_header='
+
+          generate-certs.sh output
+          tls_certs_header='
           apiVersion: v1
           kind: Secret
           metadata:
@@ -322,23 +327,18 @@ jobs:
           type: Opaque
           data:'
 
-            echo "$tls_certs_header" > k8s-certs.yml
-            ls output |
-                while read line
-                    do echo "  $line: $(cat output/$line | base64 -w 0)"
-                done >> k8s-certs.yml
-            mv k8s-certs.yml updated-deployments-loggregator/gcp/playground/
-            pushd updated-deployments-loggregator
-              apt-get update --yes
-              apt-get install --yes git
-              git config --global user.email "cf-loggregator@pivotal.io"
-              git config --global user.name "Loggregator CI"
-              git add gcp/playground/k8s-certs.yml
-              git commit -m "Add loggregator certs for kubernetes
+          echo "$tls_certs_header" > k8s-certs.yml
+          ls output |
+              while read line
+                  do echo "  $line: $(cat output/$line | base64 -w 0)"
+              done >> k8s-certs.yml
+          mv k8s-certs.yml updated-deployments-loggregator/gcp/playground/
+          pushd updated-deployments-loggregator
+            git add gcp/playground/k8s-certs.yml
+            git commit -m "Add loggregator certs for kubernetes
 
           [ci-skip]"
-            popd
-          fi
+          popd
   - put: deployments-loggregator
     params:
       repository: updated-deployments-loggregator
