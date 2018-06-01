@@ -6,7 +6,7 @@ require 'envelope_pb'
 
 module Fluent
   class LoggregatorOutput < Output
-    Fluent::Plugin.register_output('loggregator', self)
+    Plugin.register_output('loggregator', self)
 
     def load_certs(conf)
       files = [
@@ -25,7 +25,7 @@ module Fluent
 
     def emit(tag, es, chain)
       chain.next
-      es.each {|time,record|
+      es.each {|time, record|
         batch = Loggregator::V2::EnvelopeBatch.new
         env = Loggregator::V2::Envelope.new
         log = Loggregator::V2::Log.new
@@ -36,7 +36,7 @@ module Fluent
         end
 
         env.log = log
-        env.timestamp = (Time.now.to_f * (10 ** 9)).to_i
+        env.timestamp = (time.to_f * (10 ** 9)).to_i
         env.source_id = record.fetch("kubernetes", {}).fetch("owner", "")
         env.instance_id = record.fetch("kubernetes", {}).fetch("pod_id", "")
         batch.batch << env
@@ -55,11 +55,9 @@ module Fluent
       }
     end
   end
-end
 
-module Fluent
-  class SourceIDFilter < Fluent::Filter
-    Fluent::Plugin.register_filter('source_id', self)
+  class SourceIDFilter < Filter
+    Plugin.register_filter('source_id', self)
 
     def configure(conf)
       @client = KubernetesClient.new()
@@ -154,11 +152,15 @@ require 'uri'
 require 'json'
 
 class KubernetesClient
-  def initialize
+  def initialize(token: nil)
     @url = "https://kubernetes.default.svc.cluster.local"
-    token_file = "/var/run/secrets/kubernetes.io/serviceaccount/token"
     ca_file = "/var/run/secrets/kubernetes.io/serviceaccount/ca.crt"
-    @token = File.read(token_file)
+    if token
+      @token = token
+    else
+      token_file = "/var/run/secrets/kubernetes.io/serviceaccount/token"
+      @token = File.read(token_file)
+    end
 
     uri = URI.parse(@url)
     @http = Net::HTTP.new(uri.host, uri.port)
@@ -167,16 +169,25 @@ class KubernetesClient
     @http.ca_file = ca_file
   end
 
+  private
+
+  def method_missing(method_name, resource_name, namespace_name)
+    name = method_name.to_s.sub('get_', '')
+    request = make_request(namespace_name, name.to_sym, resource_name)
+    response = @http.request(request)
+    JSON.parse(response.body)
+  end
+
   def resource_url(namespace_name, resource_type, resource_name)
     {
-      Pod: "%s/api/v1/namespaces/%s/pods/%s",
-      ReplicationController: "%s/api/v1/namespaces/%s/replicationcontrollers/%s",
-      ReplicaSet: "%s/apis/apps/v1/namespaces/%s/replicasets/%s",
-      Deployment: "%s/apis/apps/v1/namespaces/%s/deployments/%s",
-      DaemonSet: "%s/apis/apps/v1/namespaces/%s/daemonsets/%s",
-      StatefulSet: "%s/apis/apps/v1/namespaces/%s/statefulsets/%s",
-      Job: "%s/apis/batch/v1/namespaces/%s/jobs/%s",
-      CronJob: "%s/apis/batch/v1beta1/namespaces/%s/cronjobs/%s",
+      pod: "%s/api/v1/namespaces/%s/pods/%s",
+      replicationcontroller: "%s/api/v1/namespaces/%s/replicationcontrollers/%s",
+      replicaset: "%s/apis/apps/v1/namespaces/%s/replicasets/%s",
+      deployment: "%s/apis/apps/v1/namespaces/%s/deployments/%s",
+      daemonset: "%s/apis/apps/v1/namespaces/%s/daemonsets/%s",
+      statefulset: "%s/apis/apps/v1/namespaces/%s/statefulsets/%s",
+      job: "%s/apis/batch/v1/namespaces/%s/jobs/%s",
+      cronjob: "%s/apis/batch/v1beta1/namespaces/%s/cronjobs/%s",
     }[resource_type] % [@url, namespace_name, resource_name]
   end
 
@@ -187,51 +198,4 @@ class KubernetesClient
     request
   end
 
-  def get_pod(resource_name, namespace_name)
-    request = make_request(namespace_name, :Pod, resource_name)
-    response = @http.request(request)
-    JSON.parse(response.body)
-  end
-
-  def get_replicationcontroller(resource_name, namespace_name)
-    request = make_request(namespace_name, :ReplicationController, resource_name)
-    response = @http.request(request)
-    JSON.parse(response.body)
-  end
-
-  def get_replicaset(resource_name, namespace_name)
-    request = make_request(namespace_name, :ReplicaSet, resource_name)
-    response = @http.request(request)
-    JSON.parse(response.body)
-  end
-
-  def get_deployment(resource_name, namespace_name)
-    request = make_request(namespace_name, :Deployment, resource_name)
-    response = @http.request(request)
-    JSON.parse(response.body)
-  end
-
-  def get_daemonset(resource_name, namespace_name)
-    request = make_request(namespace_name, :DaemonSet, resource_name)
-    response = @http.request(request)
-    JSON.parse(response.body)
-  end
-
-  def get_statefulset(resource_name, namespace_name)
-    request = make_request(namespace_name, :StatefulSet, resource_name)
-    response = @http.request(request)
-    JSON.parse(response.body)
-  end
-
-  def get_job(resource_name, namespace_name)
-    request = make_request(namespace_name, :Job, resource_name)
-    response = @http.request(request)
-    JSON.parse(response.body)
-  end
-
-  def get_cronjob(resource_name, namespace_name)
-    request = make_request(namespace_name, :CronJob, resource_name)
-    response = @http.request(request)
-    JSON.parse(response.body)
-  end
 end
