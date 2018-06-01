@@ -2116,10 +2116,10 @@ jobs:
             value: 2
           - path: /releases/name=consul/url
             type: replace
-            value: https://bosh.io/d/github.com/cloudfoundry-incubator/consul-release?v=192
+            value: https://bosh.io/d/github.com/cloudfoundry-incubator/consul-release?v=193
           - path: /releases/name=consul/sha1
             type: replace
-            value: 399894e3b4f5d4ba7ea5abe4ab89190ec2d4ad56
+            value: 3596fa1a1692d9e48d2e28789b60e0c72e984d31
           - type: replace
             path: /instance_groups/name=doppler/jobs/-
             value:
