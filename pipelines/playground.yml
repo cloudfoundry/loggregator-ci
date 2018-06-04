@@ -282,6 +282,8 @@ jobs:
         manifests/ops-files/iaas/gcp/add-service-key-worker.yml
   - task: run-apply-addons-errand
     file: cf-deployment-concourse-tasks/run-errand/task.yml
+    input_mapping:
+      bbl-state: deployments-loggregator
     params:
       DEPLOYMENT_NAME: cfcr
       ERRAND_NAME: apply-addons
