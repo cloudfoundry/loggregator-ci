@@ -267,6 +267,9 @@ jobs:
     input_mapping:
       cf-deployment: kubo-deployment
       ops-files: kubo-deployment
+      bbl-state: deployments-loggregator
+      vars-store: deployments-loggregator
+      vars-files: deployments-loggregator
     params:
       BBL_STATE_DIR: gcp/playground
       SYSTEM_DOMAIN: playground.loggr.cf-app.com
