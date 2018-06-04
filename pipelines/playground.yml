@@ -2,6 +2,7 @@ groups:
 - name: main
   jobs:
   - cfcr-deploy
+  - oratos-deploy
   - cf-deploy
   - deploy-datadog-forwarder
   - cfcr-destroy
@@ -170,8 +171,6 @@ jobs:
       trigger: true
     - get: kubo-deployment
       trigger: true
-    - get: loggregator-k8s-deployment
-      trigger: true
     - get: cf-deployment-concourse-tasks
     - get: bbl-state
       resource: deployments-loggregator
@@ -291,6 +290,19 @@ jobs:
       DEPLOYMENT_NAME: cfcr
       ERRAND_NAME: apply-addons
       BBL_STATE_DIR: gcp/playground
+
+- name: oratos-deploy
+  public: false
+  serial: true
+  plan:
+  - aggregate:
+    - get: weekday-before-work
+      trigger: true
+      passed:
+      - cfcr-deploy
+    - get: deployments-loggregator
+    - get: loggregator-k8s-deployment
+      trigger: true
   - task: prepare-certs
     config:
       platform: linux
@@ -343,7 +355,7 @@ jobs:
     params:
       repository: updated-deployments-loggregator
       rebase: true
-  - task: loggregator-deploy
+  - task: oratos-deploy
     config:
       platform: linux
       image_resource:
