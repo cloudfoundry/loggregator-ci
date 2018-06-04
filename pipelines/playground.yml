@@ -169,16 +169,10 @@ jobs:
   - aggregate:
     - get: weekday-before-work
       trigger: true
+    - get: deployments-loggregator
     - get: kubo-deployment
       trigger: true
     - get: cf-deployment-concourse-tasks
-    - get: bbl-state
-      resource: deployments-loggregator
-    - get: vars-store
-      resource: deployments-loggregator
-    - get: vars-files
-      resource: deployments-loggregator
-    - get: deployments-loggregator
     - get: kubo-release-bosh-io
       trigger: true
   - task: upload-release
@@ -190,7 +184,7 @@ jobs:
           repository: relintdockerhubpushbot/cf-deployment-concourse-tasks
       inputs:
       - name: kubo-release-bosh-io
-      - name: bbl-state
+      - name: deployments-loggregator
       params:
         BBL_STATE_DIR: gcp/playground
       run:
@@ -203,13 +197,12 @@ jobs:
 
           # set bosh env vars
           set +x
-          pushd "bbl-state/$BBL_STATE_DIR" > /dev/null
+          pushd "deployments-loggregator/$BBL_STATE_DIR" > /dev/null
             eval "$(bbl print-env)"
           popd > /dev/null
           set -x
 
           bosh upload-release kubo-release-bosh-io/release.tgz
-
   - task: upload-stemcell
     config:
       platform: linux
@@ -219,7 +212,7 @@ jobs:
           repository: relintdockerhubpushbot/cf-deployment-concourse-tasks
       inputs:
       - name: kubo-deployment
-      - name: bbl-state
+      - name: deployments-loggregator
       params:
         BBL_STATE_DIR: gcp/playground
       run:
@@ -240,7 +233,7 @@ jobs:
 
           # set bosh env vars
           set +x
-          pushd "bbl-state/$BBL_STATE_DIR" > /dev/null
+          pushd "deployments-loggregator/$BBL_STATE_DIR" > /dev/null
             eval "$(bbl print-env)"
           popd > /dev/null
           set -x
