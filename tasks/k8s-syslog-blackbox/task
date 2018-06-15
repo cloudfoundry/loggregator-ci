@@ -165,7 +165,7 @@ sleep "$WAIT" # wait for a bit to collect logs
 MSG_COUNT=$(grep -c "$MESSAGE" output.txt)
 
 if [ "$MSG_COUNT" -lt $(($CYCLES * 99 / 100)) ]; then
-    echo the reliability test did not meet our SLO
+    echo THE RELIABILITY TEST DID NOT MEET OUR SLO
     exit 123
 fi
 
