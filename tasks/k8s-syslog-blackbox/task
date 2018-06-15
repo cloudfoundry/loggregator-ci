@@ -141,7 +141,7 @@ spec:
                 --namespace oratos | \
                 jq --raw-output .status.phase
         )"
-        if [ "$logspinner_status" = "Running" && "$nozzle_status" = "Running" ]; then
+        if [[ "$logspinner_status" = "Running" && "$nozzle_status" = "Running" ]]; then
             break
         fi
         sleep 10
