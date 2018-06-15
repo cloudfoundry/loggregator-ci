@@ -39,7 +39,10 @@ module Fluent
         env.timestamp = (time.to_f * (10 ** 9)).to_i
         env.source_id = record.fetch("kubernetes", {}).fetch("owner", "")
         env.instance_id = record.fetch("kubernetes", {}).fetch("pod_id", "")
+        env.tags["pod_name"] = record.fetch("kubernetes", {}).fetch("pod_name", "")
         env.tags["namespace"] = record.fetch("kubernetes", {}).fetch("namespace_name", "")
+        env.tags["container"] = record.fetch("kubernetes", {}).fetch("container_name", "")
+        env.tags["cluster"] = record.fetch("kubernetes", {}).fetch("host", "")
         batch.batch << env
 
         begin

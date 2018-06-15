@@ -16,6 +16,9 @@ RSpec.describe 'Loggregator Fluentd' do
       env.source_id = "test_owner"
       env.instance_id = "test_pod_id"
       env.tags["namespace"] = "test_namespace"
+      env.tags["container"] = "test_container"
+      env.tags["cluster"] = "test_host"
+      env.tags["pod_name"] = "test_pod_name"
       expectedBatch.batch << env
 
       output = Fluent::LoggregatorOutput.new
@@ -30,7 +33,10 @@ RSpec.describe 'Loggregator Fluentd' do
         "kubernetes" => {
           "owner" => "test_owner",
           "pod_id" => "test_pod_id",
+          "pod_name" => "test_pod_name",
           "namespace_name" => "test_namespace",
+          "container_name" => "test_container",
+          "host" => "test_host",
         },
       }]], "")
     end
