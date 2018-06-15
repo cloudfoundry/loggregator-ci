@@ -89,8 +89,6 @@ kind: Deployment
 metadata:
   name: syslog-nozzle
   namespace: oratos
-  labels:
-    run: syslog-nozzle
 spec:
   replicas: 1
   template:
@@ -125,7 +123,7 @@ spec:
             jq --raw-output .items[0].metadata.name
     )"
     nozzle_pod_name="$(
-        kubectl get pod -l run=syslog-nozzle \
+        kubectl get pod -l app=syslog-nozzle \
             --output=json \
             --namespace oratos | \
             jq --raw-output .items[0].metadata.name
