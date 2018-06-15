@@ -35,4 +35,4 @@ params:
   # - Wait sleeps for N seconds waiting for messages to show up.
   WAIT: 300
 run:
-  path: loggregator-ci/tasks/k8s-blackbox/task
+  path: loggregator-ci/tasks/k8s-syslog-blackbox/task
