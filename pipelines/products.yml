@@ -11,6 +11,7 @@ groups:
   - lats
   - cfar-lats
   - cats
+  - lcats
   - loggregator-benchmarks
   - loggregator-promotion
   - loggregator-agent-promotion
@@ -69,6 +70,7 @@ groups:
   - log-cache-bump-submodule
   - cfar-lats
   - cats
+  - lcats
   - cf-deploy
   - log-cache-release-elect-promotion
   - log-cache-master-promotion
@@ -171,6 +173,12 @@ resources:
   source:
     uri: https://github.com/cloudfoundry/logging-acceptance-tests-release
     branch: master
+
+- name: log-cache-acceptance-tests-release
+  type: git
+  source:
+    branch: develop
+    uri: https://github.com/cloudfoundry/log-cache-acceptance-tests-release
 
 - name: loggregator-src
   type: git
@@ -1319,7 +1327,7 @@ jobs:
     - get: develop
       resource: log-cache-release
       trigger: true
-      passed: ["cats", "cfar-lats"]
+      passed: ["cats", "cfar-lats", "lcats"]
     - get: log-cache-release-elect
   - put: log-cache-release-elect
     params:
@@ -1369,6 +1377,50 @@ jobs:
   - put: log-cache-release-master
     params:
       repository: merged-dest
+
+- name: lcats
+  serial: true
+  plan:
+  - aggregate:
+    - get: log-cache-release
+      passed:
+      - cf-deploy
+      trigger: true
+    - get: deployments-loggregator
+    - get: loggregator-ci
+    - get: log-cache-acceptance-tests-release
+      trigger: true
+  - task: upload-lcats
+    file: loggregator-ci/tasks/upload-release/task.yml
+    params:
+      BBL_STATE_DIR: gcp/coconut-bbl
+    input_mapping:
+      bbl-state: deployments-loggregator
+      bosh-release-dir: log-cache-acceptance-tests-release
+  - task: lcats-deploy
+    file: loggregator-ci/tasks/bosh-deploy/task.yml
+    params:
+      BBL_STATE_DIR: gcp/coconut-bbl
+      DEPLOYMENT_NAME: lcats
+      MANIFEST_FILE: manifests/manifest.yml
+      VARS_FILES: gcp/coconut-bbl/deployment-vars.yml
+      VARS_STORE_FILE: gcp/coconut-bbl/lcats-vars.yml
+    input_mapping:
+      bbl-state: deployments-loggregator
+      bosh-release: log-cache-acceptance-tests-release
+      ops-files: deployments-loggregator
+      vars-files: deployments-loggregator
+      vars-store: deployments-loggregator
+  - task: run-lcats
+    file: loggregator-ci/tasks/run-errand/task.yml
+    params:
+      BBL_STATE_DIR: gcp/coconut-bbl
+      DEPLOYMENT_NAME: lcats
+      ERRAND: lcats
+      KEEP_ALIVE: true
+    input_mapping:
+      bbl-state: deployments-loggregator
+
 
 ###############################################################################
 # CF SYSLOG DRAIN
@@ -2132,6 +2184,16 @@ jobs:
           - type: replace
             path: /instance_groups/name=doppler/vm_type
             value: small-highmem
+          - type: replace
+            path: /instance_groups/name=doppler/jobs/name=log-cache-group-reader/provides?
+            value:
+                log-cache-group-reader: {shared: true}
+          - type: replace
+            path: /update/max_in_flight
+            value: 10
+          - type: replace
+            path: /update/canaries
+            value: 5
           EOT
   - task: upload-stemcell
     file: cf-deployment-concourse-tasks/bosh-upload-stemcell-from-cf-deployment/task.yml
@@ -2149,9 +2211,9 @@ jobs:
         use-compiled-releases.yml
         add-persistent-isolation-segment-router.yml
         add-persistent-isolation-segment-diego-cell.yml
+        add-log-cache.yml
         on-the-fly.yml
         windows-cell.yml
-        add-log-cache.yml
         use-bosh-dns.yml
         use-bosh-dns-for-containers.yml
   - put: deployments-loggregator
