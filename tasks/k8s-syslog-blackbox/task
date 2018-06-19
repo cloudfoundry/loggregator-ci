@@ -16,8 +16,8 @@ function report_to_datadog {
   -d "{ \"series\" :
     [
       {
-        \"metric\":\"smoke_test.loggregator.k8s_namespace_logs_received\",
-        \"points\":[[${currenttime}, ${MSG_COUNT}]],
+        \"metric\":\"smoke_test.loggregator.k8s_namespace_delay\",
+        \"points\":[[${currenttime}, ${DELAY}]],
         \"type\":\"gauge\",
         \"host\":\"${SYSTEM_DOMAIN}\",
         \"tags\":[
@@ -26,13 +26,21 @@ function report_to_datadog {
         ]
       },
       {
+        \"metric\":\"smoke_test.loggregator.k8s_namespace_logs_received\",
+        \"points\":[[${currenttime}, ${MSG_COUNT}]],
+        \"type\":\"gauge\",
+        \"host\":\"${SYSTEM_DOMAIN}\",
+        \"tags\":[
+          \"${APP_NAME}\"
+        ]
+      },
+      {
         \"metric\":\"smoke_test.loggregator.k8s_namespace_logs_sent\",
         \"points\":[[${currenttime}, ${CYCLES}]],
         \"type\":\"gauge\",
         \"host\":\"${SYSTEM_DOMAIN}\",
         \"tags\":[
-          \"${APP_NAME}\",
-          \"delay_unit:${DELAY_UNIT}\"
+          \"${APP_NAME}\"
         ]
       }
     ]
