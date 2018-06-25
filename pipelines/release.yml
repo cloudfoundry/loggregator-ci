@@ -27,7 +27,7 @@ resources:
   type: git
   source:
     uri: git@github.com:cloudfoundry/loggregator-release.git
-    branch: &backport-branch v101.x
+    branch: &backport-branch v96.x
     private_key: {{loggregator-key}}
 
 - name: loggregator-release-develop
@@ -676,7 +676,7 @@ jobs:
         S3_ACCESS_KEY: {{s3-access-key}}
         S3_SECRET_KEY: {{s3-secret-key}}
         SSH_KEY: {{loggregator-key}}
-        NEW_VERSION: "101.11"
+        NEW_VERSION: "96.3"
         BRANCH_NAME: *backport-branch
       inputs:
       - name: loggregator-backport
@@ -715,6 +715,10 @@ jobs:
 
               # Ensure sync-package-specs has been run
               ./scripts/sync-package-specs
+
+              # Running status here makes the following diff-index work as
+              # indended. TODO: Why?
+              git status
 
               # Assert there is not diff
               if ! git diff-index --quiet HEAD --; then
