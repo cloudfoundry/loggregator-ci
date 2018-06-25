@@ -177,7 +177,6 @@ resources:
 - name: log-cache-acceptance-tests-release
   type: git
   source:
-    branch: develop
     uri: https://github.com/cloudfoundry/log-cache-acceptance-tests-release
 
 - name: loggregator-src
