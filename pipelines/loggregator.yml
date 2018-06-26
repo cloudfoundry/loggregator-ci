@@ -816,47 +816,6 @@ jobs:
       put: pipeline-pool
       params: {release: pipeline-pool}
 
-- name: loggregator-create-release
-  serial: true
-  plan:
-  - aggregate:
-    - get: loggregator-develop
-    - get: loggregator-master
-      resource: loggregator-master
-    - get: loggregator-ci
-    - get: loggregator-release-elect
-      passed: ["loggregator-promotion"]
-
-  - task: create-final-release
-    file: loggregator-ci/tasks/create-final-release/task.yml
-    input_mapping:
-      to-repo: loggregator-develop
-      from-repo: loggregator-master
-    params:
-      S3_ACCESS_KEY: {{s3-access-key}}
-      S3_SECRET_KEY: {{s3-secret-key}}
-      BLOBSTORE_BUCKET: loggregator-release-blobs
-      SSH_KEY: {{loggregator-key}}
-      NEW_VERSION: "102.1"
-      RELEASE_NAME: Loggregator
-      TO_BRANCH: develop
-      FROM_BRANCH: master
-  - put: loggregator-release-master
-    params:
-      repository: repos/from-repo
-      rebase: false
-  - put: loggregator-release-develop
-    params:
-      repository: repos/to-repo
-      rebase: false
-  - put: loggregator-github-release-drafts
-    params:
-      name: github-release/name
-      tag: github-release/tag
-      body: github-release/body
-      globs:
-      - github-release/*.tgz
-
 - name: cf-deploy
   serial: true
   serial_groups:
