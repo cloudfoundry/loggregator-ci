@@ -120,7 +120,7 @@ spec:
         - name: LOGS_PROVIDER_ADDR
           value: loggregator-rlp.oratos.svc.cluster.local:8082
         - name: DRAINS
-          value: [{\"namespace\": \"blackbox-tests\", \"url\": \"logs2.papertrailapp.com:13998\"}]
+          value: \"[{\"namespace\": \"blackbox-tests\", \"url\": \"logs2.papertrailapp.com:13998\"}]\"
 " | kubectl apply -f -
     logspinner_pod_name="$(
         kubectl get pod -l run=logspinner \
