@@ -47,6 +47,7 @@ function report_to_datadog {
   }" \
   'https://app.datadoghq.com/api/v1/series?api_key='"$DATADOG_API_KEY"
 
+  set +e
   killall kubectl
   killall ssh
   killall ssh-agent
@@ -176,8 +177,12 @@ sleep "$WAIT" # wait for a bit to collect logs
 
 MSG_COUNT=$(grep -c "$MESSAGE" output.txt)
 
+echo "The number of messages received: $MSG_COUNT"
+echo "The number of messages sent    : $CYCLES"
 if [ "$MSG_COUNT" -lt $(($CYCLES * 99 / 100)) ]; then
+    echo =========================================
     echo THE RELIABILITY TEST DID NOT MEET OUR SLO
+    echo =========================================
     exit 123
 fi
 
