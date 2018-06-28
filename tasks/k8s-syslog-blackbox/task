@@ -10,8 +10,8 @@ echo "token: $PAPERTRAIL_TOKEN" > ~/.papertrail.yml
 
 function report_to_datadog {
   currenttime="$(date +%s)"
-  SYSTEM_DOMAIN=k8s-playground
-  APP_NAME=k8s-playground-blackbox
+  SYSTEM_DOMAIN=k8s-syslog-playground
+  APP_NAME=k8s-syslog-playground-blackbox
   curl --fail -X POST -H "Content-type: application/json" \
   -d "{ \"series\" :
     [
