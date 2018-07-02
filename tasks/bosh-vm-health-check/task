@@ -1,0 +1,107 @@
+#!/bin/bash
+
+set -eu
+
+# IFS or Internal Field Separator - This is required to ensure our for-loops
+# are iterating over lines and not words.
+IFS=$'\n'
+
+function check_health {
+  echo "# Performing health check for $1"
+  # CLOSE_WAIT check
+  closewaits=$(bosh -d "$DEPLOYMENT_NAME" ssh $1 \
+    -c "sudo lsof | grep CLOSE_WAIT | wc -l" \
+    | grep stdout | awk '{print $4}' | sed -e 's/[[:space:]]*$//')
+
+  for closewait in $closewaits; do
+    if [ $closewait -gt 100 ]; then
+      fail "CLOSE_WAIT exceeds 100: $closewait"
+    fi
+
+    pass "CLOSE_WAIT check"
+  done
+
+  # /var/vcap/sys/log usage
+  log_percentages=$(bosh -d "$DEPLOYMENT_NAME" ssh $1 \
+    -c "sudo df -hk /var/vcap/sys/log" \
+    | grep stdout | grep "/dev" | awk '{print $8}' | cut -f1 -d'%')
+
+  for log_percentage in $log_percentages; do
+    if [ $log_percentage -gt 30 ]; then
+      fail "log disk percentage exceeds 30: $log_percentage"
+    fi
+
+    pass "log disk usage"
+  done
+
+  # memory usage
+  free_mem_reports=$(bosh -d "$DEPLOYMENT_NAME" ssh $1 \
+    -c "free" \
+    | grep stdout | grep Mem)
+
+  for free_mem_report in $free_mem_reports; do
+    mem_total=$(echo $free_mem_report | awk '{print $5}')
+    mem_used=$(echo $free_mem_report | awk '{print $6}')
+    percentage=$(($mem_used*100 / $mem_total*100 / 100))
+
+    if [ $percentage -gt 85 ]; then
+      fail "memory percentage exceeds 85: $percentage"
+    fi
+
+    pass "memory usage"
+  done
+
+  # swap usage
+  swap_usages=$(bosh -d "$DEPLOYMENT_NAME" ssh $1 \
+    -c "free" \
+    | grep stdout | grep Swap | awk '{print $6}')
+
+  for swap_used in $swap_usages; do
+    if [ $swap_used -gt 0 ]; then
+      fail "swap usage exceeds 0: $swap_used"
+    fi
+
+    pass "swap usage"
+  done
+
+  # cpu usage
+  cpu_usage_reports=$(bosh -d "$DEPLOYMENT_NAME" ssh $1 \
+    -c "grep 'cpu ' /proc/stat" \
+    | grep stdout)
+
+  for cpu_usage_report in $cpu_usage_reports; do
+    user=$(echo $cpu_usage_report | awk '{print $5}')
+    system=$(echo $cpu_usage_report | awk '{print $7}')
+    idle=$(echo $cpu_usage_report | awk '{print $8}')
+    percentage=$((($user+$system)*100/($user+$system+$idle)*100 / 100))
+
+    if [ $percentage -gt 70 ]; then
+      fail "cpu usage exceeds 70: $percentage"
+    fi
+
+    pass "cpu usage"
+  done
+}
+
+function header {
+  echo "# $1"
+}
+
+function pass {
+  echo "  [ OK ] $1"
+}
+
+function fail {
+  echo "  [FAIL] $1"
+  exit 1
+}
+
+pushd bbl-state/$BBL_STATE_DIR
+  eval $(bbl print-env)
+  export BOSH_CA_CERT=$(bbl director-ca-cert)
+popd
+
+check_health "adapter"
+check_health "scheduler"
+check_health "doppler"
+check_health "log-api"
