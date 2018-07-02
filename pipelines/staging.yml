@@ -13,11 +13,33 @@ groups:
   - bbl-destroy
 
 resources:
+- name: 2m
+  type: time
+  source:
+    interval: 2m
+
+- name: 30m
+  type: time
+  source:
+    interval: 30m
+
+- name: 2h
+  type: time
+  source:
+    interval: 2h
+
+- name: daily
+  type: time
+  source:
+    start: 8:00 PM
+    stop: 9:00 PM
+    location: America/Denver
+
 - name: cf-deployment-concourse-tasks
   type: git
   source:
     uri: https://github.com/cloudfoundry/cf-deployment-concourse-tasks
-    branch: v4.21
+    branch: v6.9
 
 - name: loggregator-release-elect
   type: git
@@ -59,28 +81,6 @@ resources:
   source:
     uri: https://github.com/cloudfoundry/loggregator-ci
 
-- name: 2m
-  type: time
-  source:
-    interval: 2m
-
-- name: 30m
-  type: time
-  source:
-    interval: 30m
-
-- name: 2h
-  type: time
-  source:
-    interval: 2h
-
-- name: daily
-  type: time
-  source:
-    start: 8:00 PM
-    stop: 9:00 PM
-    location: America/Denver
-
 - name: deployments-loggregator
   type: git
   source:
@@ -91,10 +91,83 @@ resources:
 - name: bosh-deployment
   type: git
   source:
-    uri: https://github.com/loggregator/bosh-deployment
-    branch: local-dns
+    uri: https://github.com/cloudfoundry/bosh-deployment
+
+- name: bosh-bootloader
+  type: git
+  source:
+    uri: https://github.com/loggregator/bosh-bootloader
+    branch: master
 
 jobs:
+###############################################################################
+# DIRECTOR LIFECYCLE
+###############################################################################
+- name: bbl-create
+  public: false
+  plan:
+  - aggregate:
+    - get: cf-deployment-concourse-tasks
+    - get: bosh-bootloader
+    - get: bbl-state
+      resource: deployments-loggregator
+    - get: ops-files
+      resource: bosh-deployment
+  - task: bbl-up
+    file: cf-deployment-concourse-tasks/bbl-up/task.yml
+    input_mapping:
+      bbl-config: bosh-bootloader
+    params:
+      BBL_GCP_SERVICE_ACCOUNT_KEY: gcp/service-account.key.json
+      BBL_GCP_PROJECT_ID: cff-loggregator
+      BBL_GCP_ZONE: us-central1-a
+      BBL_GCP_REGION: us-central1
+      BBL_STATE_DIR: gcp/staging
+      BBL_IAAS: gcp
+      BBL_LB_CERT: {{coconut_bbl_lb_cert}}
+      BBL_LB_KEY: {{coconut_bbl_lb_key}}
+      BBL_ENV_NAME: staging-bbl
+      LB_DOMAIN: staging.loggr.cf-app.com
+      BBL_CONFIG_DIR: plan-patches/iso-segs-gcp
+  - put: deployments-loggregator
+    params:
+      repository: updated-bbl-state
+      rebase: true
+  - task: configure-dns
+    file: loggregator-ci/tasks/gcp-set-nameservers/task.yml
+    input_mapping:
+      bbl-state: updated-bbl-state
+      environment: create-pool
+    params:
+      BBL_GCP_SERVICE_ACCOUNT_KEY: gcp/service-account.key.json
+      GCP_DNS_ZONE: loggr
+      GCP_LB_DOMAIN: loggr.cf-app.com
+
+- name: bbl-destroy
+  public: false
+  plan:
+  - aggregate:
+    - get: loggregator-ci
+    - get: cf-deployment-concourse-tasks
+    - get: bbl-state
+      resource: deployments-loggregator
+  - task: delete-deployments
+    file: loggregator-ci/tasks/bosh-delete-all-deployments/task.yml
+    params:
+      BBL_STATE_DIR: gcp/staging
+  - task: bbl-destroy
+    file: cf-deployment-concourse-tasks/bbl-destroy/task.yml
+    params:
+      BBL_STATE_DIR: gcp/staging
+      BBL_GCP_SERVICE_ACCOUNT_KEY: gcp/service-account.key.json
+  - put: deployments-loggregator
+    params:
+      repository: updated-bbl-state
+      rebase: true
+
+###############################################################################
+# Deployments
+###############################################################################
 - name: cf-deploy
   serial: true
   serial_groups:
@@ -337,14 +410,16 @@ jobs:
     params:
       DEPLOYMENT_NAME: ouroboros
       BBL_STATE_DIR: gcp/staging
-  - aggregate:
-    - task: bosh-cleanup
-      input_mapping:
-        bbl-state: deployments-loggregator
-      file: cf-deployment-concourse-tasks/bosh-cleanup/task.yml
-      params:
-        BBL_STATE_DIR: gcp/staging
+  - task: bosh-cleanup
+    input_mapping:
+      bbl-state: deployments-loggregator
+    file: cf-deployment-concourse-tasks/bosh-cleanup/task.yml
+    params:
+      BBL_STATE_DIR: gcp/staging
 
+###############################################################################
+# Tests
+###############################################################################
 - name: blackbox-tests
   serial: true
   serial_groups:
@@ -491,50 +566,3 @@ jobs:
         TURBULENCE_API_URL: https://35.193.175.97:6868 # Public IP for `turbulence_api` job. Found in GCP console.
         VARS_FILE_PATH: "gcp/staging/deployment-vars.yml"
 
-- name: bbl-create
-  plan:
-  - aggregate:
-    - get: cf-deployment-concourse-tasks
-    - get: bbl-state
-      resource: deployments-loggregator
-    - get: ops-files
-      resource: bosh-deployment
-  - task: bbl-up
-    file: cf-deployment-concourse-tasks/bbl-up/task.yml
-    params:
-      BBL_GCP_SERVICE_ACCOUNT_KEY: service-account.key.json
-      BBL_GCP_PROJECT_ID: cff-loggregator
-      BBL_GCP_ZONE: us-central1-a
-      BBL_GCP_REGION: us-central1
-      BBL_STATE_DIR: gcp/staging
-      BBL_IAAS: gcp
-      BBL_LB_CERT: {{coconut_bbl_lb_cert}}
-      BBL_LB_KEY: {{coconut_bbl_lb_key}}
-      BBL_ENV_NAME: staging
-      LB_DOMAIN: staging.loggr.cf-app.com
-      OPS_FILES: local-dns.yml
-  - put: deployments-loggregator
-    params:
-      repository: updated-bbl-state
-      rebase: true
-
-- name: bbl-destroy
-  public: false
-  plan:
-  - aggregate:
-    - get: loggregator-ci
-    - get: cf-deployment-concourse-tasks
-    - get: bbl-state
-      resource: deployments-loggregator
-  - task: delete-deployments
-    file: loggregator-ci/tasks/bosh-delete-all-deployments/task.yml
-    params:
-      BBL_STATE_DIR: gcp/staging
-  - task: bbl-destroy
-    file: cf-deployment-concourse-tasks/bbl-destroy/task.yml
-    params:
-      BBL_STATE_DIR: gcp/staging
-  - put: deployments-loggregator
-    params:
-      repository: updated-bbl-state
-      rebase: true
