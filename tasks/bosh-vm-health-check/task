@@ -44,8 +44,8 @@ function check_health {
     mem_used=$(echo $free_mem_report | awk '{print $6}')
     percentage=$(($mem_used*100 / $mem_total*100 / 100))
 
-    if [ $percentage -gt 85 ]; then
-      fail "memory percentage exceeds 85: $percentage"
+    if [ $percentage -gt 99 ]; then
+      fail "memory percentage exceeds 99: $percentage"
     fi
 
     pass "memory usage"
