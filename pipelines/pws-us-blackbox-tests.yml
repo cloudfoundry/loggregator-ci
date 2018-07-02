@@ -71,7 +71,7 @@ jobs:
       PASSWORD: {{pws-password}}
       WAIT: 60
       CYCLES: 10000
-      DATADOG_API_KEY: {{datadog-loggregator-api-key}}
+      DATADOG_API_KEY: "((datadog-loggregator-api-key)) ((datadog-prod-api-key))"
       DELAY: "2"
       DELAY_UNIT: "us"
       MESSAGE: "FIFTEEN-MINUTE"
@@ -113,7 +113,7 @@ jobs:
       PASSWORD: {{pws-password}}
       WAIT: 600
       CYCLES: 1000
-      DATADOG_API_KEY: {{datadog-loggregator-api-key}}
+      DATADOG_API_KEY: "((datadog-loggregator-api-key)) ((datadog-prod-api-key))"
       DELAY: "500"
       DELAY_UNIT: "ms"
       MESSAGE: "HOURLY"
@@ -139,7 +139,7 @@ jobs:
       PASSWORD: {{pws-password}}
       WAIT: 60
       CYCLES: 1000
-      DATADOG_API_KEY: {{datadog-loggregator-api-key}}
+      DATADOG_API_KEY: "((datadog-loggregator-api-key)) ((datadog-prod-api-key))"
       DELAY: "1"
       DELAY_UNIT: "ms"
       MESSAGE: "HOURLY"
