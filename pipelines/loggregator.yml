@@ -32,6 +32,11 @@ resources:
     username: ((docker-hub-username))
     password: ((docker-hub-password))
 
+- name: bumper-tool
+  type: git
+  source:
+    uri: https://github.com/loggregator/bumper
+
 - name: pipeline-pool
   type: pool
   source:
@@ -157,6 +162,14 @@ resources:
     ignore_paths:
     - .final_builds
     - releases
+
+- name: loggregator-release-master
+  type: git
+  source:
+    uri: git@github.com:cloudfoundry/loggregator-release.git
+    branch: master
+    private_key: {{loggregator-key}}
+    disable_ci_skip: true
 
 jobs:
 - name: loggregator-tests
@@ -736,6 +749,32 @@ jobs:
   - put: loggregator-agent-release-elect
     params:
       repository: develop
+
+- name: loggregator-master-promotion
+  serial: true
+  plan:
+  - aggregate:
+    - get: loggregator-release-elect
+      passed: ["loggregator-promotion"]
+      trigger: true
+    - get: loggregator-agent-release-elect
+      passed: ["loggregator-agent-promotion"]
+      trigger: true
+    - get: loggregator-release-master
+    - get: bumper-tool
+    - get: loggregator-ci
+  - task: bumper
+    file: loggregator-ci/tasks/bumper/task.yml
+    input_mapping:
+      source: loggregator-release-elect
+      dest: loggregator-release-master
+    params:
+      SOURCE_BRANCH: release-elect
+      DEST_BRANCH: master
+      FOLLOW_BUMPS_OF: src/code.cloudfoundry.org/loggregator,src/code.cloudfoundry.org/go-loggregator,src/code.cloudfoundry.org/loggregator-agent
+  - put: loggregator-release-master
+    params:
+      repository: merged-dest
 
 - name: lats
   serial: true

@@ -7,9 +7,13 @@
   path: /resources/name=router-image
 - type: remove
   path: /resources/name=rlp-image
+- type: remove
+  path: /resources/name=bumper-tool
 
 - type: remove
   path: /resources/name=loggregator-release-elect
+- type: remove
+  path: /resources/name=loggregator-release-master
 - type: remove
   path: /resources/name=loggregator-agent-release-elect
 - type: remove
@@ -61,6 +65,8 @@
   path: /jobs/name=loggregator-agent-tests
 - type: remove
   path: /jobs/name=loggregator-agent-bump-submodule
+- type: remove
+  path: /jobs/name=loggregator-master-promotion
 
 # Change bump submodule responsibilities
 - type: remove
