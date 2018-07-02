@@ -14,6 +14,7 @@ groups:
   - lcats
   - loggregator-benchmarks
   - loggregator-promotion
+  - loggregator-master-promotion
   - loggregator-agent-promotion
   - cf-syslog-drain-tests
   - cf-drain-cli-tests
@@ -21,6 +22,7 @@ groups:
   - cf-drain-cli-promotion
   - cf-syslog-drain-bump-submodule
   - cf-syslog-drain-promotion
+  - cf-syslog-drain-master-promotion
   - log-cache-tests
   - log-cache-cli-tests
   - log-cache-docker-images
@@ -40,6 +42,7 @@ groups:
   - service-metrics-deploy
   - service-metrics-system-tests
   - service-metrics-promotion
+  - service-metrics-master-promotion
   - leadership-election-tests
   - leadership-election-bump-submodule
   - log-cache-promql-bug
@@ -58,6 +61,7 @@ groups:
   - loggregator-benchmarks
   - loggregator-promotion
   - loggregator-agent-promotion
+  - loggregator-master-promotion
   - lats
   - cf-deploy
   - cats
@@ -83,6 +87,7 @@ groups:
   - cf-syslog-drain-bump-submodule
   - cf-deploy
   - cf-syslog-drain-promotion
+  - cf-syslog-drain-master-promotion
   - cf-drain-cli-promotion
   - cats
   - cfar-lats
@@ -104,6 +109,7 @@ groups:
   - service-metrics-deploy
   - service-metrics-system-tests
   - service-metrics-promotion
+  - service-metrics-master-promotion
 - name: leadership-election
   jobs:
   - leadership-election-tests
@@ -197,6 +203,14 @@ resources:
     - .final_builds
     - releases
 
+- name: loggregator-release-master
+  type: git
+  source:
+    uri: git@github.com:cloudfoundry/loggregator-release.git
+    branch: master
+    private_key: {{loggregator-key}}
+    disable_ci_skip: true
+
 - name: loggregator-ci
   type: git
   source:
@@ -266,6 +280,14 @@ resources:
     ignore_paths:
     - .final_builds
     - releases
+
+- name: cf-syslog-drain-release-master
+  type: git
+  source:
+    uri: git@github.com:cloudfoundry/cf-syslog-drain-release
+    branch: master
+    private_key: {{cf-loggregator-oauth-bot-key}}
+    disable_ci_skip: true
 
 - name: scalable-syslog
   type: git
@@ -415,6 +437,14 @@ resources:
     ignore_paths:
     - .final_builds
     - releases
+
+- name: service-metrics-release-master
+  type: git
+  source:
+    uri: git@github.com:cloudfoundry/service-metrics-release
+    branch: master
+    private_key: {{cf-loggregator-oauth-bot-key}}
+    disable_ci_skip: true
 
 - name: leadership-election
   type: git
@@ -1106,6 +1136,32 @@ jobs:
     params:
       repository: develop
 
+- name: loggregator-master-promotion
+  serial: true
+  plan:
+  - aggregate:
+    - get: loggregator-release-elect
+      passed: ["loggregator-promotion"]
+      trigger: true
+    - get: loggregator-agent-release-elect
+      passed: ["loggregator-agent-promotion"]
+      trigger: true
+    - get: loggregator-release-master
+    - get: bumper-tool
+    - get: loggregator-ci
+  - task: bumper
+    file: loggregator-ci/tasks/bumper/task.yml
+    input_mapping:
+      source: loggregator-release-elect
+      dest: loggregator-release-master
+    params:
+      SOURCE_BRANCH: release-elect
+      DEST_BRANCH: master
+      FOLLOW_BUMPS_OF: src/code.cloudfoundry.org/loggregator,src/code.cloudfoundry.org/go-loggregator,src/code.cloudfoundry.org/loggregator-agent
+  - put: loggregator-release-master
+    params:
+      repository: merged-dest
+
 - name: lats
   serial: true
   serial_groups:
@@ -1559,6 +1615,29 @@ jobs:
   - put: cf-syslog-drain-release-release-elect
     params:
       repository: develop
+
+- name: cf-syslog-drain-master-promotion
+  serial: true
+  plan:
+  - aggregate:
+    - get: cf-syslog-drain-release-release-elect
+      passed: ["cf-syslog-drain-promotion"]
+      trigger: true
+    - get: cf-syslog-drain-release-master
+    - get: bumper-tool
+    - get: loggregator-ci
+  - task: bumper
+    file: loggregator-ci/tasks/bumper/task.yml
+    input_mapping:
+      source: cf-syslog-drain-release-release-elect
+      dest: cf-syslog-drain-release-master
+    params:
+      SOURCE_BRANCH: release-elect
+      DEST_BRANCH: master
+      FOLLOW_BUMPS_OF: src/code.cloudfoundry.org/scalable-syslog
+  - put: cf-syslog-drain-release-master
+    params:
+      repository: merged-dest
 
 - name: cf-drain-cli-promotion
   serial: true
@@ -2046,6 +2125,28 @@ jobs:
     params:
       repository: develop
 
+- name: service-metrics-master-promotion
+  serial: true
+  plan:
+  - aggregate:
+    - get: service-metrics-release-release-elect
+      passed: ["service-metrics-promotion"]
+      trigger: true
+    - get: service-metrics-release-master
+    - get: bumper-tool
+    - get: loggregator-ci
+  - task: bumper
+    file: loggregator-ci/tasks/bumper/task.yml
+    input_mapping:
+      source: service-metrics-release-release-elect
+      dest: service-metrics-release-master
+    params:
+      SOURCE_BRANCH: release-elect
+      DEST_BRANCH: master
+      FOLLOW_BUMPS_OF: src/github.com/cloudfoundry/service-metrics
+  - put: service-metrics-release-master
+    params:
+      repository: merged-dest
 ###############################################################################
 # SHARED
 ###############################################################################
