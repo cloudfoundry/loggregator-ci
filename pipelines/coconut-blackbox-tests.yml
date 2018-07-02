@@ -398,3 +398,20 @@ jobs:
     params:
       repository: updated-vars-store
       rebase: true
+
+- name: vm-health-metrics
+  public: false
+  serial: true
+  plan:
+  - aggregate:
+    - get: loggregator-ci
+    - get: deployments-loggregator
+    - get: 10m
+      trigger: true
+  - task: health-check
+    file: loggregator-ci/tasks/bosh-vm-health-check/task.yml
+    input_mapping:
+      bbl-state: deployments-loggregator
+    params:
+      BBL_STATE_DIR: gcp/coconut-bbl
+      DEPLOYMENT_NAME: cf
