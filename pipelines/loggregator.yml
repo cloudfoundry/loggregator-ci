@@ -873,6 +873,8 @@ jobs:
             cp cf-deployment/operations/experimental/use-bosh-dns.yml ops-files/
             cp cf-deployment/operations/experimental/use-bosh-dns-for-containers.yml ops-files/
             cp cf-deployment/operations/use-compiled-releases.yml ops-files/
+            cp cf-deployment/operations/use-latest-windows2016-stemcell.yml ops-files/
+            cp cf-deployment/operations/use-latest-windows-stemcell.yml ops-files/
             cp loggregator-agent-release/manifests/operations/infrastructure-metrics.yml ops-files/infrastructure-metrics.yml
 
             cat <<EOT >> ops-files/on-the-fly.yml
@@ -918,6 +920,8 @@ jobs:
           windows-cell.yml
           use-bosh-dns.yml
           use-bosh-dns-for-containers.yml
+          use-latest-windows-stemcell.yml
+          use-latest-windows2016-stemcell.yml
           infrastructure-metrics.yml
     - put: deployments-loggregator
       input_mapping:

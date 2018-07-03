@@ -98,6 +98,7 @@
     cp cf-deployment/operations/experimental/use-bosh-dns.yml ops-files/
     cp cf-deployment/operations/experimental/use-bosh-dns-for-containers.yml ops-files/
     cp cf-deployment/operations/use-compiled-releases.yml ops-files/
+    cp cf-deployment/operations/use-latest-windows-stemcell.yml ops-files/
 
     cat <<EOT >> ops-files/on-the-fly.yml
     - type: replace
@@ -134,6 +135,7 @@
     windows-cell.yml
     use-bosh-dns.yml
     use-bosh-dns-for-containers.yml
+    use-latest-windows-stemcell.yml
 
 - type: remove
   path: /jobs/name=cats/plan/0/aggregate/get=loggregator-agent-release
