@@ -1,0 +1,156 @@
+# Remove resources unrelated to backport jobs
+- type: remove
+  path: /resources/name=loggregator-ci-docker-images
+- type: remove
+  path: /resources/name=agent-image
+- type: remove
+  path: /resources/name=router-image
+- type: remove
+  path: /resources/name=rlp-image
+- type: remove
+  path: /resources/name=bumper-tool
+
+- type: remove
+  path: /resources/name=loggregator-release-elect
+- type: remove
+  path: /resources/name=loggregator-release-master
+- type: remove
+  path: /resources/name=loggregator-agent-release-elect
+- type: remove
+  path: /resources/name=loggregator-agent
+- type: remove
+  path: /resources/name=loggregator-agent-release
+- type: remove
+  path: /resources/name=go-loggregator
+
+- type: remove
+  path: /resources/name=loggregator-src
+
+# We don't need to regularly trigger backport pipelines
+- type: remove
+  path: /resources/name=10m
+- type: remove
+  path: /jobs/name=loggregator-tests/plan/0/aggregate/get=10m
+
+# change resource branches
+- type: replace
+  path: /resources/name=loggregator-release/source/branch
+  value: v99.x
+
+- type: replace
+  path: /resources/name=cf-deployment/source/branch
+  value: v1.8.0
+
+- type: replace
+  path: /resources/name=cf-acceptance-tests/source/branch
+  value: cf1.8
+
+- type: replace
+  path: /resources/name=logging-acceptance-tests-release/source/branch
+  value: v101.x
+
+- type: replace
+  path: /resources/name=cfar-logging-acceptance-tests/source/branch
+  value: v99.x
+
+# Remove jobs unrelated to backports
+- type: remove
+  path: /jobs/name=loggregator-docker-images
+- type: remove
+  path: /jobs/name=loggregator-promotion
+- type: remove
+  path: /jobs/name=loggregator-agent-promotion
+- type: remove
+  path: /jobs/name=loggregator-agent-tests
+- type: remove
+  path: /jobs/name=loggregator-agent-bump-submodule
+- type: remove
+  path: /jobs/name=loggregator-bump-submodule
+- type: remove
+  path: /jobs/name=loggregator-master-promotion
+
+# Edit jobs
+- type: remove
+  path: /jobs/name=loggregator-deploy/plan/0/aggregate/get=loggregator-agent-release
+
+- type: remove
+  path: /jobs/name=lats/plan/0/aggregate/get=loggregator-agent-release
+
+- type: remove
+  path: /jobs/name=cf-deploy/plan/1/aggregate/get=loggregator-agent-release
+- type: remove
+  path: /jobs/name=cf-deploy/plan/2/aggregate/task=upload-loggregator-agent-release
+- type: remove
+  path: /jobs/name=cf-deploy/plan/3/do/task=copy-ops-files/config/inputs/name=loggregator-agent-release
+- type: replace
+  path: /jobs/name=cf-deploy/plan/1/aggregate/get=loggregator-release/passed
+  value: ["loggregator-tests"]
+
+- type: remove
+  path: /jobs/name=cats/plan/0/aggregate/get=loggregator-agent-release
+
+- type: remove
+  path: /jobs/name=cfar-lats/plan/0/aggregate/get=loggregator-agent-release
+
+# Update all jobs as affected by loggregator not being a submodule in release
+- type: replace
+  path: /jobs/name=loggregator-tests/plan/0/aggregate/get=loggregator-src/get
+  value: loggregator-release
+- type: replace
+  path: /jobs/name=loggregator-tests/plan/1/aggregate/task=run-tests/config/inputs/name=loggregator-src/name
+  value: loggregator-release
+- type: replace
+  path: /jobs/name=loggregator-tests/plan/1/aggregate/task=run-tests/config/run/args
+  value:
+  - -c
+  - |
+    #!/bin/bash
+    set -ex
+
+    pushd loggregator-release
+      export GOPATH="$PWD"
+      export PATH="$GOPATH/bin:$PATH"
+
+      go get -t -d ./...
+
+      # We didn't submodule this and the api changed
+      # pushd src/github.com/posener/wstest
+      #   git checkout v0.1
+      # popd
+
+      ./scripts/test
+    popd
+# Integration tests covered by scripts/test
+- type: remove
+  path: /jobs/name=loggregator-tests/plan/1/aggregate/task=run-integration-tests
+- type: replace
+  path: /jobs/name=loggregator-tests/plan/1/aggregate/1/do/task=build-windows-test-binary/config/inputs/name=loggregator-src/name
+  value: loggregator-release
+- type: replace
+  path: /jobs/name=loggregator-tests/plan/1/aggregate/1/do/task=build-windows-test-binary/config/run/args
+  value:
+  - -c
+  - |
+    #!/bin/bash
+    set -ex
+
+    ci_root=$PWD
+
+    function munge {
+      echo $1 | tr '/' '_'
+    }
+
+    pushd loggregator-release
+      export GOOS=windows
+      export GOPATH="$PWD"
+      export PATH="$GOPATH/bin:$PATH"
+
+      pushd src/code.cloudfoundry.org/loggregator
+        go get -t -d ./...
+        for pkg in $(go list ./agent/...); do
+          go test -c -o $ci_root/test-binaries/$(munge $pkg)_test.exe $pkg &
+        done
+        go build -o $ci_root/binaries/agent.exe code.cloudfoundry.org/loggregator/agent &
+      popd
+    popd
+    wait
