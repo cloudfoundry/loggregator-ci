@@ -873,6 +873,7 @@ jobs:
             cp cf-deployment/operations/experimental/use-bosh-dns.yml ops-files/
             cp cf-deployment/operations/experimental/use-bosh-dns-for-containers.yml ops-files/
             cp cf-deployment/operations/use-compiled-releases.yml ops-files/
+            cp loggregator-agent-release/manifests/operations/infrastructure-metrics.yml ops-files/infrastructure-metrics.yml
 
             cat <<EOT >> ops-files/on-the-fly.yml
             - type: replace
@@ -917,6 +918,7 @@ jobs:
           windows-cell.yml
           use-bosh-dns.yml
           use-bosh-dns-for-containers.yml
+          infrastructure-metrics.yml
     - put: deployments-loggregator
       input_mapping:
         environment: pipeline-pool
