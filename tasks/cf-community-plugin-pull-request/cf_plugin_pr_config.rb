@@ -3,18 +3,28 @@ class CFPluginPRConfig
     :author, :company, :created_at, :description, :homepage, :name,
     :release_repo
 
+  DESCRIPTIONS = {
+    "drains": "A plugin to simplify interactions with user provided syslog drains."
+  }
+
+  RELEASE_REPOS = {
+    "drains": "cloudfoundry/cf-drain-cli",
+  }
+
+  CREATED_ATS = {
+    "drains": "2018-04-20T00:00:00Z",
+  }
+
   def initialize
     # TODO: Is this acceptable or should all contributors be included?
-    @author_name = 'CF Loggregator'
-    @author_contact = 'cf-loggregator@pivotal.io'
-    @author_homepage = 'https://github.com/orgs/cloudfoundry/teams/cf-loggregator'
+    @author_name = 'CF Loggregator Team'
 
     @access_token = ENV.fetch("GITHUB_ACCESS_TOKEN")
     @company = 'Pivotal'
-    @created_at = ENV.fetch("CREATED_AT") # ISO8601 timestamp
-    @description = ENV.fetch("DESCRIPTION")
-    @homepage = "https://github.com/#{release_repo}"
     @name = ENV.fetch("NAME")
-    @release_repo = ENV.fetch("RELEASE_REPO")
+    @created_at = CREATED_ATS.fetch(name.to_sym) # ISO8601 timestamp
+    @description = DESCRIPTIONS.fetch(name.to_sym)
+    @release_repo = RELEASE_REPOS.fetch(name.to_sym)
+    @homepage = "https://github.com/#{release_repo}"
   end
 end
