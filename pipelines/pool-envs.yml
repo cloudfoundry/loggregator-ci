@@ -35,6 +35,32 @@ resources:
     branch: master
     private_key: {{cf-loggregator-oauth-bot-key}}
 
+- name: env
+  type: bosh2-deployment
+  source:
+    deployment: <cat metadata/name>
+      # client and client secret
+
+- name: windows-stemcell-2012
+  type: bosh-io-stemcell
+  source:
+    name: bosh-google-kvm-windows2012R2-go_agent
+
+- name: windows-stemcell-2016
+  type: bosh-io-stemcell
+  source:
+    name: bosh-google-kvm-windows2016-go_agent
+
+- name: bosh-dns
+  type: bosh-io-release
+  source:
+    repository: cloudfoundry/bosh-dns-release
+
+- name: consul
+  type: bosh-io-release
+  source:
+    repository: cloudfoundry-incubator/consul-release
+
 jobs:
 - name: bbl-create
   public: false
@@ -74,6 +100,48 @@ jobs:
       GCP_DNS_ZONE: loggr
       GCP_LB_DOMAIN: loggr.cf-app.com
     file: loggregator-ci/tasks/gcp-set-nameservers/task.yml
+
+- name: uploads
+  public: false
+  serial: true
+  plan:
+  - put: create-pool
+    params: {acquire: true}
+  # - get: create-pool
+    # passed: ["bbl-create"]
+    # trigger: true
+  - aggregate:
+    - get: windows-stemcell-2012
+    - get: windows-stemcell-2016
+    - get: bosh-dns
+      params: {version: 0.2.0}
+    - get: consul
+  - put: create-pool
+    params:
+      stemcells:
+        - windows-stemcell-2012
+        - windows-stemcell-2016
+      releases:
+        - bosh-dns
+        - consul
+    #- task: windows-stemcell-2012
+    #  timeout: 5m
+    #  config:
+    #    platform: linux
+    #    image_resource:
+    #      type: docker-image
+    #      source:
+    #        repository: loggregator/base
+    #    inputs:
+    #    - name: windows-stemcell-2012
+    #    run:
+    #      path: bash
+    #      args:
+    #      - -c
+    #      - |
+    #        #!/bin/bash
+    #        set -ex
+
   - put: pipeline-pool
     params: {add: create-pool}
   - put: create-pool
