@@ -2236,6 +2236,7 @@ jobs:
           cp cf-deployment/operations/test/add-persistent-isolation-segment-diego-cell.yml ops-files/
           cp bbl-state/gcp/coconut-bbl/ops-files/*.yml ops-files/
           cp log-cache-release/manifests/operations/deploy-in-cf-doppler-collocated.yml ops-files/add-log-cache.yml
+          cp loggregator-agent-release/manifests/operations/infrastructure-metrics.yml ops-files/infrastructure-metrics.yml
 
           cat <<EOT >> ops-files/on-the-fly.yml
           - type: replace
@@ -2317,6 +2318,7 @@ jobs:
         windows-cell.yml
         use-bosh-dns.yml
         use-bosh-dns-for-containers.yml
+        infrastructure-metrics.yml
   - put: deployments-loggregator
     params:
       repository: updated-vars-store
