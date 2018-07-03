@@ -1,9 +1,14 @@
 #!/usr/bin/env ruby
 require_relative './cf_plugin_pull_requester'
+require 'json'
+require 'yaml'
+
+# Creates yaml output that can be copy-pasted into the cli-plugin-repo.
+# Usage: GITHUB_ACCESS_TOKEN="access-token" NAME="drains" ruby task
 
 if $PROGRAM_NAME == __FILE__
   cfg = CFPluginPRConfig.new
   pr = CFPluginPullRequester.new(cfg)
 
-  pr.manifest
+  puts JSON.parse(pr.manifest.to_json).to_yaml
 end

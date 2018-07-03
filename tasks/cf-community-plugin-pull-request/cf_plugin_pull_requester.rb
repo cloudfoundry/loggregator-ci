@@ -15,8 +15,6 @@ class CFPluginPullRequester
     {
       authors: [
         {
-          contact: config.author_contact,
-          homepage: config.author_homepage,
           name: config.author_name,
         }
       ],
