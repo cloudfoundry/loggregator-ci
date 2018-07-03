@@ -168,7 +168,7 @@ resources:
   source:
     uri: git@github.com:cloudfoundry/loggregator-release.git
     branch: master
-    private_key: {{loggregator-key}}
+    private_key: ((loggregator-key))
     disable_ci_skip: true
 
 jobs:
