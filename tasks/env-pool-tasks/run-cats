@@ -36,6 +36,7 @@ cat <<EOF > integration-config/cats-config.json
   "include_tasks": true,
   "include_v3": true,
   "use_log_cache": ${USE_LOG_CACHE},
+  "include_windows": true,
 
   "include_zipkin": false,
   "include_capi_experimental": false,
@@ -43,7 +44,8 @@ cat <<EOF > integration-config/cats-config.json
   "include_isolation_segments": false,
   "include_routing_isolation_segments": false,
   "include_private_docker_registry": false,
-  "include_privileged_container_support": false
+  "include_privileged_container_support": false,
+  "windows_stack": "windows2016"
 }
 EOF
 
