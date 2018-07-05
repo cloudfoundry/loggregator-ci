@@ -122,12 +122,6 @@
     - type: replace
       path: /instance_groups/name=doppler/instances
       value: 2
-    - path: /releases/name=consul/url
-      type: replace
-      value: https://bosh.io/d/github.com/cloudfoundry-incubator/consul-release?v=191
-    - path: /releases/name=consul/sha1
-      type: replace
-      value: 61b429ae13e0fde0ebdb98fce99e08f7baf60a16
     EOT
 - type: replace
   path: /jobs/name=cf-deploy/plan/3/do/task=cf-deploy/params/OPS_FILES
