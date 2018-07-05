@@ -1,0 +1,279 @@
+resources:
+- name: cf-acceptance-tests
+  type: git
+  source:
+    branch: master
+    uri: https://github.com/cloudfoundry/cf-acceptance-tests.git
+
+- name: pipeline-pool
+  type: pool
+  source:
+    uri: git@github.com:cloudfoundry/loggregator-locks.git
+    branch: master
+    pool: pipelines
+    private_key: ((cf-loggregator-oauth-bot-key))
+
+- name: loggregator-ci
+  type: git
+  source:
+    uri: git@github.com:cloudfoundry/loggregator-ci.git
+    private_key: ((loggregator-key))
+
+- name: loggregator-release
+  type: git
+  source:
+    uri: git@github.com:cloudfoundry/loggregator-release.git
+    branch: develop
+    private_key: ((loggregator-key))
+    ignore_paths:
+    - .final_builds
+    - releases
+
+- name: loggregator-agent-release
+  type: git
+  source:
+    uri: git@github.com:cloudfoundry/loggregator-agent-release.git
+    branch: develop
+    private_key: ((cf-loggregator-oauth-bot-key))
+
+- name: deployments-loggregator
+  type: git
+  source: &deployments_loggregator
+    uri: git@github.com:cloudfoundry/deployments-loggregator.git
+    branch: master
+    private_key: ((deployments-loggregator-key))
+
+- name: cf-deployment
+  type: git
+  source:
+    uri: https://github.com/cloudfoundry/cf-deployment
+    branch: master
+    private_key: ((loggregator-key))
+
+- name: cf-deployment-concourse-tasks
+  type: git
+  source:
+    uri: https://github.com/cloudfoundry/cf-deployment-concourse-tasks
+    branch: v6.5
+
+jobs:
+- name: cf-deploy
+  serial: true
+  serial_groups:
+  - cf-deploy
+  - bosh-cf-cats
+  - bosh-cfar-lats
+  plan:
+  - put: pipeline-pool
+    params: {acquire: true}
+  - aggregate:
+    - get: loggregator-ci
+    - get: bbl-state
+      resource: deployments-loggregator
+    - get: cf-deployment
+    - get: cf-deployment-concourse-tasks
+    - get: loggregator-release
+    - get: loggregator-agent-release
+    - get: vars-store
+      resource: deployments-loggregator
+    - get: vars-files
+      resource: deployments-loggregator
+  - aggregate:
+    - task: upload-loggregator-release
+      file: loggregator-ci/tasks/env-pool-tasks/upload-release.yml
+      input_mapping:
+        image_resource:
+          type: docker-image
+          source:
+            repository: relintdockerhubpushbot/cf-deployment-concourse-tasks
+            tag: v3.19.0
+        inputs:
+        - name: bbl-state
+        - name: cf-deployment
+        - name: loggregator-agent-release
+        outputs:
+        - name: ops-files
+        run:
+          path: /bin/bash
+          args:
+          - "-c"
+          - |
+            set -e
+
+            cp cf-deployment/operations/windows2016-cell.yml ops-files/
+            cp cf-deployment/operations/scale-to-one-az.yml ops-files/
+            cp cf-deployment/operations/experimental/use-bosh-dns.yml ops-files/
+            cp cf-deployment/operations/experimental/use-bosh-dns-for-containers.yml ops-files/
+            cp cf-deployment/operations/use-compiled-releases.yml ops-files/
+
+            cat <<EOT >> ops-files/on-the-fly.yml
+            - type: replace
+              path: /releases/name=loggregator
+              value:
+                name: loggregator
+                version: latest
+            - type: replace
+              path: /update/max_in_flight
+              value: 5
+            - type: replace
+              path: /releases/name=diego
+              value:
+                name: diego
+                version: $(bosh int cf-deployment/cf-deployment.yml --path=/releases/name=diego/version)
+                url: $(bosh int cf-deployment/cf-deployment.yml --path=/releases/name=diego/url)
+                sha1: $(bosh int cf-deployment/cf-deployment.yml --path=/releases/name=diego/sha1)
+            - type: replace
+              path: /instance_groups/name=doppler/instances
+              value: 2
+            - path: /releases/name=consul/url
+              type: replace
+              value: https://bosh.io/d/github.com/cloudfoundry-incubator/consul-release?v=194
+            - path: /releases/name=consul/sha1
+              type: replace
+              value: 085921377ca2ad804060f2e6d1143f81dc490736
+            - type: replace
+              path: /releases/name=loggregator-agent/url
+              value: https://bosh.io/d/github.com/cloudfoundry/loggregator-agent-release?v=1.0
+            - type: replace
+        bosh-release-dir: loggregator-release
+        environment: pipeline-pool
+    - task: upload-loggregator-agent-release
+      file: loggregator-ci/tasks/env-pool-tasks/upload-release.yml
+      input_mapping:
+        bosh-release-dir: loggregator-agent-release
+        environment: pipeline-pool
+  - do:
+    - task: copy-ops-files
+      config:
+        platform: linux
+        image_resource:
+          type: docker-image
+          source:
+            repository: relintdockerhubpushbot/cf-deployment-concourse-tasks
+            tag: v3.19.0
+        inputs:
+        - name: bbl-state
+        - name: cf-deployment
+        - name: loggregator-agent-release
+        outputs:
+        - name: ops-files
+        run:
+          path: /bin/bash
+          args:
+          - "-c"
+          - |
+            set -e
+
+            cp cf-deployment/operations/windows2016-cell.yml ops-files/
+            cp cf-deployment/operations/scale-to-one-az.yml ops-files/
+            cp cf-deployment/operations/experimental/use-bosh-dns.yml ops-files/
+            cp cf-deployment/operations/experimental/use-bosh-dns-for-containers.yml ops-files/
+            cp cf-deployment/operations/use-compiled-releases.yml ops-files/
+
+            cat <<EOT >> ops-files/on-the-fly.yml
+            - type: replace
+              path: /releases/name=loggregator
+              value:
+                name: loggregator
+                version: latest
+            - type: replace
+              path: /update/max_in_flight
+              value: 5
+            - type: replace
+              path: /releases/name=diego
+              value:
+                name: diego
+                version: $(bosh int cf-deployment/cf-deployment.yml --path=/releases/name=diego/version)
+                url: $(bosh int cf-deployment/cf-deployment.yml --path=/releases/name=diego/url)
+                sha1: $(bosh int cf-deployment/cf-deployment.yml --path=/releases/name=diego/sha1)
+            - type: replace
+              path: /instance_groups/name=doppler/instances
+              value: 2
+            - path: /releases/name=consul/url
+              type: replace
+              value: https://bosh.io/d/github.com/cloudfoundry-incubator/consul-release?v=194
+            - path: /releases/name=consul/sha1
+              type: replace
+              value: 085921377ca2ad804060f2e6d1143f81dc490736
+            - type: replace
+              path: /releases/name=loggregator-agent/url
+              value: https://bosh.io/d/github.com/cloudfoundry/loggregator-agent-release?v=1.0
+            - type: replace
+              path: /releases/name=loggregator-agent/version
+              value: "1.0"
+            - type: replace
+              path: /releases/name=loggregator-agent/sha1
+              value: aa70e3bc95e25fe86ab00f3b698216a24a44c9d5
+            - type: replace
+              path: /releases/name=garden-runc/url
+              value: https://bosh.io/d/github.com/cloudfoundry/garden-runc-release?v=1.15.1
+            - type: replace
+              path: /releases/name=garden-runc/version
+              value: "1.15.1"
+            - type: replace
+              path: /releases/name=garden-runc/sha1
+              value: bdac2dc7debc2e9b4b9e32f009cb93ac281e5480
+            EOT
+    - task: upload-stemcell
+      file: loggregator-ci/tasks/env-pool-tasks/bosh-upload-stemcell-from-cf-deployment.yml
+      input_mapping:
+        environment: pipeline-pool
+    - task: cf-deploy
+      file: loggregator-ci/tasks/env-pool-tasks/cf-deploy.yml
+      input_mapping:
+        environment: pipeline-pool
+      params:
+        SYSTEM_DOMAIN: loggr.cf-app.com #TODO: this could be included in the lock file
+        OPS_FILES: |
+          scale-to-one-az.yml
+          use-compiled-releases.yml
+          on-the-fly.yml
+          windows2016-cell.yml
+          use-bosh-dns.yml
+          use-bosh-dns-for-containers.yml
+    - put: deployments-loggregator
+      input_mapping:
+        environment: pipeline-pool
+      params:
+        repository: updated-vars-store
+        rebase: true
+    - task: enable-feature-flags
+      file: loggregator-ci/tasks/env-pool-tasks/set-feature-flags.yml
+      input_mapping:
+        environment: pipeline-pool
+        vars-store: updated-vars-store
+      params:
+        SYSTEM_DOMAIN: loggr.cf-app.com
+        ENABLED_FEATURE_FLAGS: diego_docker
+    - task: cleanup
+      input_mapping:
+        environment: pipeline-pool
+      file: loggregator-ci/tasks/env-pool-tasks/bosh-cleanup.yml
+    on_failure:
+      put: pipeline-pool
+      params: {release: pipeline-pool}
+
+- name: cats
+  serial: true
+  serial_groups:
+  - bosh-cf-cats
+  plan:
+    - aggregate:
+      - get: cf-deployment-concourse-tasks
+      - get: deployments-loggregator
+      - get: cf-acceptance-tests
+      - get: loggregator-release
+        passed: ["cf-deploy"]
+      - get: loggregator-agent-release
+        passed: ["cf-deploy"]
+      - get: environment
+        resource: pipeline-pool
+        passed: ["cf-deploy"]
+        trigger: true
+      - get: loggregator-ci
+    - task: run-cats
+      file: loggregator-ci/tasks/env-pool-tasks/run-cats.yml
+      input_mapping:
+        integration-config: deployments-loggregator
+      params:
+        NODES: 9
