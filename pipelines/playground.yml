@@ -227,7 +227,6 @@ jobs:
           cp cf-deployment/operations/experimental/use-bosh-dns-for-containers.yml ops-files/
           cp bbl-state/gcp/playground/ops-files/*.yml ops-files/
           cp log-cache-release/manifests/operations/deploy-in-cf.yml ops-files/add-log-cache.yml
-          cp loggregator-agent-release/manifests/operations/cf-deployment-addon.yml ops-files/use-loggregator-agent.yml
 
           cat <<EOT >> ops-files/on-the-fly.yml
           - type: replace
@@ -268,7 +267,6 @@ jobs:
         on-the-fly.yml
         use-bosh-dns.yml
         use-bosh-dns-for-containers.yml
-        use-loggregator-agent.yml
   - task: enable-feature-flags
     file: cf-deployment-concourse-tasks/set-feature-flags/task.yml
     params:
