@@ -868,13 +868,12 @@ jobs:
           - |
             set -e
 
-            cp cf-deployment/operations/windows-cell.yml ops-files/
+            cp cf-deployment/operations/windows2016-cell.yml ops-files/
             cp cf-deployment/operations/scale-to-one-az.yml ops-files/
             cp cf-deployment/operations/experimental/use-bosh-dns.yml ops-files/
             cp cf-deployment/operations/experimental/use-bosh-dns-for-containers.yml ops-files/
             cp cf-deployment/operations/use-compiled-releases.yml ops-files/
             cp cf-deployment/operations/use-latest-windows2016-stemcell.yml ops-files/
-            cp cf-deployment/operations/use-latest-windows-stemcell.yml ops-files/
             cp loggregator-agent-release/manifests/operations/infrastructure-metrics.yml ops-files/infrastructure-metrics.yml
 
             cat <<EOT >> ops-files/on-the-fly.yml
@@ -917,10 +916,9 @@ jobs:
           scale-to-one-az.yml
           use-compiled-releases.yml
           on-the-fly.yml
-          windows-cell.yml
+          windows2016-cell.yml
           use-bosh-dns.yml
           use-bosh-dns-for-containers.yml
-          use-latest-windows-stemcell.yml
           use-latest-windows2016-stemcell.yml
           infrastructure-metrics.yml
     - put: deployments-loggregator

@@ -1496,7 +1496,8 @@ jobs:
         - |
           set -e
 
-          cp cf-deployment/operations/windows-cell.yml ops-files/
+          cp cf-deployment/operations/windows2016-cell.yml ops-files/
+          cp cf-deployment/operations/use-latest-windows2016-stemcell.yml ops-files/
           cp cf-deployment/operations/scale-to-one-az.yml ops-files/
           cp cf-deployment/operations/experimental/use-bosh-dns.yml ops-files/
           cp cf-deployment/operations/experimental/use-bosh-dns-for-containers.yml ops-files/
@@ -1565,6 +1566,24 @@ jobs:
           - type: replace
             path: /update/canaries
             value: 5
+          - type: replace
+            path: /releases/name=loggregator-agent/url
+            value: https://bosh.io/d/github.com/cloudfoundry/loggregator-agent-release?v=1.0
+          - type: replace
+            path: /releases/name=loggregator-agent/version
+            value: "1.0"
+          - type: replace
+            path: /releases/name=loggregator-agent/sha1
+            value: aa70e3bc95e25fe86ab00f3b698216a24a44c9d5
+          - type: replace
+            path: /releases/name=garden-runc/url
+            value: https://bosh.io/d/github.com/cloudfoundry/garden-runc-release?v=1.15.1
+          - type: replace
+            path: /releases/name=garden-runc/version
+            value: "1.15.1"
+          - type: replace
+            path: /releases/name=garden-runc/sha1
+            value: bdac2dc7debc2e9b4b9e32f009cb93ac281e5480
           EOT
   - task: upload-stemcell
     file: cf-deployment-concourse-tasks/bosh-upload-stemcell-from-cf-deployment/task.yml
@@ -1584,7 +1603,8 @@ jobs:
         add-persistent-isolation-segment-diego-cell.yml
         add-log-cache.yml
         on-the-fly.yml
-        windows-cell.yml
+        windows2016-cell.yml
+        use-latest-windows2016-stemcell.yml
         use-bosh-dns.yml
         use-bosh-dns-for-containers.yml
         infrastructure-metrics.yml
