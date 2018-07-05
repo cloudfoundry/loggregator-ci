@@ -72,6 +72,9 @@
 # Edit jobs
 - type: remove
   path: /jobs/name=loggregator-deploy/plan/0/aggregate/get=loggregator-agent-release
+- type: replace
+  path: /jobs/name=loggregator-deploy/plan/1/do/task=loggregator-deploy/params/MANIFEST_FILE
+  value: templates/loggregator.yml
 
 - type: remove
   path: /jobs/name=lats/plan/0/aggregate/get=loggregator-agent-release
