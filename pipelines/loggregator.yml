@@ -872,7 +872,6 @@ jobs:
             cp cf-deployment/operations/scale-to-one-az.yml ops-files/
             cp cf-deployment/operations/experimental/use-bosh-dns.yml ops-files/
             cp cf-deployment/operations/experimental/use-bosh-dns-for-containers.yml ops-files/
-            cp cf-deployment/operations/use-compiled-releases.yml ops-files/
             cp cf-deployment/operations/use-latest-windows2016-stemcell.yml ops-files/
             cp loggregator-agent-release/manifests/operations/infrastructure-metrics.yml ops-files/infrastructure-metrics.yml
 
@@ -908,7 +907,6 @@ jobs:
         SYSTEM_DOMAIN: loggr.cf-app.com #TODO: this could be included in the lock file
         OPS_FILES: |
           scale-to-one-az.yml
-          use-compiled-releases.yml
           on-the-fly.yml
           windows2016-cell.yml
           use-bosh-dns.yml
