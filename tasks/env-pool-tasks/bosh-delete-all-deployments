@@ -1,0 +1,8 @@
+#!/bin/bash
+
+set -exu
+
+BBL_STATE_DIR=$(cat environment/metadata)
+BBL_ENV_NAME=$(cat environment/name)
+
+./loggregator-ci/tasks/bosh-delete-all-deployments/task
