@@ -1,0 +1,67 @@
+---
+#-------------------------
+# Unused Jobs
+#-------------------------
+- type: remove
+  path: /jobs/name=cf-drain-cli-tests
+- type: remove
+  path: /jobs/name=cf-drain-cli-acceptance-tests
+- type: remove
+  path: /jobs/name=cf-syslog-drain-tests
+- type: remove
+  path: /jobs/name=cf-syslog-drain-promotion
+- type: remove
+  path: /jobs/name=cf-syslog-drain-master-promotion
+- type: remove
+  path: /jobs/name=cf-drain-cli-promotion
+
+#-------------------------
+# Update bump submodule
+#-------------------------
+- type: remove
+  path: /jobs/name=cf-syslog-drain-bump-submodule/plan/0/aggregate/get=scalable-syslog/passed
+- type: remove
+  path: /jobs/name=cf-syslog-drain-bump-submodule/plan/0/aggregate/get=go-loggregator
+- type: remove
+  path: /jobs/name=cf-syslog-drain-bump-submodule/plan/task=update-go-loggregator-submodule
+- type: replace
+  path: /jobs/name=cf-syslog-drain-bump-submodule/plan/task=sync-package-specs/input_mapping/release-repo
+  value: updated-cf-syslog-drain-release
+- type: replace
+  path: /jobs/name=cf-syslog-drain-bump-submodule/plan/task=commit/params/PATHS
+  value: |
+    src/code.cloudfoundry.org/scalable-syslog
+    packages
+
+#-------------------------
+# remove unused resource
+#-------------------------
+- type: remove
+  path: /resources/name=go-loggregator
+- type: remove
+  path: /resources/name=cf-drain-cli
+- type: remove
+  path: /resources/name=cf-drain-cli-master
+- type: remove
+  path: /resources/name=bumper-tool
+- type: remove
+  path: /resources/name=cf-syslog-drain-release-release-elect
+- type: remove
+  path: /resources/name=cf-syslog-drain-release-master
+
+
+#-------------------------
+# update versions
+#-------------------------
+- type: replace
+  path: /resources/name=cf-syslog-drain-release/source/branch
+  value: v2.x
+- type: replace
+  path: /resources/name=cf-deployment/source/branch
+  value: v0.37.0
+- type: replace
+  path: /resources/name=cf-acceptance-tests/source/branch
+  value: cf0.37
+- type: replace
+  path: /resources/name=scalable-syslog/source/branch
+  value: v2.x

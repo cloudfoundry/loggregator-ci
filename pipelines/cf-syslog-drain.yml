@@ -1,0 +1,495 @@
+resources:
+- name: go-loggregator
+  type: git
+  source:
+    uri: https://github.com/cloudfoundry/go-loggregator
+    branch: master
+
+- name: deployments-loggregator
+  type: git
+  source: &deployments_loggregator
+    uri: git@github.com:cloudfoundry/deployments-loggregator.git
+    branch: master
+    private_key: ((deployments-loggregator-key))
+
+- name: cf-acceptance-tests
+  type: git
+  source:
+    branch: master
+    uri: https://github.com/cloudfoundry/cf-acceptance-tests.git
+
+- name: cfar-logging-acceptance-tests
+  type: git
+  source:
+    branch: master
+    uri: https://github.com/cloudfoundry/cfar-logging-acceptance-tests.git
+
+- name: cf-deployment
+  type: git
+  source:
+    uri: https://github.com/cloudfoundry/cf-deployment
+    branch: master
+    private_key: ((loggregator-key))
+
+- name: cf-deployment-concourse-tasks
+  type: git
+  source:
+    uri: https://github.com/cloudfoundry/cf-deployment-concourse-tasks
+    branch: v6.5
+
+- name: loggregator-ci
+  type: git
+  source:
+    uri: git@github.com:cloudfoundry/loggregator-ci
+    branch: master
+    private_key: ((cf-loggregator-oauth-bot-key))
+
+- name: cf-syslog-drain-release
+  type: git
+  source:
+    uri: git@github.com:cloudfoundry/cf-syslog-drain-release
+    branch: develop
+    private_key: ((cf-loggregator-oauth-bot-key))
+    ignore_paths:
+    - .final_builds
+    - releases
+
+- name: cf-syslog-drain-release-release-elect
+  type: git
+  source:
+    uri: git@github.com:cloudfoundry/cf-syslog-drain-release
+    branch: release-elect
+    private_key: ((cf-loggregator-oauth-bot-key))
+    ignore_paths:
+    - .final_builds
+    - releases
+
+- name: cf-syslog-drain-release-master
+  type: git
+  source:
+    uri: git@github.com:cloudfoundry/cf-syslog-drain-release
+    branch: master
+    private_key: ((cf-loggregator-oauth-bot-key))
+    disable_ci_skip: true
+
+- name: scalable-syslog
+  type: git
+  source:
+    uri: git@github.com:cloudfoundry/scalable-syslog
+    private_key: ((cf-loggregator-oauth-bot-key))
+    branch: master
+
+- name: bumper-tool
+  type: git
+  source:
+    uri: https://github.com/loggregator/bumper
+
+- name: cf-drain-cli
+  type: git
+  source:
+    uri: https://github.com/cloudfoundry/cf-drain-cli
+    branch: develop
+
+- name: cf-drain-cli-master
+  type: git
+  source:
+    uri: git@github.com:cloudfoundry/cf-drain-cli
+    branch: master
+    private_key: ((cf-loggregator-oauth-bot-key))
+
+- name: pipeline-pool
+  type: pool
+  source:
+    uri: git@github.com:cloudfoundry/loggregator-locks.git
+    branch: master
+    pool: pipelines
+    private_key: ((cf-loggregator-oauth-bot-key))
+
+jobs:
+- name: cf-syslog-drain-tests
+  serial: true
+  public: true
+  plan:
+  - aggregate:
+    - get: loggregator-ci
+    - get: scalable-syslog
+      trigger: true
+  - task: run-tests
+    file: loggregator-ci/tasks/go-test-with-latest-packages/task.yml
+    input_mapping:
+      source-repo: scalable-syslog
+    params:
+      IMPORT_PATH: code.cloudfoundry.org/scalable-syslog
+
+- name: cf-drain-cli-tests
+  serial: true
+  public: true
+  plan:
+  - aggregate:
+    - get: loggregator-ci
+    - get: cf-drain-cli
+      trigger: true
+  - task: run-tests
+    file: loggregator-ci/tasks/go-test-with-latest-packages/task.yml
+    input_mapping:
+      source-repo: cf-drain-cli
+    params:
+      IMPORT_PATH: code.cloudfoundry.org/cf-drain-cli
+
+- name: cf-drain-cli-acceptance-tests
+  serial: true
+  public: true
+  plan:
+  - aggregate:
+    - get: loggregator-ci
+    - get: deployments-loggregator
+    - get: environment
+      resource: pipeline-pool
+      passed: ["cf-deploy"]
+      trigger: true
+    - get: cf-drain-cli
+  - task: run-tests
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source:
+          repository: relintdockerhubpushbot/cf-deployment-concourse-tasks
+          tag: v5.9
+      inputs:
+      - name: loggregator-ci
+      - name: cf-drain-cli
+      - name: environment
+      - name: deployments-loggregator
+      run:
+        path: bash
+        args:
+        - -c
+        - |
+          #!/bin/bash
+          export BBL_STATE_DIR=$(cat environment/metadata)
+          pushd deployments-loggreagor/$BBL_STATE_DIR
+            export CF_ADMIN_USER=admin
+            export CF_ADMIN_PASSWORD=$(bosh int deployment-vars.yml --path=/cf_admin_password | head -n 1)
+            export CF_DOMAIN=$(grep system_domain vars/bbl.tfvars | cut -d "=" -f2 | tr -d '"')
+            export SKIP_CERT_VERIFY=true
+          popd
+
+          IMPORT_PATH=code.cloudfoundry.org/cf-drain-cli
+          mkdir -p "workspace/src/$IMPORT_PATH"
+          cp -r cf-drain-cli/. "workspace/src/$IMPORT_PATH"
+
+          pushd workspace
+            export GOPATH="$PWD"
+            export PATH="$GOPATH/bin:$PATH"
+
+            # acceptance tests rely on cf tail command
+            go get code.cloudfoundry.org/log-cache-cli/cmd/cf-lc-plugin
+            cf install-plugin $GOPATH/bin/cf-lc-plugin -f
+
+            go get -v github.com/onsi/ginkgo/ginkgo
+            go get $IMPORT_PATH/...
+
+            pushd "src/$IMPORT_PATH/acceptance"
+              ginkgo --flakeAttempts=2
+            popd
+          popd
+
+- name: cf-syslog-drain-bump-submodule
+  serial: true
+  plan:
+  - aggregate:
+    - get: loggregator-ci
+    - get: go-loggregator
+    - get: cf-syslog-drain-release
+      trigger: true
+    - get: scalable-syslog
+      passed: ["cf-syslog-drain-tests"]
+      trigger: true
+  - task: update-submodule
+    file: loggregator-ci/tasks/bump-submodule/task.yml
+    input_mapping:
+      release-repo: cf-syslog-drain-release
+      source-repo: scalable-syslog
+    output_mapping:
+      bumped-release-repo: updated-cf-syslog-drain-release
+    params:
+      SUBMODULE_PATH: src/code.cloudfoundry.org/scalable-syslog
+  - task: update-go-loggregator-submodule
+    file: loggregator-ci/tasks/bump-submodule/task.yml
+    input_mapping:
+      release-repo: updated-cf-syslog-drain-release
+      source-repo: go-loggregator
+    output_mapping:
+      bumped-release-repo: bumped-go-loggregator-release
+    params:
+      SUBMODULE_PATH: src/code.cloudfoundry.org/go-loggregator
+  - task: sync-package-specs
+    file: loggregator-ci/tasks/run-release-script/task.yml
+    input_mapping:
+      release-repo: bumped-go-loggregator-release
+    output_mapping:
+      updated-release-repo: synced-cf-syslog-drain-release
+    params:
+      SCRIPT: scripts/sync-package-specs
+  - task: run-tests
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source:
+          repository: loggregator/base
+      inputs:
+      - name: synced-cf-syslog-drain-release
+      run:
+        path: bash
+        args:
+        - -c
+        - |
+          #!/bin/bash
+
+          set -ex
+
+          pushd synced-cf-syslog-drain-release
+            export GOPATH="$PWD"
+            export PATH="$GOPATH/bin:$PATH"
+            go test -race code.cloudfoundry.org/scalable-syslog/...
+          popd
+  - task: commit
+    file: loggregator-ci/tasks/commit-with-shortlog/task.yml
+    input_mapping:
+      release-repo: synced-cf-syslog-drain-release
+    output_mapping:
+      committed-repo: committed-cf-syslog-drain-release
+    params:
+      PATHS: |
+        src/code.cloudfoundry.org/scalable-syslog
+        src/code.cloudfoundry.org/go-loggregator
+        packages
+  - put: cf-syslog-drain-release
+    params:
+      repository: committed-cf-syslog-drain-release
+      rebase: true
+
+- name: cf-syslog-drain-promotion
+  serial: true
+  plan:
+  - aggregate:
+    - get: develop
+      resource: cf-syslog-drain-release
+      trigger: true
+      passed: ["cats", "cfar-lats"]
+    - get: cf-syslog-drain-release-release-elect
+  - put: cf-syslog-drain-release-release-elect
+    params:
+      repository: develop
+
+- name: cf-syslog-drain-master-promotion
+  serial: true
+  plan:
+  - aggregate:
+    - get: cf-syslog-drain-release-release-elect
+      passed: ["cf-syslog-drain-promotion"]
+      trigger: true
+    - get: cf-syslog-drain-release-master
+    - get: bumper-tool
+    - get: loggregator-ci
+  - task: bumper
+    file: loggregator-ci/tasks/bumper/task.yml
+    input_mapping:
+      source: cf-syslog-drain-release-release-elect
+      dest: cf-syslog-drain-release-master
+    params:
+      SOURCE_BRANCH: release-elect
+      DEST_BRANCH: master
+      FOLLOW_BUMPS_OF: src/code.cloudfoundry.org/scalable-syslog
+  - put: cf-syslog-drain-release-master
+    params:
+      repository: merged-dest
+
+- name: cf-drain-cli-promotion
+  serial: true
+  plan:
+  - aggregate:
+    - get: cf-drain-cli
+      passed: ["cf-drain-cli-acceptance-tests"]
+      trigger: true
+    - get: cf-drain-cli-master
+    - get: bumper-tool
+    - get: loggregator-ci
+  - task: bumper
+    file: loggregator-ci/tasks/bumper/task.yml
+    input_mapping:
+      source: cf-drain-cli
+      dest: cf-drain-cli-master
+    params:
+      SOURCE_BRANCH: develop
+      DEST_BRANCH: master
+  - put: cf-drain-cli-master
+    params:
+      repository: merged-dest
+
+- name: cf-deploy
+  serial: true
+  serial_groups:
+  - cf-deploy
+  - bosh-cf-cats
+  - bosh-cfar-lats
+  plan:
+  - put: pipeline-pool
+    params: {acquire: true}
+  - aggregate:
+    - get: loggregator-ci
+    - get: bbl-state
+      resource: deployments-loggregator
+    - get: cf-deployment
+      trigger: true
+    - get: cf-deployment-concourse-tasks
+    - get: cf-syslog-drain-release
+      trigger: true
+      passed: ["cf-syslog-drain-bump-submodule"]
+    - get: vars-store
+      resource: deployments-loggregator
+    - get: vars-files
+      resource: deployments-loggregator
+  - task: upload-syslog-drain-release
+    file: loggregator-ci/tasks/env-pool-tasks/upload-release.yml
+    input_mapping:
+      bosh-release-dir: cf-syslog-drain-release
+      environment: pipeline-pool
+  - task: copy-ops-files
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source:
+          repository: relintdockerhubpushbot/cf-deployment-concourse-tasks
+          tag: v3.19.0
+      inputs:
+      - name: bbl-state
+      - name: cf-deployment
+      outputs:
+      - name: ops-files
+      run:
+        path: /bin/bash
+        args:
+        - "-c"
+        - |
+          set -e
+
+          cp cf-deployment/operations/scale-to-one-az.yml ops-files/
+          cp cf-deployment/operations/experimental/use-bosh-dns.yml ops-files/
+          cp cf-deployment/operations/experimental/use-bosh-dns-for-containers.yml ops-files/
+
+          cat <<EOT >> ops-files/on-the-fly.yml
+          - type: replace
+            path: /releases/name=cf-syslog-drain
+            value:
+              name: cf-syslog-drain
+              version: latest
+          EOT
+  - task: upload-stemcell
+    file: loggregator-ci/tasks/env-pool-tasks/bosh-upload-stemcell-from-cf-deployment.yml
+    input_mapping:
+      environment: pipeline-pool
+  - task: cf-deploy
+    file: loggregator-ci/tasks/env-pool-tasks/cf-deploy.yml
+    input_mapping:
+      environment: pipeline-pool
+    params:
+      SYSTEM_DOMAIN: loggr.cf-app.com #TODO: this could be included in the lock file
+      OPS_FILES: |
+        scale-to-one-az.yml
+        use-bosh-dns.yml
+        use-bosh-dns-for-containers.yml
+        on-the-fly.yml
+  - put: deployments-loggregator
+    params:
+      repository: updated-vars-store
+      rebase: true
+  - put: deployments-loggregator
+    input_mapping:
+      environment: pipeline-pool
+    params:
+      repository: updated-vars-store
+      rebase: true
+  - task: enable-feature-flags
+    file: loggregator-ci/tasks/env-pool-tasks/set-feature-flags.yml
+    input_mapping:
+      environment: pipeline-pool
+      vars-store: updated-vars-store
+    params:
+      SYSTEM_DOMAIN: loggr.cf-app.com
+      ENABLED_FEATURE_FLAGS: diego_docker
+  - task: cleanup
+    input_mapping:
+      environment: pipeline-pool
+    file: loggregator-ci/tasks/env-pool-tasks/bosh-cleanup.yml
+  on_failure:
+    put: pipeline-pool
+    params: {release: pipeline-pool}
+
+- name: cats
+  serial: true
+  serial_groups:
+  - bosh-cf-cats
+  plan:
+    - aggregate:
+      - get: cf-deployment-concourse-tasks
+      - get: deployments-loggregator
+      - get: cf-acceptance-tests
+      - get: cf-syslog-drain-release
+        passed: ["cf-deploy"]
+        trigger: true
+      - get: environment
+        resource: pipeline-pool
+        passed: ["cf-deploy"]
+        trigger: true
+      - get: loggregator-ci
+    - task: run-cats
+      file: loggregator-ci/tasks/env-pool-tasks/run-cats.yml
+      input_mapping:
+        integration-config: deployments-loggregator
+      params:
+        NODES: 9
+        USE_WINDOWS: false
+      on_failure:
+        put: pipeline-pool
+        params: {release: environment}
+
+- name: cfar-lats
+  serial: true
+  serial_groups:
+  - bosh-cfar-lats
+  plan:
+    - aggregate:
+      - get: cfar-logging-acceptance-tests
+        trigger: true
+      - get: cf-syslog-drain-release
+        passed: ["cf-deploy"]
+        trigger: true
+      - get: loggregator-ci
+      - get: environment
+        resource: pipeline-pool
+        passed: ["cf-deploy"]
+        trigger: true
+      - get: bbl-state
+        resource: deployments-loggregator
+        passed: ["cf-deploy"]
+    - task: run-cfar-lats
+      file: loggregator-ci/tasks/env-pool-tasks/cfar-lats.yml
+      params:
+        SYSTEM_DOMAIN: loggr.cf-app.com
+        SKIP_SSL_VALIDATION: true
+      on_failure:
+        put: pipeline-pool
+        params: {release: environment}
+
+- name: unclaim-environment
+  serial: true
+  plan:
+    - get: pipeline-pool
+      passed: ["cats", "cfar-lats"]
+      trigger: true
+    - put: pipeline-pool
+      params: {release: pipeline-pool}
