@@ -43,3 +43,7 @@ params:
   # - Whether or not to run the cats with `cf logs` or `cf-tail`
   USE_LOG_CACHE: false
 
+  # - Optional
+  # - Whether or not to run WATS
+  USE_WINDOWS: true
+

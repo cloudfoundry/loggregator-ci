@@ -36,7 +36,7 @@ cat <<EOF > integration-config/cats-config.json
   "include_tasks": true,
   "include_v3": true,
   "use_log_cache": ${USE_LOG_CACHE},
-  "include_windows": true,
+  "include_windows": ${USE_WINDOWS},
 
   "include_zipkin": false,
   "include_capi_experimental": false,
