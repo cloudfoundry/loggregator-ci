@@ -882,6 +882,11 @@ jobs:
                 name: loggregator
                 version: latest
             - type: replace
+              path: /releases/name=loggregator-agent
+              value:
+                name: loggregator-agent
+                version: latest
+            - type: replace
               path: /update/max_in_flight
               value: 5
             - type: replace
