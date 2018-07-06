@@ -638,9 +638,6 @@ jobs:
       params:
         repository: updated-deployments-loggregator
         rebase: true
-    on_failure:
-      put: pipeline-pool
-      params: {release: pipeline-pool}
 
 - name: loggregator-benchmarks
   serial: true
@@ -727,9 +724,6 @@ jobs:
       params:
         repository: updated-loggregator-bench-results
         rebase: true
-    on_failure:
-      put: pipeline-pool
-      params: {release: pipeline-pool}
 
 - name: loggregator-promotion
   serial: true
@@ -835,9 +829,6 @@ jobs:
       input_mapping:
         bbl-state: deployments-loggregator
         environment: pipeline-pool
-    on_failure:
-      put: pipeline-pool
-      params: {release: pipeline-pool}
 
 - name: cf-deploy
   serial: true
@@ -966,9 +957,6 @@ jobs:
       input_mapping:
         environment: pipeline-pool
       file: loggregator-ci/tasks/env-pool-tasks/bosh-cleanup.yml
-    on_failure:
-      put: pipeline-pool
-      params: {release: pipeline-pool}
 
 - name: cats
   serial: true
@@ -996,9 +984,6 @@ jobs:
         integration-config: deployments-loggregator
       params:
         NODES: 9
-      on_failure:
-        put: pipeline-pool
-        params: {release: environment}
 
 - name: cfar-lats
   serial: true
@@ -1027,9 +1012,6 @@ jobs:
       params:
         SYSTEM_DOMAIN: loggr.cf-app.com
         SKIP_SSL_VALIDATION: true
-      on_failure:
-        put: pipeline-pool
-        params: {release: environment}
 
 - name: unclaim-environment
   serial: true
