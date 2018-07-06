@@ -1241,7 +1241,7 @@ jobs:
       S3_SECRET_KEY: {{s3-secret-key}}
       BLOBSTORE_BUCKET: loggregator-agent-release-blobs
       SSH_KEY: {{loggregator-key}}
-      NEW_VERSION: "1.0"
+      NEW_VERSION: "2.0"
       RELEASE_NAME: "Loggregator Agent"
       TO_BRANCH: develop
       FROM_BRANCH: master
