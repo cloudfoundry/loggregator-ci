@@ -1496,8 +1496,6 @@ jobs:
         - |
           set -e
 
-          cp cf-deployment/operations/windows2016-cell.yml ops-files/
-          cp cf-deployment/operations/use-latest-windows2016-stemcell.yml ops-files/
           cp cf-deployment/operations/scale-to-one-az.yml ops-files/
           cp cf-deployment/operations/experimental/use-bosh-dns.yml ops-files/
           cp cf-deployment/operations/experimental/use-bosh-dns-for-containers.yml ops-files/
@@ -1515,16 +1513,14 @@ jobs:
               name: loggregator
               version: latest
           - type: replace
-            path: /releases/name=diego
-            value:
-              name: diego
-              version: $(bosh int cf-deployment/cf-deployment.yml --path=/releases/name=diego/version)
-              url: $(bosh int cf-deployment/cf-deployment.yml --path=/releases/name=diego/url)
-              sha1: $(bosh int cf-deployment/cf-deployment.yml --path=/releases/name=diego/sha1)
-          - type: replace
             path: /releases/name=cf-syslog-drain
             value:
               name: cf-syslog-drain
+              version: latest
+          - type: replace
+            path: /releases/name=loggregator-agent
+            value:
+              name: loggregator-agent
               version: latest
           - type: replace
             path: /instance_groups/name=doppler/instances
@@ -1538,12 +1534,6 @@ jobs:
           - type: replace
             path: /instance_groups/name=api/instances
             value: 2
-          - path: /releases/name=consul/url
-            type: replace
-            value: https://bosh.io/d/github.com/cloudfoundry-incubator/consul-release?v=193
-          - path: /releases/name=consul/sha1
-            type: replace
-            value: 3596fa1a1692d9e48d2e28789b60e0c72e984d31
           - type: replace
             path: /instance_groups/name=doppler/jobs/-
             value:
@@ -1566,24 +1556,6 @@ jobs:
           - type: replace
             path: /update/canaries
             value: 5
-          - type: replace
-            path: /releases/name=loggregator-agent/url
-            value: https://bosh.io/d/github.com/cloudfoundry/loggregator-agent-release?v=1.0
-          - type: replace
-            path: /releases/name=loggregator-agent/version
-            value: "1.0"
-          - type: replace
-            path: /releases/name=loggregator-agent/sha1
-            value: aa70e3bc95e25fe86ab00f3b698216a24a44c9d5
-          - type: replace
-            path: /releases/name=garden-runc/url
-            value: https://bosh.io/d/github.com/cloudfoundry/garden-runc-release?v=1.15.1
-          - type: replace
-            path: /releases/name=garden-runc/version
-            value: "1.15.1"
-          - type: replace
-            path: /releases/name=garden-runc/sha1
-            value: bdac2dc7debc2e9b4b9e32f009cb93ac281e5480
           EOT
   - task: upload-stemcell
     file: cf-deployment-concourse-tasks/bosh-upload-stemcell-from-cf-deployment/task.yml
