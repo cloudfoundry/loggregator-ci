@@ -94,6 +94,13 @@ resources:
     branch: release-elect
     private_key: ((cf-loggregator-oauth-bot-key))
 
+- name: loggregator-agent-release-master
+  type: git
+  source:
+    uri: git@github.com:cloudfoundry/loggregator-agent-release.git
+    branch: master
+    private_key: ((cf-loggregator-oauth-bot-key))
+
 - name: go-loggregator
   type: git
   source:
@@ -773,6 +780,29 @@ jobs:
       DEST_BRANCH: master
       FOLLOW_BUMPS_OF: src/code.cloudfoundry.org/loggregator,src/code.cloudfoundry.org/go-loggregator,src/code.cloudfoundry.org/loggregator-agent
   - put: loggregator-release-master
+    params:
+      repository: merged-dest
+
+- name: loggregator-agent-master-promotion
+  serial: true
+  plan:
+  - aggregate:
+    - get: loggregator-agent-release-elect
+      passed: ["loggregator-agent-promotion"]
+      trigger: true
+    - get: loggregator-agent-release-master
+    - get: bumper-tool
+    - get: loggregator-ci
+  - task: bumper
+    file: loggregator-ci/tasks/bumper/task.yml
+    input_mapping:
+      source: loggregator-agent-release-elect
+      dest: loggregator-agent-release-master
+    params:
+      SOURCE_BRANCH: release-elect
+      DEST_BRANCH: master
+      FOLLOW_BUMPS_OF: src/code.cloudfoundry.org/go-loggregator
+  - put: loggregator-agent-release-master
     params:
       repository: merged-dest
 
