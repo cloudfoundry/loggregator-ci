@@ -20,6 +20,14 @@ resources:
     pool: create
     private_key: {{cf-loggregator-oauth-bot-key}}
 
+- name: destroy-pool
+  type: pool
+  source:
+    uri: git@github.com:cloudfoundry/loggregator-locks.git
+    branch: master
+    pool: destroy
+    private_key: {{cf-loggregator-oauth-bot-key}}
+
 - name: pipeline-pool
   type: pool
   source:
@@ -78,3 +86,33 @@ jobs:
     params: {add: create-pool}
   - put: create-pool
     params: {remove: create-pool}
+
+- name: bbl-destroy
+  public: false
+  plan:
+  - put: destroy-pool
+    params: {acquire: true}
+  - aggregate:
+    - get: loggregator-ci
+    - get: cf-deployment-concourse-tasks
+    - get: deployments-loggregator
+  - task: delete-deployments
+    file: loggregator-ci/tasks/env-pool-tasks/bosh-delete-all-deployments.yml
+    input_mapping:
+      environment: destroy-pool
+      bbl-state: deployments-loggregator
+  - task: bbl-destroy
+    file: loggregator-ci/tasks/bbl-destroy-from-pool/task.yml
+    input_mapping:
+      bbl-state: deployments-loggregator
+      environment: destroy-pool
+    params:
+      BBL_GCP_SERVICE_ACCOUNT_KEY: gcp/service-account.key.json
+      GIT_COMMIT_USERNAME: Loggregator CI
+      GIT_COMMIT_EMAIL: "cf-loggregator@pivotal.io"
+  - put: deployments-loggregator
+    params:
+      repository: updated-bbl-state
+      rebase: true
+  - put: destroy-pool
+    params: {remove: destroy-pool}

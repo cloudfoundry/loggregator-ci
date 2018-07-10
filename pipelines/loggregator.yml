@@ -619,7 +619,7 @@ jobs:
     - task: upload-lats
       file: loggregator-ci/tasks/env-pool-tasks/upload-release.yml
       input_mapping:
-        bosh-release-dir: loggregator-release
+        bosh-release-dir: logging-acceptance-tests-release
         environment: pipeline-pool
     - task: lats-deploy
       file: loggregator-ci/tasks/env-pool-tasks/bosh-deploy.yml
@@ -984,6 +984,7 @@ jobs:
         integration-config: deployments-loggregator
       params:
         NODES: 9
+        USE_WINDOWS: false
 
 - name: cfar-lats
   serial: true
