@@ -1575,8 +1575,6 @@ jobs:
         add-persistent-isolation-segment-diego-cell.yml
         add-log-cache.yml
         on-the-fly.yml
-        windows2016-cell.yml
-        use-latest-windows2016-stemcell.yml
         use-bosh-dns.yml
         use-bosh-dns-for-containers.yml
         infrastructure-metrics.yml
