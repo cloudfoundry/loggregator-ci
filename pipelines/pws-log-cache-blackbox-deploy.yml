@@ -79,7 +79,7 @@ jobs:
             path: /instance_groups/name=log-cache-blackbox/azs
             value: [z2, z3, z4]
           - type: replace
-            path: /instance_groups/jobs/name=log-cache-blackbox/properties/log_cache_host
+            path: /instance_groups/jobs/name=log-cache-blackbox/properties/log_cache_host?
             value: doppler.service.cf.internal
           - type: remove
             path: /addons/name=bosh-dns
@@ -88,8 +88,14 @@ jobs:
           EOF
 
           bosh \
-            deploy "log-cache-release/$MANIFEST_FILE" \
+            interpolate "log-cache-release/$MANIFEST_FILE" \
             --deployment "$DEPLOYMENT_NAME" \
-            --non-interactive \
             --vars-file "deployments-loggregator/$SECRETS_FILE.yml" \
             --ops-file pws.yml
+
+          # bosh \
+          #  deploy "log-cache-release/$MANIFEST_FILE" \
+          #  --deployment "$DEPLOYMENT_NAME" \
+          #  --non-interactive \
+          #  --vars-file "deployments-loggregator/$SECRETS_FILE.yml" \
+          #  --ops-file pws.yml
