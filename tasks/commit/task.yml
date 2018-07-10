@@ -22,7 +22,3 @@ params:
   # - Required.
   # - The commit message.
   COMMIT_MESSAGE:
-
-  # - Optional
-  # - Append CI skip to commit message
-  CI_SKIP: true

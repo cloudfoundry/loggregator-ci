@@ -34,9 +34,7 @@ EOF
     --tarball ../github-release/release.tgz \
     --version "$NEW_VERSION"
   git add .
-  git commit -m "Create final release
-
-[ci skip]"
+  git commit -m "Create final release"
 
   final_release_sha=$(git rev-parse HEAD)
   git tag "$tag_name" $final_release_sha

@@ -25,9 +25,7 @@ pushd vars-store
   git config user.email "cf-loggregator@pivotal.io"
   git config user.name "Loggregator CI"
   git add . --all
-  git commit -m "Updated vars store for $DEPLOYMENT_NAME
-
-  [ci-skip]"
+  git commit -m "Updated vars store for $DEPLOYMENT_NAME"
 popd
 
 rsync -ac vars-store/ updated-vars-store
