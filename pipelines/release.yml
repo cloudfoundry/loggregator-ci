@@ -641,7 +641,7 @@ jobs:
       S3_SECRET_KEY: {{s3-secret-key}}
       BLOBSTORE_BUCKET: loggregator-release-blobs
       SSH_KEY: {{loggregator-key}}
-      NEW_VERSION: "102.2"
+      NEW_VERSION: "103.0"
       RELEASE_NAME: Loggregator
       TO_BRANCH: develop
       FROM_BRANCH: master
