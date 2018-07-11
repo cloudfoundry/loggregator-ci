@@ -148,6 +148,8 @@ jobs:
       passed: ["cf-deploy"]
       trigger: true
     - get: cf-drain-cli
+      passed: ["cf-deploy"]
+      trigger: true
   - task: run-tests
     config:
       platform: linux
@@ -348,6 +350,9 @@ jobs:
     - get: cf-syslog-drain-release
       trigger: true
       passed: ["cf-syslog-drain-bump-submodule"]
+    - get: cf-drain-cli
+      trigger: true
+      passed: ["cf-drain-cli-tests"]
     - get: vars-store
       resource: deployments-loggregator
     - get: vars-files
@@ -481,7 +486,7 @@ jobs:
   serial: true
   plan:
     - get: pipeline-pool
-      passed: ["cats", "cfar-lats"]
+      passed: ["cats", "cfar-lats", "cf-drain-cli-acceptance-tests"]
       trigger: true
     - put: pipeline-pool
       params: {release: pipeline-pool}
