@@ -575,6 +575,18 @@ jobs:
             path: /instance_groups/name=uaa/instances
             value: 2
           - type: replace
+            path: /instance_groups/name=uaa/jobs/name=uaa/properties/uaa/clients/lcats?
+            value:
+              authorities: doppler.firehose
+              authorized-grant-types: client_credentials
+              scope: doppler.firehose
+              secret: (( lcats_client_secret ))
+          - type: replace
+            path: /variables/name=lcats_client_secret?
+            value:
+              name: lcats_client_secret
+              type: password
+          - type: replace
             path: /instance_groups/name=api/instances
             value: 2
           - type: replace
