@@ -14,10 +14,11 @@ function validate {
 
 function set_pipeline {
     echo setting pipeline for "$1"
+    PASSWORD=`yq r ~/workspace/deployments-loggregator/gcp/lime/deployment-vars.yml cf_admin_password`
     fly -t $TARGET set-pipeline -p "$1" \
         -c "pipelines/$1.yml" \
         -l ~/workspace/deployments-loggregator/shared-secrets.yml \
-        -l ~/workspace/deployments-loggregator/log-cache-secrets.yml \
+        -v "cf_admin_password=$PASSWORD" \
         -l ~/workspace/loggregator-ci/scripts.yml
 }
 

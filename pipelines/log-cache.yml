@@ -580,7 +580,7 @@ jobs:
               authorities: doppler.firehose
               authorized-grant-types: client_credentials
               scope: doppler.firehose
-              secret: (( lcats_client_secret ))
+              secret: ((lcats_client_secret))
           - type: replace
             path: /variables/name=lcats_client_secret?
             value:
@@ -682,8 +682,8 @@ jobs:
           repository: relintdockerhubpushbot/cf-deployment-concourse-tasks
           tag: v3.19.0
       params:
-        USERNAME: {{lime-username}}
-        PASSWORD: {{lime-password}}
+        USERNAME: admin
+        PASSWORD: {{cf_admin_password}}
         DATADOG_API_KEY: {{datadog-dev-api-key}}
       run:
         path: /bin/bash
@@ -725,8 +725,8 @@ jobs:
           repository: relintdockerhubpushbot/cf-deployment-concourse-tasks
           tag: v3.19.0
       params:
-        USERNAME: {{lime-username}}
-        PASSWORD: {{lime-password}}
+        USERNAME: admin
+        PASSWORD: {{cf_admin_password}}
       run:
         path: /bin/bash
         args:
