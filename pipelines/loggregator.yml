@@ -217,6 +217,11 @@ jobs:
 
               pushd src/code.cloudfoundry.org/loggregator
                 go get -t -d ./...
+
+                pushd $GOPATH/src/github.com/gogo/protobuf
+                  git checkout v1.0.0
+                popd
+
                 go test -race $(go list ./... | grep -v integration_tests) \
                   -ginkgo.randomizeAllSpecs \
                   -ginkgo.slowSpecThreshold 20
