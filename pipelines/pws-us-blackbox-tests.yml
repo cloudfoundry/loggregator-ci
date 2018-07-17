@@ -5,9 +5,6 @@ resources:
 - name: 20m
   type: time
   source: {interval: 20m}
-- name: 30m
-  type: time
-  source: {interval: 30m}
 - name: 1h
   type: time
   source: {interval: 1h}
@@ -151,7 +148,7 @@ jobs:
   plan:
   - get: loggregator-ci
   - get: loggregator-tools
-  - get: 30m
+  - get: 20m
     trigger: true
   - task: v2-drain
     file: loggregator-ci/tasks/cf-syslog-drain-smoke-test.yml
@@ -174,7 +171,7 @@ jobs:
   plan:
   - get: loggregator-ci
   - get: loggregator-tools
-  - get: 30m
+  - get: 20m
     trigger: true
   - task: v2-drain
     file: loggregator-ci/tasks/cf-syslog-drain-smoke-test.yml
@@ -197,7 +194,7 @@ jobs:
   plan:
   - get: loggregator-ci
   - get: loggregator-tools
-  - get: 30m
+  - get: 20m
     trigger: true
   - task: v2-drain
     file: loggregator-ci/tasks/cf-syslog-drain-smoke-test.yml
@@ -224,7 +221,7 @@ jobs:
   plan:
   - get: loggregator-ci
   - get: loggregator-tools
-  - get: 30m
+  - get: 20m
     trigger: true
   - task: v2-drain
     file: loggregator-ci/tasks/cf-syslog-drain-smoke-test.yml
