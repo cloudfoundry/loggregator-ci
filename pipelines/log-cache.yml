@@ -10,7 +10,7 @@ groups:
   - log-cache-release-elect-promotion
   - log-cache-master-promotion
   - log-cache-cli-promotion
-  - log-cache-promql-bug
+  - blackbox-deploy
 - name: leadership-election
   jobs:
   - leadership-election-tests
@@ -478,6 +478,95 @@ jobs:
     input_mapping:
       bbl-state: deployments-loggregator
 
+- name: blackbox-deploy
+  serial: true
+  plan:
+  - aggregate:
+    - get: deployments-loggregator
+    - get: log-cache-release
+      passed:
+      - cf-deploy
+      trigger: true
+    - get: loggregator-ci
+  - task: create-blackbox-ops-file
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source:
+          repository: relintdockerhubpushbot/cf-deployment-concourse-tasks
+          tag: v3.19.0
+      outputs:
+      - name: ops-files
+      run:
+        path: /bin/bash
+        args:
+        - "-c"
+        - |
+          set -e
+
+          cat <<EOT >> ops-files/blackbox.yml
+          - type: replace
+            path: /name
+            value: blackbox
+          - type: replace
+            path: /addons/name=bosh-dns/properties?
+            value:
+              aliases:
+                doppler.service.cf.internal:
+                - '*.doppler.default.cf.bosh'
+              api:
+                client:
+                  tls:
+                    ca: ((dns_api_tls_ca.certificate))
+                    certificate: ((dns_api_client_tls.certificate))
+                    private_key: ((dns_api_client_tls.private_key))
+                server:
+                  tls:
+                    ca: ((dns_api_tls_ca.certificate))
+                    certificate: ((dns_api_server_tls.certificate))
+                    private_key: ((dns_api_server_tls.private_key))
+          - type: replace
+            path: /instance_groups
+            value:
+            - name: blackbox
+              azs: [z1, z2, z3, z4]
+              instances: 1
+              persistent_disk_type: 5GB
+              vm_type: minimal
+              stemcell: default
+              networks: [{name: default}]
+              jobs:
+              - name: log-cache-blackbox
+                release: log-cache
+                consumes:
+                  log-cache: {from: log-cache, deployment: cf}
+                properties:
+                  log_cache_host: doppler.service.cf.internal
+                  datadog:
+                    api_key: ((datadog-loggregator-api-key))
+                    tags: [blackbox]
+                    origin_host: lime.loggr.cf-app.com
+                consumes: {log-cache: {from: log-cache, deployment: cf}}
+          EOT
+
+  - task: blackbox-deploy
+    file: loggregator-ci/tasks/bosh-deploy/task.yml
+    params:
+      BBL_STATE_DIR: gcp/lime
+      DEPLOYMENT_NAME: blackbox
+      MANIFEST_FILE: manifests/log-cache-blackbox.yml
+      OPS_FILES: |
+        blackbox.yml
+      VARS_FILES: gcp/lime/deployment-vars.yml
+      VARS_STORE_FILE: gcp/lime/blackbox-vars.yml
+    input_mapping:
+      bbl-state: deployments-loggregator
+      bosh-release: log-cache-release
+      ops-files: ops-files
+      vars-files: deployments-loggregator
+      vars-store: deployments-loggregator
+
 ###############################################################################
 # SHARED
 ###############################################################################
@@ -663,102 +752,6 @@ jobs:
       ORG: system
       SPACE: accumulators
       SYSTEM_DOMAIN: lime.loggr.cf-app.com
-
-- name: log-cache-promql-bug
-  plan:
-  - aggregate:
-    - get: deployments-loggregator
-    - get: loggregator-release
-      trigger: true
-      passed: ["cf-deploy"]
-    - get: 10m
-      trigger: true
-  - task: collect-data
-    config:
-      platform: linux
-      image_resource:
-        type: docker-image
-        source:
-          repository: relintdockerhubpushbot/cf-deployment-concourse-tasks
-          tag: v3.19.0
-      params:
-        USERNAME: admin
-        PASSWORD: {{cf_admin_password}}
-        DATADOG_API_KEY: {{datadog-dev-api-key}}
-      run:
-        path: /bin/bash
-        args:
-        - "-c"
-        - |
-          set -e
-
-          cf login -a https://api.lime.loggr.cf-app.com -u $USERNAME -p $PASSWORD -o system -s blackbox-testing
-
-          for i in $(seq 1 100); do
-            count=$(curl \
-                 log-cache.lime.loggr.cf-app.com/v1/promql \
-                 -s \
-                 -H"Authorization: $(cf oauth-token)" \
-                 -G \
-                 --data-urlencode 'query=CapacityRemainingMemory{source_id="rep",deployment="lime.loggr.cf-app.com"}' |
-                 jq .vector.samples[]?.point | wc -l)
-
-                 currenttime=$(date +%s)
-                 curl  -X POST -H "Content-type: application/json" \
-                 -d "{ \"series\" :
-                          [{\"metric\":\"promql.bug.count\",
-                           \"points\":[[${currenttime}, ${count}]],
-                           \"type\":\"gauge\",
-                           \"host\":\"api.lime.loggr.cf-app.com\"}
-                          ]
-                     }" \
-                 'https://app.datadoghq.com/api/v1/series?api_key='"$DATADOG_API_KEY"
-
-                 sleep 1
-          done
-  - task: run-test
-    config:
-      platform: linux
-      image_resource:
-        type: docker-image
-        source:
-          repository: relintdockerhubpushbot/cf-deployment-concourse-tasks
-          tag: v3.19.0
-      params:
-        USERNAME: admin
-        PASSWORD: {{cf_admin_password}}
-      run:
-        path: /bin/bash
-        args:
-        - "-c"
-        - |
-          set -e
-
-          cf login -a https://api.lime.loggr.cf-app.com -u $USERNAME -p $PASSWORD -o system -s blackbox-testing
-
-          command() {
-            curl -s -G "http://log-cache.lime.loggr.cf-app.com/v1/promql" \
-            --data-urlencode 'query=CapacityRemainingMemory{source_id="rep"}' \
-            -H"Authorization: $(cf oauth-token)"
-          }
-          start_result=`command`
-          echo $start_result > start.txt
-          begin=`echo $start_result | jq '.vector.samples | length'`
-          echo $begin
-
-          # Assume each iteration is ~1s
-          for i in $(seq 1 600)
-          do
-              end_result=`command`
-              now=`echo $end_result | jq '.vector.samples | length'`
-              if [ "$begin" != "$now" ]
-              then
-                  echo 'Vive la difference'
-                  echo $now
-                  echo $end_result > end.txt
-                  exit 1
-              fi
-          done
 
 - name: leadership-election-tests
   public: true
