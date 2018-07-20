@@ -46,7 +46,6 @@ resources:
 jobs:
 - name: bbl-create
   public: false
-  serial: true
   plan:
   - put: create-pool
     params: {acquire: true}
