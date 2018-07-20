@@ -13,12 +13,22 @@ function validate {
 }
 
 function set_pipeline {
+    # TODO - this is an obviously nasty way of parsing and injecting
+    # credentials. Replace by modifying task yamls to accept deployment
+    # vars files directly ASAP.
+    CF_ADMIN_PASSWORD=`yq r ~/workspace/deployments-loggregator/gcp/lime/deployment-vars.yml cf_admin_password`
+    BLACKBOX_SECRET=`yq r ~/workspace/deployments-loggregator/gcp/lime/deployment-vars.yml blackbox_client_secret`
+    LCATS_SECRET=`yq r ~/workspace/deployments-loggregator/gcp/lime/deployment-vars.yml lcats_client_secret`
+    DATADOG_FORWARDER_SECRET=`yq r ~/workspace/deployments-loggregator/gcp/lime/deployment-vars.yml datadog_forwarder_client_secret`
+
     echo setting pipeline for "$1"
-    PASSWORD=`yq r ~/workspace/deployments-loggregator/gcp/lime/deployment-vars.yml cf_admin_password`
     fly -t $TARGET set-pipeline -p "$1" \
         -c "pipelines/$1.yml" \
         -l ~/workspace/deployments-loggregator/shared-secrets.yml \
-        -v "cf_admin_password=$PASSWORD" \
+        -v "cf_admin_password=$CF_ADMIN_PASSWORD" \
+        -v "blackbox_client_secret=$BLACKBOX_SECRET" \
+        -v "lcats_client_secret=$LCATS_SECRET" \
+        -v "datadog_forwarder_client_secret=$DATADOG_FORWARDER_SECRET" \
         -l ~/workspace/loggregator-ci/scripts.yml
 }
 
