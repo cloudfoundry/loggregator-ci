@@ -213,7 +213,7 @@ jobs:
       - name: cf-deployment
       - name: log-cache-release
       - name: loggregator-agent-release
-      - name: loggregator-release
+      - name: loggregator
       outputs:
       - name: ops-files
       run:
@@ -228,7 +228,7 @@ jobs:
           cp cf-deployment/operations/experimental/use-bosh-dns-for-containers.yml ops-files/
           cp bbl-state/gcp/playground/ops-files/*.yml ops-files/
           cp log-cache-release/manifests/operations/deploy-in-cf.yml ops-files/add-log-cache.yml
-          cp loggregator-release/manifests/operations/add-rlp-gateway-to-cf.yml ops-files/
+          cp loggregator/manifests/operations/add-rlp-gateway-to-cf.yml ops-files/
 
           cat <<EOT >> ops-files/on-the-fly.yml
           - type: replace
