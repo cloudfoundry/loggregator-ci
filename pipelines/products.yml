@@ -925,7 +925,7 @@ jobs:
   - task: run-tests
     file: loggregator-ci/tasks/go-test-with-latest-packages/task.yml
     params:
-      IMPORT_PATH: github.com/cloudfoundry/service-metrics
+      IMPORT_PATH: code.cloudfoundry.org/service-metrics
     input_mapping:
       source-repo: service-metrics
 
@@ -947,7 +947,7 @@ jobs:
     output_mapping:
       bumped-release-repo: bumped-service-metrics-release
     params:
-      SUBMODULE_PATH: src/github.com/cloudfoundry/service-metrics
+      SUBMODULE_PATH: src/code.cloudfoundry.org/service-metrics
   - task: sync-package-specs
     file: loggregator-ci/tasks/run-release-script/task.yml
     input_mapping:
@@ -977,7 +977,7 @@ jobs:
           pushd synced-service-metrics-release
             export GOPATH="$PWD"
             export PATH="$GOPATH/bin:$PATH"
-            go test -race github.com/cloudfoundry/service-metrics/...
+            go test -race code.cloudfoundry.org/service-metrics/...
           popd
   - task: commit
     file: loggregator-ci/tasks/commit/task.yml
@@ -1164,7 +1164,7 @@ jobs:
     params:
       SOURCE_BRANCH: release-elect
       DEST_BRANCH: master
-      FOLLOW_BUMPS_OF: src/github.com/cloudfoundry/service-metrics
+      FOLLOW_BUMPS_OF: src/code.cloudfoundry.org/service-metrics
   - put: service-metrics-release-master
     params:
       repository: merged-dest
