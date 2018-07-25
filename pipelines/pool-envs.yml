@@ -12,6 +12,12 @@ resources:
     branch: master
     private_key: {{deployments-loggregator-key}}
 
+- name: bosh-bootloader
+  type: git
+  source:
+    uri: https://github.com/loggregator/bosh-bootloader
+    branch: master
+
 - name: create-pool
   type: pool
   source:
@@ -53,10 +59,11 @@ jobs:
     - get: loggregator-ci
     - get: cf-deployment-concourse-tasks
     - get: deployments-loggregator
+    - get: bosh-bootloader
   - task: create-director
     input_mapping:
       bbl-state: deployments-loggregator
-      bbl-config: deployments-loggregator
+      bbl-config: bosh-bootloader
       environment: create-pool
     output_mapping:
       updated-bbl-state: updated-deployments-loggregator
@@ -68,6 +75,7 @@ jobs:
       BBL_IAAS: gcp
       BBL_LB_CERT: {{coconut_bbl_lb_cert}}
       BBL_LB_KEY: {{coconut_bbl_lb_key}}
+      BBL_CONFIG_DIR: plan-patches/iso-segs-gcp
     file: loggregator-ci/tasks/bbl-up-from-pool/task.yml
   - put: deployments-loggregator
     params:
