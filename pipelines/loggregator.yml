@@ -899,6 +899,8 @@ jobs:
             cp cf-deployment/operations/scale-to-one-az.yml ops-files/
             cp cf-deployment/operations/experimental/use-bosh-dns.yml ops-files/
             cp cf-deployment/operations/experimental/use-bosh-dns-for-containers.yml ops-files/
+            cp cf-deployment/operations/test/add-persistent-isolation-segment-router.yml ops-files/
+            cp cf-deployment/operations/test/add-persistent-isolation-segment-diego-cell.yml ops-files/
             cp loggregator-agent-release/manifests/operations/infrastructure-metrics.yml ops-files/infrastructure-metrics.yml
             cp loggregator-release/manifests/operations/add-rlp-gateway-to-cf.yml ops-files/
 
@@ -939,6 +941,8 @@ jobs:
         SYSTEM_DOMAIN: loggr.cf-app.com #TODO: this could be included in the lock file
         OPS_FILES: |
           scale-to-one-az.yml
+          add-persistent-isolation-segment-router.yml
+          add-persistent-isolation-segment-diego-cell.yml
           on-the-fly.yml
           use-bosh-dns.yml
           use-bosh-dns-for-containers.yml
