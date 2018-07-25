@@ -80,6 +80,7 @@ jobs:
   - put: deployments-loggregator
     params:
       repository: updated-deployments-loggregator
+      rebase: true
   - task: configure-dns
     input_mapping:
       bbl-state: updated-deployments-loggregator
