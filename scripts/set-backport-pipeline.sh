@@ -17,7 +17,7 @@ function set_pipeline {
     echo setting pipeline for $backport
     fly -t $TARGET set-pipeline -p $backport \
         -c <(bosh int "pipelines/$product.yml" -o "pipelines/backport-ops/$backport.yml" -o "pipelines/backport-ops/env.yml")\
-        -l ~/workspace/deployments-loggregator/shared-secrets.yml \
+        -l <(lpass show 'Shared-Loggregator (Pivotal Only)/pipeline-secrets.yml' --notes) \
         -l ~/workspace/loggregator-ci/scripts.yml
 }
 
