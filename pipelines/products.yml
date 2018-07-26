@@ -1303,6 +1303,7 @@ jobs:
       BBL_STATE_DIR: gcp/coconut-bbl
       SYSTEM_DOMAIN: coconut.cf-app.com
       VARS_STORE_FILE: gcp/coconut-bbl/deployment-vars.yml
+      VARS_FILES: gcp/coconut-bbl/coconut-certs.yml
       OPS_FILES: |
         clients.yml
         scale-to-one-az.yml
