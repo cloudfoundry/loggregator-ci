@@ -2,7 +2,7 @@
 
 function set_globals {
     pipeline=$1
-    TARGET="${TARGET:-loggregator}"
+    TARGET="${TARGET:-loggr}"
 }
 
 function validate {

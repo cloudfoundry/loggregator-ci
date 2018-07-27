@@ -25,7 +25,7 @@ resources:
   type: git
   source:
     uri: https://github.com/cloudfoundry/cf-deployment
-    branch: develop
+    branch: master
 
 - name: log-cache-release
   type: git
@@ -224,8 +224,8 @@ jobs:
           set -e
 
           cp cf-deployment/operations/scale-to-one-az.yml ops-files/
-          cp cf-deployment/operations/experimental/use-bosh-dns.yml ops-files/
-          cp cf-deployment/operations/experimental/use-bosh-dns-for-containers.yml ops-files/
+          cp cf-deployment/operations/use-bosh-dns.yml ops-files/
+          cp cf-deployment/operations/use-bosh-dns-for-containers.yml ops-files/
           cp bbl-state/gcp/playground/ops-files/*.yml ops-files/
           cp log-cache-release/manifests/operations/deploy-in-cf.yml ops-files/add-log-cache.yml
           cp loggregator/manifests/operations/add-rlp-gateway-to-cf.yml ops-files/

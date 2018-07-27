@@ -4,14 +4,6 @@ groups:
   - cf-deploy
   - cfar-lats
   - cats
-  - lcats
-  - log-cache-tests
-  - log-cache-cli-tests
-  - log-cache-docker-images
-  - log-cache-bump-submodule
-  - log-cache-release-elect-promotion
-  - log-cache-master-promotion
-  - log-cache-cli-promotion
   - statsd-injector-tests
   - statsd-injector-bump-submodule
   - statsd-injector-deploy
@@ -27,24 +19,10 @@ groups:
   - service-metrics-master-promotion
   - leadership-election-tests
   - leadership-election-bump-submodule
-  - log-cache-promql-bug
 - name: director-lifecycle
   jobs:
   - coconut-bbl-up
   - coconut-bbl-destroy
-- name: log-cache
-  jobs:
-  - log-cache-tests
-  - log-cache-cli-tests
-  - log-cache-docker-images
-  - log-cache-bump-submodule
-  - cfar-lats
-  - cats
-  - lcats
-  - cf-deploy
-  - log-cache-release-elect-promotion
-  - log-cache-master-promotion
-  - log-cache-cli-promotion
 - name: statsd-injector
   jobs:
   - statsd-injector-tests
@@ -123,27 +101,12 @@ resources:
     - .final_builds
     - releases
 
-- name: log-cache-acceptance-tests-release
-  type: git
-  source:
-    uri: https://github.com/cloudfoundry/log-cache-acceptance-tests-release
-    branch: master
-
 - name: loggregator-ci
   type: git
   source:
     uri: git@github.com:cloudfoundry/loggregator-ci
     branch: master
     private_key: {{cf-loggregator-oauth-bot-key}}
-
-- name: loggregator-ci-docker-images
-  type: git
-  source:
-    uri: git@github.com:cloudfoundry/loggregator-ci
-    branch: master
-    private_key: {{cf-loggregator-oauth-bot-key}}
-    paths:
-    - docker-images
 
 - name: loggregator-agent-release
   type: git
@@ -188,64 +151,6 @@ resources:
   type: git
   source:
     uri: git@github.com:cloudfoundry/noisy-neighbor-nozzle
-    branch: master
-    private_key: {{cf-loggregator-oauth-bot-key}}
-
-- name: log-cache-release
-  type: git
-  source:
-    uri: git@github.com:cloudfoundry/log-cache-release
-    branch: develop
-    private_key: {{cf-loggregator-oauth-bot-key}}
-    ignore_paths:
-    - .final_builds
-    - releases
-    disable_ci_skip: false
-
-- name: log-cache-release-elect
-  type: git
-  source:
-    uri: git@github.com:cloudfoundry/log-cache-release
-    branch: release-elect
-    private_key: {{cf-loggregator-oauth-bot-key}}
-
-- name: log-cache-release-master
-  type: git
-  source:
-    uri: git@github.com:cloudfoundry/log-cache-release
-    branch: master
-    private_key: {{cf-loggregator-oauth-bot-key}}
-    disable_ci_skip: true
-
-- name: log-cache
-  type: git
-  source:
-    uri: git@github.com:cloudfoundry/log-cache
-    branch: master
-    private_key: {{cf-loggregator-oauth-bot-key}}
-
-- name: go-log-cache
-  type: git
-  source:
-    uri: https://github.com/cloudfoundry/go-log-cache
-    branch: master
-
-- name: go-loggregator
-  type: git
-  source:
-    uri: https://github.com/cloudfoundry/go-loggregator
-    branch: master
-
-- name: log-cache-cli
-  type: git
-  source:
-    uri: https://github.com/cloudfoundry/log-cache-cli
-    branch: develop
-
-- name: log-cache-cli-master
-  type: git
-  source:
-    uri: git@github.com:cloudfoundry/log-cache-cli
     branch: master
     private_key: {{cf-loggregator-oauth-bot-key}}
 
@@ -306,34 +211,6 @@ resources:
     private_key: {{cf-loggregator-oauth-bot-key}}
     uri: git@github.com:cloudfoundry/leadership-election-release
 
-- name: log-cache-image
-  type: docker-image
-  source:
-    repository: loggregator/log-cache
-    username: {{docker-hub-username}}
-    password: {{docker-hub-password}}
-
-- name: nozzle-image
-  type: docker-image
-  source:
-    repository: loggregator/log-cache-nozzle
-    username: {{docker-hub-username}}
-    password: {{docker-hub-password}}
-
-- name: gateway-image
-  type: docker-image
-  source:
-    repository: loggregator/log-cache-gateway
-    username: {{docker-hub-username}}
-    password: {{docker-hub-password}}
-
-- name: scheduler-image
-  type: docker-image
-  source:
-    repository: loggregator/log-cache-scheduler
-    username: {{docker-hub-username}}
-    password: {{docker-hub-password}}
-
 jobs:
 ###############################################################################
 # DIRECTOR LIFECYCLE
@@ -391,296 +268,6 @@ jobs:
     params:
       repository: updated-bbl-state
       rebase: true
-
-###############################################################################
-# LOG CACHE
-###############################################################################
-- name: log-cache-tests
-  serial: true
-  public: true
-  plan:
-  - aggregate:
-    - get: loggregator-ci
-    - get: log-cache
-      trigger: true
-  - task: run-tests
-    file: loggregator-ci/tasks/go-test-with-latest-packages/task.yml
-    input_mapping:
-      source-repo: log-cache
-    params:
-      IMPORT_PATH: code.cloudfoundry.org/log-cache
-
-- name: log-cache-cli-tests
-  serial: true
-  public: true
-  plan:
-  - aggregate:
-    - get: loggregator-ci
-    - get: log-cache-cli
-      trigger: true
-    - get: 10m
-      trigger: true
-  - task: run-tests
-    file: loggregator-ci/tasks/go-test-with-latest-packages/task.yml
-    input_mapping:
-      source-repo: log-cache-cli
-    params:
-      IMPORT_PATH: code.cloudfoundry.org/log-cache-cli
-
-- name: log-cache-docker-images
-  serial: true
-  public: true
-  plan:
-  - aggregate:
-    - get: loggregator-ci
-    - get: loggregator-ci-docker-images
-      trigger: true
-    - get: log-cache
-      trigger: true
-      passed: ["log-cache-tests"]
-  - aggregate:
-    - task: build-log-cache-image
-      file: loggregator-ci/tasks/build-go-docker-image/task.yml
-      input_mapping:
-        context-repo: loggregator-ci-docker-images
-        source-repo: log-cache
-      output_mapping:
-        build-image: build-log-cache-image
-      params:
-        CONTEXT_PATH: docker-images/log-cache
-        BASE_PACKAGE: code.cloudfoundry.org/log-cache
-    - task: build-nozzle-image
-      file: loggregator-ci/tasks/build-go-docker-image/task.yml
-      input_mapping:
-        context-repo: loggregator-ci-docker-images
-        source-repo: log-cache
-      output_mapping:
-        build-image: build-nozzle-image
-      params:
-        CONTEXT_PATH: docker-images/log-cache-nozzle
-        BASE_PACKAGE: code.cloudfoundry.org/log-cache
-    - task: build-gateway-image
-      file: loggregator-ci/tasks/build-go-docker-image/task.yml
-      input_mapping:
-        context-repo: loggregator-ci-docker-images
-        source-repo: log-cache
-      output_mapping:
-        build-image: build-gateway-image
-      params:
-        CONTEXT_PATH: docker-images/log-cache-gateway
-        BASE_PACKAGE: code.cloudfoundry.org/log-cache
-    - task: build-scheduler-image
-      file: loggregator-ci/tasks/build-go-docker-image/task.yml
-      input_mapping:
-        context-repo: loggregator-ci-docker-images
-        source-repo: log-cache
-      output_mapping:
-        build-image: build-scheduler-image
-      params:
-        CONTEXT_PATH: docker-images/log-cache-scheduler
-        BASE_PACKAGE: code.cloudfoundry.org/log-cache
-  - aggregate:
-    - put: log-cache-image
-      params:
-        build: build-log-cache-image/build
-        tag: build-log-cache-image/tag
-        tag_as_latest: true
-        cache: true
-        cache_tag: latest
-    - put: nozzle-image
-      params:
-        build: build-nozzle-image/build
-        tag: build-nozzle-image/tag
-        tag_as_latest: true
-        cache: true
-        cache_tag: latest
-    - put: gateway-image
-      params:
-        build: build-gateway-image/build
-        tag: build-gateway-image/tag
-        tag_as_latest: true
-        cache: true
-        cache_tag: latest
-    - put: scheduler-image
-      params:
-        build: build-scheduler-image/build
-        tag: build-scheduler-image/tag
-        tag_as_latest: true
-        cache: true
-        cache_tag: latest
-
-- name: log-cache-bump-submodule
-  serial: true
-  plan:
-  - aggregate:
-    - get: loggregator-ci
-    - get: log-cache-release
-      trigger: true
-    - get: log-cache
-      trigger: true
-      passed: ["log-cache-tests"]
-    - get: go-log-cache
-      trigger: true
-    - get: go-loggregator
-      trigger: true
-  - task: update-log-cache-submodule
-    file: loggregator-ci/tasks/bump-submodule/task.yml
-    input_mapping:
-      release-repo: log-cache-release
-      source-repo: log-cache
-    output_mapping:
-      bumped-release-repo: bumped-log-cache-release
-    params:
-      SUBMODULE_PATH: src/code.cloudfoundry.org/log-cache
-  - task: update-go-log-cache-submodule
-    file: loggregator-ci/tasks/bump-submodule/task.yml
-    input_mapping:
-      release-repo: bumped-log-cache-release
-      source-repo: go-log-cache
-    output_mapping:
-      bumped-release-repo: bumped-go-log-cache-release
-    params:
-      SUBMODULE_PATH: src/code.cloudfoundry.org/go-log-cache
-  - task: update-go-loggregator-submodule
-    file: loggregator-ci/tasks/bump-submodule/task.yml
-    input_mapping:
-      release-repo: bumped-go-log-cache-release
-      source-repo: go-loggregator
-    output_mapping:
-      bumped-release-repo: bumped-go-loggregator-release
-    params:
-      SUBMODULE_PATH: src/code.cloudfoundry.org/go-loggregator
-  - task: sync-package-specs
-    file: loggregator-ci/tasks/run-release-script/task.yml
-    input_mapping:
-      release-repo: bumped-go-loggregator-release
-    output_mapping:
-      updated-release-repo: synced-log-cache-release
-    params:
-      SCRIPT: scripts/sync-package-specs
-  - task: run-tests
-    file: loggregator-ci/tasks/run-release-script/task.yml
-    input_mapping:
-      release-repo: synced-log-cache-release
-    params:
-      SCRIPT: scripts/test
-  - task: commit
-    file: loggregator-ci/tasks/commit-with-shortlog/task.yml
-    input_mapping:
-      release-repo: synced-log-cache-release
-    output_mapping:
-      committed-repo: committed-log-cache-release
-    params:
-      PATHS: |
-        src/code.cloudfoundry.org/log-cache
-        src/code.cloudfoundry.org/go-log-cache
-        src/code.cloudfoundry.org/go-loggregator
-        packages
-  - put: log-cache-release
-    params:
-      repository: committed-log-cache-release
-      rebase: true
-
-- name: log-cache-release-elect-promotion
-  serial: true
-  plan:
-  - aggregate:
-    - get: develop
-      resource: log-cache-release
-      trigger: true
-      passed: ["cats", "cfar-lats", "lcats"]
-    - get: log-cache-release-elect
-  - put: log-cache-release-elect
-    params:
-      repository: develop
-
-- name: log-cache-cli-promotion
-  serial: true
-  plan:
-  - aggregate:
-    - get: log-cache-cli
-      passed: ["cats"]
-      trigger: true
-    - get: log-cache-cli-master
-    - get: bumper-tool
-    - get: loggregator-ci
-  - task: bumper
-    file: loggregator-ci/tasks/bumper/task.yml
-    input_mapping:
-      source: log-cache-cli
-      dest: log-cache-cli-master
-    params:
-      SOURCE_BRANCH: develop
-      DEST_BRANCH: master
-  - put: log-cache-cli-master
-    params:
-      repository: merged-dest
-
-- name: log-cache-master-promotion
-  serial: true
-  plan:
-  - aggregate:
-    - get: log-cache-release-elect
-      passed: ["log-cache-release-elect-promotion"]
-      trigger: true
-    - get: log-cache-release-master
-    - get: bumper-tool
-    - get: loggregator-ci
-  - task: bumper
-    file: loggregator-ci/tasks/bumper/task.yml
-    input_mapping:
-      source: log-cache-release-elect
-      dest: log-cache-release-master
-    params:
-      SOURCE_BRANCH: release-elect
-      DEST_BRANCH: master
-      FOLLOW_BUMPS_OF: src/code.cloudfoundry.org/log-cache,src/code.cloudfoundry.org/go-log-cache
-  - put: log-cache-release-master
-    params:
-      repository: merged-dest
-
-- name: lcats
-  serial: true
-  plan:
-  - aggregate:
-    - get: log-cache-release
-      passed:
-      - cf-deploy
-      trigger: true
-    - get: deployments-loggregator
-    - get: loggregator-ci
-    - get: log-cache-acceptance-tests-release
-      trigger: true
-  - task: upload-lcats
-    file: loggregator-ci/tasks/upload-release/task.yml
-    params:
-      BBL_STATE_DIR: gcp/coconut-bbl
-    input_mapping:
-      bbl-state: deployments-loggregator
-      bosh-release-dir: log-cache-acceptance-tests-release
-  - task: lcats-deploy
-    file: loggregator-ci/tasks/bosh-deploy/task.yml
-    params:
-      BBL_STATE_DIR: gcp/coconut-bbl
-      DEPLOYMENT_NAME: lcats
-      MANIFEST_FILE: manifests/manifest.yml
-      VARS_FILES: gcp/coconut-bbl/deployment-vars.yml
-      VARS_STORE_FILE: gcp/coconut-bbl/lcats-vars.yml
-    input_mapping:
-      bbl-state: deployments-loggregator
-      bosh-release: log-cache-acceptance-tests-release
-      ops-files: deployments-loggregator
-      vars-files: deployments-loggregator
-      vars-store: deployments-loggregator
-  - task: run-lcats
-    file: loggregator-ci/tasks/run-errand/task.yml
-    params:
-      BBL_STATE_DIR: gcp/coconut-bbl
-      DEPLOYMENT_NAME: lcats
-      ERRAND: lcats
-      KEEP_ALIVE: true
-    input_mapping:
-      bbl-state: deployments-loggregator
 
 ###############################################################################
 # STATSD INJECTOR
@@ -1189,9 +776,6 @@ jobs:
       trigger: true
     - get: loggregator-agent-release
       trigger: true
-    - get: log-cache-release
-      trigger: true
-      passed: ["log-cache-bump-submodule"]
     - get: vars-store
       resource: deployments-loggregator
     - get: vars-files
@@ -1209,12 +793,6 @@ jobs:
         bosh-release-dir: loggregator-agent-release
       params:
         BBL_STATE_DIR: gcp/coconut-bbl
-    - task: upload-log-cache-release
-      file: loggregator-ci/tasks/upload-release/task.yml
-      input_mapping:
-        bosh-release-dir: log-cache-release
-      params:
-        BBL_STATE_DIR: gcp/coconut-bbl
   - task: copy-ops-files
     config:
       platform: linux
@@ -1226,7 +804,6 @@ jobs:
       inputs:
       - name: bbl-state
       - name: cf-deployment
-      - name: log-cache-release
       - name: loggregator-agent-release
       outputs:
       - name: ops-files
@@ -1238,13 +815,13 @@ jobs:
           set -e
 
           cp cf-deployment/operations/scale-to-one-az.yml ops-files/
+          cp cf-deployment/operations/experimental/use-log-cache.yml ops-files/
           cp cf-deployment/operations/experimental/use-bosh-dns.yml ops-files/
           cp cf-deployment/operations/experimental/use-bosh-dns-for-containers.yml ops-files/
           cp cf-deployment/operations/use-compiled-releases.yml ops-files/
           cp cf-deployment/operations/test/add-persistent-isolation-segment-router.yml ops-files/
           cp cf-deployment/operations/test/add-persistent-isolation-segment-diego-cell.yml ops-files/
           cp bbl-state/gcp/coconut-bbl/ops-files/*.yml ops-files/
-          cp log-cache-release/manifests/operations/deploy-in-cf-doppler-collocated.yml ops-files/add-log-cache.yml
           cp loggregator-agent-release/manifests/operations/infrastructure-metrics.yml ops-files/infrastructure-metrics.yml
 
           cat <<EOT >> ops-files/on-the-fly.yml
@@ -1271,21 +848,8 @@ jobs:
             path: /instance_groups/name=api/instances
             value: 2
           - type: replace
-            path: /instance_groups/name=doppler/jobs/-
-            value:
-              name: log-cache-blackbox
-              release: log-cache
-              properties:
-                datadog:
-                  api_key: {{datadog-dev-api-key}}
-                  origin_host: coconut.cf-app.com
-          - type: replace
             path: /instance_groups/name=doppler/vm_type
             value: small-highmem
-          - type: replace
-            path: /instance_groups/name=doppler/jobs/name=log-cache-group-reader/provides?
-            value:
-                log-cache-group-reader: {shared: true}
           - type: replace
             path: /update/max_in_flight
             value: 10
@@ -1308,9 +872,9 @@ jobs:
         clients.yml
         scale-to-one-az.yml
         use-compiled-releases.yml
+        use-log-cache.yml
         add-persistent-isolation-segment-router.yml
         add-persistent-isolation-segment-diego-cell.yml
-        add-log-cache.yml
         on-the-fly.yml
         use-bosh-dns.yml
         use-bosh-dns-for-containers.yml
@@ -1350,102 +914,6 @@ jobs:
       SPACE: accumulators
       SYSTEM_DOMAIN: coconut.cf-app.com
 
-- name: log-cache-promql-bug
-  plan:
-  - aggregate:
-    - get: deployments-loggregator
-    - get: loggregator-release
-      trigger: true
-      passed: ["cf-deploy"]
-    - get: 10m
-      trigger: true
-  - task: collect-data
-    config:
-      platform: linux
-      image_resource:
-        type: docker-image
-        source:
-          repository: relintdockerhubpushbot/cf-deployment-concourse-tasks
-          tag: v3.19.0
-      params:
-        USERNAME: {{coconut-username}}
-        PASSWORD: {{coconut-password}}
-        DATADOG_API_KEY: {{datadog-dev-api-key}}
-      run:
-        path: /bin/bash
-        args:
-        - "-c"
-        - |
-          set -e
-
-          cf login -a https://api.coconut.cf-app.com -u $USERNAME -p $PASSWORD -o system -s blackbox-testing
-
-          for i in $(seq 1 100); do
-            count=$(curl \
-                 log-cache.coconut.cf-app.com/v1/promql \
-                 -s \
-                 -H"Authorization: $(cf oauth-token)" \
-                 -G \
-                 --data-urlencode 'query=CapacityRemainingMemory{source_id="rep",deployment="coconut.cf-app.com"}' |
-                 jq .vector.samples[]?.point | wc -l)
-
-                 currenttime=$(date +%s)
-                 curl  -X POST -H "Content-type: application/json" \
-                 -d "{ \"series\" :
-                          [{\"metric\":\"promql.bug.count\",
-                           \"points\":[[${currenttime}, ${count}]],
-                           \"type\":\"gauge\",
-                           \"host\":\"api.coconut.cf-app.com\"}
-                          ]
-                     }" \
-                 'https://app.datadoghq.com/api/v1/series?api_key='"$DATADOG_API_KEY"
-
-                 sleep 1
-          done
-  - task: run-test
-    config:
-      platform: linux
-      image_resource:
-        type: docker-image
-        source:
-          repository: relintdockerhubpushbot/cf-deployment-concourse-tasks
-          tag: v3.19.0
-      params:
-        USERNAME: {{coconut-username}}
-        PASSWORD: {{coconut-password}}
-      run:
-        path: /bin/bash
-        args:
-        - "-c"
-        - |
-          set -e
-
-          cf login -a https://api.coconut.cf-app.com -u $USERNAME -p $PASSWORD -o system -s blackbox-testing
-
-          command() {
-            curl -s -G "http://log-cache.coconut.cf-app.com/v1/promql" \
-            --data-urlencode 'query=CapacityRemainingMemory{source_id="rep"}' \
-            -H"Authorization: $(cf oauth-token)"
-          }
-          start_result=`command`
-          echo $start_result > start.txt
-          begin=`echo $start_result | jq '.vector.samples | length'`
-          echo $begin
-
-          # Assume each iteration is ~1s
-          for i in $(seq 1 600)
-          do
-              end_result=`command`
-              now=`echo $end_result | jq '.vector.samples | length'`
-              if [ "$begin" != "$now" ]
-              then
-                  echo 'Vive la difference'
-                  echo $now
-                  echo $end_result > end.txt
-                  exit 1
-              fi
-          done
-
 - name: cats
   serial: true
   serial_groups:
@@ -1461,25 +929,12 @@ jobs:
       - get: loggregator-agent-release
         trigger: true
         passed: ["cf-deploy"]
-      - get: log-cache-cli
-        passed: ["log-cache-cli-tests"]
-        trigger: true
-      - get: log-cache-release
-        passed: ["cf-deploy"]
-        trigger: true
     - task: run-cats
       file: cf-deployment-concourse-tasks/run-cats/task.yml
       input_mapping:
         integration-config: deployments-loggregator
       params:
         CONFIG_FILE_PATH: gcp/coconut-bbl/cats-config.json
-        NODES: 9
-    - task: run-cats-with-log-cache
-      file: cf-deployment-concourse-tasks/run-cats/task.yml
-      input_mapping:
-        integration-config: deployments-loggregator
-      params:
-        CONFIG_FILE_PATH: gcp/coconut-bbl/log-cache-cats-config.json
         NODES: 9
 
 - name: cfar-lats
@@ -1494,9 +949,6 @@ jobs:
         trigger: true
         passed: ["cf-deploy"]
       - get: loggregator-agent-release
-        trigger: true
-        passed: ["cf-deploy"]
-      - get: log-cache-release
         trigger: true
         passed: ["cf-deploy"]
       - get: loggregator-ci
