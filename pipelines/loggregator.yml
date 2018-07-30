@@ -900,8 +900,8 @@ jobs:
             set -e
 
             cp cf-deployment/operations/scale-to-one-az.yml ops-files/
-            cp cf-deployment/operations/experimental/use-bosh-dns.yml ops-files/
-            cp cf-deployment/operations/experimental/use-bosh-dns-for-containers.yml ops-files/
+            cp cf-deployment/operations/use-bosh-dns.yml ops-files/
+            cp cf-deployment/operations/use-bosh-dns-for-containers.yml ops-files/
             cp cf-deployment/operations/test/add-persistent-isolation-segment-router.yml ops-files/
             cp cf-deployment/operations/test/add-persistent-isolation-segment-diego-cell.yml ops-files/
             cp cf-deployment/operations/test/add-persistent-isolation-segment-loggregator.yml ops-files/
