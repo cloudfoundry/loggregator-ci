@@ -49,7 +49,7 @@ jobs:
         SUBSCRIPTION_ID: {{noisy-neighbor-nozzle-subscription-id}}
         USERNAME: {{pws-username}}
         PASSWORD: {{pws-password}}
-        DATADOG_API_KEY: {{datadog-dev-api-key}}
+        DATADOG_API_KEY: {{datadog-prod-api-key}}
         NOZZLE_COUNT: 14
       run:
         path: bash
