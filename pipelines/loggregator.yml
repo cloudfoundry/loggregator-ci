@@ -159,7 +159,7 @@ resources:
   type: git
   source:
     uri: https://github.com/cloudfoundry/cf-deployment
-    branch: loggregator-iso-segs
+    branch: loggr-iso-segs
     private_key: ((loggregator-key))
 
 - name: cf-deployment-concourse-tasks
