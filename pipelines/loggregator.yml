@@ -155,6 +155,13 @@ resources:
     branch: master
     private_key: ((loggregator-key))
 
+- name: iso-cf-d
+  type: git
+  source:
+    uri: https://github.com/cloudfoundry/cf-deployment
+    branch: loggregator-iso-segs
+    private_key: ((loggregator-key))
+
 - name: cf-deployment-concourse-tasks
   type: git
   source:
@@ -845,6 +852,7 @@ jobs:
     - get: bbl-state
       resource: deployments-loggregator
     - get: cf-deployment
+      resource: iso-cf-d
       trigger: true
     - get: cf-deployment-concourse-tasks
     - get: loggregator-release
@@ -896,6 +904,7 @@ jobs:
             cp cf-deployment/operations/experimental/use-bosh-dns-for-containers.yml ops-files/
             cp cf-deployment/operations/test/add-persistent-isolation-segment-router.yml ops-files/
             cp cf-deployment/operations/test/add-persistent-isolation-segment-diego-cell.yml ops-files/
+            cp cf-deployment/operations/test/add-persistent-isolation-segment-loggregator.yml ops-files/
             cp loggregator-agent-release/manifests/operations/infrastructure-metrics.yml ops-files/infrastructure-metrics.yml
             cp loggregator-release/manifests/operations/add-rlp-gateway-to-cf.yml ops-files/
 
@@ -938,6 +947,7 @@ jobs:
           scale-to-one-az.yml
           add-persistent-isolation-segment-router.yml
           add-persistent-isolation-segment-diego-cell.yml
+          add-persistent-isolation-segment-loggregator.yml
           on-the-fly.yml
           use-bosh-dns.yml
           use-bosh-dns-for-containers.yml
