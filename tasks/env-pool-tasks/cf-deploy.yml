@@ -5,7 +5,7 @@ image_resource:
   type: docker-image
   source:
     repository: relintdockerhubpushbot/cf-deployment-concourse-tasks
-    tag: v5.15.0
+    tag: v5.9.0
 
 inputs:
 - name: bbl-state  # - The repo containing the Director's bbl state dir
@@ -104,14 +104,6 @@ params:
   # - Optional
   # - This will cause the task to fail if you are not using the DEPLOY_WITH_UPTIME_MEASUREMENTS flag
   # - It will cause the concourse task to fail if you do not have perfect uptime
-
-  REGENERATE_CREDENTIALS: false
-  # - Optional
-  # - Delete credentials associated with this deployment from CredHub
-  # - This allows the credentials to be freshly generated each time
-  # - This is helpful for testing changes around variable generation
-  # - Works well with fresh deployments
-  # - Upgrade deployments are not expected to work with total cred rotation
 
   APP_PUSHABILITY_THRESHOLD: 0
   # - Optional
