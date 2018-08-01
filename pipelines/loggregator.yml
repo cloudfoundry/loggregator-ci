@@ -42,7 +42,7 @@ resources:
   source:
     uri: git@github.com:cloudfoundry/loggregator-locks.git
     branch: master
-    pool: pipelines
+    pool: loggregator
     private_key: ((cf-loggregator-oauth-bot-key))
 
 - name: loggregator-ci
@@ -904,7 +904,6 @@ jobs:
             cp cf-deployment/operations/use-bosh-dns-for-containers.yml ops-files/
             cp loggregator-release/manifests/operations/add-rlp-gateway-to-cf.yml ops-files/
             cp loggregator-agent-release/manifests/operations/infrastructure-metrics.yml ops-files/infrastructure-metrics.yml
-            cp cf-deployment/operations/test/add-persistent-isolation-segment-router.yml ops-files/
             cp cf-deployment/operations/test/add-persistent-isolation-segment-diego-cell.yml ops-files/
             cp cf-deployment/operations/test/add-persistent-isolation-segment-loggregator.yml ops-files/
 
@@ -950,7 +949,6 @@ jobs:
           use-bosh-dns-for-containers.yml
           infrastructure-metrics.yml
           add-rlp-gateway-to-cf.yml
-          add-persistent-isolation-segment-router.yml
           add-persistent-isolation-segment-diego-cell.yml
           add-persistent-isolation-segment-loggregator.yml
     - put: deployments-loggregator
