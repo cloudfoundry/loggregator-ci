@@ -1,7 +1,0 @@
-#!/bin/bash
-
-set -ex
-
-export BBL_STATE_DIR=deployments-loggregator/$(cat environment/metadata)
-
-./loggregator-ci/tasks/loggregator-bench/task

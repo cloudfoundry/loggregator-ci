@@ -97,14 +97,6 @@ resources:
     branch: master
     private_key: ((cf-loggregator-oauth-bot-key))
 
-- name: pipeline-pool
-  type: pool
-  source:
-    uri: git@github.com:cloudfoundry/loggregator-locks.git
-    branch: master
-    pool: pipelines
-    private_key: ((cf-loggregator-oauth-bot-key))
-
 jobs:
 - name: cf-syslog-drain-tests
   serial: true
@@ -143,10 +135,6 @@ jobs:
   - aggregate:
     - get: loggregator-ci
     - get: deployments-loggregator
-    - get: environment
-      resource: pipeline-pool
-      passed: ["cf-deploy"]
-      trigger: true
     - get: cf-drain-cli
       passed: ["cf-deploy"]
       trigger: true
@@ -161,7 +149,6 @@ jobs:
       inputs:
       - name: loggregator-ci
       - name: cf-drain-cli
-      - name: environment
       - name: deployments-loggregator
       run:
         path: bash
@@ -169,7 +156,7 @@ jobs:
         - -c
         - |
           #!/bin/bash
-          export BBL_STATE_DIR=$(cat environment/metadata)
+          export BBL_STATE_DIR=gcp/ci-pool/four
           pushd deployments-loggreagor/$BBL_STATE_DIR
             export CF_ADMIN_USER=admin
             export CF_ADMIN_PASSWORD=$(bosh int deployment-vars.yml --path=/cf_admin_password | head -n 1)
@@ -338,8 +325,6 @@ jobs:
   - bosh-cf-cats
   - bosh-cfar-lats
   plan:
-  - put: pipeline-pool
-    params: {acquire: true}
   - aggregate:
     - get: loggregator-ci
     - get: bbl-state
@@ -358,10 +343,11 @@ jobs:
     - get: vars-files
       resource: deployments-loggregator
   - task: upload-syslog-drain-release
-    file: loggregator-ci/tasks/env-pool-tasks/upload-release.yml
+    file: loggregator-ci/tasks/upload-release/task.yml
     input_mapping:
       bosh-release-dir: cf-syslog-drain-release
-      environment: pipeline-pool
+    params:
+      BBL_STATE_DIR: gcp/ci-pool/four
   - task: copy-ops-files
     config:
       platform: linux
@@ -394,15 +380,14 @@ jobs:
               version: latest
           EOT
   - task: upload-stemcell
-    file: loggregator-ci/tasks/env-pool-tasks/bosh-upload-stemcell-from-cf-deployment.yml
-    input_mapping:
-      environment: pipeline-pool
-  - task: cf-deploy
-    file: loggregator-ci/tasks/env-pool-tasks/cf-deploy.yml
-    input_mapping:
-      environment: pipeline-pool
+    file: cf-deployment-concourse-tasks/bosh-upload-stemcell-from-cf-deployment/task.yml
     params:
-      SYSTEM_DOMAIN: loggr.cf-app.com #TODO: this could be included in the lock file
+      BBL_STATE_DIR: gcp/ci-pool/four
+  - task: cf-deploy
+    file: cf-deployment-concourse-tasks/bosh-deploy/task.yml
+    params:
+      BBL_STATE_DIR: gcp/ci-pool/four
+      SYSTEM_DOMAIN: four.loggr.cf-app.com
       OPS_FILES: |
         scale-to-one-az.yml
         use-bosh-dns.yml
@@ -412,24 +397,11 @@ jobs:
     params:
       repository: updated-vars-store
       rebase: true
-  - put: deployments-loggregator
-    input_mapping:
-      environment: pipeline-pool
-    params:
-      repository: updated-vars-store
-      rebase: true
   - task: enable-feature-flags
-    file: loggregator-ci/tasks/env-pool-tasks/set-feature-flags.yml
-    input_mapping:
-      environment: pipeline-pool
-      vars-store: updated-vars-store
+    file: cf-deployment-concourse-tasks/set-feature-flags/task.yml
     params:
-      SYSTEM_DOMAIN: loggr.cf-app.com
+      SYSTEM_DOMAIN: four.loggr.cf-app.com
       ENABLED_FEATURE_FLAGS: diego_docker
-  - task: cleanup
-    input_mapping:
-      environment: pipeline-pool
-    file: loggregator-ci/tasks/env-pool-tasks/bosh-cleanup.yml
 
 - name: cats
   serial: true
@@ -443,18 +415,14 @@ jobs:
       - get: cf-syslog-drain-release
         passed: ["cf-deploy"]
         trigger: true
-      - get: environment
-        resource: pipeline-pool
-        passed: ["cf-deploy"]
-        trigger: true
       - get: loggregator-ci
     - task: run-cats
-      file: loggregator-ci/tasks/env-pool-tasks/run-cats.yml
+      file: cf-deployment-concourse-tasks/run-cats/task.yml
       input_mapping:
         integration-config: deployments-loggregator
       params:
         NODES: 9
-        USE_WINDOWS: false
+        CONFIG_FILE_PATH: gcp/ci-pool/four/cats-config.json
 
 - name: cfar-lats
   serial: true
@@ -468,25 +436,11 @@ jobs:
         passed: ["cf-deploy"]
         trigger: true
       - get: loggregator-ci
-      - get: environment
-        resource: pipeline-pool
-        passed: ["cf-deploy"]
-        trigger: true
-      - get: bbl-state
-        resource: deployments-loggregator
-        passed: ["cf-deploy"]
     - task: run-cfar-lats
-      file: loggregator-ci/tasks/env-pool-tasks/cfar-lats.yml
+      file: loggregator-ci/tasks/cfar-lats/task.yml
       params:
-        SYSTEM_DOMAIN: loggr.cf-app.com
+        USERNAME: {{four-username}}
+        PASSWORD: {{four-password}}
+        API_ENDPOINT: api.four.loggr.cf-app.com
         SKIP_SSL_VALIDATION: true
-        USE_WINDOWS: false
 
-- name: unclaim-environment
-  serial: true
-  plan:
-    - get: pipeline-pool
-      passed: ["cats", "cfar-lats", "cf-drain-cli-acceptance-tests"]
-      trigger: true
-    - put: pipeline-pool
-      params: {release: pipeline-pool}

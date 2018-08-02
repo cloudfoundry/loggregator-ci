@@ -37,14 +37,6 @@ resources:
   source:
     uri: https://github.com/loggregator/bumper
 
-- name: pipeline-pool
-  type: pool
-  source:
-    uri: git@github.com:cloudfoundry/loggregator-locks.git
-    branch: master
-    pool: loggregator
-    private_key: ((cf-loggregator-oauth-bot-key))
-
 - name: loggregator-ci
   type: git
   source:
@@ -147,13 +139,6 @@ resources:
     private_key: ((cf-loggregator-oauth-bot-key))
     paths:
     - docker-images
-
-- name: cf-deployment
-  type: git
-  source:
-    uri: https://github.com/cloudfoundry/cf-deployment
-    tag_filter: v2.9.0
-    private_key: ((loggregator-key))
 
 - name: iso-cf-d
   type: git
@@ -586,66 +571,63 @@ jobs:
   plan:
   - aggregate:
     - get: consul-release
-    - get: pipeline-pool
-      passed: ["cf-deploy"]
-      trigger: true
     - get: loggregator-release
-      passed: ["cf-deploy"]
+      trigger: true
+      passed: ["loggregator-bump-submodule"]
     - get: loggregator-agent-release
-      passed: ["cf-deploy"]
+      trigger: true
+      passed: ["loggregator-agent-bump-submodule"]
     - get: deployments-loggregator
     - get: loggregator-ci
     - get: logging-acceptance-tests-release
-    - get: cf-deployment-concourse-tasks
-    - get: cf-deployment
-    - get: vars-store
-      resource: deployments-loggregator
-    - get: vars-files
-      resource: deployments-loggregator
-    - get: ops-files
-      resource: deployments-loggregator
-    - get: bbl-state
-      resource: deployments-loggregator
-  - do:
-    - task: upload-loggregator-release
-      file: loggregator-ci/tasks/env-pool-tasks/upload-release.yml
-      input_mapping:
-        bosh-release-dir: loggregator-release
-        environment: pipeline-pool
-    - task: loggregator-deploy
-      file: loggregator-ci/tasks/env-pool-tasks/bosh-deploy.yml
-      input_mapping:
-        bosh-release: loggregator-release
-        environment: pipeline-pool
-      output_mapping:
-        updated-vars-store: updated-deployments-loggregator
-      params:
-        SYSTEM_DOMAIN: loggr.cf-app.com
-        DEPLOYMENT_NAME: loggregator
-        MANIFEST_FILE: manifests/loggregator.yml
-        VARS_STORE_FILE: loggregator-vars.yml
-    - task: upload-lats
-      file: loggregator-ci/tasks/env-pool-tasks/upload-release.yml
-      input_mapping:
-        bosh-release-dir: logging-acceptance-tests-release
-        environment: pipeline-pool
-    - task: lats-deploy
-      file: loggregator-ci/tasks/env-pool-tasks/bosh-deploy.yml
-      input_mapping:
-        bbl-state: updated-deployments-loggregator
-        vars-files: updated-deployments-loggregator
-        bosh-release: logging-acceptance-tests-release
-        environment: pipeline-pool
-      params:
-        SYSTEM_DOMAIN: loggr.cf-app.com
-        DEPLOYMENT_NAME: lats
-        MANIFEST_FILE: manifests/lats.yml
-        VARS_FILES: $BBL_STATE_DIR/loggregator-vars.yml
-        VARS_STORE_FILE: lats-vars.yml
-    - put: deployments-loggregator
-      params:
-        repository: updated-deployments-loggregator
-        rebase: true
+      trigger: true
+  - task: upload-loggregator-release
+    file: loggregator-ci/tasks/upload-release/task.yml
+    input_mapping:
+      bbl-state: deployments-loggregator
+      bosh-release-dir: loggregator-release
+    params:
+      BBL_STATE_DIR: gcp/ci-pool/three
+  - task: upload-lats
+    file: loggregator-ci/tasks/upload-release/task.yml
+    input_mapping:
+      bbl-state: deployments-loggregator
+      bosh-release-dir: logging-acceptance-tests-release
+    params:
+      BBL_STATE_DIR: gcp/ci-pool/three
+  - task: loggregator-deploy
+    file: loggregator-ci/tasks/bosh-deploy/task.yml
+    input_mapping:
+      bbl-state: deployments-loggregator
+      vars-store: deployments-loggregator
+      ops-files: deployments-loggregator
+      vars-files: deployments-loggregator
+      bosh-release: loggregator-release
+    output_mapping:
+      updated-vars-store: updated-deployments-loggregator
+    params:
+      BBL_STATE_DIR: gcp/ci-pool/three
+      DEPLOYMENT_NAME: loggregator
+      MANIFEST_FILE: manifests/loggregator.yml
+      VARS_STORE_FILE: gcp/ci-pool/three/loggregator-vars.yml
+  - task: lats-deploy
+    file: loggregator-ci/tasks/bosh-deploy/task.yml
+    input_mapping:
+      bbl-state: deployments-loggregator
+      vars-store: deployments-loggregator
+      ops-files: deployments-loggregator
+      vars-files: deployments-loggregator
+      bosh-release: logging-acceptance-tests-release
+    params:
+      BBL_STATE_DIR: gcp/ci-pool/three
+      DEPLOYMENT_NAME: lats
+      MANIFEST_FILE: manifests/lats.yml
+      VARS_STORE_FILE: gcp/ci-pool/three/lats-vars.yml
+      VARS_FILES: gcp/ci-pool/three/loggregator-vars.yml
+  - put: deployments-loggregator
+    params:
+      repository: updated-deployments-loggregator
+      rebase: true
 
 - name: loggregator-benchmarks
   serial: true
@@ -655,83 +637,78 @@ jobs:
     - get: loggregator-bench-results
     - get: deployments-loggregator
     - get: loggregator-ci
-    - get: bbl-state
-      resource: deployments-loggregator
     - get: loggregator-release
+      resource: loggregator-release
       trigger: true
-      passed: ["loggregator-deploy"]
-    - get: pipeline-pool
-      passed: ["loggregator-deploy"]
-      trigger: true
-  - do:
-    - task: bump-loggregator-release
-      file: loggregator-ci/tasks/bump-submodule/task.yml
-      input_mapping:
-        release-repo: loggregator-bench-release
-        source-repo: loggregator-release
-      output_mapping:
-        bumped-release-repo: bumped-loggregator-bench-release
-      params:
-        SUBMODULE_PATH: src/loggregator-release
-    - task: update-submodules
-      file: loggregator-ci/tasks/run-release-script/task.yml
-      input_mapping:
-        release-repo: bumped-loggregator-bench-release
-      output_mapping:
-        updated-release-repo: updated-loggregator-bench-release
-      params:
-        SCRIPT: git submodule update --init --recursive
-    - task: sync-package-specs
-      file: loggregator-ci/tasks/run-release-script/task.yml
-      input_mapping:
-        release-repo: updated-loggregator-bench-release
-      output_mapping:
-        updated-release-repo: synced-loggregator-bench-release
-      params:
-        SCRIPT: ./scripts/sync-package-specs-with-gopath
-    - task: upload-benchmark-release
-      file: loggregator-ci/tasks/env-pool-tasks/upload-release.yml
-      input_mapping:
-        environment: pipeline-pool
-        bosh-release-dir: synced-loggregator-bench-release
-      params:
-        FORCE: true
-    - task: deploy-benchmarks
-      file: loggregator-ci/tasks/env-pool-tasks/bosh-deploy.yml
-      input_mapping:
-        bosh-release: synced-loggregator-bench-release
-        vars-store: deployments-loggregator
-        ops-files: deployments-loggregator
-        vars-files: deployments-loggregator
-        environment: pipeline-pool
-      output_mapping:
-        updated-vars-store: updated-deployments-loggregator
-      params:
-        DEPLOYMENT_NAME: loggregator-bench
-        MANIFEST_FILE: manifests/loggregator-bench.yml
-        VARS_STORE_FILE: loggregator-bench-vars.yml
-    - task: commit
-      file: loggregator-ci/tasks/commit/task.yml
-      input_mapping:
-        release-repo: updated-deployments-loggregator
-      output_mapping:
-        committed-repo: committed-deployments-loggregator
-      params:
-        COMMIT_MESSAGE: "Update loggregator-bench vars store"
-    - put: deployments-loggregator
-      params:
-        repository: committed-deployments-loggregator
-        rebase: true
-    - task: run-benchmarks
-      file: loggregator-ci/tasks/env-pool-tasks/loggregator-bench.yml
-      input_mapping:
-        environment: pipeline-pool
-      params:
-        DATADOG_VARS_DIR: deployments-loggregator
-    - put: loggregator-bench-results
-      params:
-        repository: updated-loggregator-bench-results
-        rebase: true
+      passed: ["cf-deploy"]
+  - task: bump-loggregator-release
+    file: loggregator-ci/tasks/bump-submodule/task.yml
+    input_mapping:
+      release-repo: loggregator-bench-release
+      source-repo: loggregator-release
+    output_mapping:
+      bumped-release-repo: bumped-loggregator-bench-release
+    params:
+      SUBMODULE_PATH: src/loggregator-release
+  - task: update-submodules
+    file: loggregator-ci/tasks/run-release-script/task.yml
+    input_mapping:
+      release-repo: bumped-loggregator-bench-release
+    output_mapping:
+      updated-release-repo: updated-loggregator-bench-release
+    params:
+      SCRIPT: git submodule update --init --recursive
+  - task: sync-package-specs
+    file: loggregator-ci/tasks/run-release-script/task.yml
+    input_mapping:
+      release-repo: updated-loggregator-bench-release
+    output_mapping:
+      updated-release-repo: synced-loggregator-bench-release
+    params:
+      SCRIPT: ./scripts/sync-package-specs-with-gopath
+  - task: upload-benchmark-release
+    file: loggregator-ci/tasks/upload-release/task.yml
+    input_mapping:
+      bbl-state: deployments-loggregator
+      bosh-release-dir: synced-loggregator-bench-release
+    params:
+      BBL_STATE_DIR: gcp/ci-pool/three
+      FORCE: true
+  - task: deploy-benchmarks
+    file: loggregator-ci/tasks/bosh-deploy/task.yml
+    input_mapping:
+      bbl-state: deployments-loggregator
+      bosh-release: synced-loggregator-bench-release
+      vars-store: deployments-loggregator
+      ops-files: deployments-loggregator
+      vars-files: deployments-loggregator
+    output_mapping:
+      updated-vars-store: updated-deployments-loggregator
+    params:
+      BBL_STATE_DIR: gcp/ci-pool/three
+      DEPLOYMENT_NAME: loggregator-bench
+      MANIFEST_FILE: manifests/loggregator-bench.yml
+      VARS_STORE_FILE: gcp/ci-pool/three/loggregator-bench-vars.yml
+  - task: commit
+    file: loggregator-ci/tasks/commit/task.yml
+    input_mapping:
+      release-repo: updated-deployments-loggregator
+    output_mapping:
+      committed-repo: committed-deployments-loggregator
+    params:
+      COMMIT_MESSAGE: "Update loggregator-bench vars store"
+  - put: deployments-loggregator
+    params:
+      repository: committed-deployments-loggregator
+      rebase: true
+  - task: run-benchmarks
+    file: loggregator-ci/tasks/loggregator-bench/task.yml
+    params:
+      BBL_STATE_DIR: deployments-loggregator/gcp/ci-pool/three
+  - put: loggregator-bench-results
+    params:
+      repository: updated-loggregator-bench-results
+      rebase: true
 
 - name: loggregator-promotion
   serial: true
@@ -824,19 +801,14 @@ jobs:
     - get: loggregator-agent-release
       passed: ["loggregator-deploy"]
       trigger: true
-    - get: pipeline-pool
-      passed: ["loggregator-deploy"]
-      trigger: true
-  - do:
-    - task: run-lats
-      file: loggregator-ci/tasks/env-pool-tasks/run-errand.yml
-      params:
-        DEPLOYMENT_NAME: lats
-        ERRAND: lats
-        KEEP_ALIVE: true
-      input_mapping:
-        bbl-state: deployments-loggregator
-        environment: pipeline-pool
+  - task: run-lats
+    file: loggregator-ci/tasks/run-errand/task.yml
+    params:
+      BBL_STATE_DIR: gcp/ci-pool/three
+      DEPLOYMENT_NAME: lats
+      ERRAND: lats
+    input_mapping:
+      bbl-state: deployments-loggregator
 
 - name: cf-deploy
   serial: true
@@ -845,8 +817,6 @@ jobs:
   - bosh-cf-cats
   - bosh-cfar-lats
   plan:
-  - put: pipeline-pool
-    params: {acquire: true}
   - aggregate:
     - get: loggregator-ci
     - get: bbl-state
@@ -867,15 +837,17 @@ jobs:
       resource: deployments-loggregator
   - aggregate:
     - task: upload-loggregator-release
-      file: loggregator-ci/tasks/env-pool-tasks/upload-release.yml
+      file: loggregator-ci/tasks/upload-release/task.yml
       input_mapping:
         bosh-release-dir: loggregator-release
-        environment: pipeline-pool
+      params:
+        BBL_STATE_DIR: gcp/ci-pool/three
     - task: upload-loggregator-agent-release
-      file: loggregator-ci/tasks/env-pool-tasks/upload-release.yml
+      file: loggregator-ci/tasks/upload-release/task.yml
       input_mapping:
         bosh-release-dir: loggregator-agent-release
-        environment: pipeline-pool
+      params:
+        BBL_STATE_DIR: gcp/ci-pool/three
   - do:
     - task: copy-ops-files
       config:
@@ -933,15 +905,14 @@ jobs:
               value: 2
             EOT
     - task: upload-stemcell
-      file: loggregator-ci/tasks/env-pool-tasks/bosh-upload-stemcell-from-cf-deployment.yml
-      input_mapping:
-        environment: pipeline-pool
-    - task: cf-deploy
-      file: loggregator-ci/tasks/env-pool-tasks/cf-deploy.yml
-      input_mapping:
-        environment: pipeline-pool
+      file: cf-deployment-concourse-tasks/bosh-upload-stemcell-from-cf-deployment/task.yml
       params:
-        SYSTEM_DOMAIN: loggr.cf-app.com #TODO: this could be included in the lock file
+        BBL_STATE_DIR: gcp/ci-pool/three
+    - task: cf-deploy
+      file: cf-deployment-concourse-tasks/bosh-deploy/task.yml
+      params:
+        BBL_STATE_DIR: gcp/ci-pool/three
+        SYSTEM_DOMAIN: three.loggr.cf-app.com
         OPS_FILES: |
           scale-to-one-az.yml
           on-the-fly.yml
@@ -952,23 +923,14 @@ jobs:
           add-persistent-isolation-segment-diego-cell.yml
           add-persistent-isolation-segment-loggregator.yml
     - put: deployments-loggregator
-      input_mapping:
-        environment: pipeline-pool
       params:
         repository: updated-vars-store
         rebase: true
     - task: enable-feature-flags
-      file: loggregator-ci/tasks/env-pool-tasks/set-feature-flags.yml
-      input_mapping:
-        environment: pipeline-pool
-        vars-store: updated-vars-store
+      file: cf-deployment-concourse-tasks/set-feature-flags/task.yml
       params:
-        SYSTEM_DOMAIN: loggr.cf-app.com
+        SYSTEM_DOMAIN: three.loggr.cf-app.com
         ENABLED_FEATURE_FLAGS: diego_docker
-    - task: cleanup
-      input_mapping:
-        environment: pipeline-pool
-      file: loggregator-ci/tasks/env-pool-tasks/bosh-cleanup.yml
 
 - name: cats
   serial: true
@@ -985,18 +947,14 @@ jobs:
       - get: loggregator-agent-release
         trigger: true
         passed: ["cf-deploy"]
-      - get: environment
-        resource: pipeline-pool
-        passed: ["cf-deploy"]
-        trigger: true
       - get: loggregator-ci
     - task: run-cats
-      file: loggregator-ci/tasks/env-pool-tasks/run-cats.yml
+      file: cf-deployment-concourse-tasks/run-cats/task.yml
       input_mapping:
         integration-config: deployments-loggregator
       params:
         NODES: 9
-        USE_WINDOWS: false
+        CONFIG_FILE_PATH: gcp/ci-pool/three/cats-config.json
 
 - name: cfar-lats
   serial: true
@@ -1013,25 +971,12 @@ jobs:
         trigger: true
         passed: ["cf-deploy"]
       - get: loggregator-ci
-      - get: environment
-        resource: pipeline-pool
-        passed: ["cf-deploy"]
-        trigger: true
-      - get: bbl-state
-        resource: deployments-loggregator
-        passed: ["cf-deploy"]
     - task: run-cfar-lats
-      file: loggregator-ci/tasks/env-pool-tasks/cfar-lats.yml
+      file: loggregator-ci/tasks/cfar-lats/task.yml
       params:
-        SYSTEM_DOMAIN: loggr.cf-app.com
+        USERNAME: {{three-username}}
+        PASSWORD: {{three-password}}
+        API_ENDPOINT: api.three.loggr.cf-app.com
         SKIP_SSL_VALIDATION: true
 
-- name: unclaim-environment
-  serial: true
-  plan:
-    - get: pipeline-pool
-      passed: ["loggregator-benchmarks", "lats", "cats", "cfar-lats"]
-      trigger: true
-    - put: pipeline-pool
-      params: {release: pipeline-pool}
 

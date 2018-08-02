@@ -1,7 +1,0 @@
-#!/bin/bash
-
-set -ex
-
-export BBL_STATE_DIR=$(cat environment/metadata)
-
-./loggregator-ci/tasks/run-errand/task

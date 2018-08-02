@@ -1,7 +1,0 @@
-#!/bin/bash
-
-set -ex
-
-export BBL_STATE_DIR=$(cat environment/metadata)
-
-./cf-deployment-concourse-tasks/bosh-upload-stemcell-from-cf-deployment/task
