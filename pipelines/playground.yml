@@ -76,14 +76,6 @@ resources:
     location: America/Denver
     days: [Monday, Tuesday, Wednesday, Thursday, Friday]
 
-- name: weekday-after-work
-  type: time
-  source:
-    start: 6:00 PM
-    stop: 7:00 PM
-    location: America/Denver
-    days: [Monday, Tuesday, Wednesday, Thursday, Friday]
-
 - name: loggregator-agent-release
   type: git
   source:
@@ -310,8 +302,6 @@ jobs:
   serial_groups: ["deployment"]
   public: false
   plan:
-  - get: weekday-after-work
-    trigger: true
   - aggregate:
     - get: bbl-state
       resource: deployments-loggregator
