@@ -1,4 +1,8 @@
 resources:
+- name: 5m
+  type: time
+  source: {interval: 5m}
+
 - name: cf-acceptance-tests
   type: git
   source:
@@ -740,6 +744,8 @@ jobs:
   serial: true
   plan:
   - aggregate:
+    - get: 5m
+      trigger: true
     - get: loggregator-release-elect
       passed: ["loggregator-promotion"]
       trigger: true
