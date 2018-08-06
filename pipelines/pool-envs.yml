@@ -10,7 +10,7 @@ resources:
   source:
     uri: git@github.com:cloudfoundry/deployments-loggregator.git
     branch: master
-    private_key: {{deployments-loggregator-key}}
+    private_key: ((deployments-loggregator-key))
 
 - name: bosh-bootloader
   type: git
@@ -24,7 +24,7 @@ resources:
     uri: git@github.com:cloudfoundry/loggregator-locks.git
     branch: master
     pool: create
-    private_key: {{cf-loggregator-oauth-bot-key}}
+    private_key: ((cf-loggregator-oauth-bot-key))
 
 - name: destroy-pool
   type: pool
@@ -32,22 +32,21 @@ resources:
     uri: git@github.com:cloudfoundry/loggregator-locks.git
     branch: master
     pool: destroy
-    private_key: {{cf-loggregator-oauth-bot-key}}
+    private_key: ((cf-loggregator-oauth-bot-key))
 
-- name: pipeline-pool
+- name: saved-pool
   type: pool
   source:
     uri: git@github.com:cloudfoundry/loggregator-locks.git
     branch: master
-    pool: pipelines
-    private_key: {{cf-loggregator-oauth-bot-key}}
+    private_key: ((cf-loggregator-oauth-bot-key))
 
 - name: loggregator-ci
   type: git
   source:
     uri: git@github.com:cloudfoundry/loggregator-ci.git
     branch: master
-    private_key: {{cf-loggregator-oauth-bot-key}}
+    private_key: ((cf-loggregator-oauth-bot-key))
 
 jobs:
 - name: bbl-create
@@ -73,8 +72,8 @@ jobs:
       BBL_GCP_ZONE: us-central1-a
       BBL_GCP_REGION: us-central1
       BBL_IAAS: gcp
-      BBL_LB_CERT: {{coconut_bbl_lb_cert}}
-      BBL_LB_KEY: {{coconut_bbl_lb_key}}
+      BBL_LB_CERT: ((coconut_bbl_lb_cert))
+      BBL_LB_KEY: ((coconut_bbl_lb_key))
       BBL_CONFIG_DIR: plan-patches/iso-segs-gcp
     file: loggregator-ci/tasks/bbl-up-from-pool/task.yml
   - put: deployments-loggregator
@@ -90,7 +89,7 @@ jobs:
       GCP_DNS_ZONE: loggr
       GCP_LB_DOMAIN: loggr.cf-app.com
     file: loggregator-ci/tasks/gcp-set-nameservers/task.yml
-  - put: pipeline-pool
+  - put: saved-pool
     params: {add: create-pool}
   - put: create-pool
     params: {remove: create-pool}
