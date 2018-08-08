@@ -105,7 +105,7 @@ jobs:
     - get: cf-deployment-concourse-tasks
     - get: deployments-loggregator
   - task: delete-deployments
-    file: loggregator-ci/tasks/env-pool-tasks/bosh-delete-all-deployments.yml
+    file: loggregator-ci/tasks/bosh-delete-all-deployments-from-pool/task.yml
     input_mapping:
       environment: destroy-pool
       bbl-state: deployments-loggregator
