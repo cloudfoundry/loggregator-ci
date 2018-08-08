@@ -591,14 +591,14 @@ jobs:
       bbl-state: deployments-loggregator
       bosh-release-dir: loggregator-release
     params:
-      BBL_STATE_DIR: gcp/ci-pool/three
+      BBL_STATE_DIR: gcp/ci-pool/six
   - task: upload-lats
     file: loggregator-ci/tasks/upload-release/task.yml
     input_mapping:
       bbl-state: deployments-loggregator
       bosh-release-dir: logging-acceptance-tests-release
     params:
-      BBL_STATE_DIR: gcp/ci-pool/three
+      BBL_STATE_DIR: gcp/ci-pool/six
   - task: loggregator-deploy
     file: loggregator-ci/tasks/bosh-deploy/task.yml
     input_mapping:
@@ -610,10 +610,10 @@ jobs:
     output_mapping:
       updated-vars-store: updated-deployments-loggregator
     params:
-      BBL_STATE_DIR: gcp/ci-pool/three
+      BBL_STATE_DIR: gcp/ci-pool/six
       DEPLOYMENT_NAME: loggregator
       MANIFEST_FILE: manifests/loggregator.yml
-      VARS_STORE_FILE: gcp/ci-pool/three/loggregator-vars.yml
+      VARS_STORE_FILE: gcp/ci-pool/six/loggregator-vars.yml
   - task: lats-deploy
     file: loggregator-ci/tasks/bosh-deploy/task.yml
     input_mapping:
@@ -623,11 +623,11 @@ jobs:
       vars-files: deployments-loggregator
       bosh-release: logging-acceptance-tests-release
     params:
-      BBL_STATE_DIR: gcp/ci-pool/three
+      BBL_STATE_DIR: gcp/ci-pool/six
       DEPLOYMENT_NAME: lats
       MANIFEST_FILE: manifests/lats.yml
-      VARS_STORE_FILE: gcp/ci-pool/three/lats-vars.yml
-      VARS_FILES: gcp/ci-pool/three/loggregator-vars.yml
+      VARS_STORE_FILE: gcp/ci-pool/six/lats-vars.yml
+      VARS_FILES: gcp/ci-pool/six/loggregator-vars.yml
   - put: deployments-loggregator
     params:
       repository: updated-deployments-loggregator
@@ -676,7 +676,7 @@ jobs:
       bbl-state: deployments-loggregator
       bosh-release-dir: synced-loggregator-bench-release
     params:
-      BBL_STATE_DIR: gcp/ci-pool/three
+      BBL_STATE_DIR: gcp/ci-pool/six
       FORCE: true
   - task: deploy-benchmarks
     file: loggregator-ci/tasks/bosh-deploy/task.yml
@@ -689,10 +689,10 @@ jobs:
     output_mapping:
       updated-vars-store: updated-deployments-loggregator
     params:
-      BBL_STATE_DIR: gcp/ci-pool/three
+      BBL_STATE_DIR: gcp/ci-pool/six
       DEPLOYMENT_NAME: loggregator-bench
       MANIFEST_FILE: manifests/loggregator-bench.yml
-      VARS_STORE_FILE: gcp/ci-pool/three/loggregator-bench-vars.yml
+      VARS_STORE_FILE: gcp/ci-pool/six/loggregator-bench-vars.yml
   - task: commit
     file: loggregator-ci/tasks/commit/task.yml
     input_mapping:
@@ -708,7 +708,7 @@ jobs:
   - task: run-benchmarks
     file: loggregator-ci/tasks/loggregator-bench/task.yml
     params:
-      BBL_STATE_DIR: deployments-loggregator/gcp/ci-pool/three
+      BBL_STATE_DIR: deployments-loggregator/gcp/ci-pool/six
   - put: loggregator-bench-results
     params:
       repository: updated-loggregator-bench-results
@@ -810,7 +810,7 @@ jobs:
   - task: run-lats
     file: loggregator-ci/tasks/run-errand/task.yml
     params:
-      BBL_STATE_DIR: gcp/ci-pool/three
+      BBL_STATE_DIR: gcp/ci-pool/six
       DEPLOYMENT_NAME: lats
       ERRAND: lats
     input_mapping:
@@ -847,13 +847,13 @@ jobs:
       input_mapping:
         bosh-release-dir: loggregator-release
       params:
-        BBL_STATE_DIR: gcp/ci-pool/three
+        BBL_STATE_DIR: gcp/ci-pool/six
     - task: upload-loggregator-agent-release
       file: loggregator-ci/tasks/upload-release/task.yml
       input_mapping:
         bosh-release-dir: loggregator-agent-release
       params:
-        BBL_STATE_DIR: gcp/ci-pool/three
+        BBL_STATE_DIR: gcp/ci-pool/six
   - do:
     - task: copy-ops-files
       config:
@@ -878,8 +878,6 @@ jobs:
             set -e
 
             cp cf-deployment/operations/scale-to-one-az.yml ops-files/
-            cp cf-deployment/operations/use-bosh-dns.yml ops-files/
-            cp cf-deployment/operations/use-bosh-dns-for-containers.yml ops-files/
             cp loggregator-release/manifests/operations/add-rlp-gateway-to-cf.yml ops-files/
             cp loggregator-agent-release/manifests/operations/infrastructure-metrics.yml ops-files/infrastructure-metrics.yml
             cp cf-deployment/operations/test/add-persistent-isolation-segment-diego-cell.yml ops-files/
@@ -913,17 +911,15 @@ jobs:
     - task: upload-stemcell
       file: cf-deployment-concourse-tasks/bosh-upload-stemcell-from-cf-deployment/task.yml
       params:
-        BBL_STATE_DIR: gcp/ci-pool/three
+        BBL_STATE_DIR: gcp/ci-pool/six
     - task: cf-deploy
       file: cf-deployment-concourse-tasks/bosh-deploy/task.yml
       params:
-        BBL_STATE_DIR: gcp/ci-pool/three
-        SYSTEM_DOMAIN: three.loggr.cf-app.com
+        BBL_STATE_DIR: gcp/ci-pool/six
+        SYSTEM_DOMAIN: six.loggr.cf-app.com
         OPS_FILES: |
           scale-to-one-az.yml
           on-the-fly.yml
-          use-bosh-dns.yml
-          use-bosh-dns-for-containers.yml
           infrastructure-metrics.yml
           add-rlp-gateway-to-cf.yml
           add-persistent-isolation-segment-diego-cell.yml
@@ -935,7 +931,7 @@ jobs:
     - task: enable-feature-flags
       file: cf-deployment-concourse-tasks/set-feature-flags/task.yml
       params:
-        SYSTEM_DOMAIN: three.loggr.cf-app.com
+        SYSTEM_DOMAIN: six.loggr.cf-app.com
         ENABLED_FEATURE_FLAGS: diego_docker
 
 - name: cats
@@ -960,7 +956,7 @@ jobs:
         integration-config: deployments-loggregator
       params:
         NODES: 9
-        CONFIG_FILE_PATH: gcp/ci-pool/three/cats-config.json
+        CONFIG_FILE_PATH: gcp/ci-pool/six/cats-config.json
 
 - name: cfar-lats
   serial: true
@@ -980,9 +976,9 @@ jobs:
     - task: run-cfar-lats
       file: loggregator-ci/tasks/cfar-lats/task.yml
       params:
-        USERNAME: {{three-username}}
-        PASSWORD: {{three-password}}
-        API_ENDPOINT: api.three.loggr.cf-app.com
+        USERNAME: {{six-username}}
+        PASSWORD: {{six-password}}
+        API_ENDPOINT: api.six.loggr.cf-app.com
         SKIP_SSL_VALIDATION: true
 
 
