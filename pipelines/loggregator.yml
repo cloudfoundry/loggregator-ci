@@ -772,6 +772,8 @@ jobs:
   serial: true
   plan:
   - aggregate:
+    - get: 5m
+      trigger: true
     - get: loggregator-agent-release-elect
       passed: ["loggregator-agent-promotion"]
       trigger: true
