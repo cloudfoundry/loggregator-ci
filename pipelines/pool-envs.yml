@@ -34,11 +34,12 @@ resources:
     pool: destroy
     private_key: ((cf-loggregator-oauth-bot-key))
 
-- name: saved-pool
+- name: environments-pool
   type: pool
   source:
     uri: git@github.com:cloudfoundry/loggregator-locks.git
     branch: master
+    pool: environments
     private_key: ((cf-loggregator-oauth-bot-key))
 
 - name: loggregator-ci
@@ -89,7 +90,7 @@ jobs:
       GCP_DNS_ZONE: loggr
       GCP_LB_DOMAIN: loggr.cf-app.com
     file: loggregator-ci/tasks/gcp-set-nameservers/task.yml
-  - put: saved-pool
+  - put: environments-pool
     params: {add: create-pool}
   - put: create-pool
     params: {remove: create-pool}
