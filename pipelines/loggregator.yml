@@ -919,6 +919,7 @@ jobs:
       params:
         BBL_STATE_DIR: gcp/ci-pool/six
         SYSTEM_DOMAIN: six.loggr.cf-app.com
+        VARS_STORE_FILE: gcp/ci-pool/six/deployment-vars.yml
         OPS_FILES: |
           scale-to-one-az.yml
           on-the-fly.yml
