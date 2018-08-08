@@ -1,0 +1,18 @@
+---
+platform: linux
+
+image_resource:
+  type: docker-image
+  source:
+    repository: relintdockerhubpushbot/cf-deployment-concourse-tasks
+
+inputs:
+- name: loggregator-ci  # - This repo
+- name: bbl-state       # - The env repo containing the Director's bbl state dir
+
+# - The environment to delete all deployments from, this is usually taken from a pool resource
+- name: environment
+
+run:
+  path: loggregator-ci/tasks/bosh-delete-all-deployments-from-pool/task
+
