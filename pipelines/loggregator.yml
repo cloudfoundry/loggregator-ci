@@ -592,13 +592,6 @@ jobs:
       bosh-release-dir: loggregator-release
     params:
       BBL_STATE_DIR: gcp/ci-pool/six
-  - task: upload-lats
-    file: loggregator-ci/tasks/upload-release/task.yml
-    input_mapping:
-      bbl-state: deployments-loggregator
-      bosh-release-dir: logging-acceptance-tests-release
-    params:
-      BBL_STATE_DIR: gcp/ci-pool/six
   - task: loggregator-deploy
     file: loggregator-ci/tasks/bosh-deploy/task.yml
     input_mapping:
@@ -614,13 +607,20 @@ jobs:
       DEPLOYMENT_NAME: loggregator
       MANIFEST_FILE: manifests/loggregator.yml
       VARS_STORE_FILE: gcp/ci-pool/six/loggregator-vars.yml
+  - task: upload-lats
+    file: loggregator-ci/tasks/upload-release/task.yml
+    input_mapping:
+      bbl-state: updated-deployments-loggregator
+      bosh-release-dir: logging-acceptance-tests-release
+    params:
+      BBL_STATE_DIR: gcp/ci-pool/six
   - task: lats-deploy
     file: loggregator-ci/tasks/bosh-deploy/task.yml
     input_mapping:
-      bbl-state: deployments-loggregator
-      vars-store: deployments-loggregator
-      ops-files: deployments-loggregator
-      vars-files: deployments-loggregator
+      bbl-state: updated-deployments-loggregator
+      vars-store: updated-deployments-loggregator
+      ops-files: updated-deployments-loggregator
+      vars-files: updated-deployments-loggregator
       bosh-release: logging-acceptance-tests-release
     params:
       BBL_STATE_DIR: gcp/ci-pool/six
@@ -630,7 +630,7 @@ jobs:
       VARS_FILES: gcp/ci-pool/six/loggregator-vars.yml
   - put: deployments-loggregator
     params:
-      repository: updated-deployments-loggregator
+      repository: updated-vars-store
       rebase: true
 
 - name: loggregator-benchmarks
