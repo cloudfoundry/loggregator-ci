@@ -120,7 +120,7 @@ resources:
   type: git
   source:
     uri: https://github.com/cloudfoundry/logging-acceptance-tests-release
-    branch: master
+    branch: develop
 
 - name: loggregator-bench-release
   type: git
@@ -144,18 +144,18 @@ resources:
     paths:
     - docker-images
 
-- name: iso-cf-d
+- name: cf-deployment
   type: git
   source:
     uri: https://github.com/cloudfoundry/cf-deployment
-    branch: loggr-iso-segs
+    branch: loggregator-iso-segments
     private_key: ((loggregator-key))
 
 - name: cf-deployment-concourse-tasks
   type: git
   source:
     uri: https://github.com/cloudfoundry/cf-deployment-concourse-tasks
-    branch: v6.9
+    tag_filter: v7.*
 
 - name: loggregator-release-elect
   type: git
@@ -577,7 +577,7 @@ jobs:
     - get: consul-release
     - get: loggregator-release
       trigger: true
-      passed: ["loggregator-bump-submodule"]
+      passed: ["cf-deploy"]
     - get: loggregator-agent-release
       trigger: true
       passed: ["loggregator-agent-bump-submodule"]
@@ -585,53 +585,67 @@ jobs:
     - get: loggregator-ci
     - get: logging-acceptance-tests-release
       trigger: true
+    - get: cf-deployment-concourse-tasks
   - task: upload-loggregator-release
     file: loggregator-ci/tasks/upload-release/task.yml
     input_mapping:
       bbl-state: deployments-loggregator
       bosh-release-dir: loggregator-release
     params:
-      BBL_STATE_DIR: gcp/ci-pool/six
-  - task: loggregator-deploy
-    file: loggregator-ci/tasks/bosh-deploy/task.yml
-    input_mapping:
-      bbl-state: deployments-loggregator
-      vars-store: deployments-loggregator
-      ops-files: deployments-loggregator
-      vars-files: deployments-loggregator
-      bosh-release: loggregator-release
-    output_mapping:
-      updated-vars-store: updated-deployments-loggregator
-    params:
-      BBL_STATE_DIR: gcp/ci-pool/six
-      DEPLOYMENT_NAME: loggregator
-      MANIFEST_FILE: manifests/loggregator.yml
-      VARS_STORE_FILE: gcp/ci-pool/six/loggregator-vars.yml
+      BBL_STATE_DIR: gcp/ci-pool/ten
   - task: upload-lats
     file: loggregator-ci/tasks/upload-release/task.yml
     input_mapping:
-      bbl-state: updated-deployments-loggregator
+      bbl-state: deployments-loggregator
       bosh-release-dir: logging-acceptance-tests-release
     params:
-      BBL_STATE_DIR: gcp/ci-pool/six
-  - task: lats-deploy
-    file: loggregator-ci/tasks/bosh-deploy/task.yml
+      BBL_STATE_DIR: gcp/ci-pool/ten
+  - task: deploy
+    file: cf-deployment-concourse-tasks/bosh-deploy/task.yml
     input_mapping:
-      bbl-state: updated-deployments-loggregator
-      vars-store: updated-deployments-loggregator
-      ops-files: updated-deployments-loggregator
-      vars-files: updated-deployments-loggregator
-      bosh-release: logging-acceptance-tests-release
+      cf-deployment: loggregator-release
+      ops-files: deployments-loggregator
+      bbl-state: deployments-loggregator
+      vars-files: deployments-loggregator
     params:
-      BBL_STATE_DIR: gcp/ci-pool/six
-      DEPLOYMENT_NAME: lats
+      BBL_STATE_DIR: gcp/ci-pool/ten
+      SYSTEM_DOMAIN: ten.loggr.cf-app.com
+      MANIFEST_FILE: manifests/loggregator.yml
+  - task: copy-ops-files
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source:
+          repository: relintdockerhubpushbot/cf-deployment-concourse-tasks
+          tag: v3.19.0
+      outputs:
+      - name: ops-files
+      run:
+        path: /bin/bash
+        args:
+        - "-c"
+        - |
+          set -e
+
+          cat <<EOT >> ops-files/on-the-fly.yml
+          - type: replace
+            path: /variables/name=loggregator_metron/options/ca
+            value: /bosh-ten/loggregator/loggregator_ca
+          EOT
+  - task: lats-deploy
+    file: cf-deployment-concourse-tasks/bosh-deploy/task.yml
+    input_mapping:
+      cf-deployment: logging-acceptance-tests-release
+      ops-files: ops-files
+      bbl-state: deployments-loggregator
+      vars-files: deployments-loggregator
+    params:
+      BBL_STATE_DIR: gcp/ci-pool/ten
+      SYSTEM_DOMAIN: ten.loggr.cf-app.com
       MANIFEST_FILE: manifests/lats.yml
-      VARS_STORE_FILE: gcp/ci-pool/six/lats-vars.yml
-      VARS_FILES: gcp/ci-pool/six/loggregator-vars.yml
-  - put: deployments-loggregator
-    params:
-      repository: updated-vars-store
-      rebase: true
+      OPS_FILES: on-the-fly.yml
+      REGENERATE_CREDENTIALS: true
 
 - name: loggregator-benchmarks
   serial: true
@@ -676,7 +690,7 @@ jobs:
       bbl-state: deployments-loggregator
       bosh-release-dir: synced-loggregator-bench-release
     params:
-      BBL_STATE_DIR: gcp/ci-pool/six
+      BBL_STATE_DIR: gcp/ci-pool/ten
       FORCE: true
   - task: deploy-benchmarks
     file: loggregator-ci/tasks/bosh-deploy/task.yml
@@ -689,10 +703,10 @@ jobs:
     output_mapping:
       updated-vars-store: updated-deployments-loggregator
     params:
-      BBL_STATE_DIR: gcp/ci-pool/six
+      BBL_STATE_DIR: gcp/ci-pool/ten
       DEPLOYMENT_NAME: loggregator-bench
       MANIFEST_FILE: manifests/loggregator-bench.yml
-      VARS_STORE_FILE: gcp/ci-pool/six/loggregator-bench-vars.yml
+      VARS_STORE_FILE: gcp/ci-pool/ten/loggregator-bench-vars.yml
   - task: commit
     file: loggregator-ci/tasks/commit/task.yml
     input_mapping:
@@ -708,7 +722,7 @@ jobs:
   - task: run-benchmarks
     file: loggregator-ci/tasks/loggregator-bench/task.yml
     params:
-      BBL_STATE_DIR: deployments-loggregator/gcp/ci-pool/six
+      BBL_STATE_DIR: deployments-loggregator/gcp/ci-pool/ten
   - put: loggregator-bench-results
     params:
       repository: updated-loggregator-bench-results
@@ -812,7 +826,7 @@ jobs:
   - task: run-lats
     file: loggregator-ci/tasks/run-errand/task.yml
     params:
-      BBL_STATE_DIR: gcp/ci-pool/six
+      BBL_STATE_DIR: gcp/ci-pool/ten
       DEPLOYMENT_NAME: lats
       ERRAND: lats
     input_mapping:
@@ -830,7 +844,6 @@ jobs:
     - get: bbl-state
       resource: deployments-loggregator
     - get: cf-deployment
-      resource: iso-cf-d
       trigger: true
     - get: cf-deployment-concourse-tasks
     - get: loggregator-release
@@ -849,13 +862,13 @@ jobs:
       input_mapping:
         bosh-release-dir: loggregator-release
       params:
-        BBL_STATE_DIR: gcp/ci-pool/six
+        BBL_STATE_DIR: gcp/ci-pool/ten
     - task: upload-loggregator-agent-release
       file: loggregator-ci/tasks/upload-release/task.yml
       input_mapping:
         bosh-release-dir: loggregator-agent-release
       params:
-        BBL_STATE_DIR: gcp/ci-pool/six
+        BBL_STATE_DIR: gcp/ci-pool/ten
   - do:
     - task: copy-ops-files
       config:
@@ -879,6 +892,7 @@ jobs:
           - |
             set -e
 
+            cp cf-deployment/operations/use-compiled-releases.yml ops-files/
             cp cf-deployment/operations/scale-to-one-az.yml ops-files/
             cp loggregator-release/manifests/operations/add-rlp-gateway-to-cf.yml ops-files/
             cp loggregator-agent-release/manifests/operations/infrastructure-metrics.yml ops-files/infrastructure-metrics.yml
@@ -900,42 +914,31 @@ jobs:
               path: /update/max_in_flight
               value: 5
             - type: replace
-              path: /releases/name=diego
-              value:
-                name: diego
-                version: $(bosh int cf-deployment/cf-deployment.yml --path=/releases/name=diego/version)
-                url: $(bosh int cf-deployment/cf-deployment.yml --path=/releases/name=diego/url)
-                sha1: $(bosh int cf-deployment/cf-deployment.yml --path=/releases/name=diego/sha1)
-            - type: replace
               path: /instance_groups/name=doppler/instances
               value: 2
             EOT
     - task: upload-stemcell
       file: cf-deployment-concourse-tasks/bosh-upload-stemcell-from-cf-deployment/task.yml
       params:
-        BBL_STATE_DIR: gcp/ci-pool/six
+        BBL_STATE_DIR: gcp/ci-pool/ten
     - task: cf-deploy
       file: cf-deployment-concourse-tasks/bosh-deploy/task.yml
       params:
-        BBL_STATE_DIR: gcp/ci-pool/six
-        SYSTEM_DOMAIN: six.loggr.cf-app.com
-        VARS_STORE_FILE: gcp/ci-pool/six/deployment-vars.yml
+        BBL_STATE_DIR: gcp/ci-pool/ten
+        SYSTEM_DOMAIN: ten.loggr.cf-app.com
         OPS_FILES: |
+          use-compiled-releases.yml
           scale-to-one-az.yml
           on-the-fly.yml
           infrastructure-metrics.yml
           add-rlp-gateway-to-cf.yml
           add-persistent-isolation-segment-diego-cell.yml
           add-persistent-isolation-segment-loggregator.yml
-    - put: deployments-loggregator
-      params:
-        repository: updated-vars-store
-        rebase: true
     - task: enable-feature-flags
       file: cf-deployment-concourse-tasks/set-feature-flags/task.yml
       params:
-        VARS_STORE_FILE: gcp/ci-pool/six/deployment-vars.yml
-        SYSTEM_DOMAIN: six.loggr.cf-app.com
+        BBL_STATE_DIR: gcp/ci-pool/ten
+        SYSTEM_DOMAIN: ten.loggr.cf-app.com
         ENABLED_FEATURE_FLAGS: diego_docker
 
 - name: cats
@@ -954,13 +957,22 @@ jobs:
         trigger: true
         passed: ["cf-deploy"]
       - get: loggregator-ci
+    - task: update-config
+      file: cf-deployment-concourse-tasks/update-integration-configs/task.yml
+      input_mapping:
+        bbl-state: deployments-loggregator
+        integration-configs: deployments-loggregator
+      params:
+        CATS_INTEGRATION_CONFIG_FILE: gcp/ci-pool/cats-config.json
+        BBL_STATE_DIR: gcp/ci-pool/ten
+        SYSTEM_DOMAIN: ten.loggr.cf-app.com
     - task: run-cats
       file: cf-deployment-concourse-tasks/run-cats/task.yml
       input_mapping:
-        integration-config: deployments-loggregator
+        integration-config: updated-integration-configs
       params:
         NODES: 9
-        CONFIG_FILE_PATH: gcp/ci-pool/six/cats-config.json
+        CONFIG_FILE_PATH: gcp/ci-pool/cats-config.json
 
 - name: cfar-lats
   serial: true
@@ -980,9 +992,9 @@ jobs:
     - task: run-cfar-lats
       file: loggregator-ci/tasks/cfar-lats/task.yml
       params:
-        USERNAME: {{six-username}}
-        PASSWORD: {{six-password}}
-        API_ENDPOINT: api.six.loggr.cf-app.com
+        USERNAME: {{ten-username}}
+        PASSWORD: {{ten-password}}
+        API_ENDPOINT: api.ten.loggr.cf-app.com
         SKIP_SSL_VALIDATION: true
 
 

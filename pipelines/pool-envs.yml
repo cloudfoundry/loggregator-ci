@@ -3,7 +3,7 @@ resources:
   type: git
   source:
     uri: https://github.com/cloudfoundry/cf-deployment-concourse-tasks
-    branch: v6.9
+    tag_filter: v7.*
 
 - name: deployments-loggregator
   type: git
@@ -69,8 +69,6 @@ jobs:
       updated-bbl-state: updated-deployments-loggregator
     params:
       BBL_GCP_SERVICE_ACCOUNT_KEY: gcp/service-account.key.json
-      BBL_GCP_PROJECT_ID: cff-loggregator
-      BBL_GCP_ZONE: us-central1-a
       BBL_GCP_REGION: us-central1
       BBL_IAAS: gcp
       BBL_LB_CERT: ((coconut_bbl_lb_cert))
