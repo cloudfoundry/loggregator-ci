@@ -28,14 +28,14 @@ resources:
   type: git
   source:
     uri: https://github.com/cloudfoundry/cf-deployment
-    tag_filter: v2.9.0
+    tag_filter: v3.*
     private_key: ((loggregator-key))
 
 - name: cf-deployment-concourse-tasks
   type: git
   source:
     uri: https://github.com/cloudfoundry/cf-deployment-concourse-tasks
-    branch: v6.5
+    tag_filter: v7.*
 
 - name: loggregator-ci
   type: git
@@ -156,10 +156,12 @@ jobs:
         - -c
         - |
           #!/bin/bash
-          export BBL_STATE_DIR=gcp/ci-pool/four
+          export BBL_STATE_DIR=gcp/ci-pool/eight
           pushd deployments-loggreagor/$BBL_STATE_DIR
+            eval "$(bbl print-env)"
+            password_key=$(credhub find -n cf_admin | grep name | awk '{print $3}')
             export CF_ADMIN_USER=admin
-            export CF_ADMIN_PASSWORD=$(bosh int deployment-vars.yml --path=/cf_admin_password | head -n 1)
+            export CF_ADMIN_PASSWORD=$(credhub get -n $password_key | grep value | awk '{print $2}')
             export CF_DOMAIN=$(grep system_domain vars/bbl.tfvars | cut -d "=" -f2 | tr -d '"')
             export SKIP_CERT_VERIFY=true
           popd
@@ -347,7 +349,7 @@ jobs:
     input_mapping:
       bosh-release-dir: cf-syslog-drain-release
     params:
-      BBL_STATE_DIR: gcp/ci-pool/four
+      BBL_STATE_DIR: gcp/ci-pool/eight
   - task: copy-ops-files
     config:
       platform: linux
@@ -369,8 +371,6 @@ jobs:
           set -e
 
           cp cf-deployment/operations/scale-to-one-az.yml ops-files/
-          cp cf-deployment/operations/experimental/use-bosh-dns.yml ops-files/
-          cp cf-deployment/operations/experimental/use-bosh-dns-for-containers.yml ops-files/
 
           cat <<EOT >> ops-files/on-the-fly.yml
           - type: replace
@@ -382,28 +382,21 @@ jobs:
   - task: upload-stemcell
     file: cf-deployment-concourse-tasks/bosh-upload-stemcell-from-cf-deployment/task.yml
     params:
-      BBL_STATE_DIR: gcp/ci-pool/four
+      BBL_STATE_DIR: gcp/ci-pool/eight
   - task: cf-deploy
     file: cf-deployment-concourse-tasks/bosh-deploy/task.yml
     params:
-      BBL_STATE_DIR: gcp/ci-pool/four
-      SYSTEM_DOMAIN: four.loggr.cf-app.com
-      VARS_STORE_FILE: gcp/ci-pool/four/deployment-vars.yml
+      BBL_STATE_DIR: gcp/ci-pool/eight
+      SYSTEM_DOMAIN: eight.loggr.cf-app.com
       OPS_FILES: |
         scale-to-one-az.yml
-        use-bosh-dns.yml
-        use-bosh-dns-for-containers.yml
         on-the-fly.yml
-  - put: deployments-loggregator
-    params:
-      repository: updated-vars-store
-      rebase: true
   - task: enable-feature-flags
     file: cf-deployment-concourse-tasks/set-feature-flags/task.yml
     params:
-      SYSTEM_DOMAIN: four.loggr.cf-app.com
+      BBL_STATE_DIR: gcp/ci-pool/eight
+      SYSTEM_DOMAIN: eight.loggr.cf-app.com
       ENABLED_FEATURE_FLAGS: diego_docker
-      VARS_STORE_FILE: gcp/ci-pool/four/deployment-vars.yml
 
 - name: cats
   serial: true
@@ -418,13 +411,22 @@ jobs:
         passed: ["cf-deploy"]
         trigger: true
       - get: loggregator-ci
+    - task: update-config
+      file: cf-deployment-concourse-tasks/update-integration-configs/task.yml
+      input_mapping:
+        bbl-state: deployments-loggregator
+        integration-configs: deployments-loggregator
+      params:
+        CATS_INTEGRATION_CONFIG_FILE: gcp/ci-pool/cats-config.json
+        BBL_STATE_DIR: gcp/ci-pool/eight
+        SYSTEM_DOMAIN: eight.loggr.cf-app.com
     - task: run-cats
       file: cf-deployment-concourse-tasks/run-cats/task.yml
       input_mapping:
-        integration-config: deployments-loggregator
+        integration-config: updated-integration-configs
       params:
         NODES: 9
-        CONFIG_FILE_PATH: gcp/ci-pool/four/cats-config.json
+        CONFIG_FILE_PATH: gcp/ci-pool/cats-config.json
 
 - name: cfar-lats
   serial: true
@@ -441,8 +443,8 @@ jobs:
     - task: run-cfar-lats
       file: loggregator-ci/tasks/cfar-lats/task.yml
       params:
-        USERNAME: {{four-username}}
-        PASSWORD: {{four-password}}
-        API_ENDPOINT: api.four.loggr.cf-app.com
+        USERNAME: {{eight-username}}
+        PASSWORD: {{eight-password}}
+        API_ENDPOINT: api.eight.loggr.cf-app.com
         SKIP_SSL_VALIDATION: true
 
