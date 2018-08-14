@@ -51,7 +51,7 @@ curl -s -H "Authorization: $(cf oauth-token)" \
     https://log-stream."$DOMAIN"/v2/read?log\&source_id=$(cf app $APP_NAME --guid) \
     | cut -d ' ' -f 2 \
     | jq -r '.batch[] | select(.tags.source_type | contains("APP")) | .log.payload' \
-    | base64 --decode > output.txt
+    | base64 --decode > output.txt &
 set -x
 
 sleep 30 # wait 30 seconds to establish connection
