@@ -59,11 +59,12 @@ jobs:
   - task: run-smoke-tests
     file: loggregator-ci/tasks/cf-blackbox/task.yml
     params:
-      DOMAIN: "coconut.cf-app.com"
+      CF_API: "api.coconut.cf-app.com"
       ORG: "system"
       SPACE: "blackbox-testing"
       USERNAME: {{coconut-username}}
       PASSWORD: {{coconut-password}}
+      APP_DOMAIN: "floodspinner.coconut.cf-app.com"
       APP_NAME: "floodspinner"
       WAIT: 60
       CYCLES: 10000
@@ -110,13 +111,14 @@ jobs:
   - task: run-smoke-tests
     file: loggregator-ci/tasks/cf-blackbox/task.yml
     params:
-      DOMAIN: "coconut.cf-app.com"
+      CF_API: "api.coconut.cf-app.com"
       DATADOG_API_KEY: {{datadog-loggregator-api-key}}
       LOGGREGATOR_ADDR: "wss://doppler.coconut.cf-app.com:443"
       ORG: "system"
       SPACE: "blackbox-testing"
       USERNAME: {{coconut-username}}
       PASSWORD: {{coconut-password}}
+      APP_DOMAIN: "dripspinner.coconut.cf-app.com"
       APP_NAME: "dripspinner"
       WAIT: 600
       CYCLES: 1000
@@ -146,13 +148,14 @@ jobs:
   - task: run-smoke-tests
     file: loggregator-ci/tasks/cf-blackbox/task.yml
     params:
-      DOMAIN: "coconut.cf-app.com"
+      CF_API: "api.coconut.cf-app.com"
       DATADOG_API_KEY: {{datadog-loggregator-api-key}}
       LOGGREGATOR_ADDR: "wss://doppler.coconut.cf-app.com:443"
       ORG: "system"
       SPACE: "blackbox-testing"
       USERNAME: {{coconut-username}}
       PASSWORD: {{coconut-password}}
+      APP_DOMAIN: "flowspinner.coconut.cf-app.com"
       APP_NAME: "flowspinner"
       WAIT: 60
       CYCLES: 1000
