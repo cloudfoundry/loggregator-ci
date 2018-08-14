@@ -2,6 +2,8 @@
 
 set -ex
 
+CF_API=api."$DOMAIN"
+
 function report_to_datadog {
     ruby -rdogapi -e "$(cat <<RUBY
 ENV["DATADOG_API_KEY"].split(' ').each do |k|
@@ -48,7 +50,7 @@ sleep 30 # wait 30 seconds to establish connection
 
 # curl my logspinner
 echo "Triggering $APP_NAME"
-curl "$APP_DOMAIN?cycles=$CYCLES&delay=$DELAY$DELAY_UNIT&text=$MESSAGE"
+curl "$APP_NAME.$DOMAIN?cycles=$CYCLES&delay=$DELAY$DELAY_UNIT&text=$MESSAGE"
 
 sleep "$WAIT" # wait for a bit to collect logs
 

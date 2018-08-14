@@ -7,7 +7,7 @@ inputs:
 - name: loggregator-ci
 params:
   DATADOG_API_KEY:
-  CF_API:
+  DOMAIN:
   APP_NAME:
   CYCLES: 10000
   DELAY: 20
