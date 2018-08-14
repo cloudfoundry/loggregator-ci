@@ -181,7 +181,7 @@ jobs:
       MESSAGE: "HOURLY-STREAM"
     timeout: 15m
 
-- name: dripspinner-stream
+- name: dripspinner
   public: false
   serial: true
   serial_groups: ["restage"]
