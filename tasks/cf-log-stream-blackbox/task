@@ -1,0 +1,70 @@
+#!/bin/bash
+
+set -ex
+
+CF_API=api."$DOMAIN"
+
+function report_to_datadog {
+    ruby -rdogapi -e "$(cat <<RUBY
+ENV["DATADOG_API_KEY"].split(' ').each do |k|
+  client = Dogapi::Client.new(k)
+
+  metadata = {
+    timestamp: Time.now,
+    host: ENV["CF_API"],
+    tags: [
+      ENV["APP_NAME"],
+      "delay_unit:#{ENV["DELAY_UNIT"]}",
+    ],
+  }
+
+  client.batch_metrics do
+    client.emit_point("smoke_test.loggregator-stream.delay", ENV["DELAY"].to_i, metadata)
+    client.emit_point("smoke_test.loggregator-stream.msg_count", ENV["MSG_COUNT"], metadata)
+    client.emit_point("smoke_test.loggregator-stream.cycles", ENV["CYCLES"].to_i, metadata)
+  end
+
+end
+RUBY
+)"
+}
+
+export MSG_COUNT=0
+
+trap report_to_datadog EXIT
+
+# target api
+cf login \
+    -a "$CF_API" \
+    -u "$USERNAME" \
+    -p "$PASSWORD" \
+    -s "$SPACE" \
+    -o "$ORG" \
+    --skip-ssl-validation # TODO: pass this in as a param
+
+# cf logs to a file
+rm -f output.txt
+echo "Collecting logs for $APP_NAME"
+
+curl -s -H "Authorization: $(cf oauth-token)" \
+    https://log-stream."$DOMAIN"/v2/read?log\&source_id=$(cf app $APP_NAME --guid) \
+    | cut -d ' ' -f 2 \
+    | jq -r '.batch[] | select(.tags.source_type | contains("APP")) | .log.payload' \
+    | base64 --decode > output.txt
+
+sleep 30 # wait 30 seconds to establish connection
+
+# curl my logspinner
+echo "Triggering $APP_NAME"
+curl "$APP_NAME"."$DOMAIN?cycles=$CYCLES&delay=$DELAY$DELAY_UNIT&text=$MESSAGE"
+
+sleep "$WAIT" # wait for a bit to collect logs
+
+MSG_COUNT=$(grep -o $MESSAGE output.txt | wc -l)
+
+if [ "$MSG_COUNT" -lt $(($CYCLES * 99 / 100)) ]; then
+    echo the reliability test did not meet our SLO
+    exit 123
+fi
+
+# Trap will send metrics to datadog

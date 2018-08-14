@@ -106,7 +106,82 @@ jobs:
     params: *basic-smoke-details
     timeout: 15m
 
-- name: dripspinner
+- name: floodspinner-stream
+  public: false
+  serial: true
+  serial_groups: ["restage"]
+  plan:
+  - get: loggregator-ci
+  - get: 15m
+    trigger: true
+  - task: run-smoke-tests
+    file: loggregator-ci/tasks/cf-log-stream-blackbox/task.yml
+    params:
+      DOMAIN: coconut.cf-app.com
+      ORG: "system"
+      SPACE: "blackbox-testing"
+      USERNAME: {{coconut-username}}
+      PASSWORD: {{coconut-password}}
+      APP_NAME: "floodspinner"
+      WAIT: 60
+      CYCLES: 10000
+      DATADOG_API_KEY: {{datadog-loggregator-api-key}}
+      DELAY: "2"
+      DELAY_UNIT: "us"
+      MESSAGE: "FIFTEEN-MINUTE-STREAM"
+    timeout: 15m
+
+- name: dripspinner-stream
+  public: false
+  serial: true
+  serial_groups: ["restage"]
+  plan:
+  - get: loggregator-ci
+  - get: 15m
+    trigger: true
+  - task: run-smoke-tests
+    file: loggregator-ci/tasks/cf-log-stream-blackbox/task.yml
+    params:
+      DOMAIN: coconut.cf-app.com
+      ORG: "system"
+      SPACE: "blackbox-testing"
+      USERNAME: {{coconut-username}}
+      PASSWORD: {{coconut-password}}
+      APP_NAME: dripspinner
+      WAIT: 60
+      CYCLES: 10000
+      DATADOG_API_KEY: {{datadog-loggregator-api-key}}
+      DELAY: "2"
+      DELAY_UNIT: "us"
+      MESSAGE: "HOURLY-STREAM"
+    timeout: 15m
+
+- name: flowspinner-stream
+  public: false
+  serial: true
+  serial_groups: ["restage"]
+  plan:
+  - get: loggregator-ci
+  - get: 15m
+    trigger: true
+  - task: run-smoke-tests
+    file: loggregator-ci/tasks/cf-log-stream-blackbox/task.yml
+    params:
+      DOMAIN: coconut.cf-app.com
+      ORG: "system"
+      SPACE: "blackbox-testing"
+      USERNAME: {{coconut-username}}
+      PASSWORD: {{coconut-password}}
+      APP_NAME: flowspinner
+      WAIT: 60
+      CYCLES: 10000
+      DATADOG_API_KEY: {{datadog-loggregator-api-key}}
+      DELAY: "2"
+      DELAY_UNIT: "us"
+      MESSAGE: "HOURLY-STREAM"
+    timeout: 15m
+
+- name: dripspinner-stream
   public: false
   serial: true
   serial_groups: ["restage"]
@@ -130,7 +205,7 @@ jobs:
       CYCLES: 1000
       DELAY: "500"
       DELAY_UNIT: "ms"
-      MESSAGE: "HOURLY"
+      MESSAGE: "HOURLY-STREAM"
     timeout: 15m
 
 - name: flowspinner
