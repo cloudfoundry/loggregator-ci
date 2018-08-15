@@ -31,3 +31,7 @@ params:
   # - Optional
   # - Do not rebase the release after upload
   NO_REBASE: false
+
+  # - Optional
+  # - Create a dev release before uploading
+  CREATE_RELEASE: true

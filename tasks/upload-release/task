@@ -8,10 +8,12 @@ pushd "bbl-state/$BBL_STATE_DIR"
 popd
 
 pushd bosh-release-dir
-  if [ "$FORCE" == "true" ]; then
-    bosh create-release --force
-  else
-    bosh create-release
+  if [ "$CREATE_RELEASE" == true ]; then
+    if [ "$FORCE" == "true" ]; then
+      bosh create-release --force
+    else
+      bosh create-release
+    fi
   fi
 
   if [ "$NO_REBASE" = "true" ]; then
