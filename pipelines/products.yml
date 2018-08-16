@@ -83,7 +83,7 @@ resources:
   type: git
   source:
     uri: https://github.com/cloudfoundry/cf-deployment-concourse-tasks
-    branch: v6.5
+    branch: v6.8
 
 - name: bosh-bootloader
   type: git
@@ -168,6 +168,12 @@ resources:
   type: git
   source:
     uri: https://github.com/cloudfoundry/service-metrics
+    branch: master
+
+- name: on-demand-service-broker-release
+  type: git
+  source:
+    uri: https://github.com/pivotal-cf/on-demand-service-broker-release
     branch: master
 
 - name: service-metrics-release
@@ -590,6 +596,12 @@ jobs:
       passed: ["service-metrics-bump-submodule"]
     - get: deployments-loggregator
     - get: loggregator-ci
+    - get: on-demand-service-broker-release
+      params:
+        submodules:
+        - src/github.com/pivotal-cf/on-demand-services-sdk
+        - src/github.com/pivotal-cf/on-demand-service-broker
+        - src/github.com/pivotal-cf/brokerapi
   - task: upload-service-metrics-release
     file: loggregator-ci/tasks/upload-release/task.yml
     input_mapping:
@@ -597,6 +609,14 @@ jobs:
       bosh-release-dir: service-metrics-release
     params:
       BBL_STATE_DIR: gcp/coconut-bbl
+  - task: upload-on-demand-service-broker-release
+    file: loggregator-ci/tasks/upload-release/task.yml
+    input_mapping:
+      bbl-state: deployments-loggregator
+      bosh-release-dir: on-demand-service-broker-release
+    params:
+      BBL_STATE_DIR: gcp/coconut-bbl
+      CREATE_RELEASE: false
   - task: copy-ops-files
     config:
       platform: linux

@@ -2,6 +2,7 @@ groups:
 - name: main
   jobs:
   - cf-deploy
+  - service-metrics-deploy
   - deploy-datadog-forwarder
   - cf-destroy
 - name: director-lifecycle
@@ -55,6 +56,13 @@ resources:
     uri: https://github.com/cloudfoundry/statsd-injector-release
     branch: develop
 
+- name: on-demand-service-broker-release
+  type: git
+  source:
+    uri: https://github.com/pivotal-cf/on-demand-service-broker-release
+    branch: master
+    #private_key: {{deployments-loggregator-key}}
+
 - name: cf-syslog-drain-release
   type: git
   source:
@@ -80,6 +88,13 @@ resources:
   type: git
   source:
     uri: git@github.com:cloudfoundry/loggregator-agent-release.git
+    branch: develop
+    private_key: {{cf-loggregator-oauth-bot-key}}
+
+- name: service-metrics-release
+  type: git
+  source:
+    uri: git@github.com:cloudfoundry/service-metrics-release
     branch: develop
     private_key: {{cf-loggregator-oauth-bot-key}}
 
@@ -297,6 +312,118 @@ jobs:
     file: cf-deployment-concourse-tasks/bosh-cleanup/task.yml
     params:
       BBL_STATE_DIR: gcp/playground
+
+- name: service-metrics-deploy
+  serial: true
+  serial_groups: ["deployment"]
+  plan:
+  - aggregate:
+    - get: weekday-before-work
+      trigger: true
+      passed: ["cf-deploy"]
+    - get: service-metrics-release
+    - get: deployments-loggregator
+    - get: loggregator-ci
+    - get: on-demand-service-broker-release
+      params:
+        submodules:
+        - src/github.com/pivotal-cf/on-demand-services-sdk
+        - src/github.com/pivotal-cf/on-demand-service-broker
+        - src/github.com/pivotal-cf/brokerapi
+  - task: upload-on-demand-service-broker-release
+    file: loggregator-ci/tasks/upload-release/task.yml
+    input_mapping:
+      bbl-state: deployments-loggregator
+      bosh-release-dir: on-demand-service-broker-release
+    params:
+      BBL_STATE_DIR: gcp/playground
+      CREATE_RELEASE: false
+  - task: upload-service-metrics-release
+    file: loggregator-ci/tasks/upload-release/task.yml
+    input_mapping:
+      bbl-state: deployments-loggregator
+      bosh-release-dir: service-metrics-release
+    params:
+      BBL_STATE_DIR: gcp/playground
+  - task: copy-ops-files
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source:
+          repository: relintdockerhubpushbot/cf-deployment-concourse-tasks
+          tag: v5.7.0
+      inputs:
+      - name: deployments-loggregator
+      outputs:
+      - name: ops-files
+      - name: vars-files
+      run:
+        path: /bin/bash
+        args:
+        - "-c"
+        - |
+          set -exu
+
+          pushd deployments-loggregator/gcp/playground
+            eval $(bbl print-env)
+            export BOSH_CA_CERT=$(bbl director-ca-cert)
+          popd
+
+          service_metrics_version=$(bosh releases | grep service-metrics | grep -v service-metrics-adapter | head -n1 | awk '{print $2}')
+
+          cp deployments-loggregator/gcp/playground/deployment-vars.yml vars-files
+          cp deployments-loggregator/gcp/playground/service-metrics-broker-vars.yml vars-files
+
+          cat <<EOT >> vars-files/service-metrics-version.yml
+          service-metrics-release-version: $service_metrics_version
+          EOT
+
+          cat <<EOT >> ops-files/on-the-fly.yml
+          - type: replace
+            path: /instance_groups/name=service-metrics/jobs/name=metron_agent/consumes/doppler/deployment
+            value: cf
+          - type: replace
+            path: /instance_groups/name=service-metrics/jobs/name=service-metrics/properties/service_metrics/source_id?
+            value: dummy-source-id
+          EOT
+  - aggregate:
+    - do:
+      - task: deploy-odb
+        file: loggregator-ci/tasks/bosh-deploy/task.yml
+        input_mapping:
+          bbl-state: deployments-loggregator
+          vars-store: deployments-loggregator
+          ops-files: ops-files
+          bosh-release: service-metrics-release
+        output_mapping:
+          updated-vars-store: updated-deployments-loggregator
+        params:
+          BBL_STATE_DIR: gcp/playground
+          DEPLOYMENT_NAME: sample-service-metrics
+          MANIFEST_FILE: manifests/sample-service-metrics.yml
+          VARS_STORE_FILE: gcp/playground/service-metrics-odb-vars.yml
+          VARS_FILES: deployment-vars.yml service-metrics-version.yml service-metrics-broker-vars.yml
+      - put: deployments-loggregator
+        params:
+          repository: updated-deployments-loggregator
+          rebase: true
+      - task: register-service-broker
+        file: loggregator-ci/tasks/run-errand/task.yml
+        input_mapping:
+          bbl-state: deployments-loggregator
+        params:
+          BBL_STATE_DIR: gcp/playground
+          DEPLOYMENT_NAME: sample-service-metrics
+          ERRAND: register-broker
+      - task: upgrade-all-service-instances
+        file: loggregator-ci/tasks/run-errand/task.yml
+        input_mapping:
+          bbl-state: deployments-loggregator
+        params:
+          BBL_STATE_DIR: gcp/playground
+          DEPLOYMENT_NAME: sample-service-metrics
+          ERRAND: upgrade-all-service-instances
 
 - name: cf-destroy
   serial_groups: ["deployment"]
