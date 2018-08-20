@@ -44,11 +44,6 @@ resources:
   source:
     uri: https://github.com/cloudfoundry/loggregator-ci
 
-- name: loggregator-tools
-  type: git
-  source:
-    uri: https://github.com/cloudfoundry-incubator/loggregator-tools
-
 - name: statsd-injector-release
   type: git
   source:
