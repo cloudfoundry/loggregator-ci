@@ -3,7 +3,6 @@ groups:
   jobs:
   - cf-deploy
   - service-metrics-deploy
-  - deploy-datadog-forwarder
   - cf-destroy
 - name: director-lifecycle
   jobs:
@@ -444,27 +443,3 @@ jobs:
       params:
         BBL_STATE_DIR: gcp/playground
         DEPLOYMENT_NAME: cf-syslog-drain
-
-- name: deploy-datadog-forwarder
-  public: false
-  serial: true
-  plan:
-  - aggregate:
-    - get: loggregator-tools
-    - get: loggregator-ci
-  - task: deploy-datadog-forwarder
-    file: loggregator-ci/tasks/datadog-forwarder/task.yml
-    params:
-      APP_NAME: "datadog-forwarder"
-      SYSTEM_DOMAIN: "playground.loggr.cf-app.com"
-      DATADOG_API_KEY: {{datadog-loggregator-api-key}}
-      DATADOG_TAGS: accumulator-playground
-      ORG: system
-      SPACE: accumulators
-      SKIP_SSL_VALIDATION: true
-      USERNAME: {{playground-username}}
-      PASSWORD: {{playground-password}}
-      LOG_CACHE_HTTP_ADDR: http://log-cache.playground.loggr.cf-app.com
-      LOG_CACHE_GROUP_NAME: playground-datadog-forwarder
-      UAA_CLIENT: {{playground-uaa-client}}
-      UAA_CLIENT_SECRET: {{playground-uaa-client-secret}}
