@@ -120,7 +120,7 @@ resources:
   type: git
   source:
     uri: https://github.com/cloudfoundry/logging-acceptance-tests-release
-    branch: develop
+    branch: master
 
 - name: loggregator-bench-release
   type: git
