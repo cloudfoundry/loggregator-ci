@@ -35,17 +35,23 @@ EM.run do
   source = EventMachine::EventSource.new("https://log-stream.#{ENV["DOMAIN"]}/v2/read",
                                          {"log" => "", "source_id" => ENV['SOURCE_ID']},
                                          {"Authorization" => ENV['TOKEN']})
-
+  totalCount = 0
+  appLogCount = 0
   source.message do |message|
     batch = JSON.parse(message, symbolize_names: true)
 
     batch[:batch].each do |env|
+      totalCount += 1
+
       if env[:tags] && env[:tags][:source_type]
         if env[:tags][:source_type].start_with?("APP")
+          appLogCount += 1
           puts Base64.decode64(env[:log][:payload])
         end
       end
     end
+
+    puts "Total: #{totalCount}, App Logs: #{appLogCount}"
   end
 
   source.error do |error|
