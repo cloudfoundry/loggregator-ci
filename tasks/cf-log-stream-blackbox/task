@@ -87,7 +87,7 @@ set +x
 TOKEN="$(cf oauth-token)" SOURCE_ID="$(cf app $APP_NAME --guid)" read_event_stream > output.txt &
 set -x
 
-sleep 30 # wait 30 seconds to establish connection
+sleep 10 # wait 10 seconds to establish connection
 
 # curl my logspinner
 echo "Triggering $APP_NAME"

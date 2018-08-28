@@ -191,7 +191,7 @@ jobs:
       USERNAME: {{coconut-username}}
       PASSWORD: {{coconut-password}}
       APP_NAME: "floodspinner-stream"
-      WAIT: 60
+      WAIT: 30
       CYCLES: 10000
       DATADOG_API_KEY: {{datadog-loggregator-api-key}}
       DELAY: "2"
@@ -226,7 +226,7 @@ jobs:
       USERNAME: {{coconut-username}}
       PASSWORD: {{coconut-password}}
       APP_NAME: dripspinner-stream
-      WAIT: 600
+      WAIT: 510
       CYCLES: 1000
       DATADOG_API_KEY: {{datadog-loggregator-api-key}}
       DELAY: "500"
@@ -261,7 +261,7 @@ jobs:
       USERNAME: {{coconut-username}}
       PASSWORD: {{coconut-password}}
       APP_NAME: flowspinner-stream
-      WAIT: 60
+      WAIT: 30
       CYCLES: 1000
       DATADOG_API_KEY: {{datadog-loggregator-api-key}}
       DELAY: "1"
