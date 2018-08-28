@@ -55,6 +55,7 @@ EM.run do
   source.start # Start listening
 end
 RUBY
+)"
 }
 
 export MSG_COUNT=0
