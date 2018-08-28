@@ -29,6 +29,34 @@ RUBY
 )"
 }
 
+function read_event_stream {
+    ruby -rem-eventsource -rjson -rbase64 -e "$(cat <<RUBY
+EM.run do
+  source = EventMachine::EventSource.new("https://log-stream.#{ENV["DOMAIN"]}/v2/read",
+                                         {"log" => "", "source_id" => ENV['SOURCE_ID']},
+                                         {"Authorization" => ENV['TOKEN']})
+
+  source.message do |message|
+    batch = JSON.parse(message, symbolize_names: true)
+
+    batch[:batch].each do |env|
+      if env[:tags] && env[:tags][:source_type]
+        if env[:tags][:source_type].start_with?("APP")
+          puts Base64.decode64(env[:log][:payload])
+        end
+      end
+    end
+  end
+
+  source.error do |error|
+    puts "new error #{error}"
+  end
+
+  source.start # Start listening
+end
+RUBY
+}
+
 export MSG_COUNT=0
 
 trap report_to_datadog EXIT
@@ -47,11 +75,7 @@ rm -f output.txt
 echo "Collecting logs for $APP_NAME"
 
 set +x
-curl -s -H "Authorization: $(cf oauth-token)" \
-    https://log-stream."$DOMAIN"/v2/read?log\&source_id=$(cf app $APP_NAME --guid) \
-    | cut -d ' ' -f 2 \
-    | jq -r '.batch[] | select(.tags.source_type | contains("APP")) | .log.payload' \
-    | base64 --decode > output.txt &
+TOKEN="$(cf oauth-token)" SOURCE_ID="$(cf app $APP_NAME --guid)" read_event_stream > output.txt &
 set -x
 
 sleep 30 # wait 30 seconds to establish connection
