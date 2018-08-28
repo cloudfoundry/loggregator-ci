@@ -93,6 +93,10 @@ curl "$APP_NAME"."$DOMAIN?cycles=$CYCLES&delay=$DELAY$DELAY_UNIT&text=$MESSAGE"
 
 sleep "$WAIT" # wait for a bit to collect logs
 
+curl "$APP_NAME"."$DOMAIN?cycles=100&delay=10ms&text=FLUSHING"
+
+sleep 10
+
 cat output.txt
 
 MSG_COUNT=$(grep -o $MESSAGE output.txt | wc -l)
