@@ -226,7 +226,7 @@ jobs:
       USERNAME: {{coconut-username}}
       PASSWORD: {{coconut-password}}
       APP_NAME: dripspinner-stream
-      WAIT: 510
+      WAIT: 600
       CYCLES: 1000
       DATADOG_API_KEY: {{datadog-loggregator-api-key}}
       DELAY: "500"
