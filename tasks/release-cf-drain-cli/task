@@ -43,7 +43,7 @@ popd
 # build the syslog forwarder app
 pushd $GOPATH/src/code.cloudfoundry.org/cf-drain-cli/scripts
   ./build-forwarder.sh
-  mv forwarder.zip $output/forwarder.zip
+  mv ./forwarder.zip $output/forwarder.zip
 popd
 
 pushd $cfdrain
