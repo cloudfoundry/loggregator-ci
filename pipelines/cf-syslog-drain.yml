@@ -156,8 +156,10 @@ jobs:
         - -c
         - |
           #!/bin/bash
+          set -e
+          export MUST_RUN_ACCEPTANCE=true
           export BBL_STATE_DIR=gcp/ci-pool/eight
-          pushd deployments-loggreagor/$BBL_STATE_DIR
+          pushd deployments-loggregator/$BBL_STATE_DIR
             eval "$(bbl print-env)"
             password_key=$(credhub find -n cf_admin | grep name | awk '{print $3}')
             export CF_ADMIN_USER=admin
