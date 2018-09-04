@@ -217,6 +217,13 @@ resources:
     private_key: {{cf-loggregator-oauth-bot-key}}
     uri: git@github.com:cloudfoundry/leadership-election-release
 
+- name: cf-syslog-drain-release
+  type: git
+  source:
+    uri: git@github.com:cloudfoundry/cf-syslog-drain-release
+    branch: release-elect
+    private_key: ((cf-loggregator-oauth-bot-key))
+
 jobs:
 ###############################################################################
 # DIRECTOR LIFECYCLE
@@ -800,6 +807,8 @@ jobs:
       resource: deployments-loggregator
     - get: vars-files
       resource: deployments-loggregator
+    - get: cf-syslog-drain-release
+      trigger: true
   - aggregate:
     - task: upload-loggregator-release
       file: loggregator-ci/tasks/upload-release/task.yml
@@ -811,6 +820,12 @@ jobs:
       file: loggregator-ci/tasks/upload-release/task.yml
       input_mapping:
         bosh-release-dir: loggregator-agent-release
+      params:
+        BBL_STATE_DIR: gcp/coconut-bbl
+    - task: upload-cf-drain-release
+      file: loggregator-ci/tasks/upload-release/task.yml
+      input_mapping:
+        bosh-release-dir: cf-syslog-drain-release
       params:
         BBL_STATE_DIR: gcp/coconut-bbl
   - task: copy-ops-files
@@ -856,6 +871,11 @@ jobs:
             path: /releases/name=loggregator-agent
             value:
               name: loggregator-agent
+              version: latest
+          - type: replace
+            path: /releases/name=cf-syslog-drain
+            value:
+              name: cf-syslog-drain
               version: latest
           - type: replace
             path: /instance_groups/name=doppler/instances
