@@ -88,6 +88,11 @@ jobs:
       GCP_DNS_ZONE: loggr
       GCP_LB_DOMAIN: loggr.cf-app.com
     file: loggregator-ci/tasks/gcp-set-nameservers/task.yml
+  - task: allow-director-access
+    input_mapping:
+      bbl-state: updated-deployments-loggregator
+      environment: create-pool
+    file: loggregator-ci/tasks/gcp-set-nameservers/task.yml
   - put: environments-pool
     params: {add: create-pool}
   - put: create-pool
