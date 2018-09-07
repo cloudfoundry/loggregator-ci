@@ -19,5 +19,8 @@ EOT
 
 pushd bbl-state/$BBL_STATE_DIR
     eval "$(bbl print-env)"
-    bosh update-cloud-config $workspace/add-director-access.yml
+
+    bosh cloud-config > cc.yml
+    bosh int cc.yml -o $workspace/add-director-access.yml > updated_cc.yml
+    bosh update-cloud-config updated_cc.yml
 popd
