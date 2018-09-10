@@ -658,6 +658,13 @@ jobs:
           service-metrics-release-version: $service_metrics_version
           EOT
 
+          odb_version=$(bosh releases | grep on-demand-service-broker | head -n1 | awk '{print $2}')
+          cat <<EOT >> ops-files/odb-version.yml
+          - type: replace
+            path: /releases/name=on-demand-service-broker/version
+            value: $odb_version
+          EOT
+
           cat <<EOT >> ops-files/remove-bosh-dns.yml
           - type: remove
             path: /releases/name=bosh-dns
@@ -714,7 +721,7 @@ jobs:
           VARS_STORE_FILE: gcp/coconut-bbl/service-metrics-odb-vars.yml
           VARS_FILES: deployment-vars.yml service-metrics-version.yml service-metrics-broker-vars.yml
           OPS_FILES: |
-            remove-bosh-dns.yml
+            odb-version.yml
       - put: deployments-loggregator
         params:
           repository: updated-deployments-loggregator
