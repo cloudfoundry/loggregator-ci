@@ -108,7 +108,7 @@ resources:
   type: git
   source:
     uri: https://github.com/pivotal-cf/on-demand-service-broker-release
-    branch: master
+    branch: v0.20.0
 
 jobs:
 - name: cf-syslog-drain-tests
@@ -379,6 +379,12 @@ jobs:
       bosh-release-dir: on-demand-service-broker-release
     params:
       BBL_STATE_DIR: gcp/ci-pool/eight
+  - task: upload-service-metrics-release
+    file: loggregator-ci/tasks/upload-release/task.yml
+    input_mapping:
+      bosh-release-dir: service-metrics-release
+    params:
+      BBL_STATE_DIR: gcp/ci-pool/eight
   - task: copy-ops-files
     config:
       platform: linux
@@ -416,11 +422,12 @@ jobs:
 
           cp bbl-state/gcp/ci-pool/eight/service-metrics-broker-vars.yml vars-files
 
-          service_metrics_version=$(bosh releases | grep service-metrics | grep -v service-metrics-adapter | head -n1 | awk '{print $2}')
+          service_metrics_version=$(bosh releases | grep service-metrics | grep -v service-metrics-adapter | head -n1 | awk '{print $2}' | cut -d '*' -f 1)
           cat <<EOT >> vars-files/service-metrics-version.yml
           service-metrics-release-version: $service_metrics_version
           EOT
 
+          odb_version=$(bosh releases | grep on-demand-service-broker | head -n1 | awk '{print $2}' | cut -d '*' -f 1)
           cat <<EOT >> ops-files/service-metrics.yml
           - type: remove
             path: /variables/name=loggregator_ca
@@ -439,9 +446,7 @@ jobs:
               - 127.0.0.1
           - type: replace
             path: /releases/name=on-demand-service-broker/version
-            value: latest
-          - type: remove
-            path: /releases/name=bosh-dns
+            value: $odb_version
           EOT
 
   - task: upload-stemcell

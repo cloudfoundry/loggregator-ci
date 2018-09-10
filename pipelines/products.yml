@@ -649,16 +649,15 @@ jobs:
             export BOSH_CA_CERT=$(bbl director-ca-cert)
           popd
 
-          service_metrics_version=$(bosh releases | grep service-metrics | grep -v service-metrics-adapter | head -n1 | awk '{print $2}')
-
           cp deployments-loggregator/gcp/coconut-bbl/deployment-vars.yml vars-files
           cp deployments-loggregator/gcp/coconut-bbl/service-metrics-broker-vars.yml vars-files
 
+          service_metrics_version=$(bosh releases | grep service-metrics | grep -v service-metrics-adapter | head -n1 | awk '{print $2}' | cut -d '*' -f 1)
           cat <<EOT >> vars-files/service-metrics-version.yml
           service-metrics-release-version: $service_metrics_version
           EOT
 
-          odb_version=$(bosh releases | grep on-demand-service-broker | head -n1 | awk '{print $2}')
+          odb_version=$(bosh releases | grep on-demand-service-broker | head -n1 | awk '{print $2}' | cut -d '*' -f 1)
           cat <<EOT >> ops-files/odb-version.yml
           - type: replace
             path: /releases/name=on-demand-service-broker/version
