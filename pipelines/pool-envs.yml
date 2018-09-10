@@ -92,7 +92,7 @@ jobs:
     input_mapping:
       bbl-state: updated-deployments-loggregator
       environment: create-pool
-    file: loggregator-ci/tasks/gcp-set-nameservers/task.yml
+    file: loggregator-ci/tasks/allow-director-access/task.yml
   - put: environments-pool
     params: {add: create-pool}
   - put: create-pool

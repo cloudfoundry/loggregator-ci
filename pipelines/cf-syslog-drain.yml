@@ -97,6 +97,19 @@ resources:
     branch: master
     private_key: ((cf-loggregator-oauth-bot-key))
 
+- name: service-metrics-release
+  type: git
+  source:
+    uri: git@github.com:cloudfoundry/service-metrics-release
+    branch: develop
+    private_key: {{cf-loggregator-oauth-bot-key}}
+
+- name: on-demand-service-broker-release
+  type: git
+  source:
+    uri: https://github.com/pivotal-cf/on-demand-service-broker-release
+    branch: master
+
 jobs:
 - name: cf-syslog-drain-tests
   serial: true
@@ -346,10 +359,24 @@ jobs:
       resource: deployments-loggregator
     - get: vars-files
       resource: deployments-loggregator
+    - get: deployments-loggregator
+    - get: service-metrics-release
+    - get: on-demand-service-broker-release
+      params:
+        submodules:
+        - src/github.com/pivotal-cf/on-demand-services-sdk
+        - src/github.com/pivotal-cf/on-demand-service-broker
+        - src/github.com/pivotal-cf/brokerapi
   - task: upload-syslog-drain-release
     file: loggregator-ci/tasks/upload-release/task.yml
     input_mapping:
       bosh-release-dir: cf-syslog-drain-release
+    params:
+      BBL_STATE_DIR: gcp/ci-pool/eight
+  - task: upload-on-demand-service-broker-release
+    file: loggregator-ci/tasks/upload-release/task.yml
+    input_mapping:
+      bosh-release-dir: on-demand-service-broker-release
     params:
       BBL_STATE_DIR: gcp/ci-pool/eight
   - task: copy-ops-files
@@ -359,18 +386,23 @@ jobs:
         type: docker-image
         source:
           repository: relintdockerhubpushbot/cf-deployment-concourse-tasks
-          tag: v3.19.0
+          tag: v5.20.0
       inputs:
       - name: bbl-state
       - name: cf-deployment
       outputs:
       - name: ops-files
+      - name: vars-files
       run:
         path: /bin/bash
         args:
         - "-c"
         - |
           set -e
+
+          pushd bbl-state/gcp/ci-pool/eight
+            eval "$(bbl print-env)"
+          popd
 
           cp cf-deployment/operations/scale-to-one-az.yml ops-files/
 
@@ -381,6 +413,37 @@ jobs:
               name: cf-syslog-drain
               version: latest
           EOT
+
+          cp bbl-state/gcp/ci-pool/eight/service-metrics-broker-vars.yml vars-files
+
+          service_metrics_version=$(bosh releases | grep service-metrics | grep -v service-metrics-adapter | head -n1 | awk '{print $2}')
+          cat <<EOT >> vars-files/service-metrics-version.yml
+          service-metrics-release-version: $service_metrics_version
+          EOT
+
+          cat <<EOT >> ops-files/service-metrics.yml
+          - type: remove
+            path: /variables/name=loggregator_ca
+          - type: replace
+            path: /variables/name=service_metrics/options/ca
+            value: /bosh-eight/cf/loggregator_ca
+          - type: replace
+            path: /variables/name=loggregator_agent/options/ca
+            value: /bosh-eight/cf/loggregator_ca
+          - type: replace
+            path: /variables/name=loggregator_agent/options/alternative_names
+            value:
+              - metron
+              - agent
+              - logalhost
+              - 127.0.0.1
+          - type: replace
+            path: /releases/name=on-demand-service-broker/version
+            value: latest
+          - type: remove
+            path: /releases/name=bosh-dns
+          EOT
+
   - task: upload-stemcell
     file: cf-deployment-concourse-tasks/bosh-upload-stemcell-from-cf-deployment/task.yml
     params:
@@ -399,6 +462,38 @@ jobs:
       BBL_STATE_DIR: gcp/ci-pool/eight
       SYSTEM_DOMAIN: eight.loggr.cf-app.com
       ENABLED_FEATURE_FLAGS: diego_docker
+  - task: deploy-odb
+    file: cf-deployment-concourse-tasks/bosh-deploy/task.yml
+    input_mapping:
+      cf-deployment: service-metrics-release
+      ops-files: ops-files
+      bbl-state: deployments-loggregator
+      vars-files: vars-files
+    params:
+      BBL_STATE_DIR: gcp/ci-pool/eight
+      SYSTEM_DOMAIN: eight.loggr.cf-app.com
+      MANIFEST_FILE: manifests/sample-service-metrics.yml
+      VARS_FILES: |
+        service-metrics-broker-vars.yml
+        service-metrics-version.yml
+      OPS_FILES: |
+        service-metrics.yml
+  - task: register-service-broker
+    file: loggregator-ci/tasks/run-errand/task.yml
+    input_mapping:
+      bbl-state: deployments-loggregator
+    params:
+      BBL_STATE_DIR: gcp/ci-pool/eight
+      DEPLOYMENT_NAME: sample-service-metrics
+      ERRAND: register-broker
+  - task: upgrade-all-service-instances
+    file: loggregator-ci/tasks/run-errand/task.yml
+    input_mapping:
+      bbl-state: deployments-loggregator
+    params:
+      BBL_STATE_DIR: gcp/ci-pool/eight
+      DEPLOYMENT_NAME: sample-service-metrics
+      ERRAND: upgrade-all-service-instances
 
 - name: cats
   serial: true
