@@ -174,7 +174,7 @@ resources:
   type: git
   source:
     uri: https://github.com/pivotal-cf/on-demand-service-broker-release
-    branch: master
+    branch: v0.20.0
 
 - name: service-metrics-release
   type: git
@@ -658,6 +658,13 @@ jobs:
           service-metrics-release-version: $service_metrics_version
           EOT
 
+          cat <<EOT >> ops-files/remove-bosh-dns.yml
+          - type: remove
+            path: /releases/name=bosh-dns
+          - type: remove
+            path: /addons/name=bosh-dns
+          EOT
+
           cat <<EOT >> ops-files/on-the-fly.yml
           - type: replace
             path: /instance_groups/name=service-metrics/jobs/name=metron_agent/consumes/doppler/deployment
@@ -683,7 +690,9 @@ jobs:
           MANIFEST_FILE: manifests/manifest.yml
           VARS_STORE_FILE: gcp/coconut-bbl/service-metrics-injector-vars.yml
           VARS_FILES: deployment-vars.yml
-          OPS_FILES: on-the-fly.yml
+          OPS_FILES: |
+            on-the-fly.yml
+            remove-bosh-dns.yml
       - put: deployments-loggregator
         params:
           repository: updated-deployments-loggregator
@@ -704,6 +713,8 @@ jobs:
           MANIFEST_FILE: manifests/sample-service-metrics.yml
           VARS_STORE_FILE: gcp/coconut-bbl/service-metrics-odb-vars.yml
           VARS_FILES: deployment-vars.yml service-metrics-version.yml service-metrics-broker-vars.yml
+          OPS_FILES: |
+            remove-bosh-dns.yml
       - put: deployments-loggregator
         params:
           repository: updated-deployments-loggregator
