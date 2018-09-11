@@ -47,6 +47,7 @@ jobs:
       PASSWORD: {{pws-password}}
       SPACE: "development"
       USERNAME: {{pws-username}}
+      USE_CLIENT_AUTH: true
 
 - name: floodspinner
   public: false
@@ -72,6 +73,7 @@ jobs:
       DELAY: "2"
       DELAY_UNIT: "us"
       MESSAGE: "FIFTEEN-MINUTE"
+      USE_CLIENT_AUTH: true
     timeout: 20m
   - task: run-recent-logs-smoke-tests
     file: loggregator-ci/tasks/blackbox-recent-logs/task.yml
@@ -84,6 +86,7 @@ jobs:
       PASSWORD: {{pws-password}}
       SPACE: "development"
       USERNAME: {{pws-username}}
+      USE_CLIENT_AUTH: true
     timeout: 20m
   - task: container metrics
     file: loggregator-ci/tasks/container-metrics-smoke-test.yml
@@ -114,6 +117,7 @@ jobs:
       DELAY: "500"
       DELAY_UNIT: "ms"
       MESSAGE: "HOURLY"
+      USE_CLIENT_AUTH: true
     timeout: 20m
 
 - name: flowspinner
@@ -140,6 +144,7 @@ jobs:
       DELAY: "1"
       DELAY_UNIT: "ms"
       MESSAGE: "HOURLY"
+      USE_CLIENT_AUTH: true
     timeout: 20m
 
 - name: https-syslog-drain
@@ -163,6 +168,7 @@ jobs:
       DRAIN_VERSION: "2.0"
       DRAIN_TYPE: "https"
       JOB_NAME: "https-teardown"
+      USE_CLIENT_AUTH: true
     timeout: 30m
 
 - name: tcp-syslog-drain
@@ -186,6 +192,7 @@ jobs:
       DRAIN_VERSION: "2.0"
       DRAIN_TYPE: "syslog"
       JOB_NAME: "syslog-teardown"
+      USE_CLIENT_AUTH: true
     timeout: 30m
 
 - name: tcp-syslog-standalone-drain
@@ -213,6 +220,7 @@ jobs:
       EXTERNAL_DRAIN_PORT: 8000
       EXTERNAL_COUNTER_PORT: 8080
       JOB_NAME: "syslog-standalone-teardown"
+      USE_CLIENT_AUTH: true
     timeout: 30m
 
 - name: https-syslog-drain-no-teardown
@@ -237,6 +245,7 @@ jobs:
       DRAIN_VERSION: "2.0"
       DRAIN_TYPE: "https"
       JOB_NAME: "https-no-teardown"
+      USE_CLIENT_AUTH: true
     timeout: 30m
 
 - name: tcp-syslog-drain-no-teardown
@@ -261,6 +270,7 @@ jobs:
       DRAIN_VERSION: "2.0"
       DRAIN_TYPE: "syslog"
       JOB_NAME: "syslog-no-teardown"
+      USE_CLIENT_AUTH: true
     timeout: 30m
 
 - name: tcp-syslog-standalone-drain-no-teardown
@@ -289,6 +299,7 @@ jobs:
       EXTERNAL_DRAIN_PORT: 8000
       EXTERNAL_COUNTER_PORT: 8080
       JOB_NAME: "syslog-standalone-no-teardown"
+      USE_CLIENT_AUTH: true
     timeout: 30m
 
 - name: latency
@@ -310,6 +321,7 @@ jobs:
       PASSWORD: {{pws-password}}
       SPACE: "development"
       USERNAME: {{pws-username}}
+      USE_CLIENT_AUTH: true
     timeout: 20m
 
 - name: firehose-reliability
@@ -337,5 +349,6 @@ jobs:
       CLIENT_SECRET: {{pws-firehose-reliability-client-secret}}
       WORKER_INSTANCE_COUNT: 14
       APP_WS_PORT: 4443
+      USE_CLIENT_AUTH: true
     timeout: 5m
 
