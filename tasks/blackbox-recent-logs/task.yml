@@ -5,5 +5,7 @@ image_resource:
     repository: loggregator/base
 inputs:
   - name: loggregator-ci
+params:
+  USE_CLIENT_AUTH: false
 run:
   path: loggregator-ci/tasks/blackbox-recent-logs/task

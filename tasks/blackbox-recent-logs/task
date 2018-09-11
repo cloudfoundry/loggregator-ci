@@ -2,14 +2,18 @@
 
 set -e -x
 
-# target api
-cf login \
-    -a "$CF_API" \
-    -u "$USERNAME" \
-    -p "$PASSWORD" \
-    -s "$SPACE" \
-    -o "$ORG" \
-    --skip-ssl-validation # TODO: pass this in as a param
+if [ "$USE_CLIENT_AUTH" == "false" ]; then
+    cf login \
+      -a "$CF_API" \
+      -u "$USERNAME" \
+      -p "$PASSWORD" \
+      -s "$SPACE" \
+      -o "$ORG"
+else
+    cf api "$CF_API"
+    cf auth "$USERNAME" "$PASSWORD" --client-credentials
+    cf target -o "$ORG" -s "$SPACE"
+fi
 
 # build recent logs measure tool
 mkdir /tmp/gopath
