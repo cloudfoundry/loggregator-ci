@@ -25,20 +25,28 @@ def check_cf(*args, **env):
         raise subprocess.CalledProcessError(exit_code, args)
 
 
-def cf_login(api, username, password, space, org, skip_cert_verify):
-    args = [
-        "login",
-        "-a", api,
-        "-u", username,
-        "-p", password,
-        "-s", space,
-        "-o", org,
-    ]
+def cf_login(api, username, password, space, org, skip_cert_verify, use_client_auth):
+    if use_client_auth == "false":
+        args = [
+            "login",
+            "-a", api,
+            "-u", username,
+            "-p", password,
+            "-s", space,
+            "-o", org,
+        ]
 
-    if skip_cert_verify == "true":
-        args.append("--skip-ssl-validation")
+        if skip_cert_verify == "true":
+            args.append("--skip-ssl-validation")
 
-    check_cf(*args)
+        check_cf(*args)
+    else:
+        args = ["api", api]
+        if skip_cert_verify == "true":
+            args.append("--skip-ssl-validation")
+        check_cf(*args)
+        check_cf("auth", username, password, "--client-credentials")
+        check_cf("target", "-o", org, "-s", space)
 
 
 def push_worker(app_name, instance_count, **kwargs):
@@ -166,6 +174,7 @@ def main():
         os.environ['SPACE'],
         os.environ['ORG'],
         os.environ['SKIP_CERT_VERIFY'],
+        os.environ['USE_CLIENT_AUTH']
     )
     uaa_endpoint, log_endpoint = endpoints()
     push_server(os.environ['APP_NAME'])

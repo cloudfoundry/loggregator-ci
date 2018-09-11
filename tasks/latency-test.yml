@@ -5,6 +5,13 @@ image_resource:
     repository: loggregator/base
 inputs:
   - name: loggregator-tools
+params:
+  CF_API:
+  USERNAME:
+  PASSWORD:
+  SPACE:
+  ORG:
+  USE_CLIENT_AUTH: false
 run:
   path: bash
   args:
@@ -14,13 +21,18 @@ run:
 
       set -ex
 
-      # target api
-      cf login \
-        -a "$CF_API" \
-        -u "$USERNAME" \
-        -p "$PASSWORD" \
-        -s "$SPACE" \
-        -o "$ORG"
+      if [ "$USE_CLIENT_AUTH" == "false" ]; then
+          cf login \
+            -a "$CF_API" \
+            -u "$USERNAME" \
+            -p "$PASSWORD" \
+            -s "$SPACE" \
+            -o "$ORG"
+      else
+          cf api "$CF_API"
+          cf auth "$USERNAME" "$PASSWORD" --client-credentials
+          cf target -o "$ORG" -s "$SPACE"
+      fi
 
       mkdir -p build-workspace/src/code.cloudfoundry.org/loggregator-tools
       cp -r loggregator-tools/. build-workspace/src/code.cloudfoundry.org/loggregator-tools/

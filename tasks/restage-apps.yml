@@ -10,6 +10,7 @@ params:
   APP_NAMES:
   USERNAME:
   PASSWORD:
+  USE_CLIENT_AUTH: false
 inputs:
 - name: loggregator-tools
 run:
@@ -20,12 +21,18 @@ run:
       #!/bin/bash
       set -ex
 
-      cf login \
-        -a "$CF_API" \
-        -u "$USERNAME" \
-        -p "$PASSWORD" \
-        -s "$SPACE" \
-        -o "$ORG"
+      if [ "$USE_CLIENT_AUTH" == "false" ]; then
+        cf login \
+          -a "$CF_API" \
+          -u "$USERNAME" \
+          -p "$PASSWORD" \
+          -s "$SPACE" \
+          -o "$ORG"
+      else
+        cf api "$CF_API"
+        cf auth "$USERNAME" "$PASSWORD" --client-credentials
+        cf target -o "$ORG" -s "$SPACE"
+      fi
 
       for app_name in $APP_NAMES; do
         set +x

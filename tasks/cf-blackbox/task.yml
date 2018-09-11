@@ -12,5 +12,6 @@ params:
   CYCLES: 10000
   DELAY: 20
   DELAY_UNIT: ms
+  USE_CLIENT_AUTH: false
 run:
   path: loggregator-ci/tasks/cf-blackbox/task

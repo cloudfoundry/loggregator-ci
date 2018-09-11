@@ -19,6 +19,7 @@ params:
   EXTERNAL_COUNTER_PORT:
   TEARDOWN: true
   JOB_NAME:
+  USE_CLIENT_AUTH: false
 run:
   path: bash
   args:

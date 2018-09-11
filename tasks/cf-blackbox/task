@@ -31,14 +31,18 @@ export MSG_COUNT=0
 
 trap report_to_datadog EXIT
 
-# target api
-cf login \
-    -a "$CF_API" \
-    -u "$USERNAME" \
-    -p "$PASSWORD" \
-    -s "$SPACE" \
-    -o "$ORG" \
-    --skip-ssl-validation # TODO: pass this in as a param
+if [ "$USE_CLIENT_AUTH" == "false" ]; then
+    cf login \
+      -a "$CF_API" \
+      -u "$USERNAME" \
+      -p "$PASSWORD" \
+      -s "$SPACE" \
+      -o "$ORG"
+else
+    cf api "$CF_API"
+    cf auth "$USERNAME" "$PASSWORD" --client-credentials
+    cf target -o "$ORG" -s "$SPACE"
+fi
 
 # cf logs to a file
 rm -f output.txt
