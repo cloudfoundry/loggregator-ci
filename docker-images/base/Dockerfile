@@ -16,7 +16,7 @@ RUN cd /tmp \
   && unzip *.zip \
   && cp ./protoc /usr/local/bin/
 
-RUN go get -d github.com/cloudfoundry/bosh-cli && go build -o $GOPATH/bin/bosh github.com/cloudfoundry/bosh-cli
+RUN wget https://s3.amazonaws.com/bosh-cli-artifacts/bosh-cli-4.0.1-linux-amd64 && cp bosh-cli-4.0.1-linux-amd64 /usr/local/bin/bosh && chmod +x /usr/local/bin/bosh
 RUN curl -L "https://cli.run.pivotal.io/stable?release=debian64&source=github" > cf.deb && dpkg -i ./cf.deb
 
 RUN go get github.com/onsi/ginkgo/ginkgo
