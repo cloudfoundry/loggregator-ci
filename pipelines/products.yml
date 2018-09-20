@@ -6,7 +6,6 @@ groups:
   - cats
   - statsd-injector-tests
   - statsd-injector-bump-submodule
-  - statsd-injector-deploy
   - noisy-neighbor-nozzle-tests
   - noisy-neighbor-nozzle-promotion
   - noisy-neighbor-nozzle-bump-submodule
@@ -27,7 +26,6 @@ groups:
   jobs:
   - statsd-injector-tests
   - statsd-injector-bump-submodule
-  - statsd-injector-deploy
 - name: noisy-neighbor-nozzle
   jobs:
   - noisy-neighbor-nozzle-tests
@@ -361,37 +359,6 @@ jobs:
   - put: statsd-injector-release
     params:
       repository: committed-statsd-injector-release
-      rebase: true
-
-- name: statsd-injector-deploy
-  serial: true
-  public: false
-  plan:
-  - aggregate:
-    - get: statsd-injector-release
-      trigger: true
-      passed: ["statsd-injector-bump-submodule"]
-    - get: deployments-loggregator
-    - get: loggregator-ci
-  - task: deploy
-    file: loggregator-ci/tasks/bosh-deploy/task.yml
-    input_mapping:
-      bbl-state: deployments-loggregator
-      vars-store: deployments-loggregator
-      ops-files: deployments-loggregator
-      vars-files: deployments-loggregator
-      bosh-release: statsd-injector-release
-    output_mapping:
-      updated-vars-store: updated-deployments-loggregator
-    params:
-      BBL_STATE_DIR: gcp/coconut-bbl
-      DEPLOYMENT_NAME: statsd-injector
-      MANIFEST_FILE: manifests/statsd-injector.yml
-      VARS_STORE_FILE: gcp/coconut-bbl/statsd-injector-vars.yml
-      VARS_FILES: "gcp/coconut-bbl/deployment-vars.yml"
-  - put: deployments-loggregator
-    params:
-      repository: updated-deployments-loggregator
       rebase: true
 
 ###############################################################################
@@ -826,6 +793,8 @@ jobs:
       resource: deployments-loggregator
     - get: cf-syslog-drain-release
       trigger: true
+    - get: statsd-injector-release
+      trigger: true
   - aggregate:
     - task: upload-loggregator-release
       file: loggregator-ci/tasks/upload-release/task.yml
@@ -843,6 +812,12 @@ jobs:
       file: loggregator-ci/tasks/upload-release/task.yml
       input_mapping:
         bosh-release-dir: cf-syslog-drain-release
+      params:
+        BBL_STATE_DIR: gcp/coconut-bbl
+    - task: upload-statsd-injector-release
+      file: loggregator-ci/tasks/upload-release/task.yml
+      input_mapping:
+        bosh-release-dir: statsd-injector-release
       params:
         BBL_STATE_DIR: gcp/coconut-bbl
   - task: copy-ops-files
@@ -892,6 +867,11 @@ jobs:
             path: /releases/name=cf-syslog-drain
             value:
               name: cf-syslog-drain
+              version: latest
+          - type: replace
+            path: /releases/name=statsd-injector
+            value:
+              name: statsd-injector
               version: latest
           - type: replace
             path: /instance_groups/name=doppler/instances
