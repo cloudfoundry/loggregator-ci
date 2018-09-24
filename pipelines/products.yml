@@ -46,6 +46,11 @@ groups:
   - leadership-election-bump-submodule
 
 resources:
+- name: 5m
+  type: time
+  source:
+    interval: 5m
+
 - name: 10m
   type: time
   source:
@@ -382,6 +387,8 @@ jobs:
 - name: noisy-neighbor-nozzle-promotion
   serial: true
   plan:
+  - get: 5m
+    trigger: true
   - aggregate:
     - get: noisy-neighbor-nozzle
       passed: ["noisy-neighbor-nozzle-tests"]
@@ -747,6 +754,8 @@ jobs:
 - name: service-metrics-master-promotion
   serial: true
   plan:
+  - get: 5m
+    trigger: true
   - aggregate:
     - get: service-metrics-release-release-elect
       passed: ["service-metrics-promotion"]

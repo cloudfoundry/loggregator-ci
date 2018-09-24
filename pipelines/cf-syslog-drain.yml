@@ -1,4 +1,8 @@
 resources:
+- name: 5m
+  type: time
+  source: {interval: 5m}
+
 - name: go-loggregator
   type: git
   source:
@@ -293,6 +297,8 @@ jobs:
 - name: cf-syslog-drain-master-promotion
   serial: true
   plan:
+  - get: 5m
+    trigger: true
   - aggregate:
     - get: cf-syslog-drain-release-release-elect
       passed: ["cf-syslog-drain-promotion"]
@@ -316,6 +322,8 @@ jobs:
 - name: cf-drain-cli-promotion
   serial: true
   plan:
+  - get: 5m
+    trigger: true
   - aggregate:
     - get: cf-drain-cli
       passed: ["cf-drain-cli-acceptance-tests"]
