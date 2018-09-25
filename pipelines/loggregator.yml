@@ -148,7 +148,7 @@ resources:
   type: git
   source:
     uri: https://github.com/cloudfoundry/cf-deployment
-    branch: loggregator-iso-segments
+    branch: loggregator-iso-segments-2
     private_key: ((loggregator-key))
 
 - name: cf-deployment-concourse-tasks
@@ -604,13 +604,15 @@ jobs:
     file: cf-deployment-concourse-tasks/bosh-deploy/task.yml
     input_mapping:
       cf-deployment: loggregator-release
-      ops-files: deployments-loggregator
+      ops-files: loggregator-release
       bbl-state: deployments-loggregator
       vars-files: deployments-loggregator
     params:
       BBL_STATE_DIR: gcp/ci-pool/ten
       SYSTEM_DOMAIN: ten.loggr.cf-app.com
       MANIFEST_FILE: manifests/loggregator.yml
+      OPS_FILES: manifests/operations/exclude-rlp-gateway.yml
+
   - task: copy-ops-files
     config:
       platform: linux
@@ -894,8 +896,8 @@ jobs:
 
             cp cf-deployment/operations/use-compiled-releases.yml ops-files/
             cp cf-deployment/operations/scale-to-one-az.yml ops-files/
-            cp loggregator-release/manifests/operations/add-rlp-gateway-to-cf.yml ops-files/
             cp loggregator-agent-release/manifests/operations/infrastructure-metrics.yml ops-files/infrastructure-metrics.yml
+            cp cf-deployment/operations/test/add-persistent-isolation-segment-infrastructure-metrics.yml ops-files/
             cp cf-deployment/operations/test/add-persistent-isolation-segment-diego-cell.yml ops-files/
             cp cf-deployment/operations/test/add-persistent-isolation-segment-loggregator.yml ops-files/
 
@@ -931,9 +933,9 @@ jobs:
           scale-to-one-az.yml
           on-the-fly.yml
           infrastructure-metrics.yml
-          add-rlp-gateway-to-cf.yml
           add-persistent-isolation-segment-diego-cell.yml
           add-persistent-isolation-segment-loggregator.yml
+          add-persistent-isolation-segment-infrastructure-metrics.yml
     - task: enable-feature-flags
       file: cf-deployment-concourse-tasks/set-feature-flags/task.yml
       params:
