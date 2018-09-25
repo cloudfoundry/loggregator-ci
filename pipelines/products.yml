@@ -72,7 +72,7 @@ resources:
   type: git
   source:
     uri: https://github.com/cloudfoundry/cf-deployment
-    branch: loggregator-iso-segments
+    branch: loggregator-iso-segments-2
     private_key: {{loggregator-key}}
 
 - name: deployments-loggregator
@@ -857,9 +857,9 @@ jobs:
           cp cf-deployment/operations/test/add-persistent-isolation-segment-diego-cell.yml ops-files/
           cp cf-deployment/operations/test/add-persistent-isolation-segment-loggregator.yml ops-files/
           cp cf-deployment/operations/test/add-persistent-isolation-segment-syslog-drain.yml ops-files/
+          cp cf-deployment/operations/test/add-persistent-isolation-segment-infrastructure-metrics.yml ops-files/
           cp bbl-state/gcp/coconut-bbl/ops-files/*.yml ops-files/
           cp loggregator-agent-release/manifests/operations/infrastructure-metrics.yml ops-files/infrastructure-metrics.yml
-          cp loggregator-release/manifests/operations/add-rlp-gateway-to-cf.yml ops-files/add-rlp-gateway.yml
 
           cat <<EOT >> ops-files/on-the-fly.yml
           - type: replace
@@ -904,6 +904,12 @@ jobs:
             path: /update/canaries
             value: 5
           EOT
+
+          cat <<EOT >> ops-files/on-the-fly-iso.yml
+          - type: replace
+            path: /instance_groups/name=router/jobs/name=gorouter/properties/router/isolation_segments?
+            value: all
+          EOT
   - task: upload-stemcell
     file: cf-deployment-concourse-tasks/bosh-upload-stemcell-from-cf-deployment/task.yml
     params:
@@ -921,11 +927,11 @@ jobs:
         use-compiled-releases.yml
         on-the-fly.yml
         infrastructure-metrics.yml
-        add-rlp-gateway.yml
         add-persistent-isolation-segment-router.yml
         add-persistent-isolation-segment-diego-cell.yml
         add-persistent-isolation-segment-loggregator.yml
         add-persistent-isolation-segment-syslog-drain.yml
+        add-persistent-isolation-segment-infrastructure-metrics.yml
   - put: deployments-loggregator
     params:
       repository: updated-vars-store
