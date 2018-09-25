@@ -853,7 +853,6 @@ jobs:
 
           cp cf-deployment/operations/scale-to-one-az.yml ops-files/
           cp cf-deployment/operations/use-compiled-releases.yml ops-files/
-          cp cf-deployment/operations/test/add-persistent-isolation-segment-router.yml ops-files/
           cp cf-deployment/operations/test/add-persistent-isolation-segment-diego-cell.yml ops-files/
           cp cf-deployment/operations/test/add-persistent-isolation-segment-loggregator.yml ops-files/
           cp cf-deployment/operations/test/add-persistent-isolation-segment-syslog-drain.yml ops-files/
@@ -907,7 +906,7 @@ jobs:
 
           cat <<EOT >> ops-files/on-the-fly-iso.yml
           - type: replace
-            path: /instance_groups/name=router/jobs/name=gorouter/properties/router/isolation_segments?
+            path: /instance_groups/name=router/jobs/name=gorouter/properties/router/routing_table_sharding_mode?
             value: all
           EOT
   - task: upload-stemcell
@@ -927,11 +926,11 @@ jobs:
         use-compiled-releases.yml
         on-the-fly.yml
         infrastructure-metrics.yml
-        add-persistent-isolation-segment-router.yml
         add-persistent-isolation-segment-diego-cell.yml
         add-persistent-isolation-segment-loggregator.yml
         add-persistent-isolation-segment-syslog-drain.yml
         add-persistent-isolation-segment-infrastructure-metrics.yml
+        on-the-fly-iso.yml
   - put: deployments-loggregator
     params:
       repository: updated-vars-store
