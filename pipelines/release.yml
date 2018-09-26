@@ -842,22 +842,21 @@ jobs:
       RELEASE_NAME: service-metrics-release
       TO_BRANCH: develop
       FROM_BRANCH: master
-  - aggregate:
-    - put: service-metrics-release-master
-      params:
-        repository: repos/from-repo
-        rebase: false
-    - put: service-metrics-release-develop
-      params:
-        repository: repos/to-repo
-        rebase: false
-    - put: service-metrics-release-github-release-drafts
-      params:
-        name: github-release/name
-        tag: github-release/tag
-        body: github-release/body
-        globs:
-        - github-release/*.tgz
+  - put: service-metrics-release-master
+    params:
+      repository: repos/from-repo
+      rebase: false
+  - put: service-metrics-release-develop
+    params:
+      repository: repos/to-repo
+      rebase: false
+  - put: service-metrics-release-github-release-drafts
+    params:
+      name: github-release/name
+      tag: github-release/tag
+      body: github-release/body
+      globs:
+      - github-release/*.tgz
 
 - name: statsd-injector-create-final-release
   serial: true
@@ -876,26 +875,25 @@ jobs:
       S3_SECRET_KEY: {{s3-secret-access-key}}
       BLOBSTORE_BUCKET: statsd-injector-release-blobs
       SSH_KEY: {{loggregator-key}}
-      NEW_VERSION: 1.3.0
+      NEW_VERSION: 1.4.0
       RELEASE_NAME: statsd-injector-release
       TO_BRANCH: develop
       FROM_BRANCH: master
-  - aggregate:
-    - put: statsd-injector-release-master
-      params:
-        repository: repos/from-repo
-        rebase: false
-    - put: statsd-injector-release-develop
-      params:
-        repository: repos/to-repo
-        rebase: false
-    - put: statsd-injector-release-github-release-drafts
-      params:
-        name: github-release/name
-        tag: github-release/tag
-        body: github-release/body
-        globs:
-        - github-release/*.tgz
+  - put: statsd-injector-release-master
+    params:
+      repository: repos/from-repo
+      rebase: false
+  - put: statsd-injector-release-develop
+    params:
+      repository: repos/to-repo
+      rebase: false
+  - put: statsd-injector-release-github-release-drafts
+    params:
+      name: github-release/name
+      tag: github-release/tag
+      body: github-release/body
+      globs:
+      - github-release/*.tgz
 
 - name: cf-drain-cli
   serial: true
