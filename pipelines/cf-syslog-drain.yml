@@ -153,7 +153,7 @@ jobs:
     - get: loggregator-ci
     - get: deployments-loggregator
     - get: cf-drain-cli
-      passed: ["cf-deploy"]
+      passed: ["deploy-on-demand-broker"]
       trigger: true
   - task: run-tests
     config:
@@ -427,6 +427,80 @@ jobs:
               name: cf-syslog-drain
               version: latest
           EOT
+  - task: upload-stemcell
+    file: cf-deployment-concourse-tasks/bosh-upload-stemcell-from-cf-deployment/task.yml
+    params:
+      BBL_STATE_DIR: gcp/ci-pool/eight
+  - task: cf-deploy
+    file: cf-deployment-concourse-tasks/bosh-deploy/task.yml
+    params:
+      BBL_STATE_DIR: gcp/ci-pool/eight
+      SYSTEM_DOMAIN: eight.loggr.cf-app.com
+      OPS_FILES: |
+        scale-to-one-az.yml
+        on-the-fly.yml
+  - task: enable-feature-flags
+    file: cf-deployment-concourse-tasks/set-feature-flags/task.yml
+    params:
+      BBL_STATE_DIR: gcp/ci-pool/eight
+      SYSTEM_DOMAIN: eight.loggr.cf-app.com
+      ENABLED_FEATURE_FLAGS: diego_docker
+
+- name: deploy-on-demand-broker
+  serial: true
+  serial_groups:
+  - cf-deploy
+  - bosh-cf-cats
+  - bosh-cfar-lats
+  plan:
+  - aggregate:
+    - get: loggregator-ci
+    - get: bbl-state
+      resource: deployments-loggregator
+    - get: cf-deployment
+    - get: cf-deployment-concourse-tasks
+    - get: cf-syslog-drain-release
+      trigger: true
+      passed: ["cf-deploy"]
+    - get: cf-drain-cli
+      trigger: true
+      passed: ["cf-deploy"]
+    - get: vars-store
+      resource: deployments-loggregator
+    - get: vars-files
+      resource: deployments-loggregator
+    - get: deployments-loggregator
+    - get: service-metrics-release
+    - get: on-demand-service-broker-release
+      params:
+        submodules:
+        - src/github.com/pivotal-cf/on-demand-services-sdk
+        - src/github.com/pivotal-cf/on-demand-service-broker
+        - src/github.com/pivotal-cf/brokerapi
+  - task: copy-ops-files
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source:
+          repository: relintdockerhubpushbot/cf-deployment-concourse-tasks
+          tag: v5.20.0
+      inputs:
+      - name: bbl-state
+      - name: cf-deployment
+      outputs:
+      - name: ops-files
+      - name: vars-files
+      run:
+        path: /bin/bash
+        args:
+        - "-c"
+        - |
+          set -e
+
+          pushd bbl-state/gcp/ci-pool/eight
+            eval "$(bbl print-env)"
+          popd
 
           cp bbl-state/gcp/ci-pool/eight/service-metrics-broker-vars.yml vars-files
 
@@ -457,25 +531,7 @@ jobs:
             value: $odb_version
           EOT
 
-  - task: upload-stemcell
-    file: cf-deployment-concourse-tasks/bosh-upload-stemcell-from-cf-deployment/task.yml
-    params:
-      BBL_STATE_DIR: gcp/ci-pool/eight
-  - task: cf-deploy
-    file: cf-deployment-concourse-tasks/bosh-deploy/task.yml
-    params:
-      BBL_STATE_DIR: gcp/ci-pool/eight
-      SYSTEM_DOMAIN: eight.loggr.cf-app.com
-      OPS_FILES: |
-        scale-to-one-az.yml
-        on-the-fly.yml
-  - task: enable-feature-flags
-    file: cf-deployment-concourse-tasks/set-feature-flags/task.yml
-    params:
-      BBL_STATE_DIR: gcp/ci-pool/eight
-      SYSTEM_DOMAIN: eight.loggr.cf-app.com
-      ENABLED_FEATURE_FLAGS: diego_docker
-  - task: deploy-odb
+  - task: deploy
     file: cf-deployment-concourse-tasks/bosh-deploy/task.yml
     input_mapping:
       cf-deployment: service-metrics-release
@@ -491,6 +547,26 @@ jobs:
         service-metrics-version.yml
       OPS_FILES: |
         service-metrics.yml
+  - task: wait-for-service-broker
+    timeout: 10m
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source:
+          repository: relintdockerhubpushbot/cf-deployment-concourse-tasks
+          tag: v5.20.0
+      run:
+        path: /bin/bash
+        args:
+        - "-c"
+        - |
+          set -e
+
+          status="404"
+          while [ $status == "404"  ]; do
+            status=$(curl -k -s -o /dev/null -w "%{http_code}" https://sample-odb.eight.loggr.cf-app.com/v2/catalog)
+          done
   - task: register-service-broker
     file: loggregator-ci/tasks/run-errand/task.yml
     input_mapping:

@@ -530,25 +530,6 @@ jobs:
     params:
       SCRIPT: scripts/sync-package-specs
   - aggregate:
-    - task: run-specs
-      config:
-        platform: linux
-        image_resource:
-          type: docker-image
-          source:
-            repository: ruby
-        inputs:
-        - name: synced-loggregator-agent-release
-        run:
-          path: bash
-          args:
-            - -c
-            - |
-              #!/bin/bash
-              set -e
-              cd synced-loggregator-agent-release
-              bundle install
-              rspec
     - task: run-tests
       file: loggregator-ci/tasks/run-release-script/task.yml
       input_mapping:
