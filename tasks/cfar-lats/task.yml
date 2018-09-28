@@ -9,6 +9,7 @@ image_resource:
 inputs:
 - name: loggregator-ci # - This repo
 - name: cfar-logging-acceptance-tests
+- name: cf-drain-cli
 
 run:
   path: loggregator-ci/tasks/cfar-lats/task
@@ -16,15 +17,15 @@ run:
 params:
   # - Required
   # - Username to use to login to cloud foundry.
-  USERNAME:
+  CF_ADMIN_USER:
 
   # - Required
   # - The password to use to login to cloud foundry.
-  PASSWORD:
+  CF_ADMIN_PASSWORD:
 
   # - Required
-  # - The cloud foundry API endpoint.
-  API_ENDPOINT:
+  # - The cloud foundry system domain.
+  CF_DOMAIN:
 
   # - Optional
   # - Whether to disable SSL validation.

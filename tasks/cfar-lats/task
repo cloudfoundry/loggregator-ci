@@ -3,7 +3,16 @@
 set -e
 
 mkdir -p $GOPATH/src/github.com/cloudfoundry
+mkdir -p $GOPATH/src/code.cloudfoundry.org
+
 cp -R cfar-logging-acceptance-tests $GOPATH/src/github.com/cloudfoundry
+cp -R cf-drain-cli $GOPATH/src/code.cloudfoundry.org
+
+pushd $GOPATH/src/code.cloudfoundry.org/cf-drain-cli/cmd/cf-drain-cli
+    go get ./...
+    go build
+    cf install-plugin -f cf-drain-cli
+popd
 
 pushd $GOPATH/src/github.com/cloudfoundry/cfar-logging-acceptance-tests
   go get -t ./...
