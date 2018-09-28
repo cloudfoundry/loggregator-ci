@@ -413,24 +413,12 @@ jobs:
     - get: loggregator-src
       trigger: true
       passed: ["loggregator-tests"]
-    - get: loggregator-agent
-      trigger: true
-      passed: ["loggregator-agent-tests"]
     - get: go-loggregator
       trigger: true
-  - task: update-loggregator-agent
-    file: loggregator-ci/tasks/bump-submodule/task.yml
-    input_mapping:
-      release-repo: loggregator-release
-      source-repo: loggregator-agent
-    output_mapping:
-      bumped-release-repo: bumped-loggregator-agent-release
-    params:
-      SUBMODULE_PATH: src/code.cloudfoundry.org/loggregator-agent
   - task: update-loggregator
     file: loggregator-ci/tasks/bump-submodule/task.yml
     input_mapping:
-      release-repo: bumped-loggregator-agent-release
+      release-repo: loggregator-release
       source-repo: loggregator-src
     output_mapping:
       bumped-release-repo: bumped-loggregator-release
@@ -495,7 +483,6 @@ jobs:
       PATHS: |
         src/code.cloudfoundry.org/loggregator
         src/code.cloudfoundry.org/go-loggregator
-        src/code.cloudfoundry.org/loggregator-agent
         packages
   - put: loggregator-release
     params:
@@ -574,6 +561,13 @@ jobs:
       bosh-release-dir: loggregator-release
     params:
       BBL_STATE_DIR: gcp/ci-pool/ten
+  - task: upload-loggregator-agent-release
+    file: loggregator-ci/tasks/upload-release/task.yml
+    input_mapping:
+      bbl-state: deployments-loggregator
+      bosh-release-dir: loggregator-agent-release
+    params:
+      BBL_STATE_DIR: gcp/ci-pool/ten
   - task: upload-lats
     file: loggregator-ci/tasks/upload-release/task.yml
     input_mapping:
@@ -613,7 +607,12 @@ jobs:
 
           cat <<EOT >> ops-files/on-the-fly.yml
           - type: replace
-            path: /variables/name=loggregator_metron/options/ca
+            path: /releases/name=loggregator_agent
+            value:
+              name: loggregator_agent
+              version: latest
+          - type: replace
+            path: /variables/name=loggregator_agent/options/ca
             value: /bosh-ten/loggregator/loggregator_ca
           EOT
   - task: lats-deploy
