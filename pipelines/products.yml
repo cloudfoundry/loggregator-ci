@@ -7,8 +7,6 @@ groups:
   - statsd-injector-tests
   - statsd-injector-bump-submodule
   - noisy-neighbor-nozzle-tests
-  - noisy-neighbor-nozzle-promotion
-  - noisy-neighbor-nozzle-bump-submodule
   - noisy-neighbor-nozzle-deploy
   - service-metrics-tests
   - service-metrics-bump-submodule
@@ -29,8 +27,6 @@ groups:
 - name: noisy-neighbor-nozzle
   jobs:
   - noisy-neighbor-nozzle-tests
-  - noisy-neighbor-nozzle-promotion
-  - noisy-neighbor-nozzle-bump-submodule
   - noisy-neighbor-nozzle-deploy
 - name: service-metrics-injector
   jobs:
@@ -140,28 +136,11 @@ resources:
     - .final_builds
     - releases
 
-- name: noisy-neighbor-nozzle-release
-  type: git
-  source:
-    uri: git@github.com:cloudfoundry/noisy-neighbor-nozzle-release
-    branch: master
-    private_key: {{cf-loggregator-oauth-bot-key}}
-    ignore_paths:
-    - .final_builds
-    - releases
-
 - name: noisy-neighbor-nozzle
   type: git
   source:
     uri: https://github.com/cloudfoundry/noisy-neighbor-nozzle
     branch: develop
-
-- name: noisy-neighbor-nozzle-master
-  type: git
-  source:
-    uri: git@github.com:cloudfoundry/noisy-neighbor-nozzle
-    branch: master
-    private_key: {{cf-loggregator-oauth-bot-key}}
 
 - name: bumper-tool
   type: git
