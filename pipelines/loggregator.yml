@@ -884,7 +884,7 @@ jobs:
             cp loggregator-agent-release/manifests/operations/infrastructure-metrics.yml ops-files/infrastructure-metrics.yml
             cp cf-deployment/operations/test/add-persistent-isolation-segment-infrastructure-metrics.yml ops-files/
             cp cf-deployment/operations/test/add-persistent-isolation-segment-diego-cell.yml ops-files/
-            cp cf-deployment/operations/test/add-persistent-isolation-segment-loggregator.yml ops-files/
+            cp cf-deployment/operations/test/add-persistent-isolation-segment-logging-system.yml ops-files/
 
             cat <<EOT >> ops-files/on-the-fly.yml
             - type: replace
@@ -919,7 +919,7 @@ jobs:
           on-the-fly.yml
           infrastructure-metrics.yml
           add-persistent-isolation-segment-diego-cell.yml
-          add-persistent-isolation-segment-loggregator.yml
+          add-persistent-isolation-segment-logging-system.yml
           add-persistent-isolation-segment-infrastructure-metrics.yml
     - task: enable-feature-flags
       file: cf-deployment-concourse-tasks/set-feature-flags/task.yml
