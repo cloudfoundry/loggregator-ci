@@ -175,6 +175,11 @@ resources:
     private_key: ((loggregator-key))
     disable_ci_skip: true
 
+- name: cf-drain-cli
+  type: git
+  source:
+    uri: https://github.com/cloudfoundry/cf-drain-cli
+    branch: develop
 jobs:
 - name: loggregator-tests
   serial: true
@@ -971,12 +976,13 @@ jobs:
         trigger: true
         passed: ["cf-deploy"]
       - get: loggregator-ci
+      - get: cf-drain-cli
     - task: run-cfar-lats
       file: loggregator-ci/tasks/cfar-lats/task.yml
       params:
-        USERNAME: {{ten-username}}
-        PASSWORD: {{ten-password}}
-        API_ENDPOINT: api.ten.loggr.cf-app.com
+        CF_ADMIN_USER: {{ten-username}}
+        CF_ADMIN_PASSWORD: {{ten-password}}
+        CF_DOMAIN: ten.loggr.cf-app.com
         SKIP_SSL_VALIDATION: true
 
 

@@ -68,6 +68,12 @@ resources:
     branch: master
     uri: https://github.com/cloudfoundry/cfar-logging-acceptance-tests.git
 
+- name: cf-drain-cli
+  type: git
+  source:
+    branch: master
+    uri: https://github.com/cloudfoundry/cf-drain-cli.git
+
 - name: cf-deployment
   type: git
   source:
@@ -638,13 +644,6 @@ jobs:
             value: $odb_version
           EOT
 
-          cat <<EOT >> ops-files/remove-bosh-dns.yml
-          - type: remove
-            path: /releases/name=bosh-dns
-          - type: remove
-            path: /addons/name=bosh-dns
-          EOT
-
           cat <<EOT >> ops-files/on-the-fly.yml
           - type: replace
             path: /instance_groups/name=service-metrics/jobs/name=metron_agent/consumes/doppler/deployment
@@ -672,7 +671,6 @@ jobs:
           VARS_FILES: deployment-vars.yml
           OPS_FILES: |
             on-the-fly.yml
-            remove-bosh-dns.yml
       - put: deployments-loggregator
         params:
           repository: updated-deployments-loggregator
@@ -1004,12 +1002,13 @@ jobs:
         trigger: true
         passed: ["cf-deploy"]
       - get: loggregator-ci
+      - get: cf-drain-cli
     - task: run-cfar-lats
       file: loggregator-ci/tasks/cfar-lats/task.yml
       params:
-        USERNAME: {{coconut-username}}
-        PASSWORD: {{coconut-password}}
-        API_ENDPOINT: api.coconut.cf-app.com
+        CF_ADMIN_USER: {{coconut-username}}
+        CF_ADMIN_PASSWORD: {{coconut-password}}
+        CF_DOMAIN: coconut.cf-app.com
 
 - name: leadership-election-tests
   public: true

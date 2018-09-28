@@ -145,66 +145,6 @@ jobs:
     params:
       IMPORT_PATH: code.cloudfoundry.org/cf-drain-cli
 
-- name: cf-drain-cli-acceptance-tests
-  serial: true
-  public: true
-  plan:
-  - aggregate:
-    - get: loggregator-ci
-    - get: deployments-loggregator
-    - get: cf-drain-cli
-      passed: ["deploy-on-demand-broker"]
-      trigger: true
-  - task: run-tests
-    config:
-      platform: linux
-      image_resource:
-        type: docker-image
-        source:
-          repository: relintdockerhubpushbot/cf-deployment-concourse-tasks
-          tag: v5.9
-      inputs:
-      - name: loggregator-ci
-      - name: cf-drain-cli
-      - name: deployments-loggregator
-      run:
-        path: bash
-        args:
-        - -c
-        - |
-          #!/bin/bash
-          set -e
-          export MUST_RUN_ACCEPTANCE=true
-          export BBL_STATE_DIR=gcp/ci-pool/eight
-          pushd deployments-loggregator/$BBL_STATE_DIR
-            eval "$(bbl print-env)"
-            password_key=$(credhub find -n cf_admin | grep name | awk '{print $3}')
-            export CF_ADMIN_USER=admin
-            export CF_ADMIN_PASSWORD=$(credhub get -n $password_key | grep value | awk '{print $2}')
-            export CF_DOMAIN=$(grep system_domain vars/bbl.tfvars | cut -d "=" -f2 | tr -d '"')
-            export SKIP_CERT_VERIFY=true
-          popd
-
-          IMPORT_PATH=code.cloudfoundry.org/cf-drain-cli
-          mkdir -p "workspace/src/$IMPORT_PATH"
-          cp -r cf-drain-cli/. "workspace/src/$IMPORT_PATH"
-
-          pushd workspace
-            export GOPATH="$PWD"
-            export PATH="$GOPATH/bin:$PATH"
-
-            # acceptance tests rely on cf tail command
-            go get code.cloudfoundry.org/log-cache-cli/cmd/cf-lc-plugin
-            cf install-plugin $GOPATH/bin/cf-lc-plugin -f
-
-            go get -v github.com/onsi/ginkgo/ginkgo
-            go get $IMPORT_PATH/...
-
-            pushd "src/$IMPORT_PATH/acceptance"
-              ginkgo --flakeAttempts=2
-            popd
-          popd
-
 - name: cf-syslog-drain-bump-submodule
   serial: true
   plan:
@@ -326,7 +266,7 @@ jobs:
     trigger: true
   - aggregate:
     - get: cf-drain-cli
-      passed: ["cf-drain-cli-acceptance-tests"]
+      passed: ["cfar-lats"]
       trigger: true
     - get: cf-drain-cli-master
     - get: bumper-tool
@@ -626,11 +566,13 @@ jobs:
         passed: ["cf-deploy"]
         trigger: true
       - get: loggregator-ci
+      - get: cf-drain-cli
+        passed: ["deploy-on-demand-broker"]
     - task: run-cfar-lats
       file: loggregator-ci/tasks/cfar-lats/task.yml
       params:
-        USERNAME: {{eight-username}}
-        PASSWORD: {{eight-password}}
-        API_ENDPOINT: api.eight.loggr.cf-app.com
+        CF_ADMIN_USER: {{eight-username}}
+        CF_ADMIN_PASSWORD: {{eight-password}}
+        CF_DOMAIN: eight.loggr.cf-app.com
         SKIP_SSL_VALIDATION: true
 
