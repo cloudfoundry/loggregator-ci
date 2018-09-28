@@ -607,9 +607,9 @@ jobs:
 
           cat <<EOT >> ops-files/on-the-fly.yml
           - type: replace
-            path: /releases/name=loggregator_agent
+            path: /releases/name=loggregator-agent
             value:
-              name: loggregator_agent
+              name: loggregator-agent
               version: latest
           - type: replace
             path: /variables/name=loggregator_agent/options/ca
