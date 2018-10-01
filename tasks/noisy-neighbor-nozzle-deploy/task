@@ -39,7 +39,7 @@ fi
 
 # Deploy
 pushd $BINARY_PATH
-    ./deployer \
+    ./deployer-linux \
         --app-domain "$APP_DOMAIN" \
         --capi-addr "https://api.$SYSTEM_DOMAIN" \
         --client-id "$CLIENT_ID" \
