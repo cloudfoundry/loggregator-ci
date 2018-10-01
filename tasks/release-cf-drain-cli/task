@@ -2,8 +2,8 @@
 set -ex
 
 # establish version/tag strings
-version="{\"Major\":$VERSION_MAJOR,\"Minor\":$VERSION_MINOR}"
-semver="v$VERSION_MAJOR.$VERSION_MINOR"
+version="{\"Major\":$VERSION_MAJOR,\"Minor\":$VERSION_MINOR,\"Build\":$VERSION_BUILD}"
+semver="v$VERSION_MAJOR.$VERSION_MINOR.$VERSION_PATCH"
 
 # write out github release files
 echo "CF Drain CLI $semver" > github-release/name

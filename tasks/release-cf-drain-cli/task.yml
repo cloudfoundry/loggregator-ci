@@ -19,13 +19,13 @@ run:
 
 params:
   # - Required
-  # - The major version of this release. This and VERSION_MINOR need to be set
-  #   on every invocation. This should probably be switched out for a semver
-  #   resource.
+  # - The major version of this release.
   VERSION_MAJOR:
 
   # - Required
-  # - The minor version of this release. This and VERSION_MAJOR need to be set
-  #   on every invocation. This should probably be switched out for a semver
-  #   resource.
+  # - The minor version of this release.
   VERSION_MINOR:
+
+  # - Optional
+  # - The build version of this release.
+  VERSION_BUILD: 0
