@@ -568,6 +568,7 @@ jobs:
       - get: loggregator-ci
       - get: cf-drain-cli
         passed: ["deploy-on-demand-broker"]
+        trigger: true
     - task: run-cfar-lats
       file: loggregator-ci/tasks/cfar-lats/task.yml
       params:
