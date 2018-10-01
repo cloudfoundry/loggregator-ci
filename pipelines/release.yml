@@ -906,7 +906,7 @@ jobs:
     file: loggregator-ci/tasks/release-cf-drain-cli/task.yml
     params:
       VERSION_MAJOR: 1
-      VERSION_MINOR: 1
+      VERSION_MINOR: 2
     input_mapping:
       loggregator-tools: loggregator-tools-master
   - put: cf-drain-cli
