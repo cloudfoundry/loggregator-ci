@@ -67,7 +67,9 @@ jobs:
           go install code.cloudfoundry.org/noisy-neighbor-nozzle/cmd/accumulator
           go install code.cloudfoundry.org/noisy-neighbor-nozzle/cmd/datadog-reporter
 
-          cf login -a "api.$SYSTEM_DOMAIN" -u "$USERNAME" -p "$PASSWORD" -o "$ORG" -s "$SPACE"
+          cf api "api.$SYSTEM_DOMAIN"
+          cf auth "$USERNAME" "$PASSWORD" --client-credentials
+          cf target -o "$ORG" -s "$SPACE"
 
           V2=$(cf curl /v2/info)
           UAA_ADDR=$(echo $V2 | jq .token_endpoint --raw-output)

@@ -376,7 +376,7 @@ jobs:
       passed: [noisy-neighbor-nozzle-tests]
       trigger: true
     - get: loggregator-ci
-  - task: deploy-to-prod
+  - task: noisy-neighbor-nozzle-deploy
     config:
       platform: linux
       image_resource:
@@ -387,14 +387,14 @@ jobs:
       - name: noisy-neighbor-nozzle
       params:
         SYSTEM_DOMAIN: "coconut.cf-app.com"
-        ORG: "cf-lamb"
-        SPACE: "production"
-        CLIENT_ID: {{noisy-neighbor-nozzle-id}}
-        CLIENT_SECRET: {{noisy-neighbor-nozzle-secret}}
+        ORG: "system"
+        SPACE: "accumulators"
+        CLIENT_ID: {{noisy-neighbor-nozzle-coconut-id}}
+        CLIENT_SECRET: {{noisy-neighbor-nozzle-coconut-secret}}
         SUBSCRIPTION_ID: {{noisy-neighbor-nozzle-subscription-id}}
         USERNAME: {{coconut-username}}
         PASSWORD: {{coconut-password}}
-        DATADOG_API_KEY: {{datadog-prod-api-key}}
+        DATADOG_API_KEY: {{datadog-loggregator-api-key}}
         NOZZLE_COUNT: 4
       run:
         path: bash
