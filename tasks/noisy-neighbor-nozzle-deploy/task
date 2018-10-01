@@ -46,7 +46,7 @@ pushd $BINARY_PATH
         --client-secret "$CLIENT_SECRET" \
         --datadog-api-key "$DATADOG_API_KEY" \
         --loggregator-addr "wss://doppler.$SYSTEM_DOMAIN:443" \
-        --nozzle-instance-count "$NOZZLE_COUNT" \
+        --nozzle-instances "$NOZZLE_COUNT" \
         --system-domain "$SYSTEM_DOMAIN" \
         --uaa-addr "https://uaa.$SYSTEM_DOMAIN" \
         --skip-cert-verify="$SKIP_CERT_VERIFY"
