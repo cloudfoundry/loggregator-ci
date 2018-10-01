@@ -32,98 +32,18 @@ jobs:
       trigger: true
     - get: loggregator-ci
   - task: deploy-to-prod
-    config:
-      platform: linux
-      image_resource:
-        type: docker-image
-        source:
-          repository: loggregator/base
-      inputs:
-      - name: noisy-neighbor-nozzle
-      params:
-        SYSTEM_DOMAIN: "run.pivotal.io"
-        ORG: "cf-lamb"
-        SPACE: "production"
-        CLIENT_ID: {{noisy-neighbor-nozzle-id}}
-        CLIENT_SECRET: {{noisy-neighbor-nozzle-secret}}
-        SUBSCRIPTION_ID: {{noisy-neighbor-nozzle-subscription-id}}
-        USERNAME: {{pws-username}}
-        PASSWORD: {{pws-password}}
-        DATADOG_API_KEY: {{datadog-prod-api-key}}
-        NOZZLE_COUNT: 14
-      run:
-        path: bash
-        args:
-        - -c
-        - |
-          #!/bin/bash
-          set -e
-
-          mkdir -p $GOPATH/src/code.cloudfoundry.org/
-          cp -r noisy-neighbor-nozzle/ $GOPATH/src/code.cloudfoundry.org/noisy-neighbor-nozzle
-          go get code.cloudfoundry.org/noisy-neighbor-nozzle/...
-
-          go install code.cloudfoundry.org/noisy-neighbor-nozzle/cmd/nozzle
-          go install code.cloudfoundry.org/noisy-neighbor-nozzle/cmd/accumulator
-          go install code.cloudfoundry.org/noisy-neighbor-nozzle/cmd/datadog-reporter
-
-          cf api "api.$SYSTEM_DOMAIN"
-          cf auth "$USERNAME" "$PASSWORD" --client-credentials
-          cf target -o "$ORG" -s "$SPACE"
-
-          V2=$(cf curl /v2/info)
-          UAA_ADDR=$(echo $V2 | jq .token_endpoint --raw-output)
-          LOGGR_ADDR=$(echo $V2 | jq .doppler_logging_endpoint --raw-output)
-          CAPI_ADDR="https://api.$SYSTEM_DOMAIN"
-
-          cf push nn-nozzle \
-            -p "$GOPATH/bin/" \
-            -b binary_buildpack \
-            -c "./nozzle" \
-            -i "$NOZZLE_COUNT" \
-            -m 256M \
-            -k 256M \
-            --no-start
-          cf push nn-accumulator \
-            -p "$GOPATH/bin/" \
-            -b binary_buildpack \
-            -c "./accumulator" \
-            -m 256M \
-            -k 256M \
-            --no-start
-          cf push nn-datadog-reporter \
-            -p "$GOPATH/bin/" \
-            -b binary_buildpack \
-            -c "./datadog-reporter" \
-            -m 256M \
-            -k 256M \
-            -u none \
-            --no-start
-
-          # Set env for nozzle
-          cf set-env nn-nozzle UAA_ADDR $UAA_ADDR
-          cf set-env nn-nozzle CLIENT_ID $CLIENT_ID
-          cf set-env nn-nozzle CLIENT_SECRET $CLIENT_SECRET
-          cf set-env nn-nozzle LOGGREGATOR_ADDR $LOGGR_ADDR
-          cf set-env nn-nozzle SUBSCRIPTION_ID $SUBSCRIPTION_ID
-
-          # Set env for accumulator
-          cf set-env nn-accumulator UAA_ADDR $UAA_ADDR
-          cf set-env nn-accumulator CLIENT_ID $CLIENT_ID
-          cf set-env nn-accumulator CLIENT_SECRET $CLIENT_SECRET
-          cf set-env nn-accumulator NOZZLE_ADDRS https://nn-nozzle.cfapps.io
-          cf set-env nn-accumulator NOZZLE_COUNT $NOZZLE_COUNT
-          cf set-env nn-accumulator NOZZLE_APP_GUID $(cf app nn-nozzle --guid)
-
-          # Set env for datadog reporter
-          cf set-env nn-datadog-reporter UAA_ADDR $UAA_ADDR
-          cf set-env nn-datadog-reporter CAPI_ADDR $CAPI_ADDR
-          cf set-env nn-datadog-reporter ACCUMULATOR_ADDR https://nn-accumulator.cfapps.io
-          cf set-env nn-datadog-reporter CLIENT_ID $CLIENT_ID
-          cf set-env nn-datadog-reporter CLIENT_SECRET $CLIENT_SECRET
-          cf set-env nn-datadog-reporter DATADOG_API_KEY $DATADOG_API_KEY
-          cf set-env nn-datadog-reporter REPORTER_HOST $SYSTEM_DOMAIN
-
-          cf start nn-nozzle
-          cf start nn-accumulator
-          cf start nn-datadog-reporter
+    file: loggregator-ci/tasks/noisy-neighbor-nozzle-deploy/task.yml
+    params:
+    params:
+      APP_DOMAIN: "cfapps.io"
+      SYSTEM_DOMAIN: "run.pivotal.io"
+      ORG: "cf-lamb"
+      SPACE: "production"
+      CLIENT_ID: {{noisy-neighbor-nozzle-id}}
+      CLIENT_SECRET: {{noisy-neighbor-nozzle-secret}}
+      SUBSCRIPTION_ID: {{noisy-neighbor-nozzle-subscription-id}}
+      USERNAME: {{pws-username}}
+      PASSWORD: {{pws-password}}
+      DATADOG_API_KEY: {{datadog-prod-api-key}}
+      NOZZLE_COUNT: 14
+      USE_CLIENT_AUTH: true
