@@ -1,0 +1,68 @@
+platform: linux
+
+image_resource:
+  type: docker-image
+  source:
+    repository: loggregator/base
+
+inputs:
+- name: loggregator-ci # - This repo
+- name: noisy-neighbor-nozzle # - The source repo for noisy-neighbor-nozzle
+
+run:
+  path: loggregator-ci/tasks/noisy-neighbor-nozzle-deploy/task
+
+params:
+  # - Required
+  # - Cloud Foundry's system domain.
+  SYSTEM_DOMAIN:
+
+  # - Required
+  # - Cloud Foundry's system domain.
+  APP_DOMAIN:
+
+
+  # - Required
+  # - The CF org to deploy to.
+  ORG:
+
+  # - Required
+  # - The CF space to deploy to.
+  SPACE:
+
+  # - Required
+  # - The CF client ID to connect to the firehose.
+  CLIENT_ID:
+
+  # - Required
+  # - The CF client secret to connect to the firehose.
+  CLIENT_SECRET:
+
+  # - Required
+  # - The Firehose subscription ID.
+  SUBSCRIPTION_ID:
+
+  # - Required
+  # - The CF username used to push the noisy-neighbor-nozzle app.
+  USERNAME:
+
+  # - Required
+  # - The CF password used to push the noisy-neighbor-nozzle app.
+  PASSWORD:
+
+  # - Optional
+  # - Use client auth to login to CF.
+  USE_CLIENT_AUTH: false
+
+  # - Required
+  # - The DataDog API key.
+  DATADOG_API_KEY:
+
+  # - Required
+  # - The nozzle count is the number of instances to deploy to consume from
+  #   the Firehose.
+  NOZZLE_COUNT:
+
+  # - Optional
+  # - Skip certificate hostname validation.
+  SKIP_CERT_VERIFY: false
