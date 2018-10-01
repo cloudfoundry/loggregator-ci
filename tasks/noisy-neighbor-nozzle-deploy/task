@@ -2,7 +2,7 @@
 set -eux
 
 NNN_PATH=$GOPATH/src/code.cloudfoundry.org/noisy-neighbor-nozzle
-BINARY_PATH=$(mktemp)
+BINARY_PATH=$(mktemp -d)
 
 # Setup GOPATH
 mkdir -p $NNN_PATH
