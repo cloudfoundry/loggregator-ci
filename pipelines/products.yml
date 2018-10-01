@@ -140,7 +140,6 @@ resources:
   type: git
   source:
     uri: https://github.com/cloudfoundry/noisy-neighbor-nozzle
-    branch: develop
 
 - name: bumper-tool
   type: git
