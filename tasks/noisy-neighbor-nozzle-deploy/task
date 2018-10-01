@@ -19,7 +19,7 @@ popd
 
 # CF Authentication
 if [ "$USE_CLIENT_AUTH" == "false" ]; then
-    args="-a api.\"$SYSTEM_DOMAIN\" -u \"$USERNAME\" -p \"$PASSWORD\" -s \"$SPACE\" -o \"$ORG\""
+    args="-a api.$SYSTEM_DOMAIN -u $USERNAME -p $PASSWORD -s $SPACE -o $ORG"
 
     if [ $SKIP_CERT_VERIFY == "true" ]; then
         args+=" --skip-ssl-validation"
