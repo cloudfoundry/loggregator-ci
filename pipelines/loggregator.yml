@@ -923,6 +923,7 @@ jobs:
           add-persistent-isolation-segment-infrastructure-metrics.yml
     - task: enable-feature-flags
       file: cf-deployment-concourse-tasks/set-feature-flags/task.yml
+      attempts: 3
       params:
         BBL_STATE_DIR: gcp/ci-pool/ten
         SYSTEM_DOMAIN: ten.loggr.cf-app.com
