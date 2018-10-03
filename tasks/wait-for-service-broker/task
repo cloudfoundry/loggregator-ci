@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+
+set -e
+
+status="404"
+while [ $status == "404"  ]; do
+  status=$(curl -k -s -o /dev/null -w "%{http_code}" https://sample-odb.eight.loggr.cf-app.com/v2/catalog)
+done
