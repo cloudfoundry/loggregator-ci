@@ -1,6 +1,12 @@
 #!/bin/bash
-set -ex
-password=$(bosh int vars-store/$VARS_STORE_FILE --path=/cf_admin_password)
+set -exu
+
+pushd bbl-state/$BBL_STATE_DIR
+  eval $(bbl print-env)
+  export BOSH_CA_CERT=$(bbl director-ca-cert)
+popd
+
+password=$(credhub get --name=$(credhub find | grep cf_admin | awk '{print $3}') --output-json | jq -r .value)
 
 cf api api.$SYSTEM_DOMAIN --skip-ssl-validation
 cf auth admin $password

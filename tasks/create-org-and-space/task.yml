@@ -1,13 +1,13 @@
 image_resource:
   type: docker-image
   source:
-    repository: loggregator/base
+    repository: relintdockerhubpushbot/cf-deployment-concourse-tasks
 platform: linux
 inputs:
-  - name: vars-store
   - name: loggregator-ci
+  - name: bbl-state
 params:
-  VARS_STORE_FILE:
+  BBL_STATE_DIR:
   ORG:
   SPACE:
   SYSTEM_DOMAIN:
