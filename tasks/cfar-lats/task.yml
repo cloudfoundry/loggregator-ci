@@ -30,3 +30,7 @@ params:
   # - Optional
   # - Whether to disable SSL validation.
   SKIP_SSL_VALIDATION: false
+
+  # - Optional
+  # - App push timeout
+  APP_PUSH_TIMEOUT: 90s
