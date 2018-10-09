@@ -88,7 +88,7 @@ resources:
   type: git
   source:
     uri: https://github.com/cloudfoundry/cf-deployment-concourse-tasks
-    branch: v6.8
+    tag_filter: v7.*
 
 - name: bosh-bootloader
   type: git
@@ -240,7 +240,6 @@ jobs:
       BBL_LB_KEY: {{coconut_bbl_lb_key}}
       BBL_ENV_NAME: coconut-bbl
       LB_DOMAIN: coconut.cf-app.com
-      OPS_FILES: local-dns.yml
       BBL_CONFIG_DIR: plan-patches/iso-segs-gcp
   - put: deployments-loggregator
     params:
@@ -476,6 +475,7 @@ jobs:
   serial_groups: ["cf-deploy"]
   plan:
   - aggregate:
+    - get: cf-deployment-concourse-tasks
     - get: service-metrics-release
       trigger: true
       passed: ["service-metrics-bump-submodule"]
@@ -523,11 +523,9 @@ jobs:
           set -exu
 
           pushd deployments-loggregator/gcp/coconut-bbl
-            eval $(bbl print-env)
-            export BOSH_CA_CERT=$(bbl director-ca-cert)
+            eval "$(bbl print-env)"
           popd
 
-          cp deployments-loggregator/gcp/coconut-bbl/deployment-vars.yml vars-files
           cp deployments-loggregator/gcp/coconut-bbl/service-metrics-broker-vars.yml vars-files
 
           service_metrics_version=$(bosh releases | grep service-metrics | grep -v service-metrics-adapter | head -n1 | awk '{print $2}' | cut -d '*' -f 1)
@@ -544,57 +542,97 @@ jobs:
 
           cat <<EOT >> ops-files/on-the-fly.yml
           - type: replace
-            path: /instance_groups/name=service-metrics/jobs/name=metron_agent/consumes/doppler/deployment
+            path: /instance_groups/name=service-metrics/jobs/name=loggregator_agent/consumes/doppler/deployment
             value: cf
           - type: replace
             path: /instance_groups/name=service-metrics/jobs/name=service-metrics/properties/service_metrics/source_id?
             value: dummy-source-id
+          - type: remove
+            path: /variables/name=loggregator_ca
+          - type: replace
+            path: /variables/name=service-metrics/options/ca
+            value: /bosh-coconut-bbl/cf/loggregator_ca
+          - type: replace
+            path: /variables/name=loggregator_agent/options/ca
+            value: /bosh-coconut-bbl/cf/loggregator_ca
+          - type: replace
+            path: /variables/name=loggregator_agent/options/alternative_names
+            value:
+            - metron
+            - agent
+            - localhost
+            - 127.0.0.1
+          EOT
+
+          cat <<EOT >> ops-files/on-the-fly-odb.yml
+          - type: remove
+            path: /variables/name=loggregator_ca
+          - type: replace
+            path: /variables/name=service_metrics/options/ca
+            value: /bosh-coconut-bbl/cf/loggregator_ca
+          - type: replace
+            path: /variables/name=loggregator_agent/options/ca
+            value: /bosh-coconut-bbl/cf/loggregator_ca
+          - type: replace
+            path: /variables/name=loggregator_agent/options/alternative_names
+            value:
+            - metron
+            - agent
+            - localhost
+            - 127.0.0.1
           EOT
   - aggregate:
     - do:
       - task: deploy-standalone
-        file: loggregator-ci/tasks/bosh-deploy/task.yml
+        file: cf-deployment-concourse-tasks/bosh-deploy/task.yml
         input_mapping:
           bbl-state: deployments-loggregator
           vars-store: deployments-loggregator
           ops-files: ops-files
-          bosh-release: service-metrics-release
-        output_mapping:
-          updated-vars-store: updated-deployments-loggregator
+          cf-deployment: service-metrics-release
         params:
+          SYSTEM_DOMAIN: coconut.cf-app.com
           BBL_STATE_DIR: gcp/coconut-bbl
           DEPLOYMENT_NAME: service-metrics-injector
           MANIFEST_FILE: manifests/manifest.yml
-          VARS_STORE_FILE: gcp/coconut-bbl/service-metrics-injector-vars.yml
-          VARS_FILES: deployment-vars.yml
           OPS_FILES: |
             on-the-fly.yml
-      - put: deployments-loggregator
-        params:
-          repository: updated-deployments-loggregator
-          rebase: true
     - do:
       - task: deploy-odb
-        file: loggregator-ci/tasks/bosh-deploy/task.yml
+        file: cf-deployment-concourse-tasks/bosh-deploy/task.yml
         input_mapping:
           bbl-state: deployments-loggregator
           vars-store: deployments-loggregator
           ops-files: ops-files
-          bosh-release: service-metrics-release
-        output_mapping:
-          updated-vars-store: updated-deployments-loggregator
+          cf-deployment: service-metrics-release
         params:
+          SYSTEM_DOMAIN: coconut.cf-app.com
           BBL_STATE_DIR: gcp/coconut-bbl
           DEPLOYMENT_NAME: sample-service-metrics
           MANIFEST_FILE: manifests/sample-service-metrics.yml
-          VARS_STORE_FILE: gcp/coconut-bbl/service-metrics-odb-vars.yml
-          VARS_FILES: deployment-vars.yml service-metrics-version.yml service-metrics-broker-vars.yml
+          VARS_FILES: service-metrics-version.yml service-metrics-broker-vars.yml
           OPS_FILES: |
             odb-version.yml
-      - put: deployments-loggregator
-        params:
-          repository: updated-deployments-loggregator
-          rebase: true
+            on-the-fly-odb.yml
+      - task: wait-for-broker
+        timeout: 5m
+        config:
+          platform: linux
+          image_resource:
+            type: docker-image
+            source:
+              repository: relintdockerhubpushbot/cf-deployment-concourse-tasks
+              tag: v5.7.0
+          run:
+            path: /bin/bash
+            args:
+            - "-c"
+            - |
+              set -e
+              status="404"
+              while [ $status == "404"  ]; do
+                status=$(curl -k -s -o /dev/null -w "%{http_code}" https://sample-odb.coconut.cf-app.com/v2/catalog)
+              done
       - task: register-service-broker
         file: loggregator-ci/tasks/run-errand/task.yml
         input_mapping:
@@ -632,6 +670,7 @@ jobs:
       DEPLOYMENT_NAME: service-metrics-injector
       DOPPLER_ADDR: wss://doppler.coconut.cf-app.com:443
       ORIGIN: service-metrics-injector
+      CF_SSL_VALIDATION: true
 
 
 - name: service-metrics-promotion
@@ -747,14 +786,15 @@ jobs:
         - |
           set -e
 
-          cp cf-deployment/operations/scale-to-one-az.yml ops-files/
           cp cf-deployment/operations/use-compiled-releases.yml ops-files/
-          cp cf-deployment/operations/test/add-persistent-isolation-segment-diego-cell.yml ops-files/
-          cp cf-deployment/operations/test/add-persistent-isolation-segment-loggregator.yml ops-files/
-          cp cf-deployment/operations/test/add-persistent-isolation-segment-syslog-drain.yml ops-files/
-          cp cf-deployment/operations/test/add-persistent-isolation-segment-infrastructure-metrics.yml ops-files/
-          cp bbl-state/gcp/coconut-bbl/ops-files/*.yml ops-files/
+          cp cf-deployment/operations/scale-to-one-az.yml ops-files/
           cp loggregator-agent-release/manifests/operations/infrastructure-metrics.yml ops-files/infrastructure-metrics.yml
+          cp cf-deployment/operations/test/add-persistent-isolation-segment-infrastructure-metrics.yml ops-files/
+          cp cf-deployment/operations/test/add-persistent-isolation-segment-diego-cell.yml ops-files/
+          cp cf-deployment/operations/test/add-persistent-isolation-segment-logging-system.yml ops-files/
+          cp cf-deployment/operations/test/add-persistent-isolation-segment-syslog-drain.yml ops-files/
+          cp bbl-state/gcp/coconut-bbl/ops-files/clients.yml ops-files/
+
 
           cat <<EOT >> ops-files/on-the-fly.yml
           - type: replace
@@ -814,30 +854,22 @@ jobs:
     params:
       BBL_STATE_DIR: gcp/coconut-bbl
       SYSTEM_DOMAIN: coconut.cf-app.com
-      VARS_STORE_FILE: gcp/coconut-bbl/deployment-vars.yml
-      VARS_FILES: gcp/coconut-bbl/coconut-certs.yml
       OPS_FILES: |
         clients.yml
-        scale-to-one-az.yml
         use-compiled-releases.yml
+        scale-to-one-az.yml
         on-the-fly.yml
         infrastructure-metrics.yml
         add-persistent-isolation-segment-diego-cell.yml
-        add-persistent-isolation-segment-loggregator.yml
-        add-persistent-isolation-segment-syslog-drain.yml
+        add-persistent-isolation-segment-logging-system.yml
         add-persistent-isolation-segment-infrastructure-metrics.yml
         on-the-fly-iso.yml
-  - put: deployments-loggregator
-    params:
-      repository: updated-vars-store
-      rebase: true
   - task: enable-feature-flags
     file: cf-deployment-concourse-tasks/set-feature-flags/task.yml
-    input_mapping:
-      vars-store: updated-vars-store
+    attempts: 3
     params:
       SYSTEM_DOMAIN: coconut.cf-app.com
-      VARS_STORE_FILE: gcp/coconut-bbl/deployment-vars.yml
+      BBL_STATE_DIR: gcp/coconut-bbl
       ENABLED_FEATURE_FLAGS: diego_docker
   - task: cleanup
     file: cf-deployment-concourse-tasks/bosh-cleanup/task.yml
@@ -845,19 +877,15 @@ jobs:
       BBL_STATE_DIR: gcp/coconut-bbl
   - task: create-blackbox-space
     file: loggregator-ci/tasks/create-org-and-space/task.yml
-    input_mapping:
-      vars-store: bbl-state
     params:
-      VARS_STORE_FILE: gcp/coconut-bbl/deployment-vars.yml
+      BBL_STATE_DIR: gcp/coconut-bbl
       ORG: system
       SPACE: blackbox-testing
       SYSTEM_DOMAIN: coconut.cf-app.com
   - task: create-accumulators-space
     file: loggregator-ci/tasks/create-org-and-space/task.yml
-    input_mapping:
-      vars-store: bbl-state
     params:
-      VARS_STORE_FILE: gcp/coconut-bbl/deployment-vars.yml
+      BBL_STATE_DIR: gcp/coconut-bbl
       ORG: system
       SPACE: accumulators
       SYSTEM_DOMAIN: coconut.cf-app.com
@@ -877,10 +905,19 @@ jobs:
       - get: loggregator-agent-release
         trigger: true
         passed: ["cf-deploy"]
+    - task: update-config
+      file: cf-deployment-concourse-tasks/update-integration-configs/task.yml
+      input_mapping:
+        bbl-state: deployments-loggregator
+        integration-configs: deployments-loggregator
+      params:
+        CATS_INTEGRATION_CONFIG_FILE: gcp/coconut-bbl/cats-config.json
+        BBL_STATE_DIR: gcp/coconut-bbl
+        SYSTEM_DOMAIN: coconut.cf-app.com
     - task: run-cats
       file: cf-deployment-concourse-tasks/run-cats/task.yml
       input_mapping:
-        integration-config: deployments-loggregator
+        integration-config: updated-integration-configs
       params:
         CONFIG_FILE_PATH: gcp/coconut-bbl/cats-config.json
         NODES: 9
@@ -907,6 +944,8 @@ jobs:
         CF_ADMIN_USER: {{coconut-username}}
         CF_ADMIN_PASSWORD: {{coconut-password}}
         CF_DOMAIN: coconut.cf-app.com
+        SKIP_SSL_VALIDATION: true
+        APP_PUSH_TIMEOUT: 180s
 
 - name: leadership-election-tests
   public: true
