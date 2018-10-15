@@ -11,6 +11,7 @@ params:
   USERNAME:
   PASSWORD:
   USE_CLIENT_AUTH: false
+  SKIP_CERT_VERIFY: false
 inputs:
 - name: loggregator-tools
 run:
@@ -22,15 +23,24 @@ run:
       set -ex
 
       if [ "$USE_CLIENT_AUTH" == "false" ]; then
-        cf login \
-          -a "$CF_API" \
-          -u "$USERNAME" \
-          -p "$PASSWORD" \
-          -s "$SPACE" \
-          -o "$ORG"
+        args=("-a $CF_API")
+        args+=("-u $USERNAME")
+        args+=("-p $PASSWORD")
+        args+=("-s $SPACE")
+        args+=("-o $ORG")
+
+        if [ "$SKIP_CERT_VERIFY" == "true" ]; then
+            args+="--skip-ssl-validation"
+        fi
+
+        cf login "${args[@]}"
       else
         cf api "$CF_API"
-        cf auth "$USERNAME" "$PASSWORD" --client-credentials
+        if [ "$SKIP_CERT_VERIFY" == "true" ]; then
+            cf auth "$USERNAME" "$PASSWORD" --client-credentials --skip-ssl-validation
+        else
+            cf auth "$USERNAME" "$PASSWORD" --client-credentials
+        fi
         cf target -o "$ORG" -s "$SPACE"
       fi
 
