@@ -29,7 +29,7 @@ run:
             -u "$USERNAME" \
             -p "$PASSWORD" \
             -s "$SPACE" \
-            -o "$ORG"
+            -o "$ORG" \
             --skip-ssl-validation
         else
           cf login \
