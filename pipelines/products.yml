@@ -835,17 +835,11 @@ jobs:
             path: /instance_groups/name=uaa/instances
             value: 2
           - type: replace
-            path: /instance_groups/name=api/instances
-            value: 2
-          - type: replace
             path: /instance_groups/name=doppler/vm_type
             value: small-highmem
           - type: replace
             path: /update/max_in_flight
             value: 10
-          - type: replace
-            path: /update/canaries
-            value: 5
           EOT
 
           cat <<EOT >> ops-files/on-the-fly-iso.yml
