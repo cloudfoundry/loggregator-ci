@@ -13,5 +13,6 @@ params:
   DELAY: 20
   DELAY_UNIT: ms
   USE_CLIENT_AUTH: false
+  SKIP_CERT_VERIFY: false
 run:
   path: loggregator-ci/tasks/cf-blackbox/task
