@@ -32,17 +32,22 @@ export MSG_COUNT=0
 trap report_to_datadog EXIT
 
 if [ "$USE_CLIENT_AUTH" == "false" ]; then
-    args=("-a $CF_API")
-    args+=("-u $USERNAME")
-    args+=("-p $PASSWORD")
-    args+=("-s $SPACE")
-    args+=("-o $ORG")
-
     if [ "$SKIP_CERT_VERIFY" == "true" ]; then
-        args+="--skip-ssl-validation"
+      cf login \
+        -a "$CF_API" \
+        -u "$USERNAME" \
+        -p "$PASSWORD" \
+        -s "$SPACE" \
+        -o "$ORG"
+        --skip-ssl-validation
+    else
+      cf login \
+        -a "$CF_API" \
+        -u "$USERNAME" \
+        -p "$PASSWORD" \
+        -s "$SPACE" \
+        -o "$ORG"
     fi
-
-    cf login "${args[@]}"
 else
     cf api "$CF_API"
     if [ "$SKIP_CERT_VERIFY" == "true" ]; then
