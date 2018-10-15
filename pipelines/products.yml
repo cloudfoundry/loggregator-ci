@@ -55,7 +55,7 @@ resources:
 - name: cf-acceptance-tests
   type: git
   source:
-    branch: master
+    branch: logging-iso-tests
     uri: https://github.com/cloudfoundry/cf-acceptance-tests.git
 
 - name: cfar-logging-acceptance-tests
