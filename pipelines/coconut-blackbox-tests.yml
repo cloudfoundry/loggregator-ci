@@ -56,6 +56,7 @@ jobs:
       SPACE: "blackbox-testing"
       USERNAME: {{coconut-username}}
       PASSWORD: {{coconut-password}}
+      SKIP_CERT_VERIFY: true
   - task: run-smoke-tests
     file: loggregator-ci/tasks/cf-blackbox/task.yml
     params:
@@ -64,6 +65,7 @@ jobs:
       SPACE: "blackbox-testing"
       USERNAME: {{coconut-username}}
       PASSWORD: {{coconut-password}}
+      SKIP_CERT_VERIFY: true
       APP_DOMAIN: "floodspinner.coconut.cf-app.com"
       APP_NAME: "floodspinner"
       WAIT: 60
@@ -84,6 +86,7 @@ jobs:
       SPACE: "blackbox-testing"
       USERNAME: {{coconut-username}}
       PASSWORD: {{coconut-password}}
+      SKIP_CERT_VERIFY: true
     timeout: 15m
   - task: container metrics
     file: loggregator-ci/tasks/container-metrics-smoke-test.yml
@@ -108,6 +111,7 @@ jobs:
       SPACE: "blackbox-testing"
       USERNAME: {{coconut-username}}
       PASSWORD: {{coconut-password}}
+      SKIP_CERT_VERIFY: true
   - task: run-smoke-tests
     file: loggregator-ci/tasks/cf-blackbox/task.yml
     params:
@@ -118,6 +122,7 @@ jobs:
       SPACE: "blackbox-testing"
       USERNAME: {{coconut-username}}
       PASSWORD: {{coconut-password}}
+      SKIP_CERT_VERIFY: true
       APP_DOMAIN: "dripspinner.coconut.cf-app.com"
       APP_NAME: "dripspinner"
       WAIT: 600
@@ -145,6 +150,7 @@ jobs:
       SPACE: "blackbox-testing"
       USERNAME: {{coconut-username}}
       PASSWORD: {{coconut-password}}
+      SKIP_CERT_VERIFY: true
   - task: run-smoke-tests
     file: loggregator-ci/tasks/cf-blackbox/task.yml
     params:
@@ -155,6 +161,7 @@ jobs:
       SPACE: "blackbox-testing"
       USERNAME: {{coconut-username}}
       PASSWORD: {{coconut-password}}
+      SKIP_CERT_VERIFY: true
       APP_DOMAIN: "flowspinner.coconut.cf-app.com"
       APP_NAME: "flowspinner"
       WAIT: 60
@@ -182,6 +189,7 @@ jobs:
       SPACE: "blackbox-testing"
       USERNAME: {{coconut-username}}
       PASSWORD: {{coconut-password}}
+      SKIP_CERT_VERIFY: true
   - task: run-smoke-tests
     file: loggregator-ci/tasks/cf-log-stream-blackbox/task.yml
     params:
@@ -190,6 +198,7 @@ jobs:
       SPACE: "blackbox-testing"
       USERNAME: {{coconut-username}}
       PASSWORD: {{coconut-password}}
+      SKIP_CERT_VERIFY: true
       APP_NAME: "floodspinner-stream"
       WAIT: 30
       CYCLES: 10000
@@ -217,6 +226,7 @@ jobs:
       SPACE: "blackbox-testing"
       USERNAME: {{coconut-username}}
       PASSWORD: {{coconut-password}}
+      SKIP_CERT_VERIFY: true
   - task: run-smoke-tests
     file: loggregator-ci/tasks/cf-log-stream-blackbox/task.yml
     params:
@@ -225,6 +235,7 @@ jobs:
       SPACE: "blackbox-testing"
       USERNAME: {{coconut-username}}
       PASSWORD: {{coconut-password}}
+      SKIP_CERT_VERIFY: true
       APP_NAME: dripspinner-stream
       WAIT: 600
       CYCLES: 1000
@@ -252,6 +263,7 @@ jobs:
       SPACE: "blackbox-testing"
       USERNAME: {{coconut-username}}
       PASSWORD: {{coconut-password}}
+      SKIP_CERT_VERIFY: true
   - task: run-smoke-tests
     file: loggregator-ci/tasks/cf-log-stream-blackbox/task.yml
     params:
@@ -260,6 +272,7 @@ jobs:
       SPACE: "blackbox-testing"
       USERNAME: {{coconut-username}}
       PASSWORD: {{coconut-password}}
+      SKIP_CERT_VERIFY: true
       APP_NAME: flowspinner-stream
       WAIT: 30
       CYCLES: 1000
@@ -335,6 +348,7 @@ jobs:
       SPACE: blackbox-testing
       USERNAME: {{coconut-username}}
       PASSWORD: {{coconut-password}}
+      SKIP_CERT_VERIFY: true
     timeout: 15m
 
 - name: firehose-reliability
@@ -359,6 +373,7 @@ jobs:
       SPACE: blackbox-testing
       USERNAME: {{coconut-username}}
       PASSWORD: {{coconut-password}}
+      SKIP_CERT_VERIFY: true
       CLIENT_ID: {{coconut-firehose-reliability-client-id}}
       CLIENT_SECRET: {{coconut-firehose-reliability-client-secret}}
 
