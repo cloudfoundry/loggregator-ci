@@ -70,6 +70,12 @@ resources:
     branch: master
     uri: https://github.com/cloudfoundry/cf-drain-cli.git
 
+- name: logging-deployment
+  type: git
+  source:
+    branch: master
+    uri: https://github.com/loggregator/logging-deployment.git
+
 - name: cf-deployment
   type: git
   source:
@@ -727,6 +733,7 @@ jobs:
     - get: cf-deployment
       trigger: true
     - get: cf-deployment-concourse-tasks
+    - get: logging-deployment
     - get: loggregator-release
       trigger: true
     - get: loggregator-agent-release
@@ -739,6 +746,7 @@ jobs:
       trigger: true
     - get: statsd-injector-release
       trigger: true
+    - get: cf-drain-cli
   - aggregate:
     - task: upload-loggregator-release
       file: loggregator-ci/tasks/upload-release/task.yml
@@ -889,6 +897,17 @@ jobs:
       ORG: system
       SPACE: accumulators
       SYSTEM_DOMAIN: coconut.cf-app.com
+  - task: add-syslog-telemetry
+    file: logging-deployment/ci/tasks/push-logging-telemetry/task.yml
+    params:
+      ORG: system
+      SPACE: accumulators
+      SYSTEM_DOMAIN: coconut.cf-app.com
+      USERNAME: {{coconut-username}}
+      PASSWORD: {{coconut-password}}
+      SKIP_SSL_VALIDATION: true
+      APP_PREFIX: syslog-telemetry
+      DATADOG_API_KEY: {{datadog-loggregator-api-key}}
 
 - name: cats
   serial: true
