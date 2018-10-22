@@ -933,6 +933,36 @@ jobs:
         BBL_STATE_DIR: gcp/ci-pool/ten
         SYSTEM_DOMAIN: ten.loggr.cf-app.com
         ENABLED_FEATURE_FLAGS: diego_docker
+    - task: create-smoke-test-space
+      file: loggregator-ci/tasks/create-org-and-space/task.yml
+      params:
+        BBL_STATE_DIR: gcp/ci-pool/ten
+        ORG: system
+        SPACE: smoke-tests
+        SYSTEM_DOMAIN: ten.loggr.cf-app.com
+    - task: add-syslog-v2-telemetry
+      file: logging-deployment/ci/tasks/push-logging-telemetry/task.yml
+      params:
+        ORG: system
+        SPACE: smoke-tests
+        SYSTEM_DOMAIN: ten.loggr.cf-app.com
+        USERNAME: {{ten-username}}
+        PASSWORD: {{ten-password}}
+        SKIP_SSL_VALIDATION: true
+        APP_PREFIX: syslog-v2-telemetry
+        DATADOG_API_KEY: {{datadog-loggregator-api-key}}
+    - task: add-syslog-v3-telemetry
+      file: logging-deployment/ci/tasks/push-logging-telemetry/task.yml
+      params:
+        ORG: system
+        SPACE: smoke-tests
+        SYSTEM_DOMAIN: ten.loggr.cf-app.com
+        USERNAME: {{ten-username}}
+        PASSWORD: {{ten-password}}
+        SKIP_SSL_VALIDATION: true
+        APP_PREFIX: syslog-v3-telemetry
+        DATADOG_API_KEY: {{datadog-loggregator-api-key}}
+        SCHEME_SUFFIX: "-v3"
 
 - name: cats
   serial: true
