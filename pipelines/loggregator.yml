@@ -617,6 +617,11 @@ jobs:
               name: loggregator-agent
               version: latest
           - type: replace
+            path: /releases/name=bpm
+            value:
+              name: bpm
+              version: latest
+          - type: replace
             path: /variables/name=loggregator_agent/options/ca
             value: /bosh-ten/loggregator/loggregator_ca
           EOT
