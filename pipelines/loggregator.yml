@@ -882,6 +882,7 @@ jobs:
             cp cf-deployment/operations/use-compiled-releases.yml ops-files/
             cp cf-deployment/operations/scale-to-one-az.yml ops-files/
             cp loggregator-agent-release/manifests/operations/infrastructure-metrics.yml ops-files/infrastructure-metrics.yml
+            cp loggregator-agent-release/manifests/operations/cf-deployment-addon.yml ops-files/cf-deployment-addon.yml
             cp loggregator-agent-release/manifests/operations/cf-add-forwarder-agent.yml ops-files/cf-add-forwarder-agent.yml
 
             cat <<EOT >> ops-files/on-the-fly.yml
@@ -915,6 +916,7 @@ jobs:
           use-compiled-releases.yml
           scale-to-one-az.yml
           on-the-fly.yml
+          cf-deployment-addon.yml
           cf-add-forwarder-agent.yml
           infrastructure-metrics.yml
     - task: enable-feature-flags
