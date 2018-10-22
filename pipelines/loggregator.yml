@@ -148,7 +148,7 @@ resources:
   type: git
   source:
     uri: https://github.com/cloudfoundry/cf-deployment
-    branch: loggregator-iso-segments-2
+    branch: release-candidate
     private_key: ((loggregator-key))
 
 - name: cf-deployment-concourse-tasks
@@ -883,9 +883,6 @@ jobs:
             cp cf-deployment/operations/scale-to-one-az.yml ops-files/
             cp loggregator-agent-release/manifests/operations/infrastructure-metrics.yml ops-files/infrastructure-metrics.yml
             cp loggregator-agent-release/manifests/operations/cf-add-forwarder-agent.yml ops-files/cf-add-forwarder-agent.yml
-            cp cf-deployment/operations/test/add-persistent-isolation-segment-infrastructure-metrics.yml ops-files/
-            cp cf-deployment/operations/test/add-persistent-isolation-segment-diego-cell.yml ops-files/
-            cp cf-deployment/operations/test/add-persistent-isolation-segment-logging-system.yml ops-files/
 
             cat <<EOT >> ops-files/on-the-fly.yml
             - type: replace
@@ -918,11 +915,8 @@ jobs:
           use-compiled-releases.yml
           scale-to-one-az.yml
           on-the-fly.yml
-          cf-add-syslog-agent.yml
+          cf-add-forwarder-agent.yml
           infrastructure-metrics.yml
-          add-persistent-isolation-segment-diego-cell.yml
-          add-persistent-isolation-segment-logging-system.yml
-          add-persistent-isolation-segment-infrastructure-metrics.yml
     - task: enable-feature-flags
       file: cf-deployment-concourse-tasks/set-feature-flags/task.yml
       attempts: 3
