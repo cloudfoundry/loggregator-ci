@@ -875,7 +875,7 @@ jobs:
       S3_SECRET_KEY: {{s3-secret-access-key}}
       BLOBSTORE_BUCKET: statsd-injector-release-blobs
       SSH_KEY: {{loggregator-key}}
-      NEW_VERSION: 1.5.0
+      NEW_VERSION: "1.5.0"
       RELEASE_NAME: statsd-injector-release
       TO_BRANCH: develop
       FROM_BRANCH: master
