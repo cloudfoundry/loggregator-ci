@@ -794,7 +794,6 @@ jobs:
         - |
           set -e
 
-          cp cf-deployment/operations/use-compiled-releases.yml ops-files/
           cp cf-deployment/operations/scale-to-one-az.yml ops-files/
           cp loggregator-agent-release/manifests/operations/infrastructure-metrics.yml ops-files/infrastructure-metrics.yml
           cp cf-deployment/operations/test/add-persistent-isolation-segment-infrastructure-metrics.yml ops-files/
@@ -858,7 +857,6 @@ jobs:
       SYSTEM_DOMAIN: coconut.cf-app.com
       OPS_FILES: |
         clients.yml
-        use-compiled-releases.yml
         scale-to-one-az.yml
         on-the-fly.yml
         infrastructure-metrics.yml
