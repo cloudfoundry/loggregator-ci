@@ -47,6 +47,11 @@ resources:
     uri: git@github.com:cloudfoundry/loggregator-ci.git
     private_key: ((loggregator-key))
 
+- name: logging-deployment
+  type: git
+  source:
+    uri: https://github.com/loggregator/logging-deployment.git
+
 - name: loggregator-release
   type: git
   source:
@@ -848,6 +853,8 @@ jobs:
       resource: deployments-loggregator
     - get: vars-files
       resource: deployments-loggregator
+    - get: logging-deployment
+    - get: cf-drain-cli
   - aggregate:
     - task: upload-loggregator-release
       file: loggregator-ci/tasks/upload-release/task.yml
@@ -908,6 +915,9 @@ jobs:
             - type: replace
               path: /instance_groups/name=doppler/instances
               value: 2
+            - type: replace
+              path: /instance_groups/name=adapter/jobs/name=adapter/properties/scalablesyslog?/adapter?/syslog_skip_cert_verify?
+              value: true
             EOT
     - task: upload-stemcell
       file: cf-deployment-concourse-tasks/bosh-upload-stemcell-from-cf-deployment/task.yml
