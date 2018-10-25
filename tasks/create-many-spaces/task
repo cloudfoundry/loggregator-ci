@@ -1,0 +1,30 @@
+#!/bin/bash
+set -exu
+
+pushd bbl-state/$BBL_STATE_DIR
+    eval "$(bbl print-env)"
+    export BOSH_CA_CERT=$(bbl director-ca-cert)
+popd
+
+password=$(credhub get --name=$(credhub find | grep cf_admin | awk '{print $3}') --output-json | jq -r .value)
+
+cf api api.$SYSTEM_DOMAIN --skip-ssl-validation
+cf auth admin $password
+cf target -o system
+
+set +e
+cf org $ORG
+set -e
+if [ $? -eq 0 ]; then
+    cf create-org $ORG
+fi
+cf target -o $ORG
+
+for i in $(seq $SPACE_COUNT); do
+    set +e
+    cf space "$SPACE_PREFIX-$i"
+    set -e
+    if [ $? -eq 0 ]; then
+        cf create-space "$SPACE_PREFIX-$i"
+    fi
+done
