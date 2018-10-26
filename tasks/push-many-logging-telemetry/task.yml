@@ -1,0 +1,78 @@
+---
+platform: linux
+
+image_resource:
+  type: docker-image
+  source:
+    repository: relintdockerhubpushbot/cf-deployment-concourse-tasks
+    tag: v5.26.0
+
+inputs:
+- name: bbl-state
+- name: loggregator-ci
+- name: logging-deployment  # - This repo
+- name: cf-drain-cli        # - The repo that contains the cf drains plugin
+
+run:
+  path: loggregator-ci/tasks/push-many-logging-telemetry/task
+
+params:
+  # - Optional
+  # - Path to the directory containing the `bbl-state.json` file
+  # - The path is relative to root of the `bbl-state` input
+  # - Defaults to the root of the `bbl-state` input
+  BBL_STATE_DIR:
+
+  # - Required
+  # - Will produce a producer and consumer, each with prefix in front of the
+  # name
+  APP_PREFIX:
+
+  # - Required
+  # - API key for DataDog
+  DATADOG_API_KEY:
+
+  # - Optional
+  # - How often will app initiate test.
+  TEST_FREQUENCY: 10s
+
+  # - Optional
+  # - How long each test will run
+  TEST_DURATION: 1s
+
+  # - Optional
+  # - How many cycles per test
+  TEST_CYCLES: 1000
+
+  # - Required
+  # - The CF system domain
+  SYSTEM_DOMAIN:
+
+  # - Required
+  # - The CF org
+  ORG:
+
+  # - Required
+  # - The prefix to prepend to all the spaces. Space names will be
+  # - `SPACE_PREFIX-#`.
+  SPACE_PREFIX:
+
+  # - Required
+  # - The number of spaces to create.
+  SPACE_COUNT: 200
+
+  # - Required
+  # - The number of apps to create per space.
+  APP_COUNT: 200
+
+  # - Optional
+  # - Skip SSL validation when logging into CF.
+  SKIP_SSL_VALIDATION: false
+
+  # - Optional
+  # - Suffix for scheme on drain URL.
+  SCHEME_SUFFIX: ""
+
+  # - Optional
+  # - The number of drain bindings to create.
+  BINDING_COUNT:

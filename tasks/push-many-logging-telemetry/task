@@ -1,0 +1,49 @@
+#!/bin/bash
+set -ex
+
+pushd bbl-state/$BBL_STATE_DIR
+    eval "$(bbl print-env)"
+    export BOSH_CA_CERT=$(bbl director-ca-cert)
+popd
+
+USERNAME=admin
+PASSWORD=$(credhub get --name=$(credhub find | grep cf_admin | awk '{print $3}') --output-json | jq -r .value)
+
+if [ $SKIP_SSL_VALIDATION == "true" ]; then
+    cf api api.$SYSTEM_DOMAIN --skip-ssl-validation
+else
+    cf api api.$SYSTEM_DOMAIN
+fi
+
+cf auth $USERNAME $PASSWORD
+
+IMPORT_PATH=code.cloudfoundry.org/cf-drain-cli
+
+mkdir -p "workspace/src/$IMPORT_PATH"
+cp -r cf-drain-cli/. "workspace/src/$IMPORT_PATH"
+
+pushd workspace
+    export GOPATH="$PWD"
+    export PATH="$GOPATH/bin:$PATH"
+
+    go get code.cloudfoundry.org/cf-drain-cli/cmd/cf-drain-cli
+    cf install-plugin $GOPATH/bin/cf-drain-cli -f
+popd
+
+
+IMPORT_PATH=github.com/loggregator/logging-deployment
+
+mkdir -p "workspace/src/$IMPORT_PATH"
+cp -r logging-deployment/. "workspace/src/$IMPORT_PATH"
+
+pushd $GOPATH/src/$IMPORT_PATH/ci/assets/logging-telemetry
+    go get ./...
+
+    for space in $(seq $SPACE_COUNT); do
+        cf target -o $ORG -s "$SPACE_PREFIX-$space"
+
+        for app in $(seq $APP_COUNT); do
+            ./deploy.sh "$app-$APP_PREFIX" "$DATADOG_API_KEY"
+        done
+    done
+popd
