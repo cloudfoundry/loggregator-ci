@@ -1,0 +1,119 @@
+resources:
+- name: cf-deployment
+  type: git
+  source:
+    uri: https://github.com/cloudfoundry/cf-deployment
+    branch: release-candidate
+
+- name: cf-deployment-concourse-tasks
+  type: git
+  source:
+    uri: https://github.com/cloudfoundry/cf-deployment-concourse-tasks
+    tag_filter: v7.*
+
+- name: deployments-loggregator
+  type: git
+  source:
+    uri: git@github.com:cloudfoundry/deployments-loggregator.git
+    private_key: ((deployments-loggregator-key))
+
+- name: loggregator-agent-release
+  type: git
+  source:
+    uri: https://github.com/cloudfoundry/loggregator-agent-release
+    branch: release-elect
+
+- name: loggregator-ci
+  type: git
+  source:
+    uri: https://github.com/cloudfoundry/loggregator-ci
+
+jobs:
+- name: cf-deploy
+  serial: true
+  plan:
+  - aggregate:
+    - get: cf-deployment
+    - get: cf-deployment-concourse-tasks
+    - get: deployments-loggregator
+    - get: loggregator-agent-release
+    - get: loggregator-ci
+  - aggregate:
+    - task: upload-loggregator-agent-release
+      file: loggregator-ci/tasks/upload-release/task.yml
+      input_mapping:
+        bosh-release-dir: loggregator-agent-release
+        bbl-state: deployments-loggregator
+      params:
+        BBL_STATE_DIR: gcp/ci-pool/syslog-test
+    - task: upload-stemcell
+      file: cf-deployment-concourse-tasks/bosh-upload-stemcell-from-cf-deployment/task.yml
+      input_mapping:
+        bbl-state: deployments-loggregator
+      params:
+        BBL_STATE_DIR: gcp/ci-pool/syslog-test
+  # - task: copy-ops-files
+  #   config:
+  #     platform: linux
+  #     image_resource:
+  #       type: docker-image
+  #       source:
+  #         repository: relintdockerhubpushbot/cf-deployment-concourse-tasks
+  #         tag: v3.19.0
+  #     inputs:
+  #     - name: loggregator-agent-release
+  #     outputs:
+  #     - name: ops-files
+  #     run:
+  #       path: /bin/bash
+  #       args:
+  #       - "-c"
+  #       - |
+  #         set -e
+
+  #         cp loggregator-agent-release/manifests/operations/infrastructure-metrics.yml ops-files/
+  #         cp loggregator-agent-release/manifests/operations/cf-add-forwarder-agent.yml ops-files/
+  #         cp loggregator-agent-release/manifests/operations/cf-forwarder-agent-skip-cert-verify.yml ops-files/
+  #         cp loggregator-agent-release/manifests/operations/cf-deployment-addon.yml ops-files/
+
+  #         cat <<EOT >> ops-files/on-the-fly.yml
+  #         - type: replace
+  #           path: /releases/name=loggregator-agent
+  #           value:
+  #             name: loggregator-agent
+  #             version: latest
+  #         - type: replace
+  #           path: /update/max_in_flight
+  #           value: 10
+  #         - type: replace
+  #           path: /update/canaries
+  #           value: 5
+  #         EOT
+  - task: cf-deploy
+    file: cf-deployment-concourse-tasks/bosh-deploy/task.yml
+    input_mapping:
+      bbl-state: deployments-loggregator
+      vars-files: deployments-loggregator
+      ops-files: deployments-loggregator
+    params:
+      BBL_STATE_DIR: gcp/ci-pool/syslog-test
+      SYSTEM_DOMAIN: syslog-test.loggr.cf-app.com
+      # OPS_FILES: |
+      #     on-the-fly.yml
+      #     cf-deployment-addon.yml
+      #     cf-add-forwarder-agent.yml
+      #     cf-forwarder-agent-skip-cert-verify.yml
+      #     infrastructure-metrics.yml
+  # TODO: Deploy Datadog Firehose Nozzle
+  - task: create-org-and-spaces
+    file: loggregator-ci/tasks/create-many-spaces/task.yml
+    input_mapping:
+      bbl-state: deployments-loggregator
+    params:
+      BBL_STATE_DIR: gcp/ci-pool/syslog-test
+      ORG: syslog-test
+      SPACE_PREFIX: syslog-test
+      SYSTEM_DOMAIN: syslog-test.loggr.cf-app.com
+  # Push 20000 Apps (100 apps per space)
+  # Create 5 drains per app.
+  # 100s of diego cells
