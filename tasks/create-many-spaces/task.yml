@@ -11,7 +11,7 @@ inputs:
   - name: bbl-state
 
 run:
-  path: loggregator-ci/tasks/create-org-and-space/task
+  path: loggregator-ci/tasks/create-many-spaces/task
 
 params:
   # - Required
