@@ -39,7 +39,7 @@ cp -r logging-deployment/. "workspace/src/$IMPORT_PATH"
 pushd $GOPATH/src/$IMPORT_PATH/ci/assets/logging-telemetry
     go get ./...
 
-    for space in $(seq $SPACE_COUNT); do
+    for space in $(seq $SPACE_ID_START $SPACE_ID_END); do
         cf target -o $ORG -s "$SPACE_PREFIX-$space"
 
         for app in $(seq $APP_COUNT); do
