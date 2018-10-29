@@ -43,7 +43,7 @@ pushd $GOPATH/src/$IMPORT_PATH/ci/assets/logging-telemetry
         cf target -o $ORG -s "$SPACE_PREFIX-$space"
 
         for app in $(seq $APP_COUNT); do
-            ./deploy.sh "$app-$APP_PREFIX" "$DATADOG_API_KEY"
+            ./deploy.sh "$space-$app-$APP_PREFIX" "$DATADOG_API_KEY"
         done
     done
 popd

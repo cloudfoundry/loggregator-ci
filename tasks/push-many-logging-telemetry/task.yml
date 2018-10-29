@@ -10,7 +10,7 @@ image_resource:
 inputs:
 - name: bbl-state
 - name: loggregator-ci
-- name: logging-deployment  # - This repo
+- name: logging-deployment
 - name: cf-drain-cli        # - The repo that contains the cf drains plugin
 
 run:
