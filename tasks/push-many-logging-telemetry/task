@@ -9,14 +9,6 @@ popd
 USERNAME=admin
 PASSWORD=$(credhub get --name=$(credhub find | grep cf_admin | awk '{print $3}') --output-json | jq -r .value)
 
-if [ $SKIP_SSL_VALIDATION == "true" ]; then
-    cf api api.$SYSTEM_DOMAIN --skip-ssl-validation
-else
-    cf api api.$SYSTEM_DOMAIN
-fi
-
-cf auth $USERNAME $PASSWORD
-
 IMPORT_PATH=code.cloudfoundry.org/cf-drain-cli
 
 mkdir -p "workspace/src/$IMPORT_PATH"
@@ -38,12 +30,16 @@ cp -r logging-deployment/. "workspace/src/$IMPORT_PATH"
 
 pushd $GOPATH/src/$IMPORT_PATH/ci/assets/logging-telemetry
     go get ./...
+    go build
+popd
 
-    for space in $(seq $SPACE_ID_START $SPACE_ID_END); do
-        cf target -o $ORG -s "$SPACE_PREFIX-$space"
+pushd $GOPATH/src/$IMPORT_PATH/ci/assets/logging-telemetry-scaled-deployer
+    go get ./...
+    go build
 
-        for app in $(seq $APP_COUNT); do
-            ./deploy.sh "$space-$app-$APP_PREFIX" "$DATADOG_API_KEY"
-        done
-    done
+    export SCRIPT_COMMAND=$GOPATH/src/$IMPORT_PATH/ci/assets/logging-telemetry/deploy.sh
+    export SCRIPT_COMMAND_DIR=$GOPATH/src/$IMPORT_PATH/ci/assets/logging-telemetry/
+    export API_ENDPOINT="api.$SYSTEM_DOMAIN"
+
+    ./logging-telemetry-scaled-deployer
 popd
