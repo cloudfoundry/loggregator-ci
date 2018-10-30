@@ -91,7 +91,7 @@ resources:
 - name: cf-syslog-drain-release-backport
   type: git
   source:
-    branch: &cf-syslog-backport-branch v6.x
+    branch: &cf-syslog-backport-branch v7.x
     uri: git@github.com:cloudfoundry/cf-syslog-drain-release
     private_key: {{cf-loggregator-oauth-bot-key}}
 
@@ -733,7 +733,7 @@ jobs:
         S3_SECRET_KEY: {{s3-secret-access-key}}
         SSH_KEY: {{loggregator-key}}
         BLOBSTORE_BUCKET: cf-syslog-drain-release-blobs
-        NEW_VERSION: "6.7"
+        NEW_VERSION: "7.2"
         BRANCH_NAME: *cf-syslog-backport-branch
       inputs:
       - name: cf-syslog-drain-release-backport
