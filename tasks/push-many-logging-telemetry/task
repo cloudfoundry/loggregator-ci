@@ -6,8 +6,8 @@ pushd bbl-state/$BBL_STATE_DIR
     export BOSH_CA_CERT=$(bbl director-ca-cert)
 popd
 
-USERNAME=admin
-PASSWORD=$(credhub get --name=$(credhub find | grep cf_admin | awk '{print $3}') --output-json | jq -r .value)
+export USERNAME=admin
+export PASSWORD=$(credhub get --name=$(credhub find | grep cf_admin | awk '{print $3}') --output-json | jq -r .value)
 
 IMPORT_PATH=code.cloudfoundry.org/cf-drain-cli
 
