@@ -733,7 +733,7 @@ jobs:
         S3_SECRET_KEY: {{s3-secret-access-key}}
         SSH_KEY: {{loggregator-key}}
         BLOBSTORE_BUCKET: cf-syslog-drain-release-blobs
-        NEW_VERSION: "6.6"
+        NEW_VERSION: "6.7"
         BRANCH_NAME: *cf-syslog-backport-branch
       inputs:
       - name: cf-syslog-drain-release-backport
