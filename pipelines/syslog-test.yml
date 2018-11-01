@@ -28,9 +28,20 @@ resources:
   source:
     uri: https://github.com/cloudfoundry/loggregator-ci
 
+- name: logging-deployment
+  type: git
+  source:
+    uri: https://github.com/loggregator/logging-deployment
+
+- name: cf-drain-cli
+  type: git
+  source:
+    uri: https://github.com/cloudfoundry/cf-drain-cli
+
 jobs:
 - name: cf-deploy
   serial: true
+  serial_groups: ["cf-deploy"]
   plan:
   - aggregate:
     - get: cf-deployment
@@ -38,6 +49,8 @@ jobs:
     - get: deployments-loggregator
     - get: loggregator-agent-release
     - get: loggregator-ci
+    - get: logging-deployment
+    - get: cf-drain-cli
   - aggregate:
     - task: upload-loggregator-agent-release
       file: loggregator-ci/tasks/upload-release/task.yml
@@ -52,68 +65,248 @@ jobs:
         bbl-state: deployments-loggregator
       params:
         BBL_STATE_DIR: gcp/ci-pool/syslog-test
-  # - task: copy-ops-files
-  #   config:
-  #     platform: linux
-  #     image_resource:
-  #       type: docker-image
-  #       source:
-  #         repository: relintdockerhubpushbot/cf-deployment-concourse-tasks
-  #         tag: v3.19.0
-  #     inputs:
-  #     - name: loggregator-agent-release
-  #     outputs:
-  #     - name: ops-files
-  #     run:
-  #       path: /bin/bash
-  #       args:
-  #       - "-c"
-  #       - |
-  #         set -e
+  - task: copy-ops-files
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source:
+          repository: relintdockerhubpushbot/cf-deployment-concourse-tasks
+          tag: v3.19.0
+      inputs:
+      - name: loggregator-agent-release
+      outputs:
+      - name: ops-files
+      run:
+        path: /bin/bash
+        args:
+        - "-c"
+        - |
+          set -e
 
-  #         cp loggregator-agent-release/manifests/operations/infrastructure-metrics.yml ops-files/
-  #         cp loggregator-agent-release/manifests/operations/cf-add-forwarder-agent.yml ops-files/
-  #         cp loggregator-agent-release/manifests/operations/cf-forwarder-agent-skip-cert-verify.yml ops-files/
-  #         cp loggregator-agent-release/manifests/operations/cf-deployment-addon.yml ops-files/
+          cp loggregator-agent-release/manifests/operations/infrastructure-metrics.yml ops-files/
+          cp loggregator-agent-release/manifests/operations/cf-add-forwarder-agent.yml ops-files/
+          cp loggregator-agent-release/manifests/operations/cf-forwarder-agent-skip-cert-verify.yml ops-files/
+          cp loggregator-agent-release/manifests/operations/cf-deployment-addon.yml ops-files/
 
-  #         cat <<EOT >> ops-files/on-the-fly.yml
-  #         - type: replace
-  #           path: /releases/name=loggregator-agent
-  #           value:
-  #             name: loggregator-agent
-  #             version: latest
-  #         - type: replace
-  #           path: /update/max_in_flight
-  #           value: 10
-  #         - type: replace
-  #           path: /update/canaries
-  #           value: 5
-  #         EOT
+          cat <<EOT >> ops-files/on-the-fly.yml
+          - type: replace
+            path: /releases/name=loggregator-agent
+            value:
+              name: loggregator-agent
+              version: latest
+          - type: replace
+            path: /update/max_in_flight
+            value: 40
+          - type: replace
+            path: /update/canaries
+            value: 10
+          - type: replace
+            path: /instance_groups/name=diego-cell/instances
+            value: 250
+          - type: replace
+            path: /instance_groups/name=database/vm_type
+            value: n1-highcpu-16
+          - type: replace
+            path: /instance_groups/name=router/instances
+            value: 20
+          - type: replace
+            path: /instance_groups/name=api/instances
+            value: 12
+          - type: replace
+            path: /instance_groups/name=diego-api/instances
+            value: 10
+          - type: replace
+            path: /instance_groups/name=doppler/instances
+            value: 30
+          - type: replace
+            path: /instance_groups/name=doppler/vm_type
+            value: n1-standard-4
+          - type: replace
+            path: /instance_groups/name=log-api/instances
+            value: 12
+          - type: replace
+            path: /instance_groups/name=log-api/vm_type
+            value: n1-standard-4
+          - type: replace
+            path: /instance_groups/name=singleton-blobstore/persistent_disk_type
+            value: 500GB
+          - type: replace
+            path: /instance_groups/name=singleton-blobstore/vm_type
+            value: medium
+          - type: replace
+            path: /instance_groups/name=database/instances
+            value: 3
+          EOT
   - task: cf-deploy
     file: cf-deployment-concourse-tasks/bosh-deploy/task.yml
     input_mapping:
       bbl-state: deployments-loggregator
       vars-files: deployments-loggregator
-      ops-files: deployments-loggregator
     params:
       BBL_STATE_DIR: gcp/ci-pool/syslog-test
       SYSTEM_DOMAIN: syslog-test.loggr.cf-app.com
-      # OPS_FILES: |
-      #     on-the-fly.yml
-      #     cf-deployment-addon.yml
-      #     cf-add-forwarder-agent.yml
-      #     cf-forwarder-agent-skip-cert-verify.yml
-      #     infrastructure-metrics.yml
-  # TODO: Deploy Datadog Firehose Nozzle
+      OPS_FILES: |
+          on-the-fly.yml
+          cf-deployment-addon.yml
+          cf-add-forwarder-agent.yml
+          cf-forwarder-agent-skip-cert-verify.yml
+          infrastructure-metrics.yml
   - task: create-org-and-spaces
     file: loggregator-ci/tasks/create-many-spaces/task.yml
     input_mapping:
       bbl-state: deployments-loggregator
     params:
       BBL_STATE_DIR: gcp/ci-pool/syslog-test
+      SYSTEM_DOMAIN: syslog-test.loggr.cf-app.com
       ORG: syslog-test
       SPACE_PREFIX: syslog-test
-      SYSTEM_DOMAIN: syslog-test.loggr.cf-app.com
-  # Push 20000 Apps (100 apps per space)
-  # Create 5 drains per app.
-  # 100s of diego cells
+      SPACE_COUNT: 200
+
+- name: push-apps
+  serial: true
+  serial_groups: ["cf-deploy"]
+  plan:
+  - aggregate:
+    - get: deployments-loggregator
+    - get: loggregator-ci
+    - get: logging-deployment
+    - get: cf-drain-cli
+  - aggregate:
+    - task: push-apps-and-create-drain-bindings
+      file: loggregator-ci/tasks/push-many-logging-telemetry/task.yml
+      input_mapping:
+        bbl-state: deployments-loggregator
+      params:
+        BBL_STATE_DIR: gcp/ci-pool/syslog-test
+        SYSTEM_DOMAIN: syslog-test.loggr.cf-app.com
+        ORG: syslog-test
+        SPACE_PREFIX: syslog-test
+        APP_PREFIX: syslog-scale-test
+        DATADOG_API_KEY: ((datadog-loggregator-api-key))
+        SKIP_SSL_VALIDATION: true
+        SCHEME_SUFFIX: "-v3"
+        STARTING_SPACE_ID: 1
+        ENDING_SPACE_ID: 25
+        APPS_PER_SPACE: 100
+        BINDING_COUNT: 5
+    - task: push-apps-and-create-drain-bindings
+      file: loggregator-ci/tasks/push-many-logging-telemetry/task.yml
+      input_mapping:
+        bbl-state: deployments-loggregator
+      params:
+        BBL_STATE_DIR: gcp/ci-pool/syslog-test
+        SYSTEM_DOMAIN: syslog-test.loggr.cf-app.com
+        ORG: syslog-test
+        SPACE_PREFIX: syslog-test
+        APP_PREFIX: syslog-scale-test
+        DATADOG_API_KEY: ((datadog-loggregator-api-key))
+        SKIP_SSL_VALIDATION: true
+        SCHEME_SUFFIX: "-v3"
+        STARTING_SPACE_ID: 26
+        ENDING_SPACE_ID: 50
+        APPS_PER_SPACE: 100
+        BINDING_COUNT: 5
+    - task: push-apps-and-create-drain-bindings
+      file: loggregator-ci/tasks/push-many-logging-telemetry/task.yml
+      input_mapping:
+        bbl-state: deployments-loggregator
+      params:
+        BBL_STATE_DIR: gcp/ci-pool/syslog-test
+        SYSTEM_DOMAIN: syslog-test.loggr.cf-app.com
+        ORG: syslog-test
+        SPACE_PREFIX: syslog-test
+        APP_PREFIX: syslog-scale-test
+        DATADOG_API_KEY: ((datadog-loggregator-api-key))
+        SKIP_SSL_VALIDATION: true
+        SCHEME_SUFFIX: "-v3"
+        STARTING_SPACE_ID: 51
+        ENDING_SPACE_ID: 75
+        APPS_PER_SPACE: 100
+        BINDING_COUNT: 5
+    - task: push-apps-and-create-drain-bindings
+      file: loggregator-ci/tasks/push-many-logging-telemetry/task.yml
+      input_mapping:
+        bbl-state: deployments-loggregator
+      params:
+        BBL_STATE_DIR: gcp/ci-pool/syslog-test
+        SYSTEM_DOMAIN: syslog-test.loggr.cf-app.com
+        ORG: syslog-test
+        SPACE_PREFIX: syslog-test
+        APP_PREFIX: syslog-scale-test
+        DATADOG_API_KEY: ((datadog-loggregator-api-key))
+        SKIP_SSL_VALIDATION: true
+        SCHEME_SUFFIX: "-v3"
+        STARTING_SPACE_ID: 76
+        ENDING_SPACE_ID: 100
+        APPS_PER_SPACE: 100
+        BINDING_COUNT: 5
+    - task: push-apps-and-create-drain-bindings
+      file: loggregator-ci/tasks/push-many-logging-telemetry/task.yml
+      input_mapping:
+        bbl-state: deployments-loggregator
+      params:
+        BBL_STATE_DIR: gcp/ci-pool/syslog-test
+        SYSTEM_DOMAIN: syslog-test.loggr.cf-app.com
+        ORG: syslog-test
+        SPACE_PREFIX: syslog-test
+        APP_PREFIX: syslog-scale-test
+        DATADOG_API_KEY: ((datadog-loggregator-api-key))
+        SKIP_SSL_VALIDATION: true
+        SCHEME_SUFFIX: "-v3"
+        STARTING_SPACE_ID: 101
+        ENDING_SPACE_ID: 125
+        APPS_PER_SPACE: 100
+        BINDING_COUNT: 5
+    - task: push-apps-and-create-drain-bindings
+      file: loggregator-ci/tasks/push-many-logging-telemetry/task.yml
+      input_mapping:
+        bbl-state: deployments-loggregator
+      params:
+        BBL_STATE_DIR: gcp/ci-pool/syslog-test
+        SYSTEM_DOMAIN: syslog-test.loggr.cf-app.com
+        ORG: syslog-test
+        SPACE_PREFIX: syslog-test
+        APP_PREFIX: syslog-scale-test
+        DATADOG_API_KEY: ((datadog-loggregator-api-key))
+        SKIP_SSL_VALIDATION: true
+        SCHEME_SUFFIX: "-v3"
+        STARTING_SPACE_ID: 126
+        ENDING_SPACE_ID: 150
+        APPS_PER_SPACE: 100
+        BINDING_COUNT: 5
+    - task: push-apps-and-create-drain-bindings
+      file: loggregator-ci/tasks/push-many-logging-telemetry/task.yml
+      input_mapping:
+        bbl-state: deployments-loggregator
+      params:
+        BBL_STATE_DIR: gcp/ci-pool/syslog-test
+        SYSTEM_DOMAIN: syslog-test.loggr.cf-app.com
+        ORG: syslog-test
+        SPACE_PREFIX: syslog-test
+        APP_PREFIX: syslog-scale-test
+        DATADOG_API_KEY: ((datadog-loggregator-api-key))
+        SKIP_SSL_VALIDATION: true
+        SCHEME_SUFFIX: "-v3"
+        STARTING_SPACE_ID: 151
+        ENDING_SPACE_ID: 175
+        APPS_PER_SPACE: 100
+        BINDING_COUNT: 5
+    - task: push-apps-and-create-drain-bindings
+      file: loggregator-ci/tasks/push-many-logging-telemetry/task.yml
+      input_mapping:
+        bbl-state: deployments-loggregator
+      params:
+        BBL_STATE_DIR: gcp/ci-pool/syslog-test
+        SYSTEM_DOMAIN: syslog-test.loggr.cf-app.com
+        ORG: syslog-test
+        SPACE_PREFIX: syslog-test
+        APP_PREFIX: syslog-scale-test
+        DATADOG_API_KEY: ((datadog-loggregator-api-key))
+        SKIP_SSL_VALIDATION: true
+        SCHEME_SUFFIX: "-v3"
+        STARTING_SPACE_ID: 176
+        ENDING_SPACE_ID: 200
+        APPS_PER_SPACE: 100
+        BINDING_COUNT: 5
+  # TODO: Schedule teardown and create of environment on weekends
