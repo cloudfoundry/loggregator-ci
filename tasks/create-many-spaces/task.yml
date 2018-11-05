@@ -31,7 +31,7 @@ params:
 
   # - Required
   # - The number of spaces to create.
-  SPACE_COUNT: 200
+  SPACE_COUNT: 40
 
   # - Required
   # - The system domain used for targeting the foundation.
