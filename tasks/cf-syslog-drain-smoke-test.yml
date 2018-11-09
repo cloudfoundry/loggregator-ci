@@ -28,7 +28,7 @@ run:
     #!/bin/bash
 
     set -e
-
+
     go get code.cloudfoundry.org/rfc5424
 
     function teardown {
