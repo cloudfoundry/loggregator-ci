@@ -28,6 +28,9 @@ run:
     #!/bin/bash
 
     set -e
+    cd loggregator-tools
+    export GOPATH=$PWD
+    export PATH=$GOPATH/bin:$PATH
 
     go get code.cloudfoundry.org/rfc5424
 
