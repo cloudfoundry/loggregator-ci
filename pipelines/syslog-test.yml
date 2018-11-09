@@ -103,7 +103,7 @@ jobs:
             value: 10
           - type: replace
             path: /instance_groups/name=diego-cell/instances
-            value: 250
+            value: 150
           - type: replace
             path: /instance_groups/name=database/vm_type
             value: n1-highcpu-16
@@ -121,13 +121,13 @@ jobs:
             value: 30
           - type: replace
             path: /instance_groups/name=doppler/vm_type
-            value: n1-standard-4
+            value: n1-standard-8
           - type: replace
             path: /instance_groups/name=log-api/instances
             value: 12
           - type: replace
             path: /instance_groups/name=log-api/vm_type
-            value: n1-standard-4
+            value: n1-standard-8
           - type: replace
             path: /instance_groups/name=singleton-blobstore/persistent_disk_type
             value: 500GB
@@ -136,7 +136,7 @@ jobs:
             value: medium
           - type: replace
             path: /instance_groups/name=database/instances
-            value: 3
+            value: 5
           EOT
   - task: cf-deploy
     file: cf-deployment-concourse-tasks/bosh-deploy/task.yml
@@ -187,126 +187,7 @@ jobs:
         SKIP_SSL_VALIDATION: true
         SCHEME_SUFFIX: "-v3"
         STARTING_SPACE_ID: 1
-        ENDING_SPACE_ID: 25
-        APPS_PER_SPACE: 100
-        BINDING_COUNT: 5
-    - task: push-apps-and-create-drain-bindings
-      file: loggregator-ci/tasks/push-many-logging-telemetry/task.yml
-      input_mapping:
-        bbl-state: deployments-loggregator
-      params:
-        BBL_STATE_DIR: gcp/ci-pool/syslog-test
-        SYSTEM_DOMAIN: syslog-test.loggr.cf-app.com
-        ORG: syslog-test
-        SPACE_PREFIX: syslog-test
-        APP_PREFIX: syslog-scale-test
-        DATADOG_API_KEY: ((datadog-loggregator-api-key))
-        SKIP_SSL_VALIDATION: true
-        SCHEME_SUFFIX: "-v3"
-        STARTING_SPACE_ID: 26
-        ENDING_SPACE_ID: 50
-        APPS_PER_SPACE: 100
-        BINDING_COUNT: 5
-    - task: push-apps-and-create-drain-bindings
-      file: loggregator-ci/tasks/push-many-logging-telemetry/task.yml
-      input_mapping:
-        bbl-state: deployments-loggregator
-      params:
-        BBL_STATE_DIR: gcp/ci-pool/syslog-test
-        SYSTEM_DOMAIN: syslog-test.loggr.cf-app.com
-        ORG: syslog-test
-        SPACE_PREFIX: syslog-test
-        APP_PREFIX: syslog-scale-test
-        DATADOG_API_KEY: ((datadog-loggregator-api-key))
-        SKIP_SSL_VALIDATION: true
-        SCHEME_SUFFIX: "-v3"
-        STARTING_SPACE_ID: 51
-        ENDING_SPACE_ID: 75
-        APPS_PER_SPACE: 100
-        BINDING_COUNT: 5
-    - task: push-apps-and-create-drain-bindings
-      file: loggregator-ci/tasks/push-many-logging-telemetry/task.yml
-      input_mapping:
-        bbl-state: deployments-loggregator
-      params:
-        BBL_STATE_DIR: gcp/ci-pool/syslog-test
-        SYSTEM_DOMAIN: syslog-test.loggr.cf-app.com
-        ORG: syslog-test
-        SPACE_PREFIX: syslog-test
-        APP_PREFIX: syslog-scale-test
-        DATADOG_API_KEY: ((datadog-loggregator-api-key))
-        SKIP_SSL_VALIDATION: true
-        SCHEME_SUFFIX: "-v3"
-        STARTING_SPACE_ID: 76
-        ENDING_SPACE_ID: 100
-        APPS_PER_SPACE: 100
-        BINDING_COUNT: 5
-    - task: push-apps-and-create-drain-bindings
-      file: loggregator-ci/tasks/push-many-logging-telemetry/task.yml
-      input_mapping:
-        bbl-state: deployments-loggregator
-      params:
-        BBL_STATE_DIR: gcp/ci-pool/syslog-test
-        SYSTEM_DOMAIN: syslog-test.loggr.cf-app.com
-        ORG: syslog-test
-        SPACE_PREFIX: syslog-test
-        APP_PREFIX: syslog-scale-test
-        DATADOG_API_KEY: ((datadog-loggregator-api-key))
-        SKIP_SSL_VALIDATION: true
-        SCHEME_SUFFIX: "-v3"
-        STARTING_SPACE_ID: 101
-        ENDING_SPACE_ID: 125
-        APPS_PER_SPACE: 100
-        BINDING_COUNT: 5
-    - task: push-apps-and-create-drain-bindings
-      file: loggregator-ci/tasks/push-many-logging-telemetry/task.yml
-      input_mapping:
-        bbl-state: deployments-loggregator
-      params:
-        BBL_STATE_DIR: gcp/ci-pool/syslog-test
-        SYSTEM_DOMAIN: syslog-test.loggr.cf-app.com
-        ORG: syslog-test
-        SPACE_PREFIX: syslog-test
-        APP_PREFIX: syslog-scale-test
-        DATADOG_API_KEY: ((datadog-loggregator-api-key))
-        SKIP_SSL_VALIDATION: true
-        SCHEME_SUFFIX: "-v3"
-        STARTING_SPACE_ID: 126
-        ENDING_SPACE_ID: 150
-        APPS_PER_SPACE: 100
-        BINDING_COUNT: 5
-    - task: push-apps-and-create-drain-bindings
-      file: loggregator-ci/tasks/push-many-logging-telemetry/task.yml
-      input_mapping:
-        bbl-state: deployments-loggregator
-      params:
-        BBL_STATE_DIR: gcp/ci-pool/syslog-test
-        SYSTEM_DOMAIN: syslog-test.loggr.cf-app.com
-        ORG: syslog-test
-        SPACE_PREFIX: syslog-test
-        APP_PREFIX: syslog-scale-test
-        DATADOG_API_KEY: ((datadog-loggregator-api-key))
-        SKIP_SSL_VALIDATION: true
-        SCHEME_SUFFIX: "-v3"
-        STARTING_SPACE_ID: 151
-        ENDING_SPACE_ID: 175
-        APPS_PER_SPACE: 100
-        BINDING_COUNT: 5
-    - task: push-apps-and-create-drain-bindings
-      file: loggregator-ci/tasks/push-many-logging-telemetry/task.yml
-      input_mapping:
-        bbl-state: deployments-loggregator
-      params:
-        BBL_STATE_DIR: gcp/ci-pool/syslog-test
-        SYSTEM_DOMAIN: syslog-test.loggr.cf-app.com
-        ORG: syslog-test
-        SPACE_PREFIX: syslog-test
-        APP_PREFIX: syslog-scale-test
-        DATADOG_API_KEY: ((datadog-loggregator-api-key))
-        SKIP_SSL_VALIDATION: true
-        SCHEME_SUFFIX: "-v3"
-        STARTING_SPACE_ID: 176
         ENDING_SPACE_ID: 200
-        APPS_PER_SPACE: 100
+        APPS_PER_SPACE: 20
         BINDING_COUNT: 5
   # TODO: Schedule teardown and create of environment on weekends
