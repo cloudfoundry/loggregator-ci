@@ -80,6 +80,13 @@ resources:
   type: git
   source:
     uri: https://github.com/cloudfoundry/cf-deployment
+    branch: release-candidate
+    private_key: {{loggregator-key}}
+
+- name: cf-deployment-iso
+  type: git
+  source:
+    uri: https://github.com/cloudfoundry/cf-deployment
     branch: loggregator-iso-segments-2
     private_key: {{loggregator-key}}
 
@@ -732,6 +739,8 @@ jobs:
       resource: deployments-loggregator
     - get: cf-deployment
       trigger: true
+    - get: cf-deployment-iso
+      trigger: true
     - get: cf-deployment-concourse-tasks
     - get: logging-deployment
     - get: loggregator-release
@@ -783,6 +792,7 @@ jobs:
       inputs:
       - name: bbl-state
       - name: cf-deployment
+      - name: cf-deployment-iso
       - name: loggregator-agent-release
       - name: loggregator-release
       outputs:
@@ -796,10 +806,11 @@ jobs:
 
           cp cf-deployment/operations/scale-to-one-az.yml ops-files/
           cp loggregator-agent-release/manifests/operations/infrastructure-metrics.yml ops-files/infrastructure-metrics.yml
-          cp cf-deployment/operations/test/add-persistent-isolation-segment-infrastructure-metrics.yml ops-files/
           cp cf-deployment/operations/test/add-persistent-isolation-segment-diego-cell.yml ops-files/
-          cp cf-deployment/operations/test/add-persistent-isolation-segment-logging-system.yml ops-files/
-          cp cf-deployment/operations/test/add-persistent-isolation-segment-syslog-drain.yml ops-files/
+
+          cp cf-deployment-iso/operations/test/add-persistent-isolation-segment-infrastructure-metrics.yml ops-files/
+          cp cf-deployment-iso/operations/test/add-persistent-isolation-segment-logging-system.yml ops-files/
+          cp cf-deployment-iso/operations/test/add-persistent-isolation-segment-syslog-drain.yml ops-files/
           cp bbl-state/gcp/coconut-bbl/ops-files/clients.yml ops-files/
 
 
