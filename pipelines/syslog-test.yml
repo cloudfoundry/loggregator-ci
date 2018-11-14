@@ -75,6 +75,7 @@ jobs:
           tag: v3.19.0
       inputs:
       - name: loggregator-agent-release
+      - name: cf-deployment
       outputs:
       - name: ops-files
       run:
@@ -88,6 +89,7 @@ jobs:
           cp loggregator-agent-release/manifests/operations/cf-add-forwarder-agent.yml ops-files/
           cp loggregator-agent-release/manifests/operations/cf-forwarder-agent-skip-cert-verify.yml ops-files/
           cp loggregator-agent-release/manifests/operations/cf-deployment-addon.yml ops-files/
+          cp cf-deployment/operations/scale-database-cluster.yml ops-files/
 
           cat <<EOT >> ops-files/on-the-fly.yml
           - type: replace
@@ -134,9 +136,6 @@ jobs:
           - type: replace
             path: /instance_groups/name=singleton-blobstore/vm_type
             value: medium
-          - type: replace
-            path: /instance_groups/name=database/instances
-            value: 5
           EOT
   - task: cf-deploy
     file: cf-deployment-concourse-tasks/bosh-deploy/task.yml
@@ -147,21 +146,12 @@ jobs:
       BBL_STATE_DIR: gcp/ci-pool/syslog-test
       SYSTEM_DOMAIN: syslog-test.loggr.cf-app.com
       OPS_FILES: |
+          scale-database-cluster.yml
           on-the-fly.yml
           cf-deployment-addon.yml
           cf-add-forwarder-agent.yml
           cf-forwarder-agent-skip-cert-verify.yml
           infrastructure-metrics.yml
-  - task: create-org-and-spaces
-    file: loggregator-ci/tasks/create-many-spaces/task.yml
-    input_mapping:
-      bbl-state: deployments-loggregator
-    params:
-      BBL_STATE_DIR: gcp/ci-pool/syslog-test
-      SYSTEM_DOMAIN: syslog-test.loggr.cf-app.com
-      ORG: syslog-test
-      SPACE_PREFIX: syslog-test
-      SPACE_COUNT: 200
 
 - name: push-apps
   serial: true
@@ -172,6 +162,16 @@ jobs:
     - get: loggregator-ci
     - get: logging-deployment
     - get: cf-drain-cli
+  - task: create-org-and-spaces
+    file: loggregator-ci/tasks/create-many-spaces/task.yml
+    input_mapping:
+      bbl-state: deployments-loggregator
+    params:
+      BBL_STATE_DIR: gcp/ci-pool/syslog-test
+      SYSTEM_DOMAIN: syslog-test.loggr.cf-app.com
+      ORG: syslog-test
+      SPACE_PREFIX: syslog-test
+      SPACE_COUNT: 100
   - aggregate:
     - task: push-apps-and-create-drain-bindings
       file: loggregator-ci/tasks/push-many-logging-telemetry/task.yml
