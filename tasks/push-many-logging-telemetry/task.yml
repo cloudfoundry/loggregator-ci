@@ -78,5 +78,5 @@ params:
   SCHEME_SUFFIX: ""
 
   # - Optional
-  # - The number of drain bindings to create.
-  BINDING_COUNT:
+  # - The number of drains to create.
+  DRAIN_COUNT:
