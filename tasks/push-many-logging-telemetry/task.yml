@@ -58,12 +58,8 @@ params:
   SPACE_PREFIX:
 
   # - Required
-  # - The ID of the space to start deploying apps to.
-  SPACE_ID_START:
-
-  # - Required
-  # - The ID of the space to end deploying apps to.
-  SPACE_ID_END:
+  # - The number of spaces to deploy apps to.
+  SPACE_COUNT:
 
   # - Required
   # - The number of apps to create per space.
