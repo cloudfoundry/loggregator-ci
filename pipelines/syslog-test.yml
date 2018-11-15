@@ -186,9 +186,8 @@ jobs:
         DATADOG_API_KEY: ((datadog-loggregator-api-key))
         SKIP_SSL_VALIDATION: true
         SCHEME_SUFFIX: "-v3"
-        SPACE_COUNT: 100
-        APPS_PER_SPACE: 40
-        DRAIN_COUNT: 5
+        STARTING_SPACE_ID: 1
+        ENDING_SPACE_ID: 200
+        APPS_PER_SPACE: 20
+        BINDING_COUNT: 5
   # TODO: Schedule teardown and create of environment on weekends
-
-- name: destroy-apps
