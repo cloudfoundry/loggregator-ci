@@ -34,13 +34,6 @@ resources:
     paths:
     - docker-images/base
 
-- name: golang-1.10-tarball
-  type: s3
-  source:
-    endpoint: storage.googleapis.com
-    bucket: golang
-    regexp: 'go(1\.10(\.\d+)?)\.linux-amd64\.tar.gz'
-
 - name: loggregator-ci
   type: git
   source:
@@ -157,8 +150,6 @@ jobs:
   public: true
   plan:
   - aggregate:
-    - get: golang-1.10-tarball
-      trigger: true
     - get: base-image-docker-build-context
       trigger: true
   - put: base-image
