@@ -8,6 +8,7 @@ popd
 
 export USERNAME=admin
 export PASSWORD=$(credhub get --name=$(credhub find | grep cf_admin | awk '{print $3}') --output-json | jq -r .value)
+export API_ENDPOINT="api.$SYSTEM_DOMAIN"
 
 IMPORT_PATH=code.cloudfoundry.org/cf-drain-cli
 
@@ -31,15 +32,35 @@ cp -r logging-deployment/. "workspace/src/$IMPORT_PATH"
 pushd $GOPATH/src/$IMPORT_PATH/ci/assets/logging-telemetry
     go get ./...
     go build
+
+    cf login \
+        -a $API_ENDPOINT \
+        -u $USERNAME \
+        -p $PASSWORD \
+        -o system \
+       --skip-ssl-validation
+
+    cf create-space telemetry-canonical
+    cf target -s telemetry-canonical
+
+    cf push telemetry-app \
+        -b binary_buildpack \
+        -c ./logging-telemetry \
+        -u none \
+        -m 32M \
+        -k 32M \
+        --no-route \
+        --no-start
+
+    export DROPLET_GUID=$(cf v3-droplets telemetry-app 2>/dev/null | grep staged | tail -n 1 | awk '{print $1}')
 popd
 
 pushd $GOPATH/src/$IMPORT_PATH/ci/assets/logging-telemetry-scaled-deployer
     go get ./...
     go build
 
-    export SCRIPT_COMMAND=$GOPATH/src/$IMPORT_PATH/ci/assets/logging-telemetry/deploy.sh
+    export SCRIPT_COMMAND=$GOPATH/src/$IMPORT_PATH/ci/assets/logging-telemetry/deploy-with-droplet.sh
     export SCRIPT_COMMAND_DIR=$GOPATH/src/$IMPORT_PATH/ci/assets/logging-telemetry/
-    export API_ENDPOINT="api.$SYSTEM_DOMAIN"
 
     ./logging-telemetry-scaled-deployer
 popd
