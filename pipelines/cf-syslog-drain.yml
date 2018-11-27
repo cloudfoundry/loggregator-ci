@@ -493,6 +493,8 @@ jobs:
   - task: wait-for-service-broker
     timeout: 10m
     file: loggregator-ci/tasks/wait-for-service-broker/task.yml
+    params:
+      ENV_URL: sample-odb.eight.loggr.cf-app.com
   - task: register-service-broker
     file: loggregator-ci/tasks/run-errand/task.yml
     input_mapping:

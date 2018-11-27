@@ -9,3 +9,8 @@ image_resource:
 
 run:
   path: loggregator-ci/tasks/wait-for-service-broker/task
+
+params:
+  # - Required
+  # - The environment URL to which the status checker points
+  ENV_URL:
