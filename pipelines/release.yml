@@ -270,7 +270,7 @@ jobs:
   - task: download-go
     file: loggregator-ci/tasks/download-golang/task.yml
     params:
-      VERSION: &golang-version 1.11.1
+      VERSION: &golang-version 1.11.2
   - do:
     - task: bump-loggregator-release
       file: loggregator-ci/tasks/bump-golang/task.yml
