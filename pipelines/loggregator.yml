@@ -185,6 +185,12 @@ resources:
   source:
     uri: https://github.com/cloudfoundry/cf-drain-cli
     branch: develop
+
+- name: datadog-firehose-nozzle-release
+  type: git
+  source:
+    uri: https://github.com/DataDog/datadog-firehose-nozzle-release.git
+
 jobs:
 - name: loggregator-tests
   serial: true
@@ -854,6 +860,7 @@ jobs:
       resource: deployments-loggregator
     - get: vars-files
       resource: deployments-loggregator
+    - get: deployments-loggregator
   - aggregate:
     - task: upload-loggregator-release
       file: loggregator-ci/tasks/upload-release/task.yml
@@ -881,6 +888,7 @@ jobs:
         - name: cf-deployment
         - name: loggregator-agent-release
         - name: loggregator-release
+        - name: deployments-loggregator
         outputs:
         - name: ops-files
         run:
@@ -895,6 +903,7 @@ jobs:
             cp loggregator-agent-release/manifests/operations/cf-add-forwarder-agent.yml ops-files/
             cp loggregator-agent-release/manifests/operations/cf-syslog-agent-skip-cert-verify.yml ops-files/
             cp loggregator-agent-release/manifests/operations/cf-deployment-addon.yml ops-files/
+            cp deployments-loggregator/gcp/ci-pool/ten/ops-files/clients.yml ops-files/
 
             cat <<EOT >> ops-files/on-the-fly.yml
             - type: replace
@@ -933,6 +942,7 @@ jobs:
           cf-add-forwarder-agent.yml
           cf-syslog-agent-skip-cert-verify.yml
           infrastructure-metrics.yml
+          clients.yml
     - task: enable-feature-flags
       file: cf-deployment-concourse-tasks/set-feature-flags/task.yml
       attempts: 3
@@ -947,6 +957,37 @@ jobs:
         ORG: system
         SPACE: smoke-tests
         SYSTEM_DOMAIN: ten.loggr.cf-app.com
+
+- name: deploy-datadog-nozzle
+  serial: true
+  plan:
+  - aggregate:
+    - get: datadog-firehose-nozzle-release
+    - get: deployments-loggregator
+    - get: loggregator-ci
+  - task: upload-release
+    file: loggregator-ci/tasks/upload-release/task.yml
+    params:
+      BBL_STATE_DIR: gcp/ci-pool/ten
+      CREATE_RELEASE: false
+    input_mapping:
+      bbl-state: deployments-loggregator
+      bosh-release-dir: datadog-firehose-nozzle-release
+  - task: deploy
+    file: loggregator-ci/tasks/bosh-deploy/task.yml
+    params:
+      BBL_STATE_DIR: gcp/ci-pool/ten
+      DEPLOYMENT_NAME: datadog
+      MANIFEST_FILE: templates/datadog-bosh2.yml
+      OPS_FILES: gcp/ci-pool/ten/ops-files/datadog.yml
+      VARS_FILES: gcp/ci-pool/ten/vars-files/datadog.yml
+      VARS_STORE_FILE: null
+    input_mapping:
+      bbl-state: deployments-loggregator
+      bosh-release: datadog-firehose-nozzle-release
+      ops-files: deployments-loggregator
+      vars-files: deployments-loggregator
+      vars-store: deployments-loggregator
 
 - name: deploy-syslog telemetry
   serial: true
