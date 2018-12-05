@@ -153,7 +153,7 @@ resources:
   type: git
   source:
     uri: https://github.com/cloudfoundry/cf-deployment
-    branch: release-candidate
+    branch: add_origin_to_logging_metrics
     private_key: ((loggregator-key))
 
 - name: cf-deployment-concourse-tasks
@@ -904,6 +904,7 @@ jobs:
             cp loggregator-agent-release/manifests/operations/cf-syslog-agent-skip-cert-verify.yml ops-files/
             cp loggregator-agent-release/manifests/operations/cf-deployment-addon.yml ops-files/
             cp deployments-loggregator/gcp/ci-pool/ten/ops-files/clients.yml ops-files/
+            cp loggregator-agent-release/manifests/operations/cf-deployment-add-syslog-metrics-agent.yml ops-files/
 
             cat <<EOT >> ops-files/on-the-fly.yml
             - type: replace
@@ -943,6 +944,7 @@ jobs:
           cf-syslog-agent-skip-cert-verify.yml
           infrastructure-metrics.yml
           clients.yml
+          cf-deployment-add-syslog-metrics-agent.yml
     - task: enable-feature-flags
       file: cf-deployment-concourse-tasks/set-feature-flags/task.yml
       attempts: 3
