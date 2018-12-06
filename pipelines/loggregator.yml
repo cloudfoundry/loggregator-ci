@@ -15,27 +15,6 @@ resources:
     branch: master
     uri: https://github.com/cloudfoundry/cfar-logging-acceptance-tests.git
 
-- name: agent-image
-  type: docker-image
-  source:
-    repository: loggregator/agent
-    username: ((docker-hub-username))
-    password: ((docker-hub-password))
-
-- name: router-image
-  type: docker-image
-  source:
-    repository: loggregator/router
-    username: ((docker-hub-username))
-    password: ((docker-hub-password))
-
-- name: rlp-image
-  type: docker-image
-  source:
-    repository: loggregator/rlp
-    username: ((docker-hub-username))
-    password: ((docker-hub-password))
-
 - name: bumper-tool
   type: git
   source:
@@ -139,15 +118,6 @@ resources:
     uri: git@github.com:cloudfoundry-incubator/loggregator-bench-results.git
     branch: master
     private_key: ((cf-loggregator-oauth-bot-key))
-
-- name: loggregator-ci-docker-images
-  type: git
-  source:
-    uri: git@github.com:cloudfoundry/loggregator-ci
-    branch: master
-    private_key: ((cf-loggregator-oauth-bot-key))
-    paths:
-    - docker-images
 
 - name: cf-deployment
   type: git
@@ -350,74 +320,6 @@ jobs:
       source-repo: loggregator-agent
     params:
       IMPORT_PATH: code.cloudfoundry.org/loggregator-agent
-
-- name: loggregator-docker-images
-  serial: true
-  public: true
-  plan:
-  - aggregate:
-    - get: loggregator-ci
-    - get: loggregator-ci-docker-images
-      trigger: true
-    - get: loggregator-src
-      trigger: true
-      passed: ["loggregator-tests"]
-    - get: loggregator-agent
-      trigger: true
-      passed: ["loggregator-agent-tests"]
-  - aggregate:
-    - task: build-agent-image
-      file: loggregator-ci/tasks/build-go-docker-image/task.yml
-      input_mapping:
-        context-repo: loggregator-ci-docker-images
-        source-repo: loggregator-agent
-      output_mapping:
-        build-image: build-agent-image
-      params:
-        CONTEXT_PATH: docker-images/agent
-        BASE_PACKAGE: code.cloudfoundry.org/loggregator-agent
-    - task: build-router-image
-      file: loggregator-ci/tasks/build-go-docker-image/task.yml
-      input_mapping:
-        context-repo: loggregator-ci-docker-images
-        source-repo: loggregator-src
-      output_mapping:
-        build-image: build-router-image
-      params:
-        CONTEXT_PATH: docker-images/router
-        BASE_PACKAGE: code.cloudfoundry.org/loggregator
-    - task: build-rlp-image
-      file: loggregator-ci/tasks/build-go-docker-image/task.yml
-      input_mapping:
-        context-repo: loggregator-ci-docker-images
-        source-repo: loggregator-src
-      output_mapping:
-        build-image: build-rlp-image
-      params:
-        CONTEXT_PATH: docker-images/rlp
-        BASE_PACKAGE: code.cloudfoundry.org/loggregator
-  - aggregate:
-    - put: agent-image
-      params:
-        build: build-agent-image/build
-        tag: build-agent-image/tag
-        tag_as_latest: true
-        cache: true
-        cache_tag: latest
-    - put: router-image
-      params:
-        build: build-router-image/build
-        tag: build-router-image/tag
-        tag_as_latest: true
-        cache: true
-        cache_tag: latest
-    - put: rlp-image
-      params:
-        build: build-rlp-image/build
-        tag: build-rlp-image/tag
-        tag_as_latest: true
-        cache: true
-        cache_tag: latest
 
 - name: loggregator-bump-submodule
   serial: true
