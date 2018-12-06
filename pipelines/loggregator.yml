@@ -48,10 +48,10 @@ resources:
     branch: master
     private_key: ((loggregator-key))
 
-- name: 10m
+- name: 20m
   type: time
   source:
-    interval: 10m
+    interval: 20m
 
 - name: loggregator-agent
   type: git
@@ -123,7 +123,7 @@ resources:
   type: git
   source:
     uri: https://github.com/cloudfoundry/cf-deployment
-    branch: add_origin_to_logging_metrics
+    branch: develop
     private_key: ((loggregator-key))
 
 - name: cf-deployment-concourse-tasks
@@ -169,11 +169,11 @@ jobs:
   - aggregate:
     - get: loggregator-src
       trigger: true
-    - get: 10m
+    - get: 20m
       trigger: true
   - aggregate:
     - task: run-tests
-      timeout: 10m
+      timeout: 20m
       config:
         platform: linux
         image_resource:
@@ -205,7 +205,7 @@ jobs:
               popd
             popd
     - task: run-integration-tests
-      timeout: 10m
+      timeout: 20m
       config:
         platform: linux
         image_resource:
