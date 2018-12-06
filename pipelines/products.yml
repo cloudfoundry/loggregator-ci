@@ -627,25 +627,13 @@ jobs:
           OPS_FILES: |
             odb-version.yml
             on-the-fly-odb.yml
-      - task: wait-for-broker
-        timeout: 5m
-        config:
-          platform: linux
-          image_resource:
-            type: docker-image
-            source:
-              repository: relintdockerhubpushbot/cf-deployment-concourse-tasks
-              tag: v5.7.0
-          run:
-            path: /bin/bash
-            args:
-            - "-c"
-            - |
-              set -e
-              status="404"
-              while [ $status == "404"  ]; do
-                status=$(curl -k -s -o /dev/null -w "%{http_code}" https://sample-odb.coconut.cf-app.com/v2/catalog)
-              done
+      - put: deployments-loggregator
+        params:
+          repository: updated-deployments-loggregator
+          rebase: true
+      - task: wait-for-service-broker
+        timeout: 10m
+        file: loggregator-ci/tasks/wait-for-service-broker/task.yml
       - task: register-service-broker
         file: loggregator-ci/tasks/run-errand/task.yml
         input_mapping:

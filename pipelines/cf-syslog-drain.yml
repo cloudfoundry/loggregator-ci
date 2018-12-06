@@ -492,24 +492,9 @@ jobs:
         service-metrics.yml
   - task: wait-for-service-broker
     timeout: 10m
-    config:
-      platform: linux
-      image_resource:
-        type: docker-image
-        source:
-          repository: relintdockerhubpushbot/cf-deployment-concourse-tasks
-          tag: v5.20.0
-      run:
-        path: /bin/bash
-        args:
-        - "-c"
-        - |
-          set -e
-
-          status="404"
-          while [ $status == "404"  ]; do
-            status=$(curl -k -s -o /dev/null -w "%{http_code}" https://sample-odb.eight.loggr.cf-app.com/v2/catalog)
-          done
+    file: loggregator-ci/tasks/wait-for-service-broker/task.yml
+    params:
+      ENV_URL: sample-odb.eight.loggr.cf-app.com
   - task: register-service-broker
     file: loggregator-ci/tasks/run-errand/task.yml
     input_mapping:

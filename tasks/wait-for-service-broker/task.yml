@@ -1,0 +1,16 @@
+---
+platform: linux
+
+image_resource:
+  type: docker-image
+  source:
+    repository: relintdockerhubpushbot/cf-deployment-concourse-tasks
+    tag: v5.20.0
+
+run:
+  path: loggregator-ci/tasks/wait-for-service-broker/task
+
+params:
+  # - Required
+  # - The environment URL to which the status checker points
+  ENV_URL:
