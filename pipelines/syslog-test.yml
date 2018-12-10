@@ -21,7 +21,7 @@ resources:
   type: git
   source:
     uri: https://github.com/cloudfoundry/loggregator-agent-release
-    branch: release-elect
+    branch: develop
 
 - name: loggregator-ci
   type: git
@@ -85,10 +85,10 @@ jobs:
         - |
           set -e
 
-          cp loggregator-agent-release/manifests/operations/infrastructure-metrics.yml ops-files/
           cp loggregator-agent-release/manifests/operations/cf-add-forwarder-agent.yml ops-files/
-          cp loggregator-agent-release/manifests/operations/cf-forwarder-agent-skip-cert-verify.yml ops-files/
+          cp loggregator-agent-release/manifests/operations/cf-syslog-agent-skip-cert-verify.yml ops-files/
           cp loggregator-agent-release/manifests/operations/cf-deployment-addon.yml ops-files/
+          cp loggregator-agent-release/manifests/operations/cf-deployment-add-system-metrics-agent.yml ops-files/
           cp cf-deployment/operations/scale-database-cluster.yml ops-files/
 
           cat <<EOT >> ops-files/on-the-fly.yml
@@ -102,7 +102,7 @@ jobs:
             value: 40
           - type: replace
             path: /update/canaries
-            value: 10
+            value: 1
           - type: replace
             path: /instance_groups/name=diego-cell/instances
             value: 150
@@ -150,20 +150,20 @@ jobs:
           on-the-fly.yml
           cf-deployment-addon.yml
           cf-add-forwarder-agent.yml
-          cf-forwarder-agent-skip-cert-verify.yml
-          infrastructure-metrics.yml
+          cf-syslog-agent-skip-cert-verify.yml
+          cf-deployment-add-system-metrics-agent.yml
 
 - name: push-apps
   serial: true
-  serial_groups: ["cf-deploy"]
+  serial_groups: ["cf-deploy", "create-spaces"]
   plan:
   - aggregate:
     - get: deployments-loggregator
     - get: loggregator-ci
     - get: logging-deployment
     - get: cf-drain-cli
-  - task: create-org-and-spaces
-    file: loggregator-ci/tasks/create-many-spaces/task.yml
+  - task: push-apps-and-create-drain-bindings
+    file: loggregator-ci/tasks/push-many-logging-telemetry/task.yml
     input_mapping:
       bbl-state: deployments-loggregator
     params:
@@ -171,23 +171,33 @@ jobs:
       SYSTEM_DOMAIN: syslog-test.loggr.cf-app.com
       ORG: syslog-test
       SPACE_PREFIX: syslog-test
-      SPACE_COUNT: 100
-  - aggregate:
-    - task: push-apps-and-create-drain-bindings
-      file: loggregator-ci/tasks/push-many-logging-telemetry/task.yml
-      input_mapping:
-        bbl-state: deployments-loggregator
-      params:
-        BBL_STATE_DIR: gcp/ci-pool/syslog-test
-        SYSTEM_DOMAIN: syslog-test.loggr.cf-app.com
-        ORG: syslog-test
-        SPACE_PREFIX: syslog-test
-        APP_PREFIX: syslog-scale-test
-        DATADOG_API_KEY: ((datadog-loggregator-api-key))
-        SKIP_SSL_VALIDATION: true
-        SCHEME_SUFFIX: "-v3"
-        STARTING_SPACE_ID: 1
-        ENDING_SPACE_ID: 200
-        APPS_PER_SPACE: 20
-        BINDING_COUNT: 5
+      APP_PREFIX: syslog-scale-test
+      DATADOG_API_KEY: ((datadog-loggregator-api-key))
+      SKIP_SSL_VALIDATION: true
+      SCHEME_SUFFIX: "-v3"
+      STARTING_SPACE_ID: 26
+      ENDING_SPACE_ID: 100
+      APPS_PER_SPACE: 20
+      BINDING_COUNT: 5
   # TODO: Schedule teardown and create of environment on weekends
+
+- name: create-spaces
+  serial: true
+  serial_groups:
+  - cf-deploy
+  - push-apps
+  plan:
+  - aggregate:
+    - get: deployments-loggregator
+    - get: loggregator-ci
+  - task: create-org-and-spaces
+    file: loggregator-ci/tasks/create-many-spaces/task.yml
+    params:
+      BBL_STATE_DIR: gcp/ci-pool/syslog-test
+      ORG: syslog-test
+      SPACE_COUNT: 100
+      SPACE_PREFIX: syslog-test
+      SYSTEM_DOMAIN: syslog-test.loggr.cf-app.com
+    input_mapping:
+      bbl-state: deployments-loggregator
+
