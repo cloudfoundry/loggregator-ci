@@ -74,6 +74,7 @@ jobs:
       BBL_LB_CERT: ((coconut_bbl_lb_cert))
       BBL_LB_KEY: ((coconut_bbl_lb_key))
       BBL_CONFIG_DIR: plan-patches/iso-segs-gcp
+      DEBUG_MODE: false
     file: loggregator-ci/tasks/bbl-up-from-pool/task.yml
   - put: deployments-loggregator
     params:
