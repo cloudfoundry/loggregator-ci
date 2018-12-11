@@ -33,4 +33,4 @@ params:
 
   # - Optional
   # - App push timeout
-  APP_PUSH_TIMEOUT: 90s
+  APP_PUSH_TIMEOUT: 180s
