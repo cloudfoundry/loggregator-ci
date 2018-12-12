@@ -30,7 +30,6 @@ groups:
   - lats
   - loggregator-tests
   - loggregator-promotion
-  - loggregator-benchmarks
 
   - cf-syslog-drain-bump-submodule
   - cf-syslog-drain-tests
@@ -72,7 +71,6 @@ groups:
   - lats
   - loggregator-tests
   - loggregator-promotion
-  - loggregator-benchmarks
 - name: director-lifecycle
   jobs:
   - coconut-bbl-up
@@ -263,19 +261,6 @@ resources:
     branch: master
     private_key: ((cf-loggregator-oauth-bot-key))
     disable_ci_skip: true
-
-- name: loggregator-bench-release
-  type: git
-  source:
-    uri: https://github.com/cloudfoundry-incubator/loggregator-bench-release
-    branch: master
-
-- name: loggregator-bench-results
-  type: git
-  source:
-    uri: git@github.com:cloudfoundry-incubator/loggregator-bench-results.git
-    branch: master
-    private_key: ((cf-loggregator-oauth-bot-key))
 
 - name: loggregator-ci
   type: git
@@ -833,87 +818,6 @@ jobs:
       OPS_FILES: on-the-fly.yml
       REGENERATE_CREDENTIALS: true
 
-- name: loggregator-benchmarks
-  serial: true
-  plan:
-  - aggregate:
-    - get: loggregator-bench-release
-    - get: loggregator-bench-results
-    - get: deployments-loggregator
-    - get: loggregator-ci
-    - get: loggregator-release
-      resource: loggregator-release
-      trigger: true
-      passed: ["cf-deploy-loggregator"]
-  - task: bump-loggregator-release
-    file: loggregator-ci/tasks/bump-submodule/task.yml
-    input_mapping:
-      release-repo: loggregator-bench-release
-      source-repo: loggregator-release
-    output_mapping:
-      bumped-release-repo: bumped-loggregator-bench-release
-    params:
-      SUBMODULE_PATH: src/loggregator-release
-  - task: update-submodules
-    file: loggregator-ci/tasks/run-release-script/task.yml
-    input_mapping:
-      release-repo: bumped-loggregator-bench-release
-    output_mapping:
-      updated-release-repo: updated-loggregator-bench-release
-    params:
-      SCRIPT: git submodule update --init --recursive
-  - task: sync-package-specs
-    file: loggregator-ci/tasks/run-release-script/task.yml
-    input_mapping:
-      release-repo: updated-loggregator-bench-release
-    output_mapping:
-      updated-release-repo: synced-loggregator-bench-release
-    params:
-      SCRIPT: ./scripts/sync-package-specs-with-gopath
-  - task: upload-benchmark-release
-    file: loggregator-ci/tasks/upload-release/task.yml
-    input_mapping:
-      bbl-state: deployments-loggregator
-      bosh-release-dir: synced-loggregator-bench-release
-    params:
-      BBL_STATE_DIR: gcp/ci-pool/ten
-      FORCE: true
-  - task: deploy-benchmarks
-    file: loggregator-ci/tasks/bosh-deploy/task.yml
-    input_mapping:
-      bbl-state: deployments-loggregator
-      bosh-release: synced-loggregator-bench-release
-      vars-store: deployments-loggregator
-      ops-files: deployments-loggregator
-      vars-files: deployments-loggregator
-    output_mapping:
-      updated-vars-store: updated-deployments-loggregator
-    params:
-      BBL_STATE_DIR: gcp/ci-pool/ten
-      DEPLOYMENT_NAME: loggregator-bench
-      MANIFEST_FILE: manifests/loggregator-bench.yml
-      VARS_STORE_FILE: gcp/ci-pool/ten/loggregator-bench-vars.yml
-  - task: commit
-    file: loggregator-ci/tasks/commit/task.yml
-    input_mapping:
-      release-repo: updated-deployments-loggregator
-    output_mapping:
-      committed-repo: committed-deployments-loggregator
-    params:
-      COMMIT_MESSAGE: "Update loggregator-bench vars store"
-  - put: deployments-loggregator
-    params:
-      repository: committed-deployments-loggregator
-      rebase: true
-  - task: run-benchmarks
-    file: loggregator-ci/tasks/loggregator-bench/task.yml
-    params:
-      BBL_STATE_DIR: deployments-loggregator/gcp/ci-pool/ten
-  - put: loggregator-bench-results
-    params:
-      repository: updated-loggregator-bench-results
-      rebase: true
-
 - name: loggregator-promotion
   serial: true
   plan:
@@ -921,7 +825,7 @@ jobs:
     - get: develop
       resource: loggregator-release
       trigger: true
-      passed: ["lats", "cats-loggregator", "loggregator-benchmarks", "cfar-lats-loggregator"]
+      passed: ["lats", "cats-loggregator", "cfar-lats-loggregator"]
     - get: loggregator-release-release-elect
   - put: loggregator-release-release-elect
     params:
@@ -1081,8 +985,11 @@ jobs:
           - |
             set -e
 
+            cp cf-deployment/operations/scale-to-one-az.yml ops-files/
             cp cf-deployment/operations/use-compiled-releases.yml ops-files/
-            cp loggregator-agent-release/manifests/operations/infrastructure-metrics.yml ops-files/
+            cp cf-deployment/operations/experimental/use-compiled-releases-windows.yml ops-files/
+            cp cf-deployment/operations/windows1803-cell.yml ops-files/
+            cp cf-deployment/operations/use-latest-windows1803-stemcell.yml ops-files/
             cp loggregator-agent-release/manifests/operations/cf-add-forwarder-agent.yml ops-files/
             cp loggregator-agent-release/manifests/operations/cf-syslog-agent-skip-cert-verify.yml ops-files/
             cp loggregator-agent-release/manifests/operations/cf-deployment-addon.yml ops-files/
@@ -1120,12 +1027,15 @@ jobs:
         BBL_STATE_DIR: gcp/ci-pool/ten
         SYSTEM_DOMAIN: ten.loggr.cf-app.com
         OPS_FILES: |
+          scale-to-one-az.yml
           use-compiled-releases.yml
+          use-compiled-releases-windows.yml
+          windows1803-cell.yml
+          use-latest-windows1803-stemcell.yml
           on-the-fly.yml
           cf-deployment-addon.yml
           cf-add-forwarder-agent.yml
           cf-syslog-agent-skip-cert-verify.yml
-          infrastructure-metrics.yml
           clients.yml
           cf-deployment-add-system-metrics-agent.yml
     - task: enable-feature-flags
@@ -1440,7 +1350,7 @@ jobs:
 - name: cf-deploy-cf-syslog-drain
   serial: true
   serial_groups:
-  - cf-deploy
+  - cf-deploy-cf-syslog-drain
   - bosh-cf-cats-cf-syslog-drain
   - bosh-cfar-lats-cf-syslog-drain
   plan:
@@ -2065,13 +1975,11 @@ jobs:
           OPS_FILES: |
             odb-version.yml
             on-the-fly-odb.yml
-      - put: deployments-loggregator
-        params:
-          repository: updated-deployments-loggregator
-          rebase: true
       - task: wait-for-service-broker
         timeout: 10m
         file: loggregator-ci/tasks/wait-for-service-broker/task.yml
+        params:
+          ENV_URL: sample-odb.coconut.cf-app.com
       - task: register-service-broker
         file: loggregator-ci/tasks/run-errand/task.yml
         input_mapping:
@@ -2237,10 +2145,8 @@ jobs:
           set -e
 
           cp cf-deployment-release-candidate/operations/scale-to-one-az.yml ops-files/
-          cp loggregator-agent-release/manifests/operations/infrastructure-metrics.yml ops-files/infrastructure-metrics.yml
           cp cf-deployment-release-candidate/operations/test/add-persistent-isolation-segment-diego-cell.yml ops-files/
 
-          cp cf-deployment/operations/test/add-persistent-isolation-segment-infrastructure-metrics.yml ops-files/
           cp cf-deployment/operations/test/add-persistent-isolation-segment-logging-system.yml ops-files/
           cp cf-deployment/operations/test/add-persistent-isolation-segment-syslog-drain.yml ops-files/
           cp bbl-state/gcp/coconut-bbl/ops-files/clients.yml ops-files/
@@ -2302,10 +2208,8 @@ jobs:
         clients.yml
         scale-to-one-az.yml
         on-the-fly.yml
-        infrastructure-metrics.yml
         add-persistent-isolation-segment-diego-cell.yml
         add-persistent-isolation-segment-logging-system.yml
-        add-persistent-isolation-segment-infrastructure-metrics.yml
         on-the-fly-iso.yml
   - task: enable-feature-flags
     file: cf-deployment-concourse-tasks/set-feature-flags/task.yml
