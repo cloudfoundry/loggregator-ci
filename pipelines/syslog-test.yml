@@ -182,7 +182,7 @@ jobs:
       DATADOG_API_KEY: ((datadog-loggregator-api-key))
       SKIP_SSL_VALIDATION: true
       SCHEME_SUFFIX: "-v3"
-      STARTING_SPACE_ID: 26
+      STARTING_SPACE_ID: 1
       ENDING_SPACE_ID: 100
       APPS_PER_SPACE: 20
       BINDING_COUNT: 5
