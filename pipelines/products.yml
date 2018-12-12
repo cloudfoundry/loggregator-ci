@@ -2238,6 +2238,8 @@ jobs:
       SYSTEM_DOMAIN: coconut.cf-app.com
   - task: add-syslog-telemetry
     file: logging-deployment/ci/tasks/push-logging-telemetry/task.yml
+    input_mapping:
+      cf-drain-cli: cf-drain-cli-master
     params:
       ORG: system
       SPACE: accumulators
@@ -2276,6 +2278,7 @@ jobs:
       file: cf-deployment-concourse-tasks/run-cats/task.yml
       input_mapping:
         integration-config: updated-integration-configs
+        cf-acceptance-tests: cf-acceptance-tests-iso
       params:
         CONFIG_FILE_PATH: gcp/coconut-bbl/cats-config.json
         NODES: 9
@@ -2297,6 +2300,8 @@ jobs:
       - get: loggregator-ci
       - get: cf-drain-cli-master
     - task: run-cfar-lats
+      input_mapping:
+        cf-drain-cli: cf-drain-cli-master
       file: loggregator-ci/tasks/cfar-lats/task.yml
       params:
         CF_ADMIN_USER: {{coconut-username}}
