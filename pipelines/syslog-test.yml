@@ -113,6 +113,10 @@ jobs:
             path: /instance_groups/name=database/persistent_disk_type
             value: 1TB
           - type: replace
+            path: /instance_groups/name=database/vm_extensions?
+            value:
+            - 1TB_ephemeral_disk
+          - type: replace
             path: /instance_groups/name=router/instances
             value: 20
           - type: replace
