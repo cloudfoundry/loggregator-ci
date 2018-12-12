@@ -52,6 +52,10 @@ pushd $GOPATH/src/$IMPORT_PATH/ci/assets/logging-telemetry
         --no-route \
         --no-start
 
+    set +e
+    cf start telemetry-app
+    set -e
+
     export DROPLET_GUID=$(cf v3-droplets telemetry-app 2>/dev/null | grep staged | tail -n 1 | awk '{print $1}')
 popd
 
