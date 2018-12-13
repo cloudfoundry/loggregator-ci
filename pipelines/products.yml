@@ -503,22 +503,6 @@ jobs:
                   -ginkgo.slowSpecThreshold 20
               popd
             popd
-
-- name: loggregator-agent-tests
-  serial: true
-  public: true
-  plan:
-  - aggregate:
-    - get: loggregator-ci
-    - get: loggregator-agent
-      trigger: true
-  - aggregate:
-    - task: run-tests
-      file: loggregator-ci/tasks/go-test-with-latest-packages/task.yml
-      input_mapping:
-        source-repo: loggregator-agent
-      params:
-        IMPORT_PATH: code.cloudfoundry.org/loggregator-agent
     - do:
       - task: build-windows-test-binary
         config:
@@ -528,7 +512,7 @@ jobs:
             source:
               repository: loggregator/base
           inputs:
-          - name: loggregator-agent
+          - name: loggregator-src
           outputs:
           - name: binaries
           - name: test-binaries
@@ -541,24 +525,11 @@ jobs:
               set -ex
 
               ci_root=$PWD
-              mkdir -p workspace/src/code.cloudfoundry.org/loggregator-agent
-              cp -r loggregator-agent/. workspace/src/code.cloudfoundry.org/loggregator-agent/
+              mkdir -p workspace/src/code.cloudfoundry.org/loggregator
+              cp -r loggregator-src/. workspace/src/code.cloudfoundry.org/loggregator/
 
               function munge {
                 echo $1 | tr '/' '_'
-              }
-
-              function build_test {
-                build_dir=src/code.cloudfoundry.org/loggregator-agent
-                executable=$1
-
-                pushd $build_dir
-                  go get -t -d ./...
-                  for pkg in $(go list ./cmd/$executable/...); do
-                    go test -c -o $ci_root/test-binaries/$(munge $pkg)_test.exe $pkg
-                  done
-                  go build -o $ci_root/binaries/$executable.exe code.cloudfoundry.org/loggregator-agent/cmd/$executable
-                popd
               }
 
               pushd workspace
@@ -566,10 +537,15 @@ jobs:
                 export GOPATH="$PWD"
                 export PATH="$GOPATH/bin:$PATH"
 
-                build_test agent
-                build_test syslog-agent
-                build_test forwarder-agent
+                pushd src/code.cloudfoundry.org/loggregator
+                  go get -t -d ./...
+                  for pkg in $(go list ./agent/...); do
+                    go test -c -o $ci_root/test-binaries/$(munge $pkg)_test.exe $pkg &
+                  done
+                  go build -o $ci_root/binaries/agent.exe code.cloudfoundry.org/loggregator/agent &
+                popd
               popd
+              wait
       - task: run-windows-tests
         config:
           platform: windows
@@ -586,6 +562,9 @@ jobs:
                 exit 1
               }
 
+              $env:SKIP_BUILD = "true"
+              $env:AGENT_BUILD_PATH = "binaries\agent.exe"
+
               # Run all test binaries
               Get-ChildItem -Filter test-binaries\*.exe | ForEach {
                 &$_.Fullname /s
@@ -593,6 +572,21 @@ jobs:
                   throw "test failed"
                 }
               }
+
+- name: loggregator-agent-tests
+  serial: true
+  public: true
+  plan:
+  - aggregate:
+    - get: loggregator-ci
+    - get: loggregator-agent
+      trigger: true
+  - task: run-tests
+    file: loggregator-ci/tasks/go-test-with-latest-packages/task.yml
+    input_mapping:
+      source-repo: loggregator-agent
+    params:
+      IMPORT_PATH: code.cloudfoundry.org/loggregator-agent
 
 - name: loggregator-bump-submodule
   serial: true
