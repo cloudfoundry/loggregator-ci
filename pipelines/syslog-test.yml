@@ -11,6 +11,11 @@ resources:
     uri: https://github.com/cloudfoundry/cf-deployment-concourse-tasks
     tag_filter: v7.*
 
+- name: datadog-firehose-nozzle-release
+  type: git
+  source:
+    uri: https://github.com/DataDog/datadog-firehose-nozzle-release.git
+
 - name: deployments-loggregator
   type: git
   source:
@@ -76,6 +81,7 @@ jobs:
       inputs:
       - name: loggregator-agent-release
       - name: cf-deployment
+      - name: deployments-loggregator
       outputs:
       - name: ops-files
       run:
@@ -90,6 +96,7 @@ jobs:
           cp loggregator-agent-release/manifests/operations/cf-deployment-addon.yml ops-files/
           cp loggregator-agent-release/manifests/operations/cf-deployment-add-system-metrics-agent.yml ops-files/
           cp cf-deployment/operations/scale-database-cluster.yml ops-files/
+          cp deployments-loggregator/gcp/ci-pool/syslog-test/ops-files/clients.yml ops-files/
 
           cat <<EOT >> ops-files/on-the-fly.yml
           - type: replace
@@ -99,7 +106,7 @@ jobs:
               version: latest
           - type: replace
             path: /update/max_in_flight
-            value: 40
+            value: 10
           - type: replace
             path: /update/canaries
             value: 1
@@ -159,6 +166,38 @@ jobs:
           cf-add-forwarder-agent.yml
           cf-syslog-agent-skip-cert-verify.yml
           cf-deployment-add-system-metrics-agent.yml
+          clients.yml
+
+- name: deploy-datadog-nozzle
+  serial: true
+  plan:
+  - aggregate:
+    - get: datadog-firehose-nozzle-release
+    - get: deployments-loggregator
+    - get: loggregator-ci
+  - task: upload-release
+    file: loggregator-ci/tasks/upload-release/task.yml
+    params:
+      BBL_STATE_DIR: gcp/ci-pool/syslog-test
+      CREATE_RELEASE: false
+    input_mapping:
+      bbl-state: deployments-loggregator
+      bosh-release-dir: datadog-firehose-nozzle-release
+  - task: deploy
+    file: loggregator-ci/tasks/bosh-deploy/task.yml
+    params:
+      BBL_STATE_DIR: gcp/ci-pool/syslog-test
+      DEPLOYMENT_NAME: datadog
+      MANIFEST_FILE: templates/datadog-bosh2.yml
+      OPS_FILES: gcp/ci-pool/syslog-test/ops-files/datadog.yml
+      VARS_FILES: gcp/ci-pool/syslog-test/vars-files/datadog.yml
+      VARS_STORE_FILE: null
+    input_mapping:
+      bbl-state: deployments-loggregator
+      bosh-release: datadog-firehose-nozzle-release
+      ops-files: deployments-loggregator
+      vars-files: deployments-loggregator
+      vars-store: deployments-loggregator
 
 - name: push-apps
   serial: true
@@ -166,6 +205,7 @@ jobs:
   plan:
   - aggregate:
     - get: deployments-loggregator
+      passed: ["create-spaces"]
     - get: loggregator-ci
     - get: logging-deployment
     - get: cf-drain-cli
@@ -183,8 +223,8 @@ jobs:
       SKIP_SSL_VALIDATION: true
       SCHEME_SUFFIX: "-v3"
       STARTING_SPACE_ID: 1
-      ENDING_SPACE_ID: 100
-      APPS_PER_SPACE: 20
+      ENDING_SPACE_ID: 25
+      APPS_PER_SPACE: 40
       BINDING_COUNT: 5
   # TODO: Schedule teardown and create of environment on weekends
 
@@ -196,6 +236,7 @@ jobs:
   plan:
   - aggregate:
     - get: deployments-loggregator
+      passed: ["cf-deploy"]
     - get: loggregator-ci
   - task: create-org-and-spaces
     file: loggregator-ci/tasks/create-many-spaces/task.yml
