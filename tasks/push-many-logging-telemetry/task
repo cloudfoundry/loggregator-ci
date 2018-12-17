@@ -38,7 +38,6 @@ pushd $GOPATH/src/$IMPORT_PATH/ci/assets/logging-telemetry
         -u $USERNAME \
         -p $PASSWORD \
         -o system \
-        -s telemetry-canonical \
        --skip-ssl-validation
 
     cf create-space telemetry-canonical

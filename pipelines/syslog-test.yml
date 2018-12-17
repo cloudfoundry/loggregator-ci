@@ -225,7 +225,7 @@ jobs:
       STARTING_SPACE_ID: 1
       ENDING_SPACE_ID: 25
       APPS_PER_SPACE: 40
-      BINDING_COUNT: 5
+      DRAIN_COUNT: 5
   # TODO: Schedule teardown and create of environment on weekends
 
 - name: create-spaces
