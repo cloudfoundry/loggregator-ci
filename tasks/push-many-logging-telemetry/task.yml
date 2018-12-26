@@ -23,26 +23,17 @@ params:
   # - Defaults to the root of the `bbl-state` input
   BBL_STATE_DIR:
 
-  # - Required
-  # - Will produce a producer and consumer, each with prefix in front of the
-  # name
-  APP_PREFIX:
-
-  # - Required
-  # - API key for DataDog
-  DATADOG_API_KEY:
-
   # - Optional
   # - How often will app initiate test.
   EMIT_INTERVAL: 1ms
 
   # - Required
-  # - The CF system domain
-  SYSTEM_DOMAIN:
-
-  # - Required
   # - The CF org
   ORG:
+
+  # - Required
+  # - The CF system domain
+  SYSTEM_DOMAIN:
 
   # - Required
   # - The prefix to prepend to all the spaces. Space names will be
@@ -72,3 +63,7 @@ params:
   # - Optional
   # - The number of drains to create.
   DRAIN_COUNT:
+
+  # - Required
+  # - The list of drain destination IPs to rotate through for load balancing
+  DRAIN_IPS:
