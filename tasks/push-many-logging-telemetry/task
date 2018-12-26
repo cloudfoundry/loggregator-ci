@@ -24,14 +24,14 @@ pushd workspace
 popd
 
 
-IMPORT_PATH=github.com/loggregator/logging-deployment
+IMPORT_PATH=github.com/cloudfoundry-incubator/loggregator-tools
 
 mkdir -p "workspace/src/$IMPORT_PATH"
-cp -r logging-deployment/. "workspace/src/$IMPORT_PATH"
+cp -r loggregator-tools/. "workspace/src/$IMPORT_PATH"
 
-pushd $GOPATH/src/$IMPORT_PATH/ci/assets/logging-telemetry
+pushd $GOPATH/src/$IMPORT_PATH/continuous_log_emitter/cmd/emitter
     go get ./...
-    go build
+    go build -o continuous_log_emitter
 
     cf login \
         -a $API_ENDPOINT \
@@ -43,9 +43,9 @@ pushd $GOPATH/src/$IMPORT_PATH/ci/assets/logging-telemetry
     cf create-space telemetry-canonical
     cf target -s telemetry-canonical
 
-    cf push telemetry-app \
+    cf push continuous-emitter \
         -b binary_buildpack \
-        -c ./logging-telemetry \
+        -c ./continuous_log_emitter \
         -u none \
         -m 32M \
         -k 32M \
@@ -53,18 +53,18 @@ pushd $GOPATH/src/$IMPORT_PATH/ci/assets/logging-telemetry
         --no-start
 
     set +e
-    cf start telemetry-app
+    cf start continuous-emitter
     set -e
 
-    export DROPLET_GUID=$(cf v3-droplets telemetry-app 2>/dev/null | grep staged | tail -n 1 | awk '{print $1}')
+    export DROPLET_GUID=$(cf v3-droplets continuous-emitter 2>/dev/null | grep staged | tail -n 1 | awk '{print $1}')
 popd
 
-pushd $GOPATH/src/$IMPORT_PATH/ci/assets/logging-telemetry-scaled-deployer
+pushd $GOPATH/src/$IMPORT_PATH/continuous_log_emitter/cmd/deployer
     go get ./...
     go build
 
-    export SCRIPT_COMMAND=$GOPATH/src/$IMPORT_PATH/ci/assets/logging-telemetry/deploy-with-droplet.sh
-    export SCRIPT_COMMAND_DIR=$GOPATH/src/$IMPORT_PATH/ci/assets/logging-telemetry/
+    export SCRIPT_COMMAND=$GOPATH/src/$IMPORT_PATH/continuous_log_emitter/deploy-with-droplet.sh
+    export SCRIPT_COMMAND_DIR=$GOPATH/src/$IMPORT_PATH/continuous_log_emitter/
 
-    ./logging-telemetry-scaled-deployer
+    ./deployer
 popd

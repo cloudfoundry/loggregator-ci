@@ -10,7 +10,7 @@ image_resource:
 inputs:
 - name: bbl-state
 - name: loggregator-ci
-- name: logging-deployment
+- name: loggregator-tools
 - name: cf-drain-cli        # - The repo that contains the cf drains plugin
 
 run:
@@ -34,15 +34,7 @@ params:
 
   # - Optional
   # - How often will app initiate test.
-  TEST_FREQUENCY: 10s
-
-  # - Optional
-  # - How long each test will run
-  TEST_DURATION: 1s
-
-  # - Optional
-  # - How many cycles per test
-  TEST_CYCLES: 1000
+  EMIT_INTERVAL: 1ms
 
   # - Required
   # - The CF system domain
