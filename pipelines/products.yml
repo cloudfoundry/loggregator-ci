@@ -1072,7 +1072,6 @@ jobs:
             cp loggregator-agent-release/manifests/operations/cf-add-forwarder-agent.yml ops-files/
             cp loggregator-agent-release/manifests/operations/cf-syslog-agent-skip-cert-verify.yml ops-files/
             cp loggregator-agent-release/manifests/operations/cf-deployment-addon.yml ops-files/
-            cp loggregator-agent-release/manifests/operations/cf-deployment-windows-addon.yml ops-files/
             cp deployments-loggregator/gcp/ci-pool/ten/ops-files/clients.yml ops-files/
             cp loggregator-agent-release/manifests/operations/cf-deployment-add-system-metrics-agent.yml ops-files/
 
