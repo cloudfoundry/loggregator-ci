@@ -2095,8 +2095,6 @@ jobs:
       DEPLOYMENT_NAME: service-metrics-injector
       DOPPLER_ADDR: wss://doppler.coconut.cf-app.com:443
       ORIGIN: service-metrics-injector
-      CF_SSL_VALIDATION: true
-
 
 - name: service-metrics-promotion
   serial: true
