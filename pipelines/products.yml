@@ -2154,12 +2154,9 @@ jobs:
           set -e
 
           cp cf-deployment-release-candidate/operations/scale-to-one-az.yml ops-files/
-          cp cf-deployment-release-candidate/operations/test/add-persistent-isolation-segment-diego-cell.yml ops-files/
-
-          cp cf-deployment/operations/test/add-persistent-isolation-segment-logging-system.yml ops-files/
-          cp cf-deployment/operations/test/add-persistent-isolation-segment-syslog-drain.yml ops-files/
+          cp cf-deployment/operations/use-compiled-releases.yml ops-files/
+          cp cf-deployment/operations/experimental/use-compiled-releases-windows.yml ops-files/
           cp bbl-state/gcp/coconut-bbl/ops-files/clients.yml ops-files/
-
 
           cat <<EOT >> ops-files/on-the-fly.yml
           - type: replace
@@ -2187,7 +2184,7 @@ jobs:
             value: 2
           - type: replace
             path: /instance_groups/name=diego-cell/instances
-            value: 6
+            value: 3
           - type: replace
             path: /instance_groups/name=uaa/instances
             value: 2
@@ -2201,12 +2198,6 @@ jobs:
             path: /instance_groups/name=adapter/jobs/name=adapter/properties/scalablesyslog?/adapter?/syslog_skip_cert_verify?
             value: true
           EOT
-
-          cat <<EOT >> ops-files/on-the-fly-iso.yml
-          - type: replace
-            path: /instance_groups/name=router/jobs/name=gorouter/properties/router/routing_table_sharding_mode?
-            value: all
-          EOT
   - task: upload-stemcell
     file: cf-deployment-concourse-tasks/bosh-upload-stemcell-from-cf-deployment/task.yml
     params:
@@ -2219,10 +2210,9 @@ jobs:
       OPS_FILES: |
         clients.yml
         scale-to-one-az.yml
+        use-compiled-releases.yml
+        use-compiled-releases-windows.yml
         on-the-fly.yml
-        add-persistent-isolation-segment-diego-cell.yml
-        add-persistent-isolation-segment-logging-system.yml
-        on-the-fly-iso.yml
   - task: enable-feature-flags
     file: cf-deployment-concourse-tasks/set-feature-flags/task.yml
     attempts: 3
@@ -2261,8 +2251,6 @@ jobs:
       SKIP_SSL_VALIDATION: true
       APP_PREFIX: syslog-telemetry
       DATADOG_API_KEY: {{datadog-loggregator-api-key}}
-    input_mapping:
-      cf-drain-cli: cf-drain-cli-master
 
 - name: cats
   serial: true
