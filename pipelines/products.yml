@@ -955,9 +955,18 @@ jobs:
   - aggregate:
     - get: logging-deployment
     - get: cf-drain-cli
+    - get: bbl-state
+      resource: deployments-loggregator
     - get: loggregator-ci
       passed: ["cf-deploy"]
       trigger: true
+  - task: create-smoke-test-space
+    file: loggregator-ci/tasks/create-org-and-space/task.yml
+    params:
+      BBL_STATE_DIR: gcp/coconut-bbl
+      ORG: system
+      SPACE: smoke-tests
+      SYSTEM_DOMAIN: coconut.cf-app.com
   - aggregate:
     - task: add-syslog-v2-telemetry
       file: logging-deployment/ci/tasks/push-logging-telemetry/task.yml
