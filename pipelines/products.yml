@@ -15,7 +15,6 @@ groups:
   - service-metrics-promotion
   - service-metrics-master-promotion
 
-  - loggregator-deploy
   - loggregator-agent-master-promotion
   - loggregator-agent-tests
   - loggregator-agent-bump-submodule
@@ -52,7 +51,6 @@ groups:
 - name: loggregator
   jobs:
   - cf-deploy
-  - loggregator-deploy
   - loggregator-agent-master-promotion
   - loggregator-agent-tests
   - loggregator-agent-bump-submodule
@@ -714,103 +712,6 @@ jobs:
       repository: committed-loggregator-agent-release
       rebase: true
 
-- name: loggregator-deploy
-  serial: true
-  serial_groups:
-  - bosh-loggregator
-  plan:
-  - aggregate:
-    - get: loggregator-release
-      trigger: true
-      passed: ["loggregator-bump-submodule"]
-    - get: loggregator-agent-release
-      trigger: true
-      passed: ["loggregator-agent-bump-submodule"]
-    - get: deployments-loggregator
-    - get: loggregator-ci
-    - get: logging-acceptance-tests-release
-      trigger: true
-    - get: cf-deployment-concourse-tasks
-  - task: upload-loggregator-release
-    file: loggregator-ci/tasks/upload-release/task.yml
-    input_mapping:
-      bbl-state: deployments-loggregator
-      bosh-release-dir: loggregator-release
-    params:
-      BBL_STATE_DIR: gcp/coconut-bbl
-  - task: upload-loggregator-agent-release
-    file: loggregator-ci/tasks/upload-release/task.yml
-    input_mapping:
-      bbl-state: deployments-loggregator
-      bosh-release-dir: loggregator-agent-release
-    params:
-      BBL_STATE_DIR: gcp/coconut-bbl
-  - task: upload-lats
-    file: loggregator-ci/tasks/upload-release/task.yml
-    input_mapping:
-      bbl-state: deployments-loggregator
-      bosh-release-dir: logging-acceptance-tests-release
-    params:
-      BBL_STATE_DIR: gcp/coconut-bbl
-  - task: deploy
-    file: cf-deployment-concourse-tasks/bosh-deploy/task.yml
-    input_mapping:
-      cf-deployment: loggregator-release
-      ops-files: loggregator-release
-      bbl-state: deployments-loggregator
-      vars-files: deployments-loggregator
-    params:
-      BBL_STATE_DIR: gcp/coconut-bbl
-      SYSTEM_DOMAIN: coconut.cf-app.com
-      MANIFEST_FILE: manifests/loggregator.yml
-      OPS_FILES: manifests/operations/exclude-rlp-gateway.yml
-
-  - task: copy-ops-files
-    config:
-      platform: linux
-      image_resource:
-        type: docker-image
-        source:
-          repository: relintdockerhubpushbot/cf-deployment-concourse-tasks
-          tag: v3.19.0
-      outputs:
-      - name: ops-files
-      run:
-        path: /bin/bash
-        args:
-        - "-c"
-        - |
-          set -e
-
-          cat <<EOT >> ops-files/on-the-fly.yml
-          - type: replace
-            path: /releases/name=loggregator-agent
-            value:
-              name: loggregator-agent
-              version: latest
-          - type: replace
-            path: /releases/name=bpm
-            value:
-              name: bpm
-              version: latest
-          - type: replace
-            path: /variables/name=loggregator_agent/options/ca
-            value: /bosh-coconut-bbl/loggregator/loggregator_ca
-          EOT
-  - task: lats-deploy
-    file: cf-deployment-concourse-tasks/bosh-deploy/task.yml
-    input_mapping:
-      cf-deployment: logging-acceptance-tests-release
-      ops-files: ops-files
-      bbl-state: deployments-loggregator
-      vars-files: deployments-loggregator
-    params:
-      BBL_STATE_DIR: gcp/coconut-bbl
-      SYSTEM_DOMAIN: coconut.cf-app.com
-      MANIFEST_FILE: manifests/lats.yml
-      OPS_FILES: on-the-fly.yml
-      REGENERATE_CREDENTIALS: true
-
 - name: loggregator-promotion
   serial: true
   plan:
@@ -901,10 +802,10 @@ jobs:
     - get: logging-acceptance-tests-release
       trigger: true
     - get: loggregator-release
-      passed: ["loggregator-deploy"]
+      passed: ["cf-deploy"]
       trigger: true
     - get: loggregator-agent-release
-      passed: ["loggregator-deploy"]
+      passed: ["cf-deploy"]
       trigger: true
   - task: run-lats
     file: loggregator-ci/tasks/run-errand/task.yml
