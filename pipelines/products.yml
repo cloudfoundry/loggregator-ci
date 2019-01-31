@@ -885,7 +885,7 @@ jobs:
     params:
       SOURCE_BRANCH: release-elect
       DEST_BRANCH: master
-      FOLLOW_BUMPS_OF: src/code.cloudfoundry.org/go-loggregator
+      FOLLOW_BUMPS_OF: src/code.cloudfoundry.org/go-loggregator,src/code.cloudfoundry.org/loggregator-agent
   - put: loggregator-agent-release-master
     params:
       repository: merged-dest
