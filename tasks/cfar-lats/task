@@ -7,6 +7,7 @@ mkdir -p $GOPATH/src/code.cloudfoundry.org
 
 cp -R cfar-logging-acceptance-tests $GOPATH/src/github.com/cloudfoundry
 cp -R cf-drain-cli $GOPATH/src/code.cloudfoundry.org
+cp -R log-stream-cli $GOPATH/src/github.com/cloudfoundry
 
 
 pushd $GOPATH/src/code.cloudfoundry.org/cf-drain-cli
@@ -16,6 +17,15 @@ popd
 pushd $GOPATH/src/code.cloudfoundry.org/cf-drain-cli/cmd/cf-drain-cli
     go build
     cf install-plugin -f cf-drain-cli
+popd
+
+pushd $GOPATH/src/github.com/cloudfoundry/log-stream-cli
+    go get ./...
+popd
+
+pushd $GOPATH/src/github.com/cloudfoundry/log-stream-cli/cmd/log_stream
+    go build
+    cf install-plugin -f log-stream
 popd
 
 pushd $GOPATH/src/github.com/cloudfoundry/cfar-logging-acceptance-tests

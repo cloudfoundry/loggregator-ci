@@ -10,6 +10,7 @@ inputs:
 - name: loggregator-ci # - This repo
 - name: cfar-logging-acceptance-tests
 - name: cf-drain-cli
+- name: log-stream-cli
 
 run:
   path: loggregator-ci/tasks/cfar-lats/task
