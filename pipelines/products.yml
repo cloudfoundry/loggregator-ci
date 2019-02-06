@@ -133,15 +133,8 @@ resources:
   type: git
   source:
     uri: https://github.com/cloudfoundry/cf-deployment
-    tag_filter: v6.*
+    tag_filter: v7.*
     private_key: ((loggregator-key))
-
-- name: cf-deployment-release-candidate
-  type: git
-  source:
-    uri: https://github.com/cloudfoundry/cf-deployment
-    branch: release-candidate
-    private_key: {{loggregator-key}}
 
 - name: cf-deployment-concourse-tasks
   type: git
@@ -1726,8 +1719,6 @@ jobs:
     - get: loggregator-ci
     - get: bbl-state
       resource: deployments-loggregator
-    - get: cf-deployment-release-candidate
-      trigger: true
     - get: cf-deployment
       trigger: true
     - get: cf-deployment-concourse-tasks
@@ -1786,7 +1777,6 @@ jobs:
           tag: v3.19.0
       inputs:
       - name: bbl-state
-      - name: cf-deployment-release-candidate
       - name: cf-deployment
       - name: loggregator-agent-release
       - name: loggregator-release
@@ -1799,13 +1789,13 @@ jobs:
         - |
           set -e
 
-          cp cf-deployment-release-candidate/operations/scale-to-one-az.yml ops-files/
+          cp cf-deployment/operations/scale-to-one-az.yml ops-files/
           cp cf-deployment/operations/use-compiled-releases.yml ops-files/
           cp cf-deployment/operations/experimental/use-compiled-releases-windows.yml ops-files/
           cp bbl-state/gcp/coconut-bbl/ops-files/clients.yml ops-files/
 
-          cp cf-deployment/operations/experimental/windows1803-cell.yml ops-files/
-          cp cf-deployment/operations/experimental/use-latest-windows1803-stemcell.yml ops-files/
+          cp cf-deployment/operations/windows1803-cell.yml ops-files/
+          cp cf-deployment/operations/use-latest-windows1803-stemcell.yml ops-files/
 
           cp loggregator-agent-release/manifests/operations/cf-deployment-addon.yml ops-files/
           cp loggregator-agent-release/manifests/operations/cf-add-forwarder-agent.yml ops-files/
