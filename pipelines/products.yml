@@ -1767,6 +1767,9 @@ jobs:
     - get: cf-drain-cli
       passed:
         - cf-drain-cli-tests
+    - get: log-stream-cli
+      passed:
+        - log-stream-cli-tests
   - aggregate:
     - task: upload-loggregator-release
       file: loggregator-ci/tasks/upload-release/task.yml
