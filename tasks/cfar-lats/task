@@ -23,9 +23,9 @@ pushd $GOPATH/src/github.com/cloudfoundry/log-stream-cli
     go get ./...
 popd
 
-pushd $GOPATH/src/github.com/cloudfoundry/log-stream-cli/cmd/log-stream
+pushd $GOPATH/src/github.com/cloudfoundry/log-stream-cli/cmd/log-stream-cli
     go build
-    cf install-plugin -f ./log-stream
+    cf install-plugin -f ./log-stream-cli
 popd
 
 pushd $GOPATH/src/github.com/cloudfoundry/cfar-logging-acceptance-tests
