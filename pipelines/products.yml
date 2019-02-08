@@ -37,6 +37,7 @@ groups:
   - cf-drain-cli-promotion
 
   - log-stream-cli-tests
+  - log-stream-cli-promotion
 
 - name: cf-syslog-drain
   jobs:
@@ -51,10 +52,15 @@ groups:
   - cf-drain-cli-tests
   - cf-drain-cli-promotion
 
+- name: log-stream-cli
+  jobs:
+  - cfar-lats
+  - log-stream-cli-tests
+  - log-stream-cli-promotion
+
 - name: loggregator
   jobs:
   - cf-deploy
-  - log-stream-cli-tests
   - loggregator-deploy
   - loggregator-agent-master-promotion
   - loggregator-agent-tests
@@ -215,6 +221,13 @@ resources:
   source:
     uri: https://github.com/cloudfoundry/log-stream-cli
     branch: develop
+
+- name: log-stream-cli-master
+  type: git
+  source:
+    uri: git@github.com:cloudfoundry/log-stream-cli
+    branch: master
+    private_key: ((cf-loggregator-oauth-bot-key))
 
 - name: logging-acceptance-tests-release
   type: git
@@ -423,7 +436,7 @@ jobs:
       rebase: true
 
 ###############################################################################
-# LOGGREGATOR
+# LOG STREAM CLI
 ###############################################################################
 
 - name: log-stream-cli-tests
@@ -440,6 +453,34 @@ jobs:
       source-repo: log-stream-cli
     params:
       IMPORT_PATH: github.com/cloudfoundry/log-stream-cli
+
+- name: log-stream-cli-promotion
+  serial: true
+  plan:
+  - get: 5m
+    trigger: true
+  - aggregate:
+    - get: log-stream-cli
+      passed: ["cfar-lats"]
+      trigger: true
+    - get: log-stream-cli-master
+    - get: bumper-tool
+    - get: loggregator-ci
+  - task: bumper
+    file: loggregator-ci/tasks/bumper/task.yml
+    input_mapping:
+      source: log-stream-cli
+      dest: log-stream-cli-master
+    params:
+      SOURCE_BRANCH: develop
+      DEST_BRANCH: master
+  - put: log-stream-cli-master
+    params:
+      repository: merged-dest
+
+###############################################################################
+# LOGGREGATOR
+###############################################################################
 
 - name: loggregator-tests
   serial: true
@@ -1983,7 +2024,7 @@ jobs:
         passed: ["cf-deploy"]
         trigger: true
       - get: log-stream-cli
-        passed: ["cf-deploy"]
+        passed: ["log-stream-cli-tests"]
         trigger: true
       - get: loggregator-ci
       - get: cf-drain-cli-master
