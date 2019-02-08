@@ -1233,11 +1233,11 @@ jobs:
         - |
           set -e
 
-          pushd bbl-state/gcp/ci-pool/eight
+          pushd bbl-state/gcp/coconut-bbl
             eval "$(bbl print-env)"
           popd
 
-          cp bbl-state/gcp/ci-pool/eight/service-metrics-broker-vars.yml vars-files
+          cp bbl-state/gcp/coconut-bbl/service-metrics-broker-vars.yml vars-files
 
           service_metrics_version=$(bosh releases | grep service-metrics | grep -v service-metrics-adapter | head -n1 | awk '{print $2}' | cut -d '*' -f 1)
           cat <<EOT >> vars-files/service-metrics-version.yml
@@ -1250,10 +1250,10 @@ jobs:
             path: /variables/name=loggregator_ca
           - type: replace
             path: /variables/name=service_metrics/options/ca
-            value: /bosh-eight/cf/loggregator_ca
+            value: /bosh-coconut-bbl/cf/loggregator_ca
           - type: replace
             path: /variables/name=loggregator_agent/options/ca
-            value: /bosh-eight/cf/loggregator_ca
+            value: /bosh-coconut-bbl/cf/loggregator_ca
           - type: replace
             path: /variables/name=loggregator_agent/options/alternative_names
             value:
@@ -1274,8 +1274,8 @@ jobs:
       bbl-state: deployments-loggregator
       vars-files: vars-files
     params:
-      BBL_STATE_DIR: gcp/ci-pool/eight
-      SYSTEM_DOMAIN: eight.loggr.cf-app.com
+      BBL_STATE_DIR: gcp/coconut-bbl
+      SYSTEM_DOMAIN: coconut.cf-app.com
       MANIFEST_FILE: manifests/sample-service-metrics.yml
       VARS_FILES: |
         service-metrics-broker-vars.yml
@@ -1286,13 +1286,13 @@ jobs:
     timeout: 10m
     file: loggregator-ci/tasks/wait-for-service-broker/task.yml
     params:
-      ENV_URL: sample-odb.eight.loggr.cf-app.com
+      ENV_URL: sample-odb.coconut.cf-app.com
   - task: register-service-broker
     file: loggregator-ci/tasks/run-errand/task.yml
     input_mapping:
       bbl-state: deployments-loggregator
     params:
-      BBL_STATE_DIR: gcp/ci-pool/eight
+      BBL_STATE_DIR: gcp/coconut-bbl
       DEPLOYMENT_NAME: sample-service-metrics
       ERRAND: register-broker
   - task: upgrade-all-service-instances
@@ -1300,7 +1300,7 @@ jobs:
     input_mapping:
       bbl-state: deployments-loggregator
     params:
-      BBL_STATE_DIR: gcp/ci-pool/eight
+      BBL_STATE_DIR: gcp/coconut-bbl
       DEPLOYMENT_NAME: sample-service-metrics
       ERRAND: upgrade-all-service-instances
 

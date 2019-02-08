@@ -13,7 +13,6 @@ resources:
     private_key: {{loggregator-key}}
     ignore_paths:
     - .final_builds
-    - releases
 
 - name: loggregator-master
   type: git
@@ -27,7 +26,7 @@ resources:
   type: git
   source:
     uri: git@github.com:cloudfoundry/loggregator-release.git
-    branch: &backport-branch v102.x
+    branch: &backport-branch v103.x
     private_key: {{loggregator-key}}
 
 - name: loggregator-release-develop
@@ -238,7 +237,7 @@ jobs:
   - task: download-go
     file: loggregator-ci/tasks/download-golang/task.yml
     params:
-      VERSION: &golang-version 1.11.4
+      VERSION: &golang-version 1.11.5
   - do:
     - task: bump-loggregator-release
       file: loggregator-ci/tasks/bump-golang/task.yml
@@ -463,7 +462,7 @@ jobs:
         S3_ACCESS_KEY: {{loggregator-team-s3-access-key}}
         S3_SECRET_KEY: {{loggregator-team-s3-secret-key}}
         SSH_KEY: {{loggregator-key}}
-        NEW_VERSION: "102.8"
+        NEW_VERSION: "103.4"
         BRANCH_NAME: *backport-branch
       inputs:
       - name: loggregator-backport
@@ -568,7 +567,7 @@ jobs:
       S3_SECRET_KEY: {{s3-secret-access-key}}
       BLOBSTORE_BUCKET: cf-syslog-drain-release-blobs
       SSH_KEY: {{loggregator-key}}
-      NEW_VERSION: "8.2"
+      NEW_VERSION: "9.0"
       RELEASE_NAME: "CF Syslog Drain Release"
       TO_BRANCH: develop
       FROM_BRANCH: master
@@ -710,7 +709,7 @@ jobs:
       S3_SECRET_KEY: {{loggregator-team-s3-secret-key}}
       BLOBSTORE_BUCKET: oss-service-metrics-release-blobs
       SSH_KEY: {{loggregator-key}}
-      NEW_VERSION: 1.9.0
+      NEW_VERSION: 1.10.0
       RELEASE_NAME: service-metrics-release
       TO_BRANCH: develop
       FROM_BRANCH: master
@@ -747,7 +746,7 @@ jobs:
       S3_SECRET_KEY: {{s3-secret-access-key}}
       BLOBSTORE_BUCKET: statsd-injector-release-blobs
       SSH_KEY: {{loggregator-key}}
-      NEW_VERSION: "1.6.0"
+      NEW_VERSION: "1.7.0"
       RELEASE_NAME: statsd-injector-release
       TO_BRANCH: develop
       FROM_BRANCH: master
