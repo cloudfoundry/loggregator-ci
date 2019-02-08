@@ -8,7 +8,6 @@ image_resource:
 inputs:
 - name: loggregator-ci    # - This repo
 - name: log-stream-cli      # - The plugin repo
-- name: loggregator-tools # - Tools repo needed for syslog forwarder app
 
 outputs:
 - name: output-repo    # - The released version of the repo

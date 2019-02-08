@@ -12,24 +12,15 @@ echo "TBD" > github-release/body
 
 # setup go path
 logstream=$PWD/log-stream-cli
-tools=$PWD/loggregator-tools
 mkdir -p go
 pushd go
   export GOPATH=$PWD
-
-  go get -d code.cloudfoundry.org/log-stream-cli/...
-  rm -rf src/code.cloudfoundry.org/log-stream-cli
-  cp -r $logstream src/code.cloudfoundry.org/log-stream-cli
-
-  go get -d code.cloudfoundry.org/loggregator-tools/log-cache-forwarders/cmd/syslog/...
-  rm -rf src/code.cloudfoundry.org/loggregator-tools
-  cp -r $tools src/code.cloudfoundry.org/loggregator-tools
 popd
 
 # build binaries
 mkdir -p github-release/builds
 output=$PWD/github-release/builds
-pushd $GOPATH/src/code.cloudfoundry.org/log-stream-cli/cmd/log-stream-cli
+pushd $logstream/cmd/log-stream-cli
   GOOS=linux go build -ldflags "-X main.version=$version" -o $output/log-stream-cli-linux
   GOOS=darwin go build -ldflags "-X main.version=$version" -o $output/log-stream-cli-darwin
   GOOS=windows go build -ldflags "-X main.version=$version" -o $output/log-stream-cli-windows
