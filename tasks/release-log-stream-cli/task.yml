@@ -3,7 +3,7 @@ platform: linux
 image_resource:
   type: docker-image
   source:
-    repository: loggregator/base
+    repository: chentom77/loggregator
 
 inputs:
 - name: loggregator-ci    # - This repo
