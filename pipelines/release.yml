@@ -162,13 +162,6 @@ resources:
     branch: master
     private_key: {{cf-loggregator-oauth-bot-key}}
 
-- name: loggregator-tools-master
-  type: git
-  source:
-    uri: git@github.com:cloudfoundry-incubator/loggregator-tools
-    branch: master
-    private_key: {{cf-loggregator-oauth-bot-key}}
-
 - name: cf-drain-cli-github-release-drafts
   type: github-release
   source:
@@ -176,6 +169,28 @@ resources:
     repository: cf-drain-cli
     access_token: {{access-token}}
     drafts: true
+
+- name: log-stream-cli
+  type: git
+  source:
+    uri: git@github.com:cloudfoundry/log-stream-cli
+    branch: master
+    private_key: {{cf-loggregator-oauth-bot-key}}
+
+- name: log-stream-cli-github-release-drafts
+  type: github-release
+  source:
+    user: cloudfoundry
+    repository: log-stream-cli
+    access_token: {{access-token}}
+    drafts: true
+
+- name: loggregator-tools-master
+  type: git
+  source:
+    uri: git@github.com:cloudfoundry-incubator/loggregator-tools
+    branch: master
+    private_key: {{cf-loggregator-oauth-bot-key}}
 
 - name: noisy-neighbor-nozzle-repo
   type: git
@@ -785,6 +800,29 @@ jobs:
       repository: output-repo/cf-drain-cli
       rebase: false
   - put: cf-drain-cli-github-release-drafts
+    params:
+      name: github-release/name
+      tag: github-release/tag
+      body: github-release/body
+      globs:
+      - github-release/builds/*
+
+- name: log-stream-cli
+  serial: true
+  plan:
+  - aggregate:
+    - get: loggregator-ci
+    - get: log-stream-cli
+  - task: create-binaries
+    file: loggregator-ci/tasks/release-log-stream-cli/task.yml
+    params:
+      VERSION_MAJOR: 0
+      VERSION_MINOR: 1
+  - put: log-stream-cli
+    params:
+      repository: output-repo/log-stream-cli
+      rebase: false
+  - put: log-stream-cli-github-release-drafts
     params:
       name: github-release/name
       tag: github-release/tag
