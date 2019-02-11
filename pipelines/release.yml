@@ -170,6 +170,13 @@ resources:
     access_token: {{access-token}}
     drafts: true
 
+- name: leadership-election-release
+  type: git
+  source:
+    uri: git@github.com:cloudfoundry/leadership-election-release
+    branch: develop
+    private_key: {{cf-loggregator-oauth-bot-key}}
+
 - name: log-stream-cli
   type: git
   source:
@@ -241,6 +248,7 @@ jobs:
   serial: true
   plan:
   - aggregate:
+    - get: leadership-election-release
     - get: loggregator-ci
     - get: loggregator-develop
     - get: loggregator-agent-release-develop
@@ -253,6 +261,31 @@ jobs:
     file: loggregator-ci/tasks/download-golang/task.yml
     params:
       VERSION: &golang-version 1.11.5
+  - do:
+    - task: leadership-election-release
+      file: loggregator-ci/tasks/bump-golang/task.yml
+      input_mapping:
+        release-repo: leadership-election-release
+      output_mapping:
+        updated-release-repo: updated-leadership-election-release
+      params:
+        VERSION: *golang-version
+        INCLUDE_WINDOWS: true
+        ACCESS_KEY_ID: {{s3-access-key-id}}
+        SECRET_ACCESS_KEY: {{s3-secret-access-key}}
+        BUCKET_NAME: leadership-election-release-blobs
+    - task: commit-leadership-election-release
+      file: loggregator-ci/tasks/commit/task.yml
+      input_mapping:
+        release-repo: updated-leadership-election-release
+      output_mapping:
+        committed-repo: committed-leadership-election-release
+      params:
+        COMMIT_MESSAGE: "Bump golang version"
+    - put: leadership-election-release
+      params:
+        repository: committed-leadership-election-release
+        rebase: false
   - do:
     - task: bump-loggregator-release
       file: loggregator-ci/tasks/bump-golang/task.yml
