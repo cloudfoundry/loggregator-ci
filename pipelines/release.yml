@@ -850,7 +850,7 @@ jobs:
     file: loggregator-ci/tasks/release-log-stream-cli/task.yml
     params:
       VERSION_MAJOR: 0
-      VERSION_MINOR: 2
+      VERSION_MINOR: 3
   - put: log-stream-cli
     params:
       repository: output-repo/log-stream-cli
