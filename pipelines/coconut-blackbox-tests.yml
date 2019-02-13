@@ -318,6 +318,53 @@ jobs:
       JOB_NAME: "https-no-teardown"
     timeout: 20m
 
+- name: https-v3-syslog-drain
+  public: false
+  serial: true
+  plan:
+    - get: loggregator-ci
+    - get: loggregator-tools
+    - get: 1h
+      trigger: true
+    - task: v3-drain
+      file: loggregator-ci/tasks/cf-syslog-drain-smoke-test.yml
+      params:
+        CF_ORG: system
+        CF_SPACE: blackbox-testing
+        CF_APP_DOMAIN: coconut.cf-app.com
+        CF_SYSTEM_DOMAIN: coconut.cf-app.com
+        CF_USERNAME: {{coconut-username}}
+        CF_PASSWORD: {{coconut-password}}
+        DATADOG_API_KEY: {{datadog-loggregator-api-key}}
+        DRAIN_VERSION: "3.0"
+        DRAIN_TYPE: "https"
+        JOB_NAME: "v3-https-teardown"
+      timeout: 20m
+
+- name: https-v3-syslog-drain-no-teardown
+  public: false
+  serial: true
+  plan:
+    - get: loggregator-ci
+    - get: loggregator-tools
+    - get: 1h
+      trigger: true
+    - task: v3-drain
+      file: loggregator-ci/tasks/cf-syslog-drain-smoke-test.yml
+      params:
+        TEARDOWN: false
+        CF_ORG: system
+        CF_SPACE: blackbox-testing
+        CF_APP_DOMAIN: coconut.cf-app.com
+        CF_SYSTEM_DOMAIN: coconut.cf-app.com
+        CF_USERNAME: {{coconut-username}}
+        CF_PASSWORD: {{coconut-password}}
+        DATADOG_API_KEY: {{datadog-loggregator-api-key}}
+        DRAIN_VERSION: "3.0"
+        DRAIN_TYPE: "https"
+        JOB_NAME: "v3-https-no-teardown"
+      timeout: 20m
+
 - name: latency
   public: false
   serial: true
