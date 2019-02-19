@@ -148,6 +148,29 @@ resources:
     access_token: {{access-token}}
     drafts: true
 
+- name: leadership-election-release-master
+  type: git
+  source:
+    uri: git@github.com:cloudfoundry/leadership-election-release
+    branch: master
+    private_key: {{cf-loggregator-oauth-bot-key}}
+
+- name: leadership-election-release-develop
+  type: git
+  source:
+    uri: git@github.com:cloudfoundry/leadership-election-release
+    branch: develop
+    private_key: {{cf-loggregator-oauth-bot-key}}
+    disable_ci_skip: true
+
+- name: leadership-election-release-github-release-drafts
+  type: github-release
+  source:
+    user: cloudfoundry
+    repository: leadership-election-release
+    access_token: {{access-token}}
+    drafts: true
+
 - name: reference-nozzle-release
   type: git
   source:
@@ -255,6 +278,7 @@ jobs:
     - get: logging-acceptance-tests-release
     - get: cf-syslog-drain-release-develop
     - get: statsd-injector-release-develop
+    - get: leadership-election-release-develop
     - get: reference-nozzle-release
     - get: service-metrics-release-develop
   - task: download-go
@@ -383,6 +407,30 @@ jobs:
     - put: statsd-injector-release-develop
       params:
         repository: committed-statsd-injector-release
+        rebase: false
+  - do:
+    - task: bump-leadership-election-release
+      file: loggregator-ci/tasks/bump-golang/task.yml
+      input_mapping:
+        release-repo: leadership-election-release-develop
+      output_mapping:
+        updated-release-repo: updated-leadership-election-release
+      params:
+        VERSION: *golang-version
+        ACCESS_KEY_ID: {{s3-access-key-id}}
+        SECRET_ACCESS_KEY: {{s3-secret-access-key}}
+        BUCKET_NAME: leadership-election-release-blobs
+    - task: commit-leadership-election-release
+      file: loggregator-ci/tasks/commit/task.yml
+      input_mapping:
+        release-repo: updated-leadership-election-release
+      output_mapping:
+        committed-repo: committed-leadership-election-release
+      params:
+        COMMIT_MESSAGE: "Bump golang version"
+    - put: leadership-election-release-develop
+      params:
+        repository: committed-leadership-election-release
         rebase: false
   - do:
     - task: bump-reference-nozzle-release
@@ -807,6 +855,43 @@ jobs:
       repository: repos/to-repo
       rebase: false
   - put: statsd-injector-release-github-release-drafts
+    params:
+      name: github-release/name
+      tag: github-release/tag
+      body: github-release/body
+      globs:
+      - github-release/*.tgz
+
+- name: leadership-election-create-final-release
+  serial: true
+  plan:
+  - aggregate:
+    - get: leadership-election-release-develop
+    - get: leadership-election-release-master
+    - get: loggregator-ci
+  - task: create-final-release
+    file: loggregator-ci/tasks/create-final-release/task.yml
+    input_mapping:
+      to-repo: leadership-election-release-develop
+      from-repo: leadership-election-release-master
+    params:
+      S3_ACCESS_KEY: {{s3-access-key-id}}
+      S3_SECRET_KEY: {{s3-secret-access-key}}
+      BLOBSTORE_BUCKET: leadership-election-release-blobs
+      SSH_KEY: {{loggregator-key}}
+      NEW_VERSION: "0.0.1"
+      RELEASE_NAME: leadership-election-release
+      TO_BRANCH: develop
+      FROM_BRANCH: master
+  - put: leadership-election-release-master
+    params:
+      repository: repos/from-repo
+      rebase: false
+  - put: leadership-election-release-develop
+    params:
+      repository: repos/to-repo
+      rebase: false
+  - put: leadership-election-release-github-release-drafts
     params:
       name: github-release/name
       tag: github-release/tag
