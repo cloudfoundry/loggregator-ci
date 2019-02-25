@@ -715,13 +715,13 @@ jobs:
         run:
           path: bash
           args:
-            - -c
-            - |
-              #!/bin/bash
-              set -e
-              cd synced-loggregator-release
-              bundle install
-              rspec
+          - -c
+          - |
+            #!/bin/bash
+            set -e
+            cd synced-loggregator-release
+            bundle install
+            rspec
     - task: run-tests
       file: loggregator-ci/tasks/run-release-script/task.yml
       input_mapping:
@@ -1422,7 +1422,7 @@ jobs:
         source:
           repository: loggregator/base
       inputs:
-        - name: synced-statsd-injector-release
+      - name: synced-statsd-injector-release
       run:
         path: bash
         args:
@@ -1457,79 +1457,79 @@ jobs:
   serial: true
   public: true
   plan:
-    - aggregate:
-        - get: loggregator-ci
-        - get: leadership-election
-          trigger: true
-    - task: run-tests
-      file: loggregator-ci/tasks/go-test-with-latest-packages/task.yml
-      input_mapping:
-        source-repo: leadership-election
-      params:
-        IMPORT_PATH: code.cloudfoundry.org/leadership-election
+  - aggregate:
+    - get: loggregator-ci
+    - get: leadership-election
+      trigger: true
+  - task: run-tests
+    file: loggregator-ci/tasks/go-test-with-latest-packages/task.yml
+    input_mapping:
+      source-repo: leadership-election
+    params:
+      IMPORT_PATH: code.cloudfoundry.org/leadership-election
 
 - name: leadership-election-bump-submodule
   serial: true
   plan:
-    - aggregate:
-        - get: loggregator-ci
-        - get: leadership-election-release
-          trigger: true
-        - get: leadership-election
-          passed: ["leadership-election-tests"]
-          trigger: true
-    - task: update-submodule
-      file: loggregator-ci/tasks/bump-submodule/task.yml
-      input_mapping:
-        release-repo: leadership-election-release
-        source-repo: leadership-election
-      output_mapping:
-        bumped-release-repo: bumped-leadership-election-release
-      params:
-        SUBMODULE_PATH: src/code.cloudfoundry.org/leadership-election
-    - task: sync-package-specs
-      file: loggregator-ci/tasks/run-release-script/task.yml
-      input_mapping:
-        release-repo: bumped-leadership-election-release
-      output_mapping:
-        updated-release-repo: synced-leadership-election-release
-      params:
-        SCRIPT: scripts/sync-package-specs
-    - task: run-tests
-      config:
-        platform: linux
-        image_resource:
-          type: docker-image
-          source:
-            repository: loggregator/base
-        inputs:
-          - name: synced-leadership-election-release
-        run:
-          path: bash
-          args:
-            - -c
-            - |
-              #!/bin/bash
+  - aggregate:
+    - get: loggregator-ci
+    - get: leadership-election-release
+      trigger: true
+    - get: leadership-election
+      passed: ["leadership-election-tests"]
+      trigger: true
+  - task: update-submodule
+    file: loggregator-ci/tasks/bump-submodule/task.yml
+    input_mapping:
+      release-repo: leadership-election-release
+      source-repo: leadership-election
+    output_mapping:
+      bumped-release-repo: bumped-leadership-election-release
+    params:
+      SUBMODULE_PATH: src/code.cloudfoundry.org/leadership-election
+  - task: sync-package-specs
+    file: loggregator-ci/tasks/run-release-script/task.yml
+    input_mapping:
+      release-repo: bumped-leadership-election-release
+    output_mapping:
+      updated-release-repo: synced-leadership-election-release
+    params:
+      SCRIPT: scripts/sync-package-specs
+  - task: run-tests
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source:
+          repository: loggregator/base
+      inputs:
+      - name: synced-leadership-election-release
+      run:
+        path: bash
+        args:
+        - -c
+        - |
+          #!/bin/bash
 
-              set -ex
+          set -ex
 
-              pushd synced-leadership-election-release
-                export GOPATH="$PWD"
-                export PATH="$GOPATH/bin:$PATH"
-                go test -race code.cloudfoundry.org/leadership-election/...
-              popd
-    - task: commit
-      file: loggregator-ci/tasks/commit/task.yml
-      input_mapping:
-        release-repo: synced-leadership-election-release
-      output_mapping:
-        committed-repo: committed-leadership-election-release
-      params:
-        COMMIT_MESSAGE: "Bump leadership-election"
-    - put: leadership-election-release
-      params:
-        repository: committed-leadership-election-release
-        rebase: true
+          pushd synced-leadership-election-release
+            export GOPATH="$PWD"
+            export PATH="$GOPATH/bin:$PATH"
+            go test -race code.cloudfoundry.org/leadership-election/...
+          popd
+  - task: commit
+    file: loggregator-ci/tasks/commit/task.yml
+    input_mapping:
+      release-repo: synced-leadership-election-release
+    output_mapping:
+      committed-repo: committed-leadership-election-release
+    params:
+      COMMIT_MESSAGE: "Bump leadership-election"
+  - put: leadership-election-release
+    params:
+      repository: committed-leadership-election-release
+      rebase: true
 
 ###############################################################################
 # NOISY NEIGHBOR NOZZLE
@@ -1623,7 +1623,7 @@ jobs:
         source:
           repository: loggregator/base
       inputs:
-        - name: synced-service-metrics-release
+      - name: synced-service-metrics-release
       run:
         path: bash
         args:
@@ -1907,17 +1907,17 @@ jobs:
     - get: cf-syslog-drain-release
       trigger: true
       passed:
-        - cf-syslog-drain-bump-submodule
+      - cf-syslog-drain-bump-submodule
     - get: statsd-injector-release
       trigger: true
     - get: leadership-election-release
       trigger: true
     - get: cf-drain-cli
       passed:
-        - cf-drain-cli-tests
+      - cf-drain-cli-tests
     - get: log-stream-cli
       passed:
-        - log-stream-cli-tests
+      - log-stream-cli-tests
   - aggregate:
     - task: upload-loggregator-release
       file: loggregator-ci/tasks/upload-release/task.yml
@@ -2087,69 +2087,69 @@ jobs:
   serial_groups:
   - bosh-cf-cats
   plan:
-    - aggregate:
-      - get: cf-deployment-concourse-tasks
-      - get: deployments-loggregator
-      - get: cf-acceptance-tests
-      - get: loggregator-release
-        trigger: true
-        passed: ["cf-deploy"]
-      - get: loggregator-agent-release
-        trigger: true
-        passed: ["cf-deploy"]
-      - get: cf-syslog-drain-release
-        passed: ["cf-deploy"]
-        trigger: true
-    - task: update-config
-      file: cf-deployment-concourse-tasks/update-integration-configs/task.yml
-      input_mapping:
-        bbl-state: deployments-loggregator
-        integration-configs: deployments-loggregator
-      params:
-        CATS_INTEGRATION_CONFIG_FILE: gcp/coconut-bbl/cats-config.json
-        BBL_STATE_DIR: gcp/coconut-bbl
-        SYSTEM_DOMAIN: coconut.cf-app.com
-    - task: run-cats
-      file: cf-deployment-concourse-tasks/run-cats/task.yml
-      input_mapping:
-        integration-config: updated-integration-configs
-        cf-acceptance-tests: cf-acceptance-tests
-      params:
-        CONFIG_FILE_PATH: gcp/coconut-bbl/cats-config.json
-        NODES: 9
+  - aggregate:
+    - get: cf-deployment-concourse-tasks
+    - get: deployments-loggregator
+    - get: cf-acceptance-tests
+    - get: loggregator-release
+      trigger: true
+      passed: ["cf-deploy"]
+    - get: loggregator-agent-release
+      trigger: true
+      passed: ["cf-deploy"]
+    - get: cf-syslog-drain-release
+      passed: ["cf-deploy"]
+      trigger: true
+  - task: update-config
+    file: cf-deployment-concourse-tasks/update-integration-configs/task.yml
+    input_mapping:
+      bbl-state: deployments-loggregator
+      integration-configs: deployments-loggregator
+    params:
+      CATS_INTEGRATION_CONFIG_FILE: gcp/coconut-bbl/cats-config.json
+      BBL_STATE_DIR: gcp/coconut-bbl
+      SYSTEM_DOMAIN: coconut.cf-app.com
+  - task: run-cats
+    file: cf-deployment-concourse-tasks/run-cats/task.yml
+    input_mapping:
+      integration-config: updated-integration-configs
+      cf-acceptance-tests: cf-acceptance-tests
+    params:
+      CONFIG_FILE_PATH: gcp/coconut-bbl/cats-config.json
+      NODES: 9
 
 - name: cfar-lats
   serial: true
   serial_groups:
   - bosh-cfar-lats
   plan:
-    - aggregate:
-      - get: cfar-logging-acceptance-tests
-        trigger: true
-      - get: loggregator-release
-        trigger: true
-        passed: ["cf-deploy"]
-      - get: loggregator-agent-release
-        trigger: true
-        passed: ["cf-deploy"]
-      - get: cf-syslog-drain-release
-        passed: ["cf-deploy"]
-        trigger: true
-      - get: cf-drain-cli
-        passed: ["cf-deploy"]
-        trigger: true
-      - get: log-stream-cli
-        passed: ["log-stream-cli-tests"]
-        trigger: true
-      - get: loggregator-ci
-      - get: cf-drain-cli-master
-    - task: run-cfar-lats
-      input_mapping:
-        cf-drain-cli: cf-drain-cli-master
-      file: loggregator-ci/tasks/cfar-lats/task.yml
-      params:
-        CF_ADMIN_USER: {{coconut-username}}
-        CF_ADMIN_PASSWORD: {{coconut-password}}
-        CF_DOMAIN: coconut.cf-app.com
-        SKIP_SSL_VALIDATION: true
-        APP_PUSH_TIMEOUT: 180s
+  - aggregate:
+    - get: cfar-logging-acceptance-tests
+      trigger: true
+    - get: loggregator-release
+      trigger: true
+      passed: ["cf-deploy"]
+    - get: loggregator-agent-release
+      trigger: true
+      passed: ["cf-deploy"]
+    - get: cf-syslog-drain-release
+      passed: ["cf-deploy"]
+      trigger: true
+    - get: cf-drain-cli
+      passed: ["cf-deploy"]
+      trigger: true
+    - get: log-stream-cli
+      passed: ["log-stream-cli-tests"]
+      trigger: true
+    - get: loggregator-ci
+    - get: cf-drain-cli-master
+  - task: run-cfar-lats
+    input_mapping:
+      cf-drain-cli: cf-drain-cli-master
+    file: loggregator-ci/tasks/cfar-lats/task.yml
+    params:
+      CF_ADMIN_USER: {{coconut-username}}
+      CF_ADMIN_PASSWORD: {{coconut-password}}
+      CF_DOMAIN: coconut.cf-app.com
+      SKIP_SSL_VALIDATION: true
+      APP_PUSH_TIMEOUT: 180s
