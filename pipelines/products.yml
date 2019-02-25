@@ -1854,6 +1854,7 @@ jobs:
           cp loggregator-agent-release/manifests/operations/cf-deployment-windows-addon.yml ops-files/
           cp loggregator-agent-release/manifests/operations/cf-syslog-agent-skip-cert-verify-windows.yml ops-files/
           cp loggregator-release/manifests/operations/cf-deployment-add-tls-to-rlp-gateway.yml ops-files/
+          cp loggregator-release/manifests/operations/cf-deployment-add-tls-to-trafficcontroller.yml ops-files/
 
           cat <<EOT >> ops-files/on-the-fly.yml
           - type: replace
@@ -1926,6 +1927,7 @@ jobs:
         cf-deployment-windows-addon.yml
         cf-syslog-agent-skip-cert-verify-windows.yml
         cf-deployment-add-tls-to-rlp-gateway.yml
+        cf-deployment-add-tls-to-trafficcontroller.yml
   - task: enable-feature-flags
     file: cf-deployment-concourse-tasks/set-feature-flags/task.yml
     attempts: 3
