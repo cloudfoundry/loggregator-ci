@@ -568,72 +568,72 @@ jobs:
       run:
         path: bash
         args:
-          - -c
-          - |
-            #!/bin/bash
-            set -ex
+        - -c
+        - |
+          #!/bin/bash
+          set -ex
 
-            # establish version/tag strings
-            new_version="$NEW_VERSION"
-            tag_name="v$new_version"
-            backport_branch="$BRANCH_NAME"
+          # establish version/tag strings
+          new_version="$NEW_VERSION"
+          tag_name="v$new_version"
+          backport_branch="$BRANCH_NAME"
 
-            # write out github release files
-            echo "Loggregator $new_version" > github-release/name
-            echo $tag_name > github-release/tag
-            echo "TBD" > github-release/body
+          # write out github release files
+          echo "Loggregator $new_version" > github-release/name
+          echo $tag_name > github-release/tag
+          echo "TBD" > github-release/body
 
-            # setup ssh for reading from github
-            eval "$(ssh-agent -s)"
-            mkdir -p ~/.ssh
-            echo -e "Host github.com\n\tStrictHostKeyChecking no\n" >> ~/.ssh/config
-            ssh-add <(echo "$SSH_KEY")
+          # setup ssh for reading from github
+          eval "$(ssh-agent -s)"
+          mkdir -p ~/.ssh
+          echo -e "Host github.com\n\tStrictHostKeyChecking no\n" >> ~/.ssh/config
+          ssh-add <(echo "$SSH_KEY")
 
-            # build final release on backport branchd
-            pushd loggregator-backport
-              export GOPATH=$PWD
-              export PATH=$PATH:$GOPATH/bin
-              git checkout "$backport_branch"
+          # build final release on backport branchd
+          pushd loggregator-backport
+            export GOPATH=$PWD
+            export PATH=$PATH:$GOPATH/bin
+            git checkout "$backport_branch"
 
-              # Ensure sync-package-specs has been run
-              ./scripts/sync-package-specs
+            # Ensure sync-package-specs has been run
+            ./scripts/sync-package-specs
 
-              # Running status here makes the following diff-index work as
-              # indended. TODO: Why?
-              git status
+            # Running status here makes the following diff-index work as
+            # indended. TODO: Why?
+            git status
 
-              # Assert there is not diff
-              if ! git diff-index --quiet HEAD --; then
-                echo "Looks like sync-package-specs wasn't run"
-                exit 1
-              fi
+            # Assert there is not diff
+            if ! git diff-index --quiet HEAD --; then
+              echo "Looks like sync-package-specs wasn't run"
+              exit 1
+            fi
 
-              # setup private.yml used by `create-release --final`
-              cat << EOF > config/private.yml
-            ---
-            blobstore:
-              provider: s3
-              options:
-                bucket_name: loggregator-release-blobs
-                access_key_id: $S3_ACCESS_KEY
-                secret_access_key: $S3_SECRET_KEY
-                credentials_source: static
-            EOF
+            # setup private.yml used by `create-release --final`
+            cat << EOF > config/private.yml
+          ---
+          blobstore:
+            provider: s3
+            options:
+              bucket_name: loggregator-release-blobs
+              access_key_id: $S3_ACCESS_KEY
+              secret_access_key: $S3_SECRET_KEY
+              credentials_source: static
+          EOF
 
-              # create final release and commit artifcats
-              bosh -n create-release --sha2 --final \
-                --tarball ../github-release/release.tgz \
-                --version $new_version
-              git add .
-              git commit -m "Create final release"
+            # create final release and commit artifcats
+            bosh -n create-release --sha2 --final \
+              --tarball ../github-release/release.tgz \
+              --version $new_version
+            git add .
+            git commit -m "Create final release"
 
-              final_release_abbrev=$(git rev-parse --abbrev-ref HEAD)
-              final_release_sha=$(git rev-parse HEAD)
-              git tag "$tag_name" $final_release_sha
-            popd
+            final_release_abbrev=$(git rev-parse --abbrev-ref HEAD)
+            final_release_sha=$(git rev-parse HEAD)
+            git tag "$tag_name" $final_release_sha
+          popd
 
-            # copy repos into output
-            cp -r loggregator-backport create-final-release
+          # copy repos into output
+          cp -r loggregator-backport create-final-release
   - put: loggregator-release-backport
     params:
       repository: create-final-release/loggregator-backport
@@ -710,72 +710,72 @@ jobs:
       run:
         path: bash
         args:
-          - -c
-          - |
-            #!/bin/bash
-            set -ex
+        - -c
+        - |
+          #!/bin/bash
+          set -ex
 
-            # establish version/tag strings
-            new_version="$NEW_VERSION"
-            tag_name="v$new_version"
-            backport_branch="$BRANCH_NAME"
+          # establish version/tag strings
+          new_version="$NEW_VERSION"
+          tag_name="v$new_version"
+          backport_branch="$BRANCH_NAME"
 
-            # write out github release files
-            echo "CF Syslog Drain Release $new_version" > github-release/name
-            echo $tag_name > github-release/tag
-            echo "TBD" > github-release/body
+          # write out github release files
+          echo "CF Syslog Drain Release $new_version" > github-release/name
+          echo $tag_name > github-release/tag
+          echo "TBD" > github-release/body
 
-            # setup git for committing
-            git config --global user.email "cf-loggregator@pivotal.io"
-            git config --global user.name "Loggregator CI"
+          # setup git for committing
+          git config --global user.email "cf-loggregator@pivotal.io"
+          git config --global user.name "Loggregator CI"
 
-            # setup ssh for reading from github
-            eval "$(ssh-agent -s)"
-            mkdir -p ~/.ssh
-            echo -e "Host github.com\n\tStrictHostKeyChecking no\n" >> ~/.ssh/config
-            ssh-add <(echo "$SSH_KEY")
+          # setup ssh for reading from github
+          eval "$(ssh-agent -s)"
+          mkdir -p ~/.ssh
+          echo -e "Host github.com\n\tStrictHostKeyChecking no\n" >> ~/.ssh/config
+          ssh-add <(echo "$SSH_KEY")
 
-            # build final release on backport branchd
-            pushd cf-syslog-drain-release-backport
-              export GOPATH=$PWD
-              export PATH=$PATH:$GOPATH/bin
-              git checkout "$backport_branch"
+          # build final release on backport branchd
+          pushd cf-syslog-drain-release-backport
+            export GOPATH=$PWD
+            export PATH=$PATH:$GOPATH/bin
+            git checkout "$backport_branch"
 
-              # Ensure sync-package-specs has been run
-              ./scripts/sync-package-specs
+            # Ensure sync-package-specs has been run
+            ./scripts/sync-package-specs
 
-              # Assert there is not diff
-              if [ ! test $(git diff-index --quiet HEAD --) ]; then
-                echo "Looks like sync-package-specs wasn't ran"
-                exit 1
-              fi
+            # Assert there is not diff
+            if [ ! test $(git diff-index --quiet HEAD --) ]; then
+              echo "Looks like sync-package-specs wasn't ran"
+              exit 1
+            fi
 
-              # setup private.yml used by `create-release --final`
-              cat << EOF > config/private.yml
-            ---
-            blobstore:
-              provider: s3
-              options:
-                bucket_name: $BLOBSTORE_BUCKET
-                access_key_id: $S3_ACCESS_KEY
-                secret_access_key: $S3_SECRET_KEY
-                credentials_source: static
-            EOF
+            # setup private.yml used by `create-release --final`
+            cat << EOF > config/private.yml
+          ---
+          blobstore:
+            provider: s3
+            options:
+              bucket_name: $BLOBSTORE_BUCKET
+              access_key_id: $S3_ACCESS_KEY
+              secret_access_key: $S3_SECRET_KEY
+              credentials_source: static
+          EOF
 
-              # create final release and commit artifcats
-              bosh -n create-release --sha2 --final \
-                --tarball ../github-release/release.tgz \
-                --version $new_version
-              git add .
-              git commit -m "Create final release"
+            # create final release and commit artifcats
+            bosh -n create-release --sha2 --final \
+              --tarball ../github-release/release.tgz \
+              --version $new_version
+            git add .
+            git commit -m "Create final release"
 
-              final_release_abbrev=$(git rev-parse --abbrev-ref HEAD)
-              final_release_sha=$(git rev-parse HEAD)
-              git tag "$tag_name" $final_release_sha
-            popd
+            final_release_abbrev=$(git rev-parse --abbrev-ref HEAD)
+            final_release_sha=$(git rev-parse HEAD)
+            git tag "$tag_name" $final_release_sha
+          popd
 
-            # copy repos into output
-            cp -r cf-syslog-drain-release-backport create-final-release
+          # copy repos into output
+          cp -r cf-syslog-drain-release-backport create-final-release
   - put: cf-syslog-drain-release-backport
     params:
       repository: create-final-release/cf-syslog-drain-release-backport
@@ -973,57 +973,57 @@ jobs:
       run:
         path: bash
         args:
-          - -c
-          - |
-            #!/bin/bash
-            set -ex
+        - -c
+        - |
+          #!/bin/bash
+          set -ex
 
-            # establish version/tag strings
-            version="{\"Major\":$VERSION_MAJOR,\"Minor\":$VERSION_MINOR,\"Build\":$VERSION_PATCH}"
-            semver="v$VERSION_MAJOR.$VERSION_MINOR.$VERSION_PATCH"
+          # establish version/tag strings
+          version="{\"Major\":$VERSION_MAJOR,\"Minor\":$VERSION_MINOR,\"Build\":$VERSION_PATCH}"
+          semver="v$VERSION_MAJOR.$VERSION_MINOR.$VERSION_PATCH"
 
-            # write out github release files
-            echo "noisy-neighbor-nozzle $semver" > github-release/name
-            echo $semver > github-release/tag
-            echo "TBD" > github-release/body
-            cp -R noisy-neighbor-nozzle-repo/. repo-output
+          # write out github release files
+          echo "noisy-neighbor-nozzle $semver" > github-release/name
+          echo $semver > github-release/tag
+          echo "TBD" > github-release/body
+          cp -R noisy-neighbor-nozzle-repo/. repo-output
 
-            export WORKSPACE=$PWD
+          export WORKSPACE=$PWD
 
-            mkdir -p go
-            pushd go
-              export GOPATH=$PWD
-              mkdir -p src/code.cloudfoundry.org
-              cp -R $WORKSPACE/noisy-neighbor-nozzle-repo/ src/code.cloudfoundry.org/
-            popd
+          mkdir -p go
+          pushd go
+            export GOPATH=$PWD
+            mkdir -p src/code.cloudfoundry.org
+            cp -R $WORKSPACE/noisy-neighbor-nozzle-repo/ src/code.cloudfoundry.org/
+          popd
 
-            mkdir $WORKSPACE/noisy-neighbor
-            pushd $GOPATH/src/code.cloudfoundry.org/noisy-neighbor-nozzle-repo/
-              go get ./...
-              for c in $(ls cmd); do
-                pushd cmd/$c
-                  binary_file=noisy-neighbor-$c
-                  GOOS=linux go build -o $WORKSPACE/noisy-neighbor/$c
-                popd
-              done
-            popd
+          mkdir $WORKSPACE/noisy-neighbor
+          pushd $GOPATH/src/code.cloudfoundry.org/noisy-neighbor-nozzle-repo/
+            go get ./...
+            for c in $(ls cmd); do
+              pushd cmd/$c
+                binary_file=noisy-neighbor-$c
+                GOOS=linux go build -o $WORKSPACE/noisy-neighbor/$c
+              popd
+            done
+          popd
 
-            mv noisy-neighbor/deployer noisy-neighbor/deployer-linux
-            cp noisy-neighbor-nozzle-repo/cmd/deployer/manifest/manifest_template.yml noisy-neighbor/.
-            rm noisy-neighbor/cli-plugin
+          mv noisy-neighbor/deployer noisy-neighbor/deployer-linux
+          cp noisy-neighbor-nozzle-repo/cmd/deployer/manifest/manifest_template.yml noisy-neighbor/.
+          rm noisy-neighbor/cli-plugin
 
-            pushd $GOPATH/src/code.cloudfoundry.org/noisy-neighbor-nozzle-repo/cmd/deployer
-              GOOS=darwin go build -o $WORKSPACE/noisy-neighbor/deployer-darwin
-              GOOS=windows go build -o $WORKSPACE/noisy-neighbor/deployer-windows
-            popd
+          pushd $GOPATH/src/code.cloudfoundry.org/noisy-neighbor-nozzle-repo/cmd/deployer
+            GOOS=darwin go build -o $WORKSPACE/noisy-neighbor/deployer-darwin
+            GOOS=windows go build -o $WORKSPACE/noisy-neighbor/deployer-windows
+          popd
 
-            tar czvf binary-output/noisy-neighbor.tgz noisy-neighbor
+          tar czvf binary-output/noisy-neighbor.tgz noisy-neighbor
 
-            pushd $GOPATH/src/code.cloudfoundry.org/noisy-neighbor-nozzle-repo/cmd/cli-plugin
-              GOOS=linux go build -ldflags "-X main.version=$version" -o $WORKSPACE/binary-output/noisy-neighbor-cli-plugin-linux
-              GOOS=darwin go build -ldflags "-X main.version=$version" -o $WORKSPACE/binary-output/noisy-neighbor-cli-plugin-darwin
-              GOOS=windows go build -ldflags "-X main.version=$version" -o $WORKSPACE/binary-output/noisy-neighbor-cli-plugin-windows
-            popd
+          pushd $GOPATH/src/code.cloudfoundry.org/noisy-neighbor-nozzle-repo/cmd/cli-plugin
+            GOOS=linux go build -ldflags "-X main.version=$version" -o $WORKSPACE/binary-output/noisy-neighbor-cli-plugin-linux
+            GOOS=darwin go build -ldflags "-X main.version=$version" -o $WORKSPACE/binary-output/noisy-neighbor-cli-plugin-darwin
+            GOOS=windows go build -ldflags "-X main.version=$version" -o $WORKSPACE/binary-output/noisy-neighbor-cli-plugin-windows
+          popd
   - put: noisy-neighbor-nozzle-repo
     params:
       repository: repo-output
