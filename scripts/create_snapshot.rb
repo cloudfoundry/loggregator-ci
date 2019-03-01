@@ -24,6 +24,17 @@ def set_version(gets, hash)
   end
 end
 
+def strip_puts(hash)
+  if hash.kind_of?(Hash)
+    hash.each do |_, v| strip_puts(v) end
+  elsif hash.kind_of?(Array)
+    hash.reject! do |it|
+      it.kind_of?(Hash) ? it.has_key?('put') : false
+    end
+    hash.each do |h| strip_puts(h) end
+  end
+end
+
 if ARGV.length < 2
   puts 'Usage: ./scripts/create_snapshot.rb <pipeline_name> <snapshot_suffix>'
   exit 1
@@ -38,6 +49,7 @@ filename = "pipelines/#{pipeline_name}.yml"
 pipeline_str = sanitize(File.read(filename))
 
 pipeline = YAML.load(pipeline_str)
+strip_puts(pipeline)
 pipeline['jobs'].each do |job|
   job_name = job['name']
   gets = JSON.load(`./scripts/get_gets.sh #{pipeline_name} #{job_name}`)
