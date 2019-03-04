@@ -5,7 +5,7 @@ require 'json'
 require 'fileutils'
 
 def sanitize(input)
-  input.gsub(/{{(.*)}}/, '"{{\1}}"')
+  input.gsub(/{{(.*)}}/, '"((\1))"')
 end
 
 def set_version(gets, hash)
