@@ -36,14 +36,15 @@ def strip_puts(hash)
 end
 
 if ARGV.length < 2
-  puts 'Usage: ./scripts/create_snapshot.rb <pipeline_name> <snapshot_suffix>'
+  puts 'Usage: ./scripts/create_snapshot.rb <pipeline name> <snapshot unique identifier>'
   exit 1
 end
 
 pipeline_name = ARGV[0]
-pipeline_suffix = ARGV[1]
-snapshot_name = "#{pipeline_name}-#{pipeline_suffix}"
-FileUtils.mkdir_p "snapshots/#{snapshot_name}/resources"
+snapshot_id = ARGV[1]
+
+snapshot_dir = "snapshots/#{pipeline_name}/#{snapshot_id}"
+FileUtils.mkdir_p "#{snapshot_dir}/resources"
 
 filename = "pipelines/#{pipeline_name}.yml"
 pipeline_str = sanitize(File.read(filename))
@@ -56,9 +57,9 @@ pipeline['jobs'].each do |job|
 
   versions = gets.map {|k, v| [k, v['version']] }.to_h
 
-  File.open("snapshots/#{snapshot_name}/resources/#{job_name}.json", 'w') {|f| f.write versions.to_json }
+  File.open("#{snapshot_dir}/resources/#{job_name}.json", 'w') {|f| f.write versions.to_json }
 
   set_version(gets, job['plan'])
 end
 
-File.open("snapshots/#{snapshot_name}/pipeline.yml", 'w') {|f| f.write pipeline.to_yaml }
+File.open("#{snapshot_dir}/pipeline.yml", 'w') {|f| f.write pipeline.to_yaml }
