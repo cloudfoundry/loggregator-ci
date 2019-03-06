@@ -19,7 +19,7 @@ get_plan() {
 
 get_gets() {
     local plan=$1
-    echo $(jq '.. | .get? // empty | select(.type=="git") | select(.version !=null)' $plan)
+    echo $(jq '.. | .get? // empty | select(.version !=null)' $plan)
 }
 
 token=$(get_auth_token)

@@ -8,30 +8,39 @@ def sanitize(input)
   input.gsub(/{{(.*)}}/, '"((\1))"')
 end
 
-def set_version(gets, hash)
+def set_version(resources, hash)
   if hash.kind_of?(Hash)
     if hash.has_key?('get')
-      if gets.has_key?(hash['get'])
-        hash['version'] = gets[hash['get']]['version']
+      if resources.has_key?(hash['get'])
+        hash['version'] = resources[hash['get']]['version']
       end
     else
       hash.keys.each do |key|
-        set_version(gets, hash[key])
+        set_version(resources, hash[key])
       end
     end
   elsif hash.kind_of?(Array)
-    hash.each do |i| set_version(gets,i) end
+    hash.each do |i| set_version(resources,i) end
   end
 end
 
-def strip_puts(hash)
+def strip_key(hash, key)
   if hash.kind_of?(Hash)
-    hash.each do |_, v| strip_puts(v) end
+    hash.delete(key)
+    hash.each do |_, v| strip_key(v, key) end
+  elsif hash.kind_of?(Array)
+    hash.each do |h| strip_key(h, key) end
+  end
+end
+
+def strip_item_by_key(hash, key)
+  if hash.kind_of?(Hash)
+    hash.each do |_, v| strip_item_by_key(v, key) end
   elsif hash.kind_of?(Array)
     hash.reject! do |it|
-      it.kind_of?(Hash) ? it.has_key?('put') : false
+      it.kind_of?(Hash) ? it.has_key?(key) : false
     end
-    hash.each do |h| strip_puts(h) end
+    hash.each do |h| strip_item_by_key(h, key) end
   end
 end
 
@@ -50,16 +59,36 @@ filename = "pipelines/#{pipeline_name}.yml"
 pipeline_str = sanitize(File.read(filename))
 
 pipeline = YAML.load(pipeline_str)
-strip_puts(pipeline)
+strip_item_by_key(pipeline, 'put')
+
+included_jobs = %w(cf-deploy cfar-lats cats)
+pipeline['jobs'].select!{ |job| included_jobs.include?(job['name']) }
+
+resource_names = Array.new
 pipeline['jobs'].each do |job|
   job_name = job['name']
-  gets = JSON.load(`./scripts/get_gets.sh #{pipeline_name} #{job_name}`)
 
-  versions = gets.map {|k, v| [k, v['version']] }.to_h
+  resources = JSON.load(`./scripts/get_gets.sh #{pipeline_name} #{job_name}`)
+  resource_names << resources.keys
+
+  git_resources = resources.select{|k, v| v['type'] == 'git'}
+  versions = git_resources.map {|k, v| [k, v['version']] }.to_h
 
   File.open("#{snapshot_dir}/resources/#{job_name}.json", 'w') {|f| f.write versions.to_json }
 
-  set_version(gets, job['plan'])
+  set_version(git_resources, job['plan'])
 end
+
+cf_deploy = pipeline['jobs'].detect {|job| job['name'] == 'cf-deploy' }
+strip_key(cf_deploy, 'passed')
+strip_key(cf_deploy, 'trigger')
+
+cfar_lats = pipeline['jobs'].detect {|job| job['name'] == 'cfar-lats'}
+
+log_stream_cli = cfar_lats['plan'][0]['aggregate'].detect {|resource| resource['get'] == 'log-stream-cli'}
+log_stream_cli.delete('passed')
+
+pipeline['resources'].select! { |r| resource_names.flatten.include?(r['name']) }
+pipeline.delete('groups')
 
 File.open("#{snapshot_dir}/pipeline.yml", 'w') {|f| f.write pipeline.to_yaml }

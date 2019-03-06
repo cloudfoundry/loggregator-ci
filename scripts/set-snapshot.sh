@@ -6,11 +6,13 @@ snapshot_dir=snapshots/$pipeline/$snapshot_id
 resource_files=$snapshot_dir/resources/*.json
 
 snapshot_pipeline_name="$pipeline-$snapshot_id"
-
 function check_resources {
-    cat ${resource_files} \
-        | jq 'to_entries | .[] | [ .key, .value.ref|tostring ] | join(" -f ref:")' \
-        | xargs -n 1 -I {} sh -c "fly -t loggregator check-resource --resource $snapshot_pipeline_name/{}"
+    IFS=$'\n'
+    for resource in $(cat ${resource_files} | jq -r 'to_entries | .[] | [ .key, .value.ref|tostring ] | join(" -f ref:")'); do
+        local fly_cmd="fly -t loggregator check-resource --resource $snapshot_pipeline_name/$resource"
+        echo $fly_cmd
+        sh -c $fly_cmd
+    done
 }
 
 function set_globals {
@@ -45,6 +47,7 @@ function main {
     validate
     sync_fly
     set_pipeline
+    fly -t loggregator unpause-pipeline -p $snapshot_pipeline_name
     check_resources
 }
 main
