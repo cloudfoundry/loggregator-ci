@@ -4,8 +4,6 @@ groups:
   - cf-deploy
   - cfar-lats
   - cats
-  - statsd-injector-tests
-  - statsd-injector-bump-submodule
   - noisy-neighbor-nozzle-tests
   - noisy-neighbor-nozzle-deploy
   - service-metrics-tests
@@ -14,6 +12,11 @@ groups:
   - service-metrics-system-tests
   - service-metrics-promotion
   - service-metrics-master-promotion
+
+  - statsd-injector-tests
+  - statsd-injector-bump-submodule
+  - statsd-injector-promotion
+  - statsd-injector-master-promotion
 
   - loggregator-agent-master-promotion
   - loggregator-agent-tests
@@ -80,10 +83,14 @@ groups:
   jobs:
   - coconut-bbl-up
   - coconut-bbl-destroy
+
 - name: statsd-injector
   jobs:
   - statsd-injector-tests
   - statsd-injector-bump-submodule
+  - statsd-injector-promotion
+  - statsd-injector-master-promotion
+
 - name: noisy-neighbor-nozzle
   jobs:
   - noisy-neighbor-nozzle-tests
@@ -379,6 +386,24 @@ resources:
     ignore_paths:
     - .final_builds
     - releases
+
+- name: statsd-injector-release-release-elect
+  type: git
+  source:
+    uri: git@github.com:cloudfoundry/statsd-injector-release.git
+    branch: release-elect
+    private_key: {{cf-loggregator-oauth-bot-key}}
+    ignore_paths:
+    - .final_builds
+    - releases
+
+- name: statsd-injector-release-master
+  type: git
+  source:
+    uri: git@github.com:cloudfoundry/statsd-injector-release.git
+    branch: master
+    private_key: ((cf-loggregator-oauth-bot-key))
+    disable_ci_skip: true
 
 - name: leadership-election
   type: git
@@ -1338,6 +1363,44 @@ jobs:
     params:
       repository: committed-statsd-injector-release
       rebase: true
+
+- name: statsd-injector-promotion
+  serial: true
+  plan:
+  - aggregate:
+    - get: develop
+      resource: statsd-injector-release
+      trigger: true
+      passed: ["statsd-injector-bump-submodule"]
+    - get: statsd-injector-release-release-elect
+  - put: statsd-injector-release-release-elect
+    params:
+      repository: develop
+
+- name: statsd-injector-master-promotion
+  serial: true
+  plan:
+  - aggregate:
+    - get: 5m
+      trigger: true
+    - get: statsd-injector-release-release-elect
+      passed: ["statsd-injector-promotion"]
+      trigger: true
+    - get: statsd-injector-release-master
+    - get: bumper-tool
+    - get: loggregator-ci
+  - task: bumper
+    file: loggregator-ci/tasks/bumper/task.yml
+    input_mapping:
+      source: statsd-injector-release-release-elect
+      dest: statsd-injector-release-master
+    params:
+      SOURCE_BRANCH: release-elect
+      DEST_BRANCH: master
+      FOLLOW_BUMPS_OF: src/code.cloudfoundry.org/statsd-injector
+  - put: statsd-injector-release-master
+    params:
+      repository: merged-dest
 
 ###############################################################################
 # LEADERSHIP ELECTION
