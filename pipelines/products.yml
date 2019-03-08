@@ -39,6 +39,8 @@ groups:
 
   - leadership-election-tests
   - leadership-election-bump-submodule
+  - leadership-election-promotion
+  - leadership-election-master-promotion
 
 - name: cf-syslog-drain
   jobs:
@@ -99,6 +101,8 @@ groups:
   jobs:
   - leadership-election-tests
   - leadership-election-bump-submodule
+  - leadership-election-promotion
+  - leadership-election-master-promotion
 
 - name: datadog-nozzle
   jobs:
@@ -391,6 +395,24 @@ resources:
     ignore_paths:
     - .final_builds
     - releases
+
+- name: leadership-election-release-release-elect
+  type: git
+  source:
+    uri: git@github.com:cloudfoundry/leadership-election-release.git
+    branch: release-elect
+    private_key: {{cf-loggregator-oauth-bot-key}}
+    ignore_paths:
+    - .final_builds
+    - releases
+
+- name: leadership-election-release-master
+  type: git
+  source:
+    uri: git@github.com:cloudfoundry/leadership-election-release.git
+    branch: master
+    private_key: ((cf-loggregator-oauth-bot-key))
+    disable_ci_skip: true
 
 jobs:
 ###############################################################################
@@ -1397,6 +1419,44 @@ jobs:
     params:
       repository: committed-leadership-election-release
       rebase: true
+
+- name: leadership-election-promotion
+  serial: true
+  plan:
+  - aggregate:
+    - get: develop
+      resource: leadership-election-release
+      trigger: true
+      passed: ["leadership-election-bump-submodule"]
+    - get: leadership-election-release-release-elect
+  - put: leadership-election-release-release-elect
+    params:
+      repository: develop
+
+- name: leadership-election-master-promotion
+  serial: true
+  plan:
+  - aggregate:
+    - get: 5m
+      trigger: true
+    - get: leadership-election-release-release-elect
+      passed: ["leadership-election-promotion"]
+      trigger: true
+    - get: leadership-election-release-master
+    - get: bumper-tool
+    - get: loggregator-ci
+  - task: bumper
+    file: loggregator-ci/tasks/bumper/task.yml
+    input_mapping:
+      source: leadership-election-release-release-elect
+      dest: leadership-election-release-master
+    params:
+      SOURCE_BRANCH: release-elect
+      DEST_BRANCH: master
+      FOLLOW_BUMPS_OF: src/code.cloudfoundry.org/leadership-election
+  - put: leadership-election-release-master
+    params:
+      repository: merged-dest
 
 ###############################################################################
 # NOISY NEIGHBOR NOZZLE
