@@ -5,6 +5,7 @@ RUN go version
 RUN apt-get update; apt-get install --yes \
     bundler \
     jq \
+    yq \
     rsync \
     unzip \
     psmisc \
