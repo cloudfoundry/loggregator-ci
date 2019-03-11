@@ -5,7 +5,6 @@ RUN go version
 RUN apt-get update; apt-get install --yes \
     bundler \
     jq \
-    yq \
     rsync \
     unzip \
     psmisc \
@@ -44,3 +43,5 @@ RUN cd /tmp \
   && wget https://github.com/cloudfoundry-incubator/credhub-cli/releases/download/1.7.5/credhub-linux-1.7.5.tgz \
   && tar xzvf credhub*.tgz ./credhub \
   && cp ./credhub /usr/local/bin/
+
+RUN go get gopkg.in/mikefarah/yq.v2
