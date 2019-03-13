@@ -1352,13 +1352,15 @@ jobs:
             go test -race github.com/cloudfoundry/statsd-injector/...
           popd
   - task: commit
-    file: loggregator-ci/tasks/commit/task.yml
+    file: loggregator-ci/tasks/commit-with-shortlog/task.yml
     input_mapping:
       release-repo: synced-statsd-injector-release
     output_mapping:
       committed-repo: committed-statsd-injector-release
     params:
-      COMMIT_MESSAGE: "Bump statsd-injector"
+      PATHS: |
+        src/github.com/cloudfoundry/statsd-injector
+        packages
   - put: statsd-injector-release
     params:
       repository: committed-statsd-injector-release
