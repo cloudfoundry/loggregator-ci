@@ -1634,14 +1634,15 @@ jobs:
             go test -race code.cloudfoundry.org/service-metrics/...
           popd
   - task: commit
-    file: loggregator-ci/tasks/commit/task.yml
+    file: loggregator-ci/tasks/commit-with-shortlog/task.yml
     input_mapping:
       release-repo: synced-service-metrics-release
-
     output_mapping:
       committed-repo: committed-service-metrics-release
     params:
-      COMMIT_MESSAGE: "Bump service metrics"
+      PATHS: |
+        src/code.cloudfoundry.org/leadership-election
+        packages
   - put: service-metrics-release
     params:
       repository: committed-service-metrics-release
