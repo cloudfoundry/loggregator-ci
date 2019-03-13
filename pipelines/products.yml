@@ -331,7 +331,7 @@ resources:
   type: git
   source:
     uri: https://github.com/pivotal-cf/on-demand-service-broker-release
-    branch: v0.20.0
+    tag_filter: v0.*
 
 - name: scalable-syslog
   type: git
@@ -1660,6 +1660,7 @@ jobs:
     - get: deployments-loggregator
     - get: loggregator-ci
     - get: on-demand-service-broker-release
+      trigger: true
       params:
         submodules:
         - src/github.com/pivotal-cf/on-demand-services-sdk
