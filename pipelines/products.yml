@@ -1473,13 +1473,16 @@ jobs:
             go test -race code.cloudfoundry.org/leadership-election/...
           popd
   - task: commit
-    file: loggregator-ci/tasks/commit/task.yml
+    file: loggregator-ci/tasks/commit-with-shortlog/task.yml
     input_mapping:
       release-repo: synced-leadership-election-release
     output_mapping:
       committed-repo: committed-leadership-election-release
     params:
-      COMMIT_MESSAGE: "Bump leadership-election"
+      PATHS: |
+        src/code.cloudfoundry.org/leadership-election
+        packages
+
   - put: leadership-election-release
     params:
       repository: committed-leadership-election-release
