@@ -25,7 +25,6 @@ groups:
   - loggregator-master-promotion
   - loggregator-agent-promotion
   - deploy-datadog-nozzle
-  - deploy-syslog-telemetry
   - loggregator-tests
   - loggregator-promotion
 
@@ -71,7 +70,6 @@ groups:
   - loggregator-bump-submodule
   - loggregator-master-promotion
   - loggregator-agent-promotion
-  - deploy-syslog-telemetry
   - cfar-lats
   - cats
   - loggregator-tests
@@ -241,12 +239,6 @@ resources:
     uri: git@github.com:cloudfoundry/log-stream-cli
     branch: master
     private_key: ((cf-loggregator-oauth-bot-key))
-
-- name: logging-deployment
-  type: git
-  source:
-    branch: master
-    uri: https://github.com/loggregator/logging-deployment.git
 
 - name: loggregator-agent
   type: git
@@ -941,51 +933,6 @@ jobs:
       ops-files: deployments-loggregator
       vars-files: deployments-loggregator
       vars-store: deployments-loggregator
-
-- name: deploy-syslog-telemetry
-  serial: true
-  serial_groups:
-  - cf-deploy
-  plan:
-  - aggregate:
-    - get: logging-deployment
-    - get: cf-drain-cli
-    - get: bbl-state
-      resource: deployments-loggregator
-    - get: loggregator-ci
-      passed: ["cf-deploy"]
-      trigger: true
-  - task: create-smoke-test-space
-    file: loggregator-ci/tasks/create-org-and-space/task.yml
-    params:
-      BBL_STATE_DIR: gcp/coconut-bbl
-      ORG: system
-      SPACE: smoke-tests
-      SYSTEM_DOMAIN: coconut.cf-app.com
-  - aggregate:
-    - task: add-syslog-v2-telemetry
-      file: logging-deployment/ci/tasks/push-logging-telemetry/task.yml
-      params:
-        ORG: system
-        SPACE: smoke-tests
-        SYSTEM_DOMAIN: coconut.cf-app.com
-        USERNAME: {{coconut-username}}
-        PASSWORD: {{coconut-password}}
-        SKIP_SSL_VALIDATION: true
-        APP_PREFIX: syslog-v2-telemetry
-        DATADOG_API_KEY: {{datadog-loggregator-api-key}}
-    - task: add-syslog-v3-telemetry
-      file: logging-deployment/ci/tasks/push-logging-telemetry/task.yml
-      params:
-        ORG: system
-        SPACE: smoke-tests
-        SYSTEM_DOMAIN: coconut.cf-app.com
-        USERNAME: {{coconut-username}}
-        PASSWORD: {{coconut-password}}
-        SKIP_SSL_VALIDATION: true
-        APP_PREFIX: syslog-v3-telemetry
-        DATADOG_API_KEY: {{datadog-loggregator-api-key}}
-        SCHEME_SUFFIX: "-v3"
 
 ###############################################################################
 # CF SYSLOG DRAIN
@@ -1765,7 +1712,6 @@ jobs:
     - get: cf-deployment
       trigger: true
     - get: cf-deployment-concourse-tasks
-    - get: logging-deployment
     - get: loggregator-release
       passed: ["loggregator-bump-submodule"]
       trigger: true
