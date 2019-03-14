@@ -1,0 +1,69 @@
+---
+platform: linux
+
+image_resource:
+  type: docker-image
+  source:
+    repository: relintdockerhubpushbot/cf-deployment-concourse-tasks
+    tag: v5.9
+
+inputs:
+- name: logging-deployment  # - This repo
+- name: cf-drain-cli        # - The repo that contains the cf drains plugin
+
+run:
+  path: logging-deployment/ci/tasks/push-logging-telemetry/task
+
+params:
+  # - Required
+  # - Will produce a producer and consumer, each with prefix in front of the
+  # name
+  APP_PREFIX:
+
+  # - Required
+  # - API key for DataDog
+  DATADOG_API_KEY:
+
+  # - Optional
+  # - How often will app initiate test.
+  TEST_FREQUENCY: 10s
+
+  # - Optional
+  # - How long each test will run
+  TEST_DURATION: 1s
+
+  # - Optional
+  # - How many cycles per test
+  TEST_CYCLES: 1000
+
+  # - Required
+  # - The CF username.
+  USERNAME:
+
+  # - Required
+  # - The CF password.
+  PASSWORD:
+
+  # - Required
+  # - The CF system domain
+  SYSTEM_DOMAIN:
+
+  # - Required
+  # - The CF org
+  ORG:
+
+  # - Required
+  # - The CF SPACE
+  SPACE:
+
+  # - Optional
+  # - Skip SSL validation when logging into CF.
+  SKIP_SSL_VALIDATION: false
+
+  # - Optional
+  # - Suffix for scheme on drain URL.
+  SCHEME_SUFFIX: ""
+
+  # - Optional
+  # - The number of app drains to create.
+  DRAIN_COUNT:
