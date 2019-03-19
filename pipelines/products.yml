@@ -659,7 +659,7 @@ jobs:
 
               pushd src/code.cloudfoundry.org/loggregator-agent/cmd
                 go get -t -d ./...
-                for pkg in $(go list ./... | grep -vE metric-scraper\|prom-scraper\|syslog-binding-cache\|udp-forwarder); do
+                for pkg in $(go list ./... | grep -vE metric-scraper\|syslog-binding-cache\|udp-forwarder); do
                   go test -c -o $ci_root/test-binaries/$(munge $pkg)_test.exe $pkg &
                 done
               popd
