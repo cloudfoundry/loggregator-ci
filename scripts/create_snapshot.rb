@@ -86,10 +86,16 @@ cf_deploy = pipeline['jobs'].detect {|job| job['name'] == 'cf-deploy' }
 strip_key(cf_deploy, 'passed')
 strip_key(cf_deploy, 'trigger')
 
+cats = pipeline['jobs'].detect {|job| job['name'] == 'cats'}
+deployments_loggregator = cats['plan'][0]['aggregate'].detect {|resource| resource['get'] == 'deployments-loggregator'}
+deployments_loggregator['passed'] = ['cf-deploy']
+
 cfar_lats = pipeline['jobs'].detect {|job| job['name'] == 'cfar-lats'}
 
 log_stream_cli = cfar_lats['plan'][0]['aggregate'].detect {|resource| resource['get'] == 'log-stream-cli'}
 log_stream_cli.delete('passed')
+cfar_lats['plan'][0]['aggregate'].push({'get' => 'deployments-loggregator', 'passed' => ['cf-deploy']})
+
 
 pipeline['resources'].select! { |r| resource_names.flatten.include?(r['name']) }
 pipeline.delete('groups')
