@@ -64,6 +64,9 @@ strip_item_by_key(pipeline, 'put')
 included_jobs = %w(cf-deploy cfar-lats cats)
 pipeline['jobs'].select!{ |job| included_jobs.include?(job['name']) }
 
+excluded_resources = [
+    'deployments-loggregator'
+]
 resource_names = Array.new
 pipeline['jobs'].each do |job|
   job_name = job['name']
@@ -71,7 +74,7 @@ pipeline['jobs'].each do |job|
   resources = JSON.load(`./scripts/get_gets.sh #{pipeline_name} #{job_name}`)
   resource_names << resources.keys
 
-  git_resources = resources.select{|k, v| v['type'] == 'git'}
+  git_resources = resources.select{|k, v| v['type'] == 'git' && !excluded_resources.include?(v['resource']) }
   versions = git_resources.map {|k, v| [k, v['version']] }.to_h
 
   File.open("#{snapshot_dir}/resources/#{job_name}.json", 'w') {|f| f.write versions.to_json }
