@@ -44,6 +44,10 @@ def strip_item_by_key(hash, key)
   end
 end
 
+def replace_strings(replacements, pipeline)
+  replacements.reduce(pipeline.to_yaml) {|str, (from, to)| str.gsub(from, to)}
+end
+
 if ARGV.length < 2
   puts 'Usage: ./scripts/create_snapshot.rb <pipeline name> <snapshot unique identifier>'
   exit 1
@@ -96,8 +100,13 @@ log_stream_cli = cfar_lats['plan'][0]['aggregate'].detect {|resource| resource['
 log_stream_cli.delete('passed')
 cfar_lats['plan'][0]['aggregate'].push({'get' => 'deployments-loggregator', 'passed' => ['cf-deploy']})
 
-
 pipeline['resources'].select! { |r| resource_names.flatten.include?(r['name']) }
 pipeline.delete('groups')
 
-File.open("#{snapshot_dir}/pipeline.yml", 'w') {|f| f.write pipeline.to_yaml }
+new_subdomain = 'snapshot.loggr.'
+new_env_dir = 'gcp/ci-pool/snapshot'
+replacements = {
+'coconut.' => new_subdomain,
+'gcp/coconut-bbl' => new_env_dir,
+}
+File.open("#{snapshot_dir}/pipeline.yml", 'w') {|f| f.write replace_strings(replacements, pipeline) }
