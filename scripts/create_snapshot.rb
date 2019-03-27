@@ -104,23 +104,82 @@ cfar_lats['plan'][0]['aggregate'].push({'get' => 'deployments-loggregator', 'pas
 pipeline['resources'].select! {|r| resource_names.flatten.include?(r['name'])}
 pipeline.delete('groups')
 
+new_env_name = "#{pipeline_name}-#{snapshot_id}"
+create_snapshot_lock = YAML.load <<END_YAML
+name: create-snapshot-lock
+plan:
+- task: create-lock-files
+  config:
+    platform: linux
+    image_resource:
+      type: docker-image
+      source:
+        repository: relintdockerhubpushbot/cf-deployment-concourse-tasks
+        tag: v3.19.0
+    outputs:
+      - name: lock-files
+    run:
+      path: /bin/bash
+      args:
+        - "-c"
+        - |
+          set -e
+
+          echo '#{new_env_name}' > lock-files/name
+          echo 'gcp/ci-pool/#{new_env_name}' > lock-files/metadata
+- put: create-pool
+  params: {add: lock-files}
+END_YAML
+destroy_snapshot_lock = YAML.load <<END_YAML
+name: destroy-snapshot-lock
+plan:
+- get: deployments-loggregator
+  trigger: true
+  passed:
+  - cats
+  - cfar-lats
+
+- task: create-lock-files
+  config:
+    platform: linux
+    image_resource:
+      type: docker-image
+      source:
+        repository: relintdockerhubpushbot/cf-deployment-concourse-tasks
+        tag: v3.19.0
+    outputs:
+      - name: lock-files
+    run:
+      path: /bin/bash
+      args:
+        - "-c"
+        - |
+          set -e
+
+          echo '#{new_env_name}' > lock-files/name
+          echo 'gcp/ci-pool/#{new_env_name}' > lock-files/metadata
+- put: destroy-pool
+  params: {add: lock-files}
+END_YAML
 pool_envs = YAML.load_file('pipelines/pool-envs.yml')
 # push file to lock
 bbl_create = pool_envs['jobs'].detect {|job| job['name'] == 'bbl-create'}
-# push file to lock
 bbl_destroy = pool_envs['jobs'].detect {|job| job['name'] == 'bbl-destroy'}
-pipeline['jobs'].unshift(bbl_create)
-pipeline['jobs'].push(bbl_destroy)
+pipeline['jobs'].unshift(create_snapshot_lock, bbl_create)
+pipeline['jobs'].push(destroy_snapshot_lock, bbl_destroy)
 # Merge pool envs resources, taking base pipeline resources over pool envs
 pipeline['resources'] = (pipeline['resources'] + pool_envs['resources']).uniq {|r| r['name']}
 
-bbl_destroy = pipeline['jobs'].detect {|job| job['name'] == 'bbl-destroy'}
-depl = bbl_destroy['plan'][1]['aggregate'].detect {|a| a['get'] == 'deployments-loggregator'}
-depl.merge!({'passed' => ["cats", "cfar-lats"], 'trigger' => true})
+bbl_create = pipeline['jobs'].detect {|job| job['name'] == 'bbl-create'}
+bbl_create['plan'][0]['params'] = {'claim' => new_env_name}
+bbl_create['plan'].unshift({'get' => 'create-pool', 'passed' => ['create-snapshot-lock'], 'trigger' => true})
 
-new_env_name = 'snapshot'
-new_subdomain = 'snapshot.loggr.'
-new_env_dir = 'gcp/ci-pool/snapshot'
+bbl_destroy = pipeline['jobs'].detect {|job| job['name'] == 'bbl-destroy'}
+bbl_destroy['plan'][0]['params'] = {'claim' => new_env_name}
+bbl_destroy['plan'].unshift({'get' => 'destroy-pool', 'passed' => ['destroy-snapshot-lock'], 'trigger' => true})
+
+new_subdomain = "#{new_env_name}.loggr."
+new_env_dir = "gcp/ci-pool/#{new_env_name}"
 replacements = {
 'coconut.' => new_subdomain,
 'BBL_STATE_DIR: gcp/coconut-bbl' => "BBL_STATE_DIR: #{new_env_dir}",
