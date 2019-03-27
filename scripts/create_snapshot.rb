@@ -162,7 +162,6 @@ plan:
   params: {add: lock-files}
 END_YAML
 pool_envs = YAML.load_file('pipelines/pool-envs.yml')
-# push file to lock
 bbl_create = pool_envs['jobs'].detect {|job| job['name'] == 'bbl-create'}
 bbl_destroy = pool_envs['jobs'].detect {|job| job['name'] == 'bbl-destroy'}
 pipeline['jobs'].unshift(create_snapshot_lock, bbl_create)
