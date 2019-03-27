@@ -103,10 +103,14 @@ cfar_lats['plan'][0]['aggregate'].push({'get' => 'deployments-loggregator', 'pas
 pipeline['resources'].select! { |r| resource_names.flatten.include?(r['name']) }
 pipeline.delete('groups')
 
+new_env_name = 'snapshot'
 new_subdomain = 'snapshot.loggr.'
 new_env_dir = 'gcp/ci-pool/snapshot'
 replacements = {
 'coconut.' => new_subdomain,
-'gcp/coconut-bbl' => new_env_dir,
+'BBL_STATE_DIR: gcp/coconut-bbl' => "BBL_STATE_DIR: #{new_env_dir}",
+'BBL_ENV_NAME: coconut-bbl' => "BBL_ENV_NAME: #{new_env_name}",
+'pushd deployments-loggregator/gcp/coconut-bbl' => "pushd deployments-loggregator/#{new_env_dir}",
+'bosh-coconut-bbl' => "bosh-#{new_env_name}",
 }
 File.open("#{snapshot_dir}/pipeline.yml", 'w') {|f| f.write replace_strings(replacements, pipeline) }
