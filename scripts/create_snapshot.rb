@@ -66,7 +66,7 @@ pipeline = YAML.load(pipeline_str)
 strip_item_by_key(pipeline, 'put')
 
 included_jobs = %w(cf-deploy cfar-lats cats)
-pipeline['jobs'].select!{ |job| included_jobs.include?(job['name']) }
+pipeline['jobs'].select!{|job| included_jobs.include?(job['name'])}
 
 excluded_resources = [
     'deployments-loggregator'
@@ -89,19 +89,34 @@ end
 cf_deploy = pipeline['jobs'].detect {|job| job['name'] == 'cf-deploy' }
 strip_key(cf_deploy, 'passed')
 strip_key(cf_deploy, 'trigger')
+depls = cf_deploy['plan'][0]['aggregate'].select {|a| a['resource'] == 'deployments-loggregator'}
+depls.map! {|d| d.merge!({'passed' => ["bbl-create"], 'trigger' => true})}
 
 cats = pipeline['jobs'].detect {|job| job['name'] == 'cats'}
 deployments_loggregator = cats['plan'][0]['aggregate'].detect {|resource| resource['get'] == 'deployments-loggregator'}
-deployments_loggregator['passed'] = ['cf-deploy']
+deployments_loggregator.merge!({'passed' => ['cf-deploy'], 'trigger' => true})
 
 cfar_lats = pipeline['jobs'].detect {|job| job['name'] == 'cfar-lats'}
-
 log_stream_cli = cfar_lats['plan'][0]['aggregate'].detect {|resource| resource['get'] == 'log-stream-cli'}
 log_stream_cli.delete('passed')
-cfar_lats['plan'][0]['aggregate'].push({'get' => 'deployments-loggregator', 'passed' => ['cf-deploy']})
+cfar_lats['plan'][0]['aggregate'].push({'get' => 'deployments-loggregator', 'passed' => ['cf-deploy'], 'trigger' => true})
 
-pipeline['resources'].select! { |r| resource_names.flatten.include?(r['name']) }
+pipeline['resources'].select! {|r| resource_names.flatten.include?(r['name'])}
 pipeline.delete('groups')
+
+pool_envs = YAML.load_file('pipelines/pool-envs.yml')
+# push file to lock
+bbl_create = pool_envs['jobs'].detect {|job| job['name'] == 'bbl-create'}
+# push file to lock
+bbl_destroy = pool_envs['jobs'].detect {|job| job['name'] == 'bbl-destroy'}
+pipeline['jobs'].unshift(bbl_create)
+pipeline['jobs'].push(bbl_destroy)
+# Merge pool envs resources, taking base pipeline resources over pool envs
+pipeline['resources'] = (pipeline['resources'] + pool_envs['resources']).uniq {|r| r['name']}
+
+bbl_destroy = pipeline['jobs'].detect {|job| job['name'] == 'bbl-destroy'}
+depl = bbl_destroy['plan'][1]['aggregate'].detect {|a| a['get'] == 'deployments-loggregator'}
+depl.merge!({'passed' => ["cats", "cfar-lats"], 'trigger' => true})
 
 new_env_name = 'snapshot'
 new_subdomain = 'snapshot.loggr.'
