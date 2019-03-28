@@ -1781,6 +1781,41 @@ jobs:
         bosh-release-dir: leadership-election-release
       params:
         BBL_STATE_DIR: gcp/coconut-bbl
+  - task: add-windows-stemcell-to-manifest
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source:
+          repository: relintdockerhubpushbot/cf-deployment-concourse-tasks
+          tag: v3.19.0
+      inputs:
+        - name: cf-deployment
+      outputs:
+        - name: modified-cf-deployment
+      run:
+        path: "/bin/bash"
+        args:
+          - "-c"
+          - |
+            set -e
+
+            cat <<EOT >> on-the-fly.yml
+            - type: replace
+              path: /stemcells/-
+              value:
+                alias: windows1803
+                os: windows1803
+                version: "1803.7"
+            EOT
+
+            bosh int cf-deployment/cf-deployment.yml -o on-the-fly.yml > modified-cf-deployment/cf-deployment.yml
+  - task: upload-stemcell
+    file: cf-deployment-concourse-tasks/bosh-upload-stemcell-from-cf-deployment/task.yml
+    input_mapping:
+      cf-deployment: modified-cf-deployment
+    params:
+      BBL_STATE_DIR: gcp/ci-pool/products-lock-test
   - task: copy-ops-files
     config:
       platform: linux
@@ -1864,10 +1899,6 @@ jobs:
             path: /instance_groups/name=scheduler/instances
             value: 3
           EOT
-  - task: upload-stemcell
-    file: cf-deployment-concourse-tasks/bosh-upload-stemcell-from-cf-deployment/task.yml
-    params:
-      BBL_STATE_DIR: gcp/coconut-bbl
   - task: cf-deploy
     file: cf-deployment-concourse-tasks/bosh-deploy/task.yml
     params:
