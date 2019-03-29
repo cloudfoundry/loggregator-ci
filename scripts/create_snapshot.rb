@@ -48,13 +48,13 @@ def replace_strings(replacements, pipeline)
   replacements.reduce(pipeline.to_yaml) {|str, (from, to)| str.gsub(from, to)}
 end
 
-if ARGV.length < 2
-  puts 'Usage: ./scripts/create_snapshot.rb <pipeline name> <snapshot unique identifier>'
+if ARGV.length < 1
+  puts 'Usage: ./scripts/create_snapshot.rb <snapshot unique identifier>'
   exit 1
 end
 
-pipeline_name = ARGV[0]
-snapshot_id = ARGV[1]
+pipeline_name = 'products'
+snapshot_id = ARGV[0]
 
 snapshot_dir = "snapshots/#{pipeline_name}/#{snapshot_id}"
 FileUtils.mkdir_p "#{snapshot_dir}/resources"

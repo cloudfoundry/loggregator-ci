@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
-pipeline=$1
-snapshot_id=$2
+pipeline='products'
+snapshot_id=$1
 snapshot_dir=snapshots/$pipeline/$snapshot_id
 resource_files=$snapshot_dir/resources/*.json
 
@@ -20,7 +20,7 @@ function set_globals {
 }
 
 function validate {
-    if [ "$pipeline" = "-h" ] || [ "$pipeline" = "--help" ] || [ -z "$snapshot_id" ]; then
+    if [ "$snapshot_id" = "-h" ] || [ "$snapshot_id" = "--help" ] || [ -z "$snapshot_id" ]; then
         print_usage
         exit 1
     fi
@@ -39,7 +39,7 @@ function sync_fly {
 }
 
 function print_usage {
-    echo "usage: $0 <pipeline> <snapshot_id>"
+    echo "usage: $0 <snapshot_id>"
 }
 
 function main {
