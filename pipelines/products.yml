@@ -1898,6 +1898,8 @@ jobs:
           - type: replace
             path: /instance_groups/name=scheduler/instances
             value: 3
+          - type: remove
+            path: /variables/name=cf_admin_password
           EOT
   - task: set-vars-files
     config:
@@ -1946,6 +1948,33 @@ jobs:
         cf-deployment-add-tls-to-trafficcontroller.yml
       VARS_FILES: |
         on-the-fly-vars.yml
+
+  - task: save-vars-to-credhub
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source:
+          repository: relintdockerhubpushbot/cf-deployment-concourse-tasks
+          tag: latest
+      inputs:
+      - name: bbl-state
+      run:
+        path: "/bin/bash"
+        args:
+          - "-c"
+          - |
+            set -e
+
+            pushd bbl-state/gcp/ci-pool/products-lock-test-4 > /dev/null
+              eval "$(bbl print-env)"
+            popd
+
+            wget https://github.com/cloudfoundry-incubator/credhub-cli/releases/download/2.1.0/credhub-linux-2.1.0.tgz \
+            && tar xzvf credhub*.tgz ./credhub
+
+            ./credhub set -n /bosh-products-lock-test-4/cf/cf_admin_password -t password -w ((coconut-password))
+
   - task: enable-feature-flags
     file: cf-deployment-concourse-tasks/set-feature-flags/task.yml
     attempts: 3
