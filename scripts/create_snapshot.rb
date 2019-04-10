@@ -9,10 +9,12 @@ def sanitize(input)
 end
 
 def set_version(resources, hash)
+  excluded_get_versions = %w(bbl-state deployments-loggregator)
   if hash.kind_of?(Hash)
     if hash.has_key?('get')
-      if resources.has_key?(hash['get'])
-        hash['version'] = resources[hash['get']]['version']
+      resource_alias = hash['get']
+      if resources.has_key?(resource_alias) && !excluded_get_versions.include?(resource_alias)
+        hash['version'] = resources[resource_alias]['version']
       end
     else
       hash.keys.each do |key|
@@ -68,9 +70,6 @@ strip_item_by_key(pipeline, 'put')
 included_jobs = %w(cf-deploy cfar-lats cats)
 pipeline['jobs'].select!{|job| included_jobs.include?(job['name'])}
 
-excluded_resources = [
-    'deployments-loggregator'
-]
 resource_names = Array.new
 pipeline['jobs'].each do |job|
   job_name = job['name']
@@ -78,7 +77,7 @@ pipeline['jobs'].each do |job|
   resources = JSON.load(`./scripts/get_gets.sh #{pipeline_name} #{job_name}`)
   resource_names << resources.keys
 
-  git_resources = resources.select{|k, v| v['type'] == 'git' && !excluded_resources.include?(v['resource']) }
+  git_resources = resources.select{|k, v| v['type'] == 'git' }
   versions = git_resources.map {|k, v| [k, v['version']] }.to_h
 
   File.open("#{snapshot_dir}/resources/#{job_name}.json", 'w') {|f| f.write versions.to_json }
@@ -91,6 +90,14 @@ strip_key(cf_deploy, 'passed')
 strip_key(cf_deploy, 'trigger')
 depls = cf_deploy['plan'][0]['aggregate'].select {|a| a['resource'] == 'deployments-loggregator'}
 depls.map! {|d| d.merge!({'passed' => ["bbl-create"], 'trigger' => true})}
+cf_deploy_resources = JSON.load(File.read("#{snapshot_dir}/resources/cf-deploy.json"))
+cf_deploy['plan'][0]['aggregate'].push({
+   'get' => 'bbl-state-locked',
+   'resource' => 'deployments-loggregator-locked',
+   'version' => cf_deploy_resources['bbl-state'],
+})
+copy_ops_files = cf_deploy['plan'].detect {|step| step['task'] == 'copy-ops-files'}
+copy_ops_files['input_mapping'] = {'bbl-state' => 'bbl-state-locked'}
 
 cats = pipeline['jobs'].detect {|job| job['name'] == 'cats'}
 deployments_loggregator = cats['plan'][0]['aggregate'].detect {|resource| resource['get'] == 'deployments-loggregator'}
@@ -103,6 +110,9 @@ cfar_lats['plan'][0]['aggregate'].push({'get' => 'deployments-loggregator', 'pas
 
 pipeline['resources'].select! {|r| resource_names.flatten.include?(r['name'])}
 pipeline.delete('groups')
+deployments_loggregator_locked = pipeline['resources'].detect {|r| r['name'] == "deployments-loggregator"}
+deployments_loggregator_locked['name'] = "deployments-loggregator-locked"
+pipeline['resources'].push(deployments_loggregator_locked)
 
 new_env_name = "#{pipeline_name}-#{snapshot_id}"
 create_snapshot_lock = YAML.load <<END_YAML
@@ -184,6 +194,7 @@ replacements = {
 'BBL_STATE_DIR: gcp/coconut-bbl' => "BBL_STATE_DIR: #{new_env_dir}",
 'BBL_ENV_NAME: coconut-bbl' => "BBL_ENV_NAME: #{new_env_name}",
 'pushd deployments-loggregator/gcp/coconut-bbl' => "pushd deployments-loggregator/#{new_env_dir}",
+'pushd bbl-state/gcp/coconut-bbl' => "pushd bbl-state/#{new_env_dir}",
 'bosh-coconut-bbl' => "bosh-#{new_env_name}",
 }
 File.open("#{snapshot_dir}/pipeline.yml", 'w') {|f| f.write replace_strings(replacements, pipeline) }

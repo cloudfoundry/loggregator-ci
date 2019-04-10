@@ -1732,10 +1732,6 @@ jobs:
     - get: loggregator-agent-release
       passed: ["loggregator-agent-bump-submodule"]
       trigger: true
-    - get: vars-store
-      resource: deployments-loggregator
-    - get: vars-files
-      resource: deployments-loggregator
     - get: cf-syslog-drain-release
       trigger: true
       passed:
