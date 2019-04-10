@@ -1815,7 +1815,7 @@ jobs:
     input_mapping:
       cf-deployment: modified-cf-deployment
     params:
-      BBL_STATE_DIR: gcp/ci-pool/products-lock-test
+      BBL_STATE_DIR: gcp/coconut-bbl
   - task: copy-ops-files
     config:
       platform: linux
@@ -1966,14 +1966,14 @@ jobs:
           - |
             set -e
 
-            pushd bbl-state/gcp/ci-pool/products-lock-test-4 > /dev/null
+            pushd bbl-state/gcp/coconut-bbl > /dev/null
               eval "$(bbl print-env)"
             popd
 
             wget https://github.com/cloudfoundry-incubator/credhub-cli/releases/download/2.1.0/credhub-linux-2.1.0.tgz \
             && tar xzvf credhub*.tgz ./credhub
 
-            ./credhub set -n /bosh-products-lock-test-4/cf/cf_admin_password -t password -w ((coconut-password))
+            ./credhub set -n /bosh-coconut-bbl/cf/cf_admin_password -t password -w ((coconut-password))
 
   - task: enable-feature-flags
     file: cf-deployment-concourse-tasks/set-feature-flags/task.yml
