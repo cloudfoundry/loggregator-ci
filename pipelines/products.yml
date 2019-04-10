@@ -1566,10 +1566,10 @@ jobs:
             path: /variables/name=loggregator_ca
           - type: replace
             path: /variables/name=service-metrics/options/ca
-            value: /bosh-coconut-bbl/cf/loggregator_ca
+            value: /bosh-bbl-env-athabasca-2019-03-22t18-23z/cf/loggregator_ca
           - type: replace
             path: /variables/name=loggregator_agent/options/ca
-            value: /bosh-coconut-bbl/cf/loggregator_ca
+            value: /bosh-bbl-env-athabasca-2019-03-22t18-23z/cf/loggregator_ca
           - type: replace
             path: /variables/name=loggregator_agent/options/alternative_names
             value:
@@ -1584,10 +1584,10 @@ jobs:
             path: /variables/name=loggregator_ca
           - type: replace
             path: /variables/name=service_metrics/options/ca
-            value: /bosh-coconut-bbl/cf/loggregator_ca
+            value: /bosh-bbl-env-athabasca-2019-03-22t18-23z/cf/loggregator_ca
           - type: replace
             path: /variables/name=loggregator_agent/options/ca
-            value: /bosh-coconut-bbl/cf/loggregator_ca
+            value: /bosh-bbl-env-athabasca-2019-03-22t18-23z/cf/loggregator_ca
           - type: replace
             path: /variables/name=loggregator_agent/options/alternative_names
             value:
@@ -1969,7 +1969,7 @@ jobs:
             wget https://github.com/cloudfoundry-incubator/credhub-cli/releases/download/2.1.0/credhub-linux-2.1.0.tgz \
             && tar xzvf credhub*.tgz ./credhub
 
-            ./credhub set -n /bosh-coconut-bbl/cf/cf_admin_password -t password -w ((coconut-password))
+            ./credhub set -n /bosh-bbl-env-athabasca-2019-03-22t18-23z/cf/cf_admin_password -t password -w ((coconut-password))
 
   - task: enable-feature-flags
     file: cf-deployment-concourse-tasks/set-feature-flags/task.yml

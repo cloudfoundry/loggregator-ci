@@ -195,6 +195,6 @@ replacements = {
 'BBL_ENV_NAME: coconut-bbl' => "BBL_ENV_NAME: #{new_env_name}",
 'pushd deployments-loggregator/gcp/coconut-bbl' => "pushd deployments-loggregator/#{new_env_dir}",
 'pushd bbl-state/gcp/coconut-bbl' => "pushd bbl-state/#{new_env_dir}",
-'bosh-coconut-bbl' => "bosh-#{new_env_name}",
+'bosh-bbl-env-athabasca-2019-03-22t18-23z' => "bosh-#{new_env_name}",
 }
 File.open("#{snapshot_dir}/pipeline.yml", 'w') {|f| f.write replace_strings(replacements, pipeline) }
