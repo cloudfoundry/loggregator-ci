@@ -157,7 +157,6 @@ require 'json'
 
 class KubernetesClient
   def initialize(token: nil)
-    @url = "https://kubernetes.default.svc.cluster.local"
     ca_file = "/var/run/secrets/kubernetes.io/serviceaccount/ca.crt"
     if token
       @token = token
@@ -166,14 +165,20 @@ class KubernetesClient
       @token = File.read(token_file)
     end
 
-    uri = URI.parse(@url)
-    @http = Net::HTTP.new(uri.host, uri.port)
+    @http = Net::HTTP.new(k8s_uri.host, k8s_uri.port)
     @http.use_ssl = true
     @http.verify_mode = OpenSSL::SSL::VERIFY_PEER
     @http.ca_file = ca_file
   end
 
   private
+
+  def k8s_uri
+    return @k8s_uri if @k8s_uri
+    host = ENV.fetch('KUBERNETES_SERVICE_HOST', 'kubernetes.default.svc.cluster.local')
+    port = ENV.fetch('KUBERNETES_SERVICE_PORT_HTTPS', '443')
+    @k8s_uri = URI.parse("https://#{host}:#{port}")
+  end
 
   def method_missing(method_name, resource_name, namespace_name)
     name = method_name.to_s.sub('get_', '')
@@ -192,7 +197,7 @@ class KubernetesClient
       statefulset: "%s/apis/apps/v1/namespaces/%s/statefulsets/%s",
       job: "%s/apis/batch/v1/namespaces/%s/jobs/%s",
       cronjob: "%s/apis/batch/v1beta1/namespaces/%s/cronjobs/%s",
-    }[resource_type] % [@url, namespace_name, resource_name]
+    }[resource_type] % [k8s_uri.to_s, namespace_name, resource_name]
   end
 
   def make_request(namespace_name, resource_type, resource_name)
