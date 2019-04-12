@@ -1849,8 +1849,6 @@ jobs:
           cp loggregator-agent-release/manifests/operations/cf-syslog-agent-skip-cert-verify.yml ops-files/
           cp loggregator-agent-release/manifests/operations/cf-deployment-windows-addon.yml ops-files/
           cp loggregator-agent-release/manifests/operations/cf-syslog-agent-skip-cert-verify-windows.yml ops-files/
-          cp loggregator-release/manifests/operations/cf-deployment-add-tls-to-rlp-gateway.yml ops-files/
-          cp loggregator-release/manifests/operations/cf-deployment-add-tls-to-trafficcontroller.yml ops-files/
 
           cat <<EOT >> ops-files/on-the-fly.yml
           - type: replace
@@ -1940,8 +1938,6 @@ jobs:
         cf-syslog-agent-skip-cert-verify.yml
         cf-deployment-windows-addon.yml
         cf-syslog-agent-skip-cert-verify-windows.yml
-        cf-deployment-add-tls-to-rlp-gateway.yml
-        cf-deployment-add-tls-to-trafficcontroller.yml
       VARS_FILES: |
         on-the-fly-vars.yml
 
