@@ -1837,6 +1837,7 @@ jobs:
           cp cf-deployment/operations/scale-to-one-az.yml ops-files/
           cp cf-deployment/operations/use-compiled-releases.yml ops-files/
           cp cf-deployment/operations/experimental/use-compiled-releases-windows.yml ops-files/
+          cp cf-deployment/operations/experimental/add-metric-store.yml ops-files/
           cp bbl-state/gcp/coconut-bbl/ops-files/clients.yml ops-files/
 
           cp cf-deployment/operations/windows1803-cell.yml ops-files/
@@ -1894,6 +1895,37 @@ jobs:
             value: 3
           - type: remove
             path: /variables/name=cf_admin_password
+          - type: remove
+            path: /addons/name=loggregator_agent/jobs/name=prom_scraper
+          - type: replace
+            path: /addons/-
+            value:
+              name: prom_scraper
+              exclude:
+                instance_groups:
+                - metric-store
+                - doppler
+              include:
+                stemcell:
+                - os: ubuntu-trusty
+                - os: ubuntu-xenial
+              jobs:
+              - name: prom_scraper
+                release: loggregator-agent
+                properties:
+                  metrics_urls: http://localhost:14822/metrics,http://localhost:14823/metrics,http://localhost:14824/metrics
+
+          - type: replace
+            path: /instance_groups/name=doppler/jobs/-
+            value:
+              name: prom_scraper
+              release: loggregator-agent
+              properties:
+                metric_urls: "http://localhost:6060/metrics,http://localhost:6061/metrics,http://localhost:6065/metrics,http://localhost:14822/metrics,http://localhost:14823/metrics,http://localhost:14824/metrics"
+
+          - type: replace
+            path: /instance_groups/name=metric-store/jobs/name=prom_scraper/properties/metrics_urls
+            value: "http://localhost:6060/metrics,http://localhost:6061/metrics,http://localhost:6065/metrics,http://localhost:14822/metrics,http://localhost:14823/metrics,http://localhost:14824/metrics"
           EOT
   - task: set-vars-files
     config:
@@ -1924,12 +1956,11 @@ jobs:
         scale-to-one-az.yml
         use-compiled-releases.yml
         use-compiled-releases-windows.yml
+        add-metric-store.yml
         clients.yml
 
         windows1803-cell.yml
         use-latest-windows1803-stemcell.yml
-
-        on-the-fly.yml
 
         cf-deployment-addon.yml
         cf-add-forwarder-agent.yml
@@ -1938,6 +1969,8 @@ jobs:
         cf-syslog-agent-skip-cert-verify.yml
         cf-deployment-windows-addon.yml
         cf-syslog-agent-skip-cert-verify-windows.yml
+
+        on-the-fly.yml
       VARS_FILES: |
         on-the-fly-vars.yml
 
