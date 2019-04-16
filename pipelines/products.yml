@@ -1895,8 +1895,6 @@ jobs:
             value: 3
           - type: remove
             path: /variables/name=cf_admin_password
-          - type: remove
-            path: /addons/name=loggregator_agent/jobs/name=prom_scraper
           - type: replace
             path: /addons/-
             value:
