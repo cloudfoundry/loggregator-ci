@@ -153,7 +153,7 @@ resources:
   type: git
   source:
     uri: https://github.com/cloudfoundry/cf-deployment
-    tag_filter: v7.*
+    branch: add-prom-scraper
     private_key: ((loggregator-key))
 
 - name: cf-deployment-concourse-tasks
@@ -1844,7 +1844,6 @@ jobs:
           cp cf-deployment/operations/use-latest-windows1803-stemcell.yml ops-files/
 
           cp loggregator-agent-release/manifests/operations/cf-deployment-addon.yml ops-files/
-          cp loggregator-agent-release/manifests/operations/cf-add-forwarder-agent.yml ops-files/
           cp loggregator-agent-release/manifests/operations/cf-deployment-add-system-metrics-agent.yml ops-files/
           cp loggregator-agent-release/manifests/operations/cf-add-system-metric-scraper.yml ops-files/
           cp loggregator-agent-release/manifests/operations/cf-syslog-agent-skip-cert-verify.yml ops-files/
@@ -1895,37 +1894,86 @@ jobs:
             value: 3
           - type: remove
             path: /variables/name=cf_admin_password
-          - type: remove
-            path: /addons/name=loggregator_agent/jobs/name=prom_scraper
+          
           - type: replace
             path: /addons/-
             value:
-              name: prom_scraper
-              exclude:
-                instance_groups:
-                - metric-store
-                - doppler
+              name: loggr-syslog-agent
               include:
                 stemcell:
                 - os: ubuntu-trusty
                 - os: ubuntu-xenial
+              exclude:
+                jobs:
+                - name: smoke_tests
+                  release: cf-smoke-tests
               jobs:
-              - name: prom_scraper
+              - name: loggr-syslog-agent
                 release: loggregator-agent
                 properties:
-                  metrics_urls: http://localhost:14822/metrics,http://localhost:14823/metrics,http://localhost:14824/metrics
+                  port: 3460
+                  tls:
+                    ca_cert: "((loggregator_ca.certificate))"
+                    cert: "((loggregator_tls_agent.certificate))"
+                    key: "((loggregator_tls_agent.private_key))"
+                  cache:
+                    tls:
+                      ca_cert: "((loggregator_ca.certificate))"
+                      cert: "((syslog_agent_api_tls.certificate))"
+                      key: "((syslog_agent_api_tls.private_key))"
+                      cn: "binding-cache"
 
           - type: replace
-            path: /instance_groups/name=doppler/jobs/-
+            path: /variables/-
             value:
-              name: prom_scraper
+              name: syslog_agent_api_tls
+              type: certificate
+              options:
+                ca: loggregator_ca
+                common_name: syslog-agent
+                extended_key_usage:
+                - client_auth
+
+          - type: replace
+            path: /instance_groups/name=scheduler/jobs/-
+            value:
+              name: loggr-syslog-binding-cache
               release: loggregator-agent
               properties:
-                metric_urls: "http://localhost:6060/metrics,http://localhost:6061/metrics,http://localhost:6065/metrics,http://localhost:14822/metrics,http://localhost:14823/metrics,http://localhost:14824/metrics"
+                external_port: 9000
+                tls:
+                  ca_cert: "((loggregator_ca.certificate))"
+                  cert: "((binding_cache_tls.certificate))"
+                  key: "((binding_cache_tls.private_key))"
+                  cn: "binding-cache"
+                api:
+                  tls:
+                    ca_cert: "((service_cf_internal_ca.certificate))"
+                    cert: "((binding_cache_api_tls.certificate))"
+                    key: "((binding_cache_api_tls.private_key))"
+                    cn: "cloud-controller-ng.service.cf.internal"
 
           - type: replace
-            path: /instance_groups/name=metric-store/jobs/name=prom_scraper/properties/metrics_urls
-            value: "http://localhost:6060/metrics,http://localhost:6061/metrics,http://localhost:6065/metrics,http://localhost:14822/metrics,http://localhost:14823/metrics,http://localhost:14824/metrics"
+            path: /variables/-
+            value:
+              name: binding_cache_api_tls
+              type: certificate
+              options:
+                ca: service_cf_internal_ca
+                common_name: binding-cache
+                extended_key_usage:
+                - client_auth
+
+          - type: replace
+            path: /variables/-
+            value:
+              name: binding_cache_tls
+              type: certificate
+              options:
+                ca: loggregator_ca
+                common_name: binding-cache
+                extended_key_usage:
+                - server_auth
           EOT
   - task: set-vars-files
     config:
@@ -1962,15 +2010,15 @@ jobs:
         windows1803-cell.yml
         use-latest-windows1803-stemcell.yml
 
+        on-the-fly.yml
+
         cf-deployment-addon.yml
-        cf-add-forwarder-agent.yml
         cf-deployment-add-system-metrics-agent.yml
         cf-add-system-metric-scraper.yml
         cf-syslog-agent-skip-cert-verify.yml
         cf-deployment-windows-addon.yml
         cf-syslog-agent-skip-cert-verify-windows.yml
 
-        on-the-fly.yml
       VARS_FILES: |
         on-the-fly-vars.yml
 
