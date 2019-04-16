@@ -1844,7 +1844,7 @@ jobs:
           cp cf-deployment/operations/use-latest-windows1803-stemcell.yml ops-files/
 
           cp loggregator-agent-release/manifests/operations/cf-deployment-addon.yml ops-files/
-          cp loggregator-agent-release/manifests/operations/cf-add-forwarder-agent.yml ops-files/
+          cp loggregator-agent-release/manifests/operations/cf-add-syslog-agent.yml ops-files/
           cp loggregator-agent-release/manifests/operations/cf-deployment-add-system-metrics-agent.yml ops-files/
           cp loggregator-agent-release/manifests/operations/cf-add-system-metric-scraper.yml ops-files/
           cp loggregator-agent-release/manifests/operations/cf-syslog-agent-skip-cert-verify.yml ops-files/
@@ -1963,7 +1963,7 @@ jobs:
         use-latest-windows1803-stemcell.yml
 
         cf-deployment-addon.yml
-        cf-add-forwarder-agent.yml
+        cf-add-syslog-agent.yml
         cf-deployment-add-system-metrics-agent.yml
         cf-add-system-metric-scraper.yml
         cf-syslog-agent-skip-cert-verify.yml
