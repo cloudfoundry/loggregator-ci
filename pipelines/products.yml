@@ -1786,26 +1786,26 @@ jobs:
           repository: relintdockerhubpushbot/cf-deployment-concourse-tasks
           tag: v3.19.0
       inputs:
-        - name: cf-deployment
+      - name: cf-deployment
       outputs:
-        - name: modified-cf-deployment
+      - name: modified-cf-deployment
       run:
         path: "/bin/bash"
         args:
-          - "-c"
-          - |
-            set -e
+        - "-c"
+        - |
+          set -e
 
-            cat <<EOT >> on-the-fly.yml
-            - type: replace
-              path: /stemcells/-
-              value:
-                alias: windows1803
-                os: windows1803
-                version: "1803.7"
-            EOT
+          cat <<EOT >> on-the-fly.yml
+          - type: replace
+            path: /stemcells/-
+            value:
+              alias: windows1803
+              os: windows1803
+              version: "1803.7"
+          EOT
 
-            bosh int cf-deployment/cf-deployment.yml -o on-the-fly.yml > modified-cf-deployment/cf-deployment.yml
+          bosh int cf-deployment/cf-deployment.yml -o on-the-fly.yml > modified-cf-deployment/cf-deployment.yml
   - task: upload-stemcell
     file: cf-deployment-concourse-tasks/bosh-upload-stemcell-from-cf-deployment/task.yml
     input_mapping:
@@ -1896,34 +1896,18 @@ jobs:
           - type: remove
             path: /variables/name=cf_admin_password
           - type: replace
-            path: /addons/-
+            path: /addons/name=prom_scraper/exclude?
             value:
-              name: prom_scraper
-              exclude:
                 instance_groups:
                 - metric-store
                 - doppler
-              include:
-                stemcell:
-                - os: ubuntu-trusty
-                - os: ubuntu-xenial
-              jobs:
-              - name: prom_scraper
-                release: loggregator-agent
-                properties:
-                  metrics_urls: http://localhost:14822/metrics,http://localhost:14823/metrics,http://localhost:14824/metrics
 
           - type: replace
             path: /instance_groups/name=doppler/jobs/-
             value:
               name: prom_scraper
               release: loggregator-agent
-              properties:
-                metric_urls: "http://localhost:6060/metrics,http://localhost:6061/metrics,http://localhost:6065/metrics,http://localhost:14822/metrics,http://localhost:14823/metrics,http://localhost:14824/metrics"
 
-          - type: replace
-            path: /instance_groups/name=metric-store/jobs/name=prom_scraper/properties/metrics_urls
-            value: "http://localhost:6060/metrics,http://localhost:6061/metrics,http://localhost:6065/metrics,http://localhost:14822/metrics,http://localhost:14823/metrics,http://localhost:14824/metrics"
           EOT
   - task: set-vars-files
     config:
@@ -1934,17 +1918,17 @@ jobs:
           repository: relintdockerhubpushbot/cf-deployment-concourse-tasks
           tag: v3.19.0
       outputs:
-        - name: vars-files
+      - name: vars-files
       run:
         path: "/bin/bash"
         args:
-          - "-c"
-          - |
-            set -e
+        - "-c"
+        - |
+          set -e
 
-            cat <<EOT >> vars-files/on-the-fly-vars.yml
-            cf_admin_password: ((coconut-password))
-            EOT
+          cat <<EOT >> vars-files/on-the-fly-vars.yml
+          cf_admin_password: ((coconut-password))
+          EOT
   - task: cf-deploy
     file: cf-deployment-concourse-tasks/bosh-deploy/task.yml
     params:
@@ -1985,18 +1969,18 @@ jobs:
       run:
         path: "/bin/bash"
         args:
-          - "-c"
-          - |
-            set -e
+        - "-c"
+        - |
+          set -e
 
-            pushd bbl-state/gcp/coconut-bbl > /dev/null
-              eval "$(bbl print-env)"
-            popd
+          pushd bbl-state/gcp/coconut-bbl > /dev/null
+            eval "$(bbl print-env)"
+          popd
 
-            wget https://github.com/cloudfoundry-incubator/credhub-cli/releases/download/2.1.0/credhub-linux-2.1.0.tgz \
-            && tar xzvf credhub*.tgz ./credhub
+          wget https://github.com/cloudfoundry-incubator/credhub-cli/releases/download/2.1.0/credhub-linux-2.1.0.tgz \
+          && tar xzvf credhub*.tgz ./credhub
 
-            ./credhub set -n /bosh-bbl-env-athabasca-2019-03-22t18-23z/cf/cf_admin_password -t password -w ((coconut-password))
+          ./credhub set -n /bosh-bbl-env-athabasca-2019-03-22t18-23z/cf/cf_admin_password -t password -w ((coconut-password))
 
   - task: enable-feature-flags
     file: cf-deployment-concourse-tasks/set-feature-flags/task.yml
