@@ -24,7 +24,6 @@ groups:
   - loggregator-bump-submodule
   - loggregator-master-promotion
   - loggregator-agent-promotion
-  - deploy-datadog-nozzle
   - loggregator-tests
   - loggregator-promotion
 
@@ -106,10 +105,6 @@ groups:
   - leadership-election-bump-submodule
   - leadership-election-promotion
   - leadership-election-master-promotion
-
-- name: datadog-nozzle
-  jobs:
-  - deploy-datadog-nozzle
 
 resources:
 - name: 5m
@@ -208,11 +203,6 @@ resources:
   source:
     branch: master
     uri: https://github.com/cloudfoundry/cfar-logging-acceptance-tests.git
-
-- name: datadog-firehose-nozzle-release
-  type: git
-  source:
-    uri: https://github.com/DataDog/datadog-firehose-nozzle-release.git
 
 - name: deployments-loggregator
   type: git
@@ -916,37 +906,6 @@ jobs:
   - put: loggregator-agent-release-master
     params:
       repository: merged-dest
-
-- name: deploy-datadog-nozzle
-  serial: true
-  plan:
-  - aggregate:
-    - get: datadog-firehose-nozzle-release
-    - get: deployments-loggregator
-    - get: loggregator-ci
-  - task: upload-release
-    file: loggregator-ci/tasks/upload-release/task.yml
-    params:
-      BBL_STATE_DIR: gcp/coconut-bbl
-      CREATE_RELEASE: false
-    input_mapping:
-      bbl-state: deployments-loggregator
-      bosh-release-dir: datadog-firehose-nozzle-release
-  - task: deploy
-    file: loggregator-ci/tasks/bosh-deploy/task.yml
-    params:
-      BBL_STATE_DIR: gcp/coconut-bbl
-      DEPLOYMENT_NAME: datadog
-      MANIFEST_FILE: templates/datadog-bosh2.yml
-      OPS_FILES: gcp/coconut-bbl/ops-files/datadog.yml
-      VARS_FILES: gcp/coconut-bbl/vars-files/datadog.yml
-      VARS_STORE_FILE: null
-    input_mapping:
-      bbl-state: deployments-loggregator
-      bosh-release: datadog-firehose-nozzle-release
-      ops-files: deployments-loggregator
-      vars-files: deployments-loggregator
-      vars-store: deployments-loggregator
 
 ###############################################################################
 # CF SYSLOG DRAIN
@@ -1907,6 +1866,9 @@ jobs:
             value:
               name: prom_scraper
               release: loggregator-agent
+
+          - type: remove
+            path: /addons/name=loggregator_agent/jobs/name=loggr-expvar-forwarder
 
           EOT
   - task: set-vars-files
