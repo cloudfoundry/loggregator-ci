@@ -8,7 +8,6 @@ groups:
   jobs:
   - emitter
   - logspinner
-  - certs
 
 resources:
 - name: loggregator-tools
@@ -98,21 +97,6 @@ resources:
     username: {{docker-hub-username}}
     password: {{docker-hub-password}}
 
-- name: certs-image-docker-build-context
-  type: git
-  source:
-    uri: https://github.com/cloudfoundry/loggregator-ci
-    branch: master
-    paths:
-    - docker-images/certs
-
-- name: certs-image
-  type: docker-image
-  source:
-    repository: loggregator/certs
-    username: {{docker-hub-username}}
-    password: {{docker-hub-password}}
-
 jobs:
 - name: build-base-image
   public: true
@@ -194,14 +178,4 @@ jobs:
       tag: build-image/tag
       tag_as_latest: true
       cache: true
-      cache_tag: latest
-
-- name: certs
-  plan:
-  - get: certs-image-docker-build-context
-    trigger: true
-  - put: certs-image
-    params:
-      build: certs-image-docker-build-context/docker-images/certs
-      tag_as_latest: true
       cache_tag: latest
