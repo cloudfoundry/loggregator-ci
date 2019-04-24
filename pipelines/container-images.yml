@@ -10,7 +10,6 @@ groups:
   - logspinner
   - certs
   - fluentd
-  - syslog-nozzle
 
 resources:
 - name: loggregator-tools
@@ -127,21 +126,6 @@ resources:
   type: docker-image
   source:
     repository: loggregator/fluentd
-    username: {{docker-hub-username}}
-    password: {{docker-hub-password}}
-
-- name: syslog-nozzle-image-docker-build-context
-  type: git
-  source:
-    uri: https://github.com/cloudfoundry/loggregator-ci
-    branch: master
-    paths:
-    - docker-images/syslog-nozzle
-
-- name: syslog-nozzle-image
-  type: docker-image
-  source:
-    repository: loggregator/syslog-nozzle
     username: {{docker-hub-username}}
     password: {{docker-hub-password}}
 
@@ -269,31 +253,6 @@ jobs:
     params:
       build: fluentd-image-docker-build-context/docker-images/fluentd
       tag: tag/tag
-      tag_as_latest: true
-      cache: true
-      cache_tag: latest
-
-- name: syslog-nozzle
-  plan:
-  - aggregate:
-    - get: syslog-nozzle-image-docker-build-context
-      trigger: true
-    - get: loggregator-tools
-      trigger: true
-    - get: loggregator-ci
-  - task: build-image
-    file: loggregator-ci/tasks/build-go-docker-image/task.yml
-    input_mapping:
-      context-repo: syslog-nozzle-image-docker-build-context
-      source-repo: loggregator-tools
-    params:
-      CONTEXT_PATH: docker-images/syslog-nozzle
-      BASE_PACKAGE: code.cloudfoundry.org/loggregator-tools
-      SUB_PACKAGE: syslog-nozzle
-  - put: syslog-nozzle-image
-    params:
-      build: build-image/build
-      tag: build-image/tag
       tag_as_latest: true
       cache: true
       cache_tag: latest
