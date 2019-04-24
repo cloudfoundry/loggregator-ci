@@ -13,7 +13,7 @@ RUN apt-get --yes update && \
         unzip \
         wget &&\
     gem update --system && \
-    gem install bosh_cli bundler --no-ri --no-rdoc
+    gem install bosh_cli bundler --no-document
 
 RUN wget https://github.com/cloudfoundry-incubator/spiff/releases/download/v1.0.8/spiff_linux_amd64.zip && \
     unzip spiff*.zip && \
