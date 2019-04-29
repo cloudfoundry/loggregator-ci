@@ -21,7 +21,7 @@ resources:
 
 - name: deployments-loggregator
   type: git
-  source: &deployments_loggregator
+  source:
     uri: git@github.com:cloudfoundry/deployments-loggregator.git
     branch: master
     private_key: {{deployments-loggregator-key}}
@@ -66,7 +66,7 @@ jobs:
     timeout: 15m
   - task: run-recent-logs-smoke-tests
     file: loggregator-ci/tasks/blackbox-recent-logs/task.yml
-    params: &basic-smoke-details
+    params:
       APP_NAME: "floodspinner"
       CF_API: "api.coconut.cf-app.com"
       DATADOG_API_KEY: {{datadog-loggregator-api-key}}
@@ -76,10 +76,6 @@ jobs:
       USERNAME: {{coconut-username}}
       PASSWORD: {{coconut-password}}
       SKIP_CERT_VERIFY: true
-    timeout: 15m
-  - task: container metrics
-    file: loggregator-ci/tasks/container-metrics-smoke-test.yml
-    params: *basic-smoke-details
     timeout: 15m
 
 - name: dripspinner

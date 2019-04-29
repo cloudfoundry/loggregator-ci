@@ -77,7 +77,7 @@ jobs:
     timeout: 20m
   - task: run-recent-logs-smoke-tests
     file: loggregator-ci/tasks/blackbox-recent-logs/task.yml
-    params: &basic-smoke-details
+    params:
       APP_NAME: "floodspinner"
       CF_API: "api.run.pivotal.io"
       DATADOG_API_KEY: {{datadog-loggregator-api-key}}
@@ -87,10 +87,6 @@ jobs:
       SPACE: "development"
       USERNAME: {{pws-username}}
       USE_CLIENT_AUTH: true
-    timeout: 20m
-  - task: container metrics
-    file: loggregator-ci/tasks/container-metrics-smoke-test.yml
-    params: *basic-smoke-details
     timeout: 20m
 
 - name: dripspinner
