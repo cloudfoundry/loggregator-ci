@@ -7,7 +7,7 @@ pushd "bbl-state/$BBL_STATE_DIR"
   export BOSH_CA_CERT=$(bbl director-ca-cert)
 popd
 
-deployed_release="$(bosh -d $DEPLOYMENT_NAME deployment | grep '$RELEASE_NAME/' | awk '{print $1}')"
+deployed_release="$(bosh -d $DEPLOYMENT_NAME deployment | grep $RELEASE_NAME/ | awk '{print $1}')"
 
 ubuntu_stemcell="$(bosh stemcells | grep 'xenial' | awk '{print $3"/"$2}' | sed 's/\*//g')"
 bosh -d $DEPLOYMENT_NAME export-release $deployed_release $ubuntu_stemcell
