@@ -191,34 +191,6 @@ jobs:
       USE_CLIENT_AUTH: true
     timeout: 30m
 
-- name: tcp-syslog-standalone-drain
-  public: false
-  serial: true
-  plan:
-  - get: loggregator-ci
-  - get: loggregator-tools
-  - get: 20m
-    trigger: true
-  - task: v2-drain
-    file: loggregator-ci/tasks/cf-syslog-drain-smoke-test.yml
-    params:
-      CF_ORG: cf-lamb
-      CF_PASSWORD: {{pws-password}}
-      CF_SPACE: development
-      CF_APP_DOMAIN: cf-tcpapps.io
-      CF_SYSTEM_DOMAIN: run.pivotal.io
-      CF_USERNAME: {{pws-username}}
-      DATADOG_API_KEY: "((datadog-loggregator-api-key)) ((datadog-prod-api-key))"
-      DRAIN_VERSION: "2.0"
-      DRAIN_TYPE: "syslog"
-      SINK_DEPLOY: standalone
-      EXTERNAL_DRAIN_HOST: syslog.loggr.cf-app.com
-      EXTERNAL_DRAIN_PORT: 8000
-      EXTERNAL_COUNTER_PORT: 8080
-      JOB_NAME: "syslog-standalone-teardown"
-      USE_CLIENT_AUTH: true
-    timeout: 30m
-
 - name: https-syslog-drain-no-teardown
   public: false
   serial: true
@@ -266,35 +238,6 @@ jobs:
       DRAIN_VERSION: "2.0"
       DRAIN_TYPE: "syslog"
       JOB_NAME: "syslog-no-teardown"
-      USE_CLIENT_AUTH: true
-    timeout: 30m
-
-- name: tcp-syslog-standalone-drain-no-teardown
-  public: false
-  serial: true
-  plan:
-  - get: loggregator-ci
-  - get: loggregator-tools
-  - get: 20m
-    trigger: true
-  - task: v2-drain-loggregator
-    file: loggregator-ci/tasks/cf-syslog-drain-smoke-test.yml
-    params:
-      TEARDOWN: false
-      CF_ORG: cf-lamb
-      CF_PASSWORD: {{pws-password}}
-      CF_SPACE: development
-      CF_APP_DOMAIN: cf-tcpapps.io
-      CF_SYSTEM_DOMAIN: run.pivotal.io
-      CF_USERNAME: {{pws-username}}
-      DATADOG_API_KEY: "((datadog-loggregator-api-key)) ((datadog-prod-api-key))"
-      DRAIN_VERSION: "2.0"
-      DRAIN_TYPE: "syslog"
-      SINK_DEPLOY: standalone
-      EXTERNAL_DRAIN_HOST: syslog.loggr.cf-app.com
-      EXTERNAL_DRAIN_PORT: 8000
-      EXTERNAL_COUNTER_PORT: 8080
-      JOB_NAME: "syslog-standalone-no-teardown"
       USE_CLIENT_AUTH: true
     timeout: 30m
 
