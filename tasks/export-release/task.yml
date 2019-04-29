@@ -1,0 +1,34 @@
+---
+platform: linux
+
+image_resource:
+  type: docker-image
+  source:
+    repository: relintdockerhubpushbot/cf-deployment-concourse-tasks
+
+inputs:
+- name: loggregator-ci # - This repo
+- name: bbl-state  # - The Director's `bbl-state.json`
+
+run:
+  path: loggregator-ci/tasks/export-release/task
+
+params:
+  # - Required
+  # - The deployment to export the release from
+  DEPLOYMENT_NAME:
+
+  # - Required
+  # - The release to export
+  RELEASE_NAME:
+
+  # - Optional
+  # - Whether to export this release to windows. Non empty is true.
+  # - Defaults to false
+  EXPORT_TO_WINDOWS:
+
+  #  # - Optional
+  # - Path to the directory containing the `bbl-state.json` file
+  # - The path is relative to root of the `bbl-state` input
+  # - Defaults to the root of the `bbl-state` input
+  BBL_STATE_DIR:

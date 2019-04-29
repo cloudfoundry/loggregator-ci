@@ -1,0 +1,19 @@
+#!/bin/bash
+
+set -exu
+
+pushd "bbl-state/$BBL_STATE_DIR"
+  eval $(bbl print-env)
+  export BOSH_CA_CERT=$(bbl director-ca-cert)
+popd
+
+deployed_release="$(bosh -d $DEPLOYMENT_NAME deployment | grep $RELEASE_NAME | awk '{print $1}')"
+
+ubuntu_stemcell="$(bosh stemcells | grep 'xenial' | awk '{print $3"/"$2}' | sed 's/\*//g')"
+bosh export-release $deployed_release $ubuntu_stemcell
+
+if [ -n $EXPORT_TO_WINDOWS ]
+then
+    windows_stemcell="$(bosh stemcells | grep 'windows' | awk '{print $3"/"$2}' | sed 's/\*//g')"
+    bosh export-release $deployed_release $windows_stemcell
+fi
