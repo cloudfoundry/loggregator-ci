@@ -1918,6 +1918,37 @@ jobs:
       VARS_FILES: |
         on-the-fly-vars.yml
 
+  - task: export-loggregator-release
+    file: loggregator-ci/tasks/export-release/task.yml
+    params:
+      BBL_STATE_DIR: gcp/coconut-bbl
+      DEPLOYMENT_NAME: cf
+      RELEASE_NAME: loggregator
+  - task: export-loggregator-agent-release
+    file: loggregator-ci/tasks/export-release/task.yml
+    params:
+      BBL_STATE_DIR: gcp/coconut-bbl
+      DEPLOYMENT_NAME: cf
+      RELEASE_NAME: loggregator-agent
+      EXPORT_TO_WINDOWS: true
+  - task: export-cf-syslog-drain-release
+    file: loggregator-ci/tasks/export-release/task.yml
+    params:
+      BBL_STATE_DIR: gcp/coconut-bbl
+      DEPLOYMENT_NAME: cf
+      RELEASE_NAME: cf-syslog-drain
+  - task: export-statsd-injector-release
+    file: loggregator-ci/tasks/export-release/task.yml
+    params:
+      BBL_STATE_DIR: gcp/coconut-bbl
+      DEPLOYMENT_NAME: cf
+      RELEASE_NAME: statsd-injector
+  - task: export-leadership-election-release
+    file: loggregator-ci/tasks/export-release/task.yml
+    params:
+      BBL_STATE_DIR: gcp/coconut-bbl
+      DEPLOYMENT_NAME: cf
+      RELEASE_NAME: leadership-election
   - task: save-vars-to-credhub
     config:
       platform: linux
