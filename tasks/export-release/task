@@ -9,11 +9,10 @@ popd
 
 deployed_release="$(bosh -d $DEPLOYMENT_NAME deployment | grep $RELEASE_NAME/ | awk '{print $1}')"
 
-ubuntu_stemcell="$(bosh stemcells | grep 'xenial' | awk '{print $3"/"$2}' | sed 's/\*//g')"
+ubuntu_stemcell="$(bosh stemcells | grep 'xenial' | grep '*' | awk '{print $3"/"$2}' | sed 's/\*//g')"
 bosh -d $DEPLOYMENT_NAME export-release $deployed_release $ubuntu_stemcell
 
-if [ -n $EXPORT_TO_WINDOWS ]
-then
-    windows_stemcell="$(bosh stemcells | grep 'windows' | awk '{print $3"/"$2}' | sed 's/\*//g')"
+if [ ! -z $EXPORT_TO_WINDOWS ]; then
+    windows_stemcell="$(bosh stemcells | grep 'windows' | grep '*' | awk '{print $3"/"$2}' | sed 's/\*//g')"
     bosh -d $DEPLOYMENT_NAME export-release $deployed_release $windows_stemcell
 fi
