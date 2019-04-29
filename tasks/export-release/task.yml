@@ -27,8 +27,12 @@ params:
   # - Defaults to false
   EXPORT_TO_WINDOWS:
 
-  #  # - Optional
+  # - Optional
   # - Path to the directory containing the `bbl-state.json` file
   # - The path is relative to root of the `bbl-state` input
   # - Defaults to the root of the `bbl-state` input
   BBL_STATE_DIR:
+
+  # - Optional
+  # - Set to true to see debug output
+  DEBUG:
