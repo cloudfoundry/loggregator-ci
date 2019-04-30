@@ -445,16 +445,16 @@ jobs:
     input_mapping:
       bbl-config: bosh-bootloader
     params:
-      BBL_GCP_SERVICE_ACCOUNT_KEY: gcp/coconut-bbl/service-account.key.json
+      BBL_GCP_SERVICE_ACCOUNT_KEY: ((bbl_state_dir))/service-account.key.json
       BBL_GCP_PROJECT_ID: cff-loggregator
       BBL_GCP_ZONE: us-central1-a
       BBL_GCP_REGION: us-central1
-      BBL_STATE_DIR: gcp/coconut-bbl
+      BBL_STATE_DIR: ((bbl_state_dir))
       BBL_IAAS: gcp
       BBL_LB_CERT: {{coconut_bbl_lb_cert}}
       BBL_LB_KEY: {{coconut_bbl_lb_key}}
       BBL_ENV_NAME: coconut-bbl
-      LB_DOMAIN: coconut.cf-app.com
+      LB_DOMAIN: ((system_domain))
       BBL_CONFIG_DIR: plan-patches/iso-segs-gcp
   - put: deployments-loggregator
     params:
@@ -472,12 +472,12 @@ jobs:
   - task: delete-deployments
     file: loggregator-ci/tasks/bosh-delete-all-deployments/task.yml
     params:
-      BBL_STATE_DIR: gcp/coconut-bbl
+      BBL_STATE_DIR: ((bbl_state_dir))
   - task: bbl-destroy
     file: cf-deployment-concourse-tasks/bbl-destroy/task.yml
     params:
-      BBL_STATE_DIR: gcp/coconut-bbl
-      BBL_GCP_SERVICE_ACCOUNT_KEY: gcp/coconut-bbl/service-account.key.json
+      BBL_STATE_DIR: ((bbl_state_dir))
+      BBL_GCP_SERVICE_ACCOUNT_KEY: ((bbl_state_dir))/service-account.key.json
   - put: deployments-loggregator
     params:
       repository: updated-bbl-state
@@ -1349,8 +1349,8 @@ jobs:
   - task: noisy-neighbor-nozzle-deploy
     file: loggregator-ci/tasks/noisy-neighbor-nozzle-deploy/task.yml
     params:
-      SYSTEM_DOMAIN: "coconut.cf-app.com"
-      APP_DOMAIN: "coconut.cf-app.com"
+      SYSTEM_DOMAIN: ((system_domain))
+      APP_DOMAIN: ((system_domain))
       ORG: "system"
       SPACE: "accumulators"
       CLIENT_ID: {{noisy-neighbor-nozzle-coconut-id}}
@@ -1467,14 +1467,14 @@ jobs:
       bbl-state: deployments-loggregator
       bosh-release-dir: service-metrics-release
     params:
-      BBL_STATE_DIR: gcp/coconut-bbl
+      BBL_STATE_DIR: ((bbl_state_dir))
   - task: upload-on-demand-service-broker-release
     file: loggregator-ci/tasks/upload-release/task.yml
     input_mapping:
       bbl-state: deployments-loggregator
       bosh-release-dir: on-demand-service-broker-release
     params:
-      BBL_STATE_DIR: gcp/coconut-bbl
+      BBL_STATE_DIR: ((bbl_state_dir))
       CREATE_RELEASE: false
   - task: copy-ops-files
     config:
@@ -1489,6 +1489,8 @@ jobs:
       outputs:
       - name: ops-files
       - name: vars-files
+      params:
+        BBL_STATE_DIR: ((bbl_state_dir))
       run:
         path: /bin/bash
         args:
@@ -1496,11 +1498,11 @@ jobs:
         - |
           set -exu
 
-          pushd deployments-loggregator/gcp/coconut-bbl
+          pushd deployments-loggregator/${BBL_STATE_DIR}
             eval "$(bbl print-env)"
           popd
 
-          cp deployments-loggregator/gcp/coconut-bbl/service-metrics-broker-vars.yml vars-files
+          cp deployments-loggregator/${BBL_STATE_DIR}/service-metrics-broker-vars.yml vars-files
 
           service_metrics_version=$(bosh releases | grep service-metrics | grep -v service-metrics-adapter | head -n1 | awk '{print $2}' | cut -d '*' -f 1)
           cat <<EOT >> vars-files/service-metrics-version.yml
@@ -1565,8 +1567,8 @@ jobs:
           ops-files: ops-files
           cf-deployment: service-metrics-release
         params:
-          SYSTEM_DOMAIN: coconut.cf-app.com
-          BBL_STATE_DIR: gcp/coconut-bbl
+          SYSTEM_DOMAIN: ((system_domain))
+          BBL_STATE_DIR: ((bbl_state_dir))
           DEPLOYMENT_NAME: service-metrics-injector
           MANIFEST_FILE: manifests/manifest.yml
           OPS_FILES: |
@@ -1580,8 +1582,8 @@ jobs:
           ops-files: ops-files
           cf-deployment: service-metrics-release
         params:
-          SYSTEM_DOMAIN: coconut.cf-app.com
-          BBL_STATE_DIR: gcp/coconut-bbl
+          SYSTEM_DOMAIN: ((system_domain))
+          BBL_STATE_DIR: ((bbl_state_dir))
           DEPLOYMENT_NAME: sample-service-metrics
           MANIFEST_FILE: manifests/sample-service-metrics.yml
           VARS_FILES: service-metrics-version.yml service-metrics-broker-vars.yml
@@ -1592,13 +1594,13 @@ jobs:
         timeout: 10m
         file: loggregator-ci/tasks/wait-for-service-broker/task.yml
         params:
-          ENV_URL: sample-odb.coconut.cf-app.com
+          ENV_URL: sample-odb.((system_domain))
       - task: register-service-broker
         file: loggregator-ci/tasks/run-errand/task.yml
         input_mapping:
           bbl-state: deployments-loggregator
         params:
-          BBL_STATE_DIR: gcp/coconut-bbl
+          BBL_STATE_DIR: ((bbl_state_dir))
           DEPLOYMENT_NAME: sample-service-metrics
           ERRAND: register-broker
       - task: upgrade-all-service-instances
@@ -1606,7 +1608,7 @@ jobs:
         input_mapping:
           bbl-state: deployments-loggregator
         params:
-          BBL_STATE_DIR: gcp/coconut-bbl
+          BBL_STATE_DIR: ((bbl_state_dir))
           DEPLOYMENT_NAME: sample-service-metrics
           ERRAND: upgrade-all-service-instances
 
@@ -1624,11 +1626,11 @@ jobs:
   - task: system-tests
     file: loggregator-ci/tasks/service-metrics-release/system-tests.yml
     params:
-      CF_API: "https://api.coconut.cf-app.com"
+      CF_API: https://api.((system_domain))
       CF_USERNAME: {{coconut-username}}
       CF_PASSWORD: {{coconut-password}}
       DEPLOYMENT_NAME: service-metrics-injector
-      DOPPLER_ADDR: wss://doppler.coconut.cf-app.com:443
+      DOPPLER_ADDR: wss://doppler.((system_domain)):443
       ORIGIN: service-metrics-injector
 
 - name: service-metrics-promotion
@@ -1711,31 +1713,31 @@ jobs:
       input_mapping:
         bosh-release-dir: loggregator-release
       params:
-        BBL_STATE_DIR: gcp/coconut-bbl
+        BBL_STATE_DIR: ((bbl_state_dir))
     - task: upload-loggregator-agent-release
       file: loggregator-ci/tasks/upload-release/task.yml
       input_mapping:
         bosh-release-dir: loggregator-agent-release
       params:
-        BBL_STATE_DIR: gcp/coconut-bbl
+        BBL_STATE_DIR: ((bbl_state_dir))
     - task: upload-cf-syslog-drain-release
       file: loggregator-ci/tasks/upload-release/task.yml
       input_mapping:
         bosh-release-dir: cf-syslog-drain-release
       params:
-        BBL_STATE_DIR: gcp/coconut-bbl
+        BBL_STATE_DIR: ((bbl_state_dir))
     - task: upload-statsd-injector-release
       file: loggregator-ci/tasks/upload-release/task.yml
       input_mapping:
         bosh-release-dir: statsd-injector-release
       params:
-        BBL_STATE_DIR: gcp/coconut-bbl
+        BBL_STATE_DIR: ((bbl_state_dir))
     - task: upload-leadership-election-release
       file: loggregator-ci/tasks/upload-release/task.yml
       input_mapping:
         bosh-release-dir: leadership-election-release
       params:
-        BBL_STATE_DIR: gcp/coconut-bbl
+        BBL_STATE_DIR: ((bbl_state_dir))
   - task: add-windows-stemcell-to-manifest
     config:
       platform: linux
@@ -1770,7 +1772,7 @@ jobs:
     input_mapping:
       cf-deployment: modified-cf-deployment
     params:
-      BBL_STATE_DIR: gcp/coconut-bbl
+      BBL_STATE_DIR: ((bbl_state_dir))
   - task: copy-ops-files
     config:
       platform: linux
@@ -1786,6 +1788,8 @@ jobs:
       - name: loggregator-release
       outputs:
       - name: ops-files
+      params:
+        BBL_STATE_DIR: ((bbl_state_dir))
       run:
         path: /bin/bash
         args:
@@ -1797,7 +1801,7 @@ jobs:
           cp cf-deployment/operations/use-compiled-releases.yml ops-files/
           cp cf-deployment/operations/experimental/use-compiled-releases-windows.yml ops-files/
           cp cf-deployment/operations/experimental/add-metric-store.yml ops-files/
-          cp bbl-state/gcp/coconut-bbl/ops-files/clients.yml ops-files/
+          cp bbl-state/${BBL_STATE_DIR}/ops-files/clients.yml ops-files/
 
           cp cf-deployment/operations/windows1803-cell.yml ops-files/
           cp cf-deployment/operations/use-latest-windows1803-stemcell.yml ops-files/
@@ -1894,8 +1898,8 @@ jobs:
   - task: cf-deploy
     file: cf-deployment-concourse-tasks/bosh-deploy/task.yml
     params:
-      BBL_STATE_DIR: gcp/coconut-bbl
-      SYSTEM_DOMAIN: coconut.cf-app.com
+      BBL_STATE_DIR: ((bbl_state_dir))
+      SYSTEM_DOMAIN: ((system_domain))
       OPS_FILES: |
         scale-to-one-az.yml
         use-compiled-releases.yml
@@ -1921,32 +1925,32 @@ jobs:
   - task: export-loggregator-release
     file: loggregator-ci/tasks/export-release/task.yml
     params:
-      BBL_STATE_DIR: gcp/coconut-bbl
+      BBL_STATE_DIR: ((bbl_state_dir))
       DEPLOYMENT_NAME: cf
       RELEASE_NAME: loggregator
   - task: export-loggregator-agent-release
     file: loggregator-ci/tasks/export-release/task.yml
     params:
-      BBL_STATE_DIR: gcp/coconut-bbl
+      BBL_STATE_DIR: ((bbl_state_dir))
       DEPLOYMENT_NAME: cf
       RELEASE_NAME: loggregator-agent
       EXPORT_TO_WINDOWS: true
   - task: export-cf-syslog-drain-release
     file: loggregator-ci/tasks/export-release/task.yml
     params:
-      BBL_STATE_DIR: gcp/coconut-bbl
+      BBL_STATE_DIR: ((bbl_state_dir))
       DEPLOYMENT_NAME: cf
       RELEASE_NAME: cf-syslog-drain
   - task: export-statsd-injector-release
     file: loggregator-ci/tasks/export-release/task.yml
     params:
-      BBL_STATE_DIR: gcp/coconut-bbl
+      BBL_STATE_DIR: ((bbl_state_dir))
       DEPLOYMENT_NAME: cf
       RELEASE_NAME: statsd-injector
   - task: export-leadership-election-release
     file: loggregator-ci/tasks/export-release/task.yml
     params:
-      BBL_STATE_DIR: gcp/coconut-bbl
+      BBL_STATE_DIR: ((bbl_state_dir))
       DEPLOYMENT_NAME: cf
       RELEASE_NAME: leadership-election
   - task: save-vars-to-credhub
@@ -1959,6 +1963,8 @@ jobs:
           tag: latest
       inputs:
       - name: bbl-state
+      params:
+        BBL_STATE_DIR: ((bbl_state_dir))
       run:
         path: "/bin/bash"
         args:
@@ -1966,7 +1972,7 @@ jobs:
         - |
           set -e
 
-          pushd bbl-state/gcp/coconut-bbl > /dev/null
+          pushd bbl-state/${BBL_STATE_DIR} > /dev/null
             eval "$(bbl print-env)"
           popd
 
@@ -1979,27 +1985,27 @@ jobs:
     file: cf-deployment-concourse-tasks/set-feature-flags/task.yml
     attempts: 3
     params:
-      SYSTEM_DOMAIN: coconut.cf-app.com
-      BBL_STATE_DIR: gcp/coconut-bbl
+      SYSTEM_DOMAIN: ((system_domain))
+      BBL_STATE_DIR: ((bbl_state_dir))
       ENABLED_FEATURE_FLAGS: diego_docker
   - task: cleanup
     file: cf-deployment-concourse-tasks/bosh-cleanup/task.yml
     params:
-      BBL_STATE_DIR: gcp/coconut-bbl
+      BBL_STATE_DIR: ((bbl_state_dir))
   - task: create-blackbox-space
     file: loggregator-ci/tasks/create-org-and-space/task.yml
     params:
-      BBL_STATE_DIR: gcp/coconut-bbl
+      BBL_STATE_DIR: ((bbl_state_dir))
       ORG: system
       SPACE: blackbox-testing
-      SYSTEM_DOMAIN: coconut.cf-app.com
+      SYSTEM_DOMAIN: ((system_domain))
   - task: create-accumulators-space
     file: loggregator-ci/tasks/create-org-and-space/task.yml
     params:
-      BBL_STATE_DIR: gcp/coconut-bbl
+      BBL_STATE_DIR: ((bbl_state_dir))
       ORG: system
       SPACE: accumulators
-      SYSTEM_DOMAIN: coconut.cf-app.com
+      SYSTEM_DOMAIN: ((system_domain))
 
 - name: cats
   serial: true
@@ -2025,16 +2031,16 @@ jobs:
       bbl-state: deployments-loggregator
       integration-configs: deployments-loggregator
     params:
-      CATS_INTEGRATION_CONFIG_FILE: gcp/coconut-bbl/cats-config.json
-      BBL_STATE_DIR: gcp/coconut-bbl
-      SYSTEM_DOMAIN: coconut.cf-app.com
+      CATS_INTEGRATION_CONFIG_FILE: ((bbl_state_dir))/cats-config.json
+      BBL_STATE_DIR: ((bbl_state_dir))
+      SYSTEM_DOMAIN: ((system_domain))
   - task: run-cats
     file: cf-deployment-concourse-tasks/run-cats/task.yml
     input_mapping:
       integration-config: updated-integration-configs
       cf-acceptance-tests: cf-acceptance-tests
     params:
-      CONFIG_FILE_PATH: gcp/coconut-bbl/cats-config.json
+      CONFIG_FILE_PATH: ((bbl_state_dir))/cats-config.json
       NODES: 9
 
 - name: cfar-lats
@@ -2069,6 +2075,6 @@ jobs:
     params:
       CF_ADMIN_USER: {{coconut-username}}
       CF_ADMIN_PASSWORD: {{coconut-password}}
-      CF_DOMAIN: coconut.cf-app.com
+      CF_DOMAIN: ((system_domain))
       SKIP_SSL_VALIDATION: true
       APP_PUSH_TIMEOUT: 180s
