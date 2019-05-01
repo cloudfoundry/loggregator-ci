@@ -39,9 +39,11 @@ RUN cd /tmp \
 RUN wget -O /usr/local/bin/kubectl https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl \
   && chmod +x /usr/local/bin/kubectl
 
-RUN cd /tmp \
-  && wget https://github.com/cloudfoundry-incubator/credhub-cli/releases/download/1.7.5/credhub-linux-1.7.5.tgz \
-  && tar xzvf credhub*.tgz ./credhub \
-  && cp ./credhub /usr/local/bin/
+ENV credhub_cli_version=2.4.0
+RUN curl -OL https://github.com/cloudfoundry-incubator/credhub-cli/releases/download/${credhub_cli_version}/credhub-linux-${credhub_cli_version}.tgz && \
+  tar xzvf credhub-linux-${credhub_cli_version}.tgz && \
+  mv credhub /usr/local/bin && \
+  chmod +x /usr/local/bin/credhub && \
+  rm credhub-linux-${credhub_cli_version}.tgz
 
 RUN go get gopkg.in/mikefarah/yq.v2
