@@ -26,7 +26,7 @@ run:
       #!/bin/bash
       set -ex
 
-      loggregator-ci/scripts/environment-targeting/target-cf.sh
+      source loggregator-ci/scripts/environment-targeting/target-cf.sh && target-cf
 
       for app_name in $APP_NAMES; do
         set +x

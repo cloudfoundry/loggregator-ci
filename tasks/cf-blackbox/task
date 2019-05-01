@@ -28,9 +28,11 @@ RUBY
 
 function report_logs {
     if [[ $MSG_COUNT -eq 0 ]]; then
+        set +x
         echo "************************* OUTPUT *************************"
         cat output.txt
         echo "************************* OUTPUT *************************"
+        set -x
     fi
 }
 
@@ -43,7 +45,7 @@ export MSG_COUNT=0
 
 trap report EXIT
 
-loggregator-ci/scripts/environment-targeting/target-cf.sh
+source loggregator-ci/scripts/environment-targeting/target-cf.sh && target-cf
 
 # cf logs to a file
 rm -f output.txt

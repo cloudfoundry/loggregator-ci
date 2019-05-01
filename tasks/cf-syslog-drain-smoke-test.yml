@@ -5,6 +5,8 @@ image_resource:
     repository: loggregator/base
 inputs:
 - name: loggregator-tools
+- name: bbl-state
+  optional: true
 params:
   CF_SYSTEM_DOMAIN:
   CF_USERNAME:
@@ -20,6 +22,7 @@ params:
   TEARDOWN: true
   JOB_NAME:
   USE_CLIENT_AUTH: false
+  BBL_STATE_DIR:
 run:
   path: bash
   args:
@@ -33,6 +36,11 @@ run:
     export PATH=$GOPATH/bin:$PATH
 
     go get code.cloudfoundry.org/rfc5424
+
+    if [[ -d "bbl-state" ]]; then
+      source loggregator-ci/scripts/environment-targeting/target-cf.sh
+      CF_PASSWORD=$(cf-password-from-credhub)
+    fi
 
     function teardown {
       set +e

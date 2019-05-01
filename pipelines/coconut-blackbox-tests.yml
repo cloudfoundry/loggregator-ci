@@ -291,7 +291,7 @@ jobs:
       CF_APP_DOMAIN: ((domain))
       CF_SYSTEM_DOMAIN: ((domain))
       CF_USERNAME: {{coconut-username}}
-      CF_PASSWORD: {{coconut-password}}
+      BBL_STATE_DIR: ((bbl_state_dir))
       DATADOG_API_KEY: {{datadog-loggregator-api-key}}
       DRAIN_VERSION: "2.0"
       DRAIN_TYPE: "https"
@@ -317,7 +317,7 @@ jobs:
       CF_APP_DOMAIN: ((domain))
       CF_SYSTEM_DOMAIN: ((domain))
       CF_USERNAME: {{coconut-username}}
-      CF_PASSWORD: {{coconut-password}}
+      BBL_STATE_DIR: ((bbl_state_dir))
       DATADOG_API_KEY: {{datadog-loggregator-api-key}}
       DRAIN_VERSION: "2.0"
       DRAIN_TYPE: "https"

@@ -74,7 +74,7 @@ trap report_to_datadog EXIT
 
 echo "target api"
 set +x
-loggregator-ci/scripts/environment-targeting/target-cf.sh
+source loggregator-ci/scripts/environment-targeting/target-cf.sh && target-cf
 set -x
 # cf logs to a file
 rm -f output.txt

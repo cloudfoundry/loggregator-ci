@@ -24,7 +24,7 @@ run:
 
       set -ex
 
-      loggregator-ci/scripts/environment-targeting/target-cf.sh
+      source loggregator-ci/scripts/environment-targeting/target-cf.sh && target-cf
 
       mkdir -p build-workspace/src/code.cloudfoundry.org/loggregator-tools
       cp -r loggregator-tools/. build-workspace/src/code.cloudfoundry.org/loggregator-tools/

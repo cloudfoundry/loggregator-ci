@@ -1,13 +1,17 @@
 #!/usr/bin/env bash
 set -e
 
+function cf-password-from-credhub() {
+    pushd "bbl-state/${BBL_STATE_DIR}"
+        eval "$(bbl print-env)"
+    popd
+
+    credhub find -j -n cf_admin_password | jq -r .credentials[].name | xargs credhub get -j -n | jq -r .value
+}
+
 function target-cf() {
     if [[ -d "bbl-state" ]]; then
-        pushd "bbl-state/${BBL_STATE_DIR}"
-            eval "$(bbl print-env)"
-        popd
-
-        PASSWORD=$(credhub find -j -n cf_admin_password | jq -r .credentials[].name | xargs credhub get -j -n | jq -r .value)
+        PASSWORD=$(cf-password-from-credhub)
     fi
 
     if [ "$USE_CLIENT_AUTH" == "false" ]; then
@@ -37,5 +41,3 @@ function target-cf() {
         cf target -o "$ORG" -s "$SPACE"
     fi
 }
-
-target-cf
