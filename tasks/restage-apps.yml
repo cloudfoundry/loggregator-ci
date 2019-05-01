@@ -10,10 +10,14 @@ params:
   APP_NAMES:
   USERNAME:
   PASSWORD:
+  BBL_STATE_DIR:
   USE_CLIENT_AUTH: false
   SKIP_CERT_VERIFY: false
 inputs:
 - name: loggregator-tools
+- name: loggregator-ci
+- name: bbl-state
+  optional: true
 run:
   path: bash
   args:
@@ -22,32 +26,7 @@ run:
       #!/bin/bash
       set -ex
 
-      if [ "$USE_CLIENT_AUTH" == "false" ]; then
-        if [ "$SKIP_CERT_VERIFY" == "true" ]; then
-          cf login \
-            -a "$CF_API" \
-            -u "$USERNAME" \
-            -p "$PASSWORD" \
-            -s "$SPACE" \
-            -o "$ORG" \
-            --skip-ssl-validation
-        else
-          cf login \
-            -a "$CF_API" \
-            -u "$USERNAME" \
-            -p "$PASSWORD" \
-            -s "$SPACE" \
-            -o "$ORG"
-        fi
-      else
-        cf api "$CF_API"
-        if [ "$SKIP_CERT_VERIFY" == "true" ]; then
-            cf auth "$USERNAME" "$PASSWORD" --client-credentials --skip-ssl-validation
-        else
-            cf auth "$USERNAME" "$PASSWORD" --client-credentials
-        fi
-        cf target -o "$ORG" -s "$SPACE"
-      fi
+      loggregator-ci/scripts/environment-targeting/target-cf.sh
 
       for app_name in $APP_NAMES; do
         set +x

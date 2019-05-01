@@ -1,19 +1,7 @@
 #!/bin/bash
+set -ex
 
-set -e -x
-
-if [ "$USE_CLIENT_AUTH" == "false" ]; then
-    cf login \
-      -a "$CF_API" \
-      -u "$USERNAME" \
-      -p "$PASSWORD" \
-      -s "$SPACE" \
-      -o "$ORG"
-else
-    cf api "$CF_API"
-    cf auth "$USERNAME" "$PASSWORD" --client-credentials
-    cf target -o "$ORG" -s "$SPACE"
-fi
+loggregator-ci/scripts/environment-targeting/target-cf.sh
 
 # build recent logs measure tool
 mkdir /tmp/gopath

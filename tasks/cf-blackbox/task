@@ -31,32 +31,7 @@ export MSG_COUNT=0
 
 trap report_to_datadog EXIT
 
-if [ "$USE_CLIENT_AUTH" == "false" ]; then
-    if [ "$SKIP_CERT_VERIFY" == "true" ]; then
-      cf login \
-        -a "$CF_API" \
-        -u "$USERNAME" \
-        -p "$PASSWORD" \
-        -s "$SPACE" \
-        -o "$ORG" \
-        --skip-ssl-validation
-    else
-      cf login \
-        -a "$CF_API" \
-        -u "$USERNAME" \
-        -p "$PASSWORD" \
-        -s "$SPACE" \
-        -o "$ORG"
-    fi
-else
-    cf api "$CF_API"
-    if [ "$SKIP_CERT_VERIFY" == "true" ]; then
-        cf auth "$USERNAME" "$PASSWORD" --client-credentials --skip-ssl-validation
-    else
-        cf auth "$USERNAME" "$PASSWORD" --client-credentials
-    fi
-    cf target -o "$ORG" -s "$SPACE"
-fi
+loggregator-ci/scripts/environment-targeting/target-cf.sh
 
 # cf logs to a file
 rm -f output.txt

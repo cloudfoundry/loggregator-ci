@@ -26,6 +26,13 @@ resources:
     branch: master
     private_key: {{deployments-loggregator-key}}
 
+- name: denver-locks
+  type: git
+  source:
+    uri: git@github.com:pivotal-cf/denver-locks.git
+    branch: master
+    private_key: {{cf-loggregator-oauth-bot-key}}
+
 jobs:
 - name: floodspinner
   public: false
@@ -33,6 +40,8 @@ jobs:
   plan:
   - get: loggregator-tools
   - get: loggregator-ci
+  - get: bbl-state
+    resource: denver-locks
   - get: 15m
     trigger: true
   - task: restage-logspinner
@@ -40,22 +49,20 @@ jobs:
     timeout: 15m
     params:
       APP_NAMES: "floodspinner"
-      CF_API: "api.coconut.cf-app.com"
+      CF_API: ((cf_api_url))
       ORG: "system"
       SPACE: "blackbox-testing"
-      USERNAME: {{coconut-username}}
-      PASSWORD: {{coconut-password}}
-      SKIP_CERT_VERIFY: true
+      USERNAME: admin
+      BBL_STATE_DIR: ((bbl_state_dir))
   - task: run-smoke-tests
     file: loggregator-ci/tasks/cf-blackbox/task.yml
     params:
-      CF_API: "api.coconut.cf-app.com"
+      CF_API: ((cf_api_url))
       ORG: "system"
       SPACE: "blackbox-testing"
-      USERNAME: {{coconut-username}}
-      PASSWORD: {{coconut-password}}
-      SKIP_CERT_VERIFY: true
-      APP_DOMAIN: "floodspinner.coconut.cf-app.com"
+      USERNAME: admin
+      BBL_STATE_DIR: ((bbl_state_dir))
+      APP_DOMAIN: floodspinner.((domain))
       APP_NAME: "floodspinner"
       WAIT: 60
       CYCLES: 10000
@@ -68,14 +75,13 @@ jobs:
     file: loggregator-ci/tasks/blackbox-recent-logs/task.yml
     params:
       APP_NAME: "floodspinner"
-      CF_API: "api.coconut.cf-app.com"
+      CF_API: ((cf_api_url))
       DATADOG_API_KEY: {{datadog-loggregator-api-key}}
-      LOGGREGATOR_ADDR: "wss://doppler.coconut.cf-app.com:443"
+      LOGGREGATOR_ADDR: wss://doppler.((domain)):443
       ORG: "system"
       SPACE: "blackbox-testing"
-      USERNAME: {{coconut-username}}
-      PASSWORD: {{coconut-password}}
-      SKIP_CERT_VERIFY: true
+      USERNAME: admin
+      BBL_STATE_DIR: ((bbl_state_dir))
     timeout: 15m
 
 - name: dripspinner
@@ -84,6 +90,8 @@ jobs:
   plan:
   - get: loggregator-ci
   - get: loggregator-tools
+  - get: bbl-state
+    resource: denver-locks
   - get: 1h
     trigger: true
   - task: restage-logspinner
@@ -91,24 +99,22 @@ jobs:
     timeout: 15m
     params:
       APP_NAMES: "dripspinner"
-      CF_API: "api.coconut.cf-app.com"
+      CF_API: ((cf_api_url))
       ORG: "system"
       SPACE: "blackbox-testing"
-      USERNAME: {{coconut-username}}
-      PASSWORD: {{coconut-password}}
-      SKIP_CERT_VERIFY: true
+      USERNAME: admin
+      BBL_STATE_DIR: ((bbl_state_dir))
   - task: run-smoke-tests
     file: loggregator-ci/tasks/cf-blackbox/task.yml
     params:
-      CF_API: "api.coconut.cf-app.com"
+      CF_API: ((cf_api_url))
       DATADOG_API_KEY: {{datadog-loggregator-api-key}}
-      LOGGREGATOR_ADDR: "wss://doppler.coconut.cf-app.com:443"
+      LOGGREGATOR_ADDR: wss://doppler.((domain)):443
       ORG: "system"
       SPACE: "blackbox-testing"
-      USERNAME: {{coconut-username}}
-      PASSWORD: {{coconut-password}}
-      SKIP_CERT_VERIFY: true
-      APP_DOMAIN: "dripspinner.coconut.cf-app.com"
+      USERNAME: admin
+      BBL_STATE_DIR: ((bbl_state_dir))
+      APP_DOMAIN: dripspinner.((domain))
       APP_NAME: "dripspinner"
       WAIT: 600
       CYCLES: 1000
@@ -123,6 +129,8 @@ jobs:
   plan:
   - get: loggregator-ci
   - get: loggregator-tools
+  - get: bbl-state
+    resource: denver-locks
   - get: 1h
     trigger: true
   - task: restage-logspinner
@@ -130,24 +138,22 @@ jobs:
     timeout: 15m
     params:
       APP_NAMES: "flowspinner"
-      CF_API: "api.coconut.cf-app.com"
+      CF_API: ((cf_api_url))
       ORG: "system"
       SPACE: "blackbox-testing"
-      USERNAME: {{coconut-username}}
-      PASSWORD: {{coconut-password}}
-      SKIP_CERT_VERIFY: true
+      USERNAME: admin
+      BBL_STATE_DIR: ((bbl_state_dir))
   - task: run-smoke-tests
     file: loggregator-ci/tasks/cf-blackbox/task.yml
     params:
-      CF_API: "api.coconut.cf-app.com"
+      CF_API: ((cf_api_url))
       DATADOG_API_KEY: {{datadog-loggregator-api-key}}
-      LOGGREGATOR_ADDR: "wss://doppler.coconut.cf-app.com:443"
+      LOGGREGATOR_ADDR: wss://doppler.((domain)):443
       ORG: "system"
       SPACE: "blackbox-testing"
-      USERNAME: {{coconut-username}}
-      PASSWORD: {{coconut-password}}
-      SKIP_CERT_VERIFY: true
-      APP_DOMAIN: "flowspinner.coconut.cf-app.com"
+      USERNAME: admin
+      BBL_STATE_DIR: ((bbl_state_dir))
+      APP_DOMAIN: flowspinner.((domain))
       APP_NAME: "flowspinner"
       WAIT: 60
       CYCLES: 1000
@@ -162,6 +168,8 @@ jobs:
   plan:
   - get: loggregator-ci
   - get: loggregator-tools
+  - get: bbl-state
+    resource: denver-locks
   - get: 15m
     trigger: true
   - task: restage-logspinner
@@ -169,21 +177,19 @@ jobs:
     timeout: 15m
     params:
       APP_NAMES: "floodspinner-stream"
-      CF_API: "api.coconut.cf-app.com"
+      CF_API: ((cf_api_url))
       ORG: "system"
       SPACE: "blackbox-testing"
-      USERNAME: {{coconut-username}}
-      PASSWORD: {{coconut-password}}
-      SKIP_CERT_VERIFY: true
+      USERNAME: admin
+      BBL_STATE_DIR: ((bbl_state_dir))
   - task: run-smoke-tests
     file: loggregator-ci/tasks/cf-log-stream-blackbox/task.yml
     params:
-      DOMAIN: coconut.cf-app.com
+      DOMAIN: ((domain))
       ORG: "system"
       SPACE: "blackbox-testing"
-      USERNAME: {{coconut-username}}
-      PASSWORD: {{coconut-password}}
-      SKIP_CERT_VERIFY: true
+      USERNAME: admin
+      BBL_STATE_DIR: ((bbl_state_dir))
       APP_NAME: "floodspinner-stream"
       WAIT: 30
       CYCLES: 10000
@@ -199,6 +205,8 @@ jobs:
   plan:
   - get: loggregator-ci
   - get: loggregator-tools
+  - get: bbl-state
+    resource: denver-locks
   - get: 1h
     trigger: true
   - task: restage-logspinner
@@ -206,21 +214,19 @@ jobs:
     timeout: 15m
     params:
       APP_NAMES: "dripspinner-stream"
-      CF_API: "api.coconut.cf-app.com"
+      CF_API: ((cf_api_url))
       ORG: "system"
       SPACE: "blackbox-testing"
-      USERNAME: {{coconut-username}}
-      PASSWORD: {{coconut-password}}
-      SKIP_CERT_VERIFY: true
+      USERNAME: admin
+      BBL_STATE_DIR: ((bbl_state_dir))
   - task: run-smoke-tests
     file: loggregator-ci/tasks/cf-log-stream-blackbox/task.yml
     params:
-      DOMAIN: coconut.cf-app.com
+      DOMAIN: ((domain))
       ORG: "system"
       SPACE: "blackbox-testing"
-      USERNAME: {{coconut-username}}
-      PASSWORD: {{coconut-password}}
-      SKIP_CERT_VERIFY: true
+      USERNAME: admin
+      BBL_STATE_DIR: ((bbl_state_dir))
       APP_NAME: dripspinner-stream
       WAIT: 600
       CYCLES: 1000
@@ -236,6 +242,8 @@ jobs:
   plan:
   - get: loggregator-ci
   - get: loggregator-tools
+  - get: bbl-state
+    resource: denver-locks
   - get: 1h
     trigger: true
   - task: restage-logspinner
@@ -243,21 +251,19 @@ jobs:
     timeout: 15m
     params:
       APP_NAMES: "flowspinner-stream"
-      CF_API: "api.coconut.cf-app.com"
+      CF_API: ((cf_api_url))
       ORG: "system"
       SPACE: "blackbox-testing"
-      USERNAME: {{coconut-username}}
-      PASSWORD: {{coconut-password}}
-      SKIP_CERT_VERIFY: true
+      USERNAME: admin
+      BBL_STATE_DIR: ((bbl_state_dir))
   - task: run-smoke-tests
     file: loggregator-ci/tasks/cf-log-stream-blackbox/task.yml
     params:
-      DOMAIN: coconut.cf-app.com
+      DOMAIN: ((domain))
       ORG: "system"
       SPACE: "blackbox-testing"
-      USERNAME: {{coconut-username}}
-      PASSWORD: {{coconut-password}}
-      SKIP_CERT_VERIFY: true
+      USERNAME: admin
+      BBL_STATE_DIR: ((bbl_state_dir))
       APP_NAME: flowspinner-stream
       WAIT: 30
       CYCLES: 1000
@@ -273,6 +279,8 @@ jobs:
   plan:
   - get: loggregator-ci
   - get: loggregator-tools
+  - get: bbl-state
+    resource: denver-locks
   - get: 1h
     trigger: true
   - task: v2-drain
@@ -280,8 +288,8 @@ jobs:
     params:
       CF_ORG: system
       CF_SPACE: blackbox-testing
-      CF_APP_DOMAIN: coconut.cf-app.com
-      CF_SYSTEM_DOMAIN: coconut.cf-app.com
+      CF_APP_DOMAIN: ((domain))
+      CF_SYSTEM_DOMAIN: ((domain))
       CF_USERNAME: {{coconut-username}}
       CF_PASSWORD: {{coconut-password}}
       DATADOG_API_KEY: {{datadog-loggregator-api-key}}
@@ -296,6 +304,8 @@ jobs:
   plan:
   - get: loggregator-ci
   - get: loggregator-tools
+  - get: bbl-state
+    resource: denver-locks
   - get: 1h
     trigger: true
   - task: v2-drain
@@ -304,8 +314,8 @@ jobs:
       TEARDOWN: false
       CF_ORG: system
       CF_SPACE: blackbox-testing
-      CF_APP_DOMAIN: coconut.cf-app.com
-      CF_SYSTEM_DOMAIN: coconut.cf-app.com
+      CF_APP_DOMAIN: ((domain))
+      CF_SYSTEM_DOMAIN: ((domain))
       CF_USERNAME: {{coconut-username}}
       CF_PASSWORD: {{coconut-password}}
       DATADOG_API_KEY: {{datadog-loggregator-api-key}}
@@ -319,21 +329,22 @@ jobs:
   serial: true
   plan:
   - get: loggregator-tools
+  - get: bbl-state
+    resource: denver-locks
   - get: loggregator-ci
   - get: 15m
     trigger: true
   - task: run-latency-tests
     file: loggregator-ci/tasks/latency-test.yml
     params:
-      APP_DOMAIN: "loggregator-latency.coconut.cf-app.com"
+      APP_DOMAIN: loggregator-latency.((domain))
       APP_NAME: "loggregator-latency"
-      CF_API: "api.coconut.cf-app.com"
+      CF_API: ((cf_api_url))
       DATADOG_API_KEY: {{datadog-loggregator-api-key}}
       ORG: system
       SPACE: blackbox-testing
-      USERNAME: {{coconut-username}}
-      PASSWORD: {{coconut-password}}
-      SKIP_CERT_VERIFY: true
+      USERNAME: admin
+      BBL_STATE_DIR: ((bbl_state_dir))
     timeout: 15m
 
 - name: vm-health-metrics
@@ -343,12 +354,13 @@ jobs:
   - aggregate:
     - get: loggregator-ci
     - get: deployments-loggregator
+    - get: denver-locks
     - get: 10m
       trigger: true
   - task: health-check
     file: loggregator-ci/tasks/bosh-vm-health-check/task.yml
     input_mapping:
-      bbl-state: deployments-loggregator
+      bbl-state: denver-locks
     params:
-      BBL_STATE_DIR: gcp/coconut-bbl
+      BBL_STATE_DIR: ((bbl_state_dir))
       DEPLOYMENT_NAME: cf

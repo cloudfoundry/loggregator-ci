@@ -9,6 +9,7 @@ params:
   DATADOG_API_KEY:
   CF_API:
   APP_NAME:
+  BBL_STATE_DIR:
   CYCLES: 10000
   DELAY: 20
   DELAY_UNIT: ms

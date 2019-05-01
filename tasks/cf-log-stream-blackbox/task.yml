@@ -8,6 +8,7 @@ inputs:
 params:
   DOMAIN:
   DATADOG_API_KEY:
+  BBL_STATE_DIR:
   APP_NAME:
   CYCLES: 10000
   DELAY: 20

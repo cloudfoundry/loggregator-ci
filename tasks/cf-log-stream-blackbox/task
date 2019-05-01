@@ -74,13 +74,7 @@ trap report_to_datadog EXIT
 
 echo "target api"
 set +x
-cf login \
-    -a "$CF_API" \
-    -u "$USERNAME" \
-    -p "$PASSWORD" \
-    -s "$SPACE" \
-    -o "$ORG" \
-    --skip-ssl-validation # TODO: pass this in as a param
+loggregator-ci/scripts/environment-targeting/target-cf.sh
 set -x
 # cf logs to a file
 rm -f output.txt
