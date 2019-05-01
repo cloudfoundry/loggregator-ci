@@ -1,5 +1,4 @@
 #!/bin/bash
-
 set -ex
 
 function report_to_datadog {
@@ -27,9 +26,20 @@ RUBY
 )"
 }
 
+function report_logs {
+    if [[ $MSG_COUNT -eq 0 ]]; then
+        cat output.txt
+    fi
+}
+
+function report {
+    report_logs
+    report_to_datadog
+}
+
 export MSG_COUNT=0
 
-trap report_to_datadog EXIT
+trap report EXIT
 
 loggregator-ci/scripts/environment-targeting/target-cf.sh
 
