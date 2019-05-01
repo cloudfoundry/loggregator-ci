@@ -5,6 +5,8 @@ image_resource:
     repository: loggregator/blackbox
 inputs:
 - name: loggregator-ci
+- name: bbl-state
+  optional: true
 params:
   DOMAIN:
   DATADOG_API_KEY:
