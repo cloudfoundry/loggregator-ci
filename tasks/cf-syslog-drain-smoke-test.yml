@@ -5,6 +5,7 @@ image_resource:
     repository: loggregator/base
 inputs:
 - name: loggregator-tools
+- name: loggregator-ci
 - name: bbl-state
   optional: true
 params:
@@ -39,7 +40,7 @@ run:
 
     if [[ -d "bbl-state" ]]; then
       source loggregator-ci/scripts/environment-targeting/target-cf.sh
-      CF_PASSWORD=$(cf-password-from-credhub)
+      export CF_PASSWORD=$(cf-password-from-credhub)
     fi
 
     function teardown {
