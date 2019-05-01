@@ -2,9 +2,9 @@
 set -e
 
 function cf-password-from-credhub() {
-    pushd "bbl-state/${BBL_STATE_DIR}"
+    pushd "bbl-state/${BBL_STATE_DIR}" > /dev/null
         eval "$(bbl print-env)"
-    popd
+    popd > /dev/null
 
     credhub find -j -n cf_admin_password | jq -r .credentials[].name | xargs credhub get -j -n | jq -r .value
 }
