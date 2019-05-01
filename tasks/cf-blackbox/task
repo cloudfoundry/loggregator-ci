@@ -28,7 +28,9 @@ RUBY
 
 function report_logs {
     if [[ $MSG_COUNT -eq 0 ]]; then
+        echo "************************* OUTPUT *************************"
         cat output.txt
+        echo "************************* OUTPUT *************************"
     fi
 }
 
