@@ -7,7 +7,7 @@ function target-cf() {
             eval "$(bbl print-env)"
         popd
 
-        PASSWORD=$(credhub find -j -n ${cf_admin_password} | jq -r .credentials[].name | xargs credhub get -j -n | jq -r .value)
+        PASSWORD=$(credhub find -j -n cf_admin_password | jq -r .credentials[].name | xargs credhub get -j -n | jq -r .value)
     fi
 
     if [ "$USE_CLIENT_AUTH" == "false" ]; then
