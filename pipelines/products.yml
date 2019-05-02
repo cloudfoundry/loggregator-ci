@@ -1629,14 +1629,16 @@ jobs:
     passed: ["service-metrics-deploy"]
     trigger: true
   - get: loggregator-ci
+  - get: bbl-state
+    resource: denver-locks
   - get: 10m
     trigger: true
   - task: system-tests
     file: loggregator-ci/tasks/service-metrics-release/system-tests.yml
     params:
       CF_API: https://api.((system_domain))
-      CF_USERNAME: {{coconut-username}}
-      CF_PASSWORD: {{coconut-password}}
+      CF_USERNAME: admin
+      BBL_STATE_DIR: ((bbl_state_dir))
       DEPLOYMENT_NAME: service-metrics-injector
       DOPPLER_ADDR: wss://doppler.((system_domain)):443
       ORIGIN: service-metrics-injector

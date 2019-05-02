@@ -8,6 +8,7 @@ image_resource:
 inputs:
   - name: service-metrics-release
   - name: loggregator-ci
+  - name: bbl-state
 
 run:
   path: loggregator-ci/tasks/service-metrics-release/scripts/system-tests.sh
@@ -15,6 +16,6 @@ run:
 params:
   CF_API:
   CF_USERNAME:
-  CF_PASSWORD:
+  BBL_STATE_DIR:
   DOPPLER_ADDR:
   DEPLOYMENT_NAME:

@@ -9,6 +9,9 @@ pushd "${BASE_DIR}" > /dev/null
   export GOPATH=$PWD
   export PATH=$GOPATH/bin:$PATH
 
+  source loggregator-ci/scripts/environment-targeting/target-cf.sh
+  export PASSWORD=$(cf-password-from-credhub)
+
   git submodule init && git submodule update --recursive
 
   go get github.com/cloudfoundry/noaa/samples/firehose
