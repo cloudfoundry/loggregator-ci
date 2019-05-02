@@ -10,11 +10,18 @@ function cf-password-from-credhub() {
 }
 
 function target-cf() {
-    if [[ -d "bbl-state" ]]; then
-        PASSWORD=$(cf-password-from-credhub)
-    fi
-
-    if [ "$USE_CLIENT_AUTH" == "false" ]; then
+    if [ "$USE_CLIENT_AUTH" == "true" ]; then
+        cf api "$CF_API"
+        if [ "$SKIP_CERT_VERIFY" == "true" ]; then
+            cf auth "$USERNAME" "$PASSWORD" --client-credentials --skip-ssl-validation
+        else
+            cf auth "$USERNAME" "$PASSWORD" --client-credentials
+        fi
+        cf target -o "$ORG" -s "$SPACE"
+    else
+        if [[ -d "bbl-state" ]]; then
+            PASSWORD=$(cf-password-from-credhub)
+        fi
         if [ "$SKIP_CERT_VERIFY" == "true" ]; then
             cf login \
             -a "$CF_API" \
@@ -31,13 +38,6 @@ function target-cf() {
             -s "$SPACE" \
             -o "$ORG"
         fi
-    else
-        cf api "$CF_API"
-        if [ "$SKIP_CERT_VERIFY" == "true" ]; then
-            cf auth "$USERNAME" "$PASSWORD" --client-credentials --skip-ssl-validation
-        else
-            cf auth "$USERNAME" "$PASSWORD" --client-credentials
-        fi
-        cf target -o "$ORG" -s "$SPACE"
+
     fi
 }
