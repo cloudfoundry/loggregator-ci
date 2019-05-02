@@ -6,6 +6,8 @@ image_resource:
 inputs:
   - name: loggregator-tools
   - name: loggregator-ci
+  - name: bbl-state
+    optional: true
 params:
   CF_API:
   USERNAME:
