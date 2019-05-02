@@ -290,7 +290,7 @@ jobs:
       CF_SPACE: blackbox-testing
       CF_APP_DOMAIN: ((domain))
       CF_SYSTEM_DOMAIN: ((domain))
-      CF_USERNAME: {{coconut-username}}
+      CF_USERNAME: admin
       BBL_STATE_DIR: ((bbl_state_dir))
       DATADOG_API_KEY: {{datadog-loggregator-api-key}}
       DRAIN_VERSION: "2.0"
@@ -316,7 +316,7 @@ jobs:
       CF_SPACE: blackbox-testing
       CF_APP_DOMAIN: ((domain))
       CF_SYSTEM_DOMAIN: ((domain))
-      CF_USERNAME: {{coconut-username}}
+      CF_USERNAME: admin
       BBL_STATE_DIR: ((bbl_state_dir))
       DATADOG_API_KEY: {{datadog-loggregator-api-key}}
       DRAIN_VERSION: "2.0"
