@@ -1543,7 +1543,7 @@ jobs:
               url: https://uaa.((system_domain))
             user_credentials:
               username: admin
-              password: $(cf-password-from-credhub)
+              password: "$(cf-password-from-credhub)"
           EOT
 
           yq w -i vars-files/service-metrics-broker-vars.yml bosh.root_ca_cert "\"$(yq read bbl-state/${BBL_STATE_DIR}/vars/director-vars-store.yml default_ca.ca)\""

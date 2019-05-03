@@ -7,11 +7,10 @@ function credhub-get() {
         eval "$(bbl print-env)"
     popd > /dev/null
 
-    credhub_key=""
     if [[ -n "${key_name}" ]]; then
-        credhub_key="--key ${key_name}"
+        key=".${key_name}"
     fi
-    credhub find -j -n ${var_name} | jq -r .credentials[].name | xargs credhub get -j ${credhub_key} -n | jq -r .value
+    credhub find -j -n ${var_name} | jq -r .credentials[].name | xargs credhub get -j -n | jq -r ".value${key}"
 }
 
 function cf-password-from-credhub() {
