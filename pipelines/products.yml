@@ -1368,6 +1368,7 @@ jobs:
       USERNAME: admin
       DATADOG_API_KEY: {{datadog-loggregator-api-key}}
       NOZZLE_COUNT: 4
+      BBL_STATE_DIR: ((bbl_state_dir))
 
 ###############################################################################
 # SERVICE METRICS INJECTOR

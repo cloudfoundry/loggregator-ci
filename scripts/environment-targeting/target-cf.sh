@@ -1,13 +1,11 @@
 #!/usr/bin/env bash
-set -e
-
 function credhub-get() {
     var_name=$1
     pushd "bbl-state/${BBL_STATE_DIR}" > /dev/null
         eval "$(bbl print-env)"
     popd > /dev/null
 
-    credhub find -j -n var_name | jq -r .credentials[].name | xargs credhub get -j -n | jq -r .value
+    credhub find -j -n ${var_name} | jq -r .credentials[].name | xargs credhub get -j -n | jq -r .value
 }
 
 function cf-password-from-credhub() {
