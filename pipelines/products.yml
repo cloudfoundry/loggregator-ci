@@ -1491,9 +1491,11 @@ jobs:
       image_resource:
         type: docker-image
         source:
-          repository: relintdockerhubpushbot/cf-deployment-concourse-tasks
+          repository: loggregator/base
       inputs:
       - name: deployments-loggregator
+      - name: loggregator-ci
+      - name: bbl-state
       outputs:
       - name: ops-files
       - name: vars-files
@@ -1510,11 +1512,39 @@ jobs:
             eval "$(bbl print-env)"
           popd
 
-          cp bbl-state/${BBL_STATE_DIR}/service-metrics-broker-vars.yml vars-files
+          source loggregator-ci/scripts/environment-targeting/target-cf.sh
 
           service_metrics_version=$(bosh releases | grep service-metrics | grep -v service-metrics-adapter | head -n1 | awk '{print $2}' | cut -d '*' -f 1)
           cat <<EOT >> vars-files/service-metrics-version.yml
           service-metrics-release-version: $service_metrics_version
+          EOT
+
+          cat <<EOT >> vars-files/service-metrics-broker-vars.yml
+          disable_ssl_cert_verification: false
+
+          broker_name: sample-odb
+          broker_uri:  sample-odb.coconut.cf-app.com
+          broker_route_name: sample-odb
+
+          service_catalog_id: 91f32375-980f-4b70-9e62-bef43423823e
+          service_catalog_service_name: sample-odb
+
+          bosh:
+            url: https://10.0.0.6:25555
+            root_ca_cert: |
+              $(yq read bbl-state/${BBL_STATE_DIR}/vars/director-vars-store.yml default_ca.ca)
+            authentication:
+              username: admin
+              password: "$(yq read bbl-state/${BBL_STATE_DIR}/vars/director-vars-store.yml admin_password)"
+
+          cf:
+            api_url: https://api.((system_domain))
+            root_ca_cert: $(credhub-get service_cf_internal_ca ca)
+            uaa:
+              url: https://uaa.((system_domain))
+            user_credentials:
+              username: admin
+              password: $(cf-password-from-credhub)
           EOT
 
           odb_version=$(bosh releases | grep on-demand-service-broker | head -n1 | awk '{print $2}' | cut -d '*' -f 1)
