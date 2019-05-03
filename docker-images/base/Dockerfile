@@ -2,16 +2,13 @@ FROM golang:1.12
 
 RUN go version
 
-RUN apt-get update && \
-    apt-add-repository ppa:rmescandon/yq && \
-    apt-get install --yes \
+RUN apt-get update; apt-get install --yes \
     bundler \
     jq \
     rsync \
     unzip \
     psmisc \
-    vim \
-    yq
+    vim
 
 # get v3 protoc from github, it was in beta at the time of writing
 RUN cd /tmp \
@@ -48,3 +45,5 @@ RUN curl -OL https://github.com/cloudfoundry-incubator/credhub-cli/releases/down
   mv credhub /usr/local/bin && \
   chmod +x /usr/local/bin/credhub && \
   rm credhub-linux-${credhub_cli_version}.tgz
+
+RUN go get gopkg.in/mikefarah/yq.v2 && cp /go/bin/yq.v2 /go/bin/yq
