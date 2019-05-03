@@ -1531,21 +1531,23 @@ jobs:
 
           bosh:
             url: https://10.0.0.6:25555
-            root_ca_cert: |
-              $(yq read bbl-state/${BBL_STATE_DIR}/vars/director-vars-store.yml default_ca.ca)
+            root_ca_cert: ""
             authentication:
               username: admin
               password: "$(yq read bbl-state/${BBL_STATE_DIR}/vars/director-vars-store.yml admin_password)"
 
           cf:
             api_url: https://api.((system_domain))
-            root_ca_cert: $(credhub-get service_cf_internal_ca ca)
+            root_ca_cert: ""
             uaa:
               url: https://uaa.((system_domain))
             user_credentials:
               username: admin
               password: $(cf-password-from-credhub)
           EOT
+
+          yq w -i vars-files/service-metrics-broker-vars.yml bosh.root_ca_cert "\"$(yq read bbl-state/${BBL_STATE_DIR}/vars/director-vars-store.yml default_ca.ca)\""
+          yq w -i vars-files/service-metrics-broker-vars.yml cf.root_ca_cert "\"$(credhub-get service_cf_internal_ca ca)\""
 
           odb_version=$(bosh releases | grep on-demand-service-broker | head -n1 | awk '{print $2}' | cut -d '*' -f 1)
           cat <<EOT >> ops-files/odb-version.yml

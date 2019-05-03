@@ -8,7 +8,7 @@ function credhub-get() {
     popd > /dev/null
 
     credhub_key=""
-    if [[ -n key_name ]]; then
+    if [[ -n "${key_name}" ]]; then
         credhub_key="--key ${key_name}"
     fi
     credhub find -j -n ${var_name} | jq -r .credentials[].name | xargs credhub get -j ${credhub_key} -n | jq -r .value
