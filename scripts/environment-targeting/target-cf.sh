@@ -11,7 +11,7 @@ function credhub-get() {
     if [[ -n key_name ]]; then
         credhub_key="--key ${key_name}"
     fi
-    credhub find -j -n ${var_name} | jq -r .credentials[].name | xargs credhub get -j -n ${credhub_key} | jq -r .value
+    credhub find -j -n ${var_name} | jq -r .credentials[].name | xargs credhub get -j ${credhub_key} -n | jq -r .value
 }
 
 function cf-password-from-credhub() {
