@@ -7,6 +7,7 @@ function credhub-get() {
         eval "$(bbl print-env)"
     popd > /dev/null
 
+    key=""
     if [[ -n "${key_name}" ]]; then
         key=".${key_name}"
     fi
