@@ -18,13 +18,14 @@ pushd $NNN_PATH
 popd
 
 # CF Authentication
+CF_API="https://api.$SYSTEM_DOMAIN"
 source loggregator-ci/scripts/environment-targeting/target-cf.sh && target-cf
 
 # Deploy
 pushd $BINARY_PATH
     ./deployer-linux \
         --app-domain "$APP_DOMAIN" \
-        --capi-addr "https://api.$SYSTEM_DOMAIN" \
+        --capi-addr ${CF_API} \
         --client-id "$CLIENT_ID" \
         --client-secret "$CLIENT_SECRET" \
         --datadog-api-key "$DATADOG_API_KEY" \
