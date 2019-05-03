@@ -18,24 +18,7 @@ pushd $NNN_PATH
 popd
 
 # CF Authentication
-if [ "$USE_CLIENT_AUTH" == "false" ]; then
-    args="-a api.$SYSTEM_DOMAIN -u $USERNAME -p $PASSWORD -s $SPACE -o $ORG"
-
-    if [ $SKIP_CERT_VERIFY == "true" ]; then
-        args+=" --skip-ssl-validation"
-    fi
-
-    cf login ${args}
-else
-    if [ $SKIP_CERT_VERIFY == "true" ]; then
-        cf api api."$SYSTEM_DOMAIN" --skip-ssl-validation
-    else
-        cf api api."$SYSTEM_DOMAIN"
-    fi
-
-    cf auth "$USERNAME" "$PASSWORD" --client-credentials
-    cf target -o "$ORG" -s "$SPACE"
-fi
+source loggregator-ci/scripts/environment-targeting/target-cf.sh && target-cf
 
 # Deploy
 pushd $BINARY_PATH

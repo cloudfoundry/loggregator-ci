@@ -1363,8 +1363,7 @@ jobs:
       CLIENT_ID: {{noisy-neighbor-nozzle-coconut-id}}
       CLIENT_SECRET: {{noisy-neighbor-nozzle-coconut-secret}}
       SUBSCRIPTION_ID: {{noisy-neighbor-nozzle-subscription-id}}
-      USERNAME: {{coconut-username}}
-      PASSWORD: {{coconut-password}}
+      USERNAME: admin
       DATADOG_API_KEY: {{datadog-loggregator-api-key}}
       NOZZLE_COUNT: 4
 
@@ -1460,7 +1459,8 @@ jobs:
       trigger: true
       passed: ["service-metrics-bump-submodule"]
     - get: deployments-loggregator
-    - get: denver-locks
+    - get: bbl-state
+      resource: denver-locks
     - get: loggregator-ci
     - get: on-demand-service-broker-release
       trigger: true
@@ -1472,14 +1472,12 @@ jobs:
   - task: upload-service-metrics-release
     file: loggregator-ci/tasks/upload-release/task.yml
     input_mapping:
-      bbl-state: denver-locks
       bosh-release-dir: service-metrics-release
     params:
       BBL_STATE_DIR: ((bbl_state_dir))
   - task: upload-on-demand-service-broker-release
     file: loggregator-ci/tasks/upload-release/task.yml
     input_mapping:
-      bbl-state: denver-locks
       bosh-release-dir: on-demand-service-broker-release
     params:
       BBL_STATE_DIR: ((bbl_state_dir))
@@ -1491,7 +1489,6 @@ jobs:
         type: docker-image
         source:
           repository: relintdockerhubpushbot/cf-deployment-concourse-tasks
-          tag: v5.7.0
       inputs:
       - name: deployments-loggregator
       outputs:
@@ -1506,11 +1503,11 @@ jobs:
         - |
           set -exu
 
-          pushd deployments-loggregator/${BBL_STATE_DIR}
+          pushd bbl-state/${BBL_STATE_DIR}
             eval "$(bbl print-env)"
           popd
 
-          cp deployments-loggregator/${BBL_STATE_DIR}/service-metrics-broker-vars.yml vars-files
+          cp bbl-state/${BBL_STATE_DIR}/service-metrics-broker-vars.yml vars-files
 
           service_metrics_version=$(bosh releases | grep service-metrics | grep -v service-metrics-adapter | head -n1 | awk '{print $2}' | cut -d '*' -f 1)
           cat <<EOT >> vars-files/service-metrics-version.yml
@@ -1535,10 +1532,10 @@ jobs:
             path: /variables/name=loggregator_ca
           - type: replace
             path: /variables/name=service-metrics/options/ca
-            value: /bosh-bbl-env-athabasca-2019-03-22t18-23z/cf/loggregator_ca
+            value: /bosh-((env_name))/cf/loggregator_ca
           - type: replace
             path: /variables/name=loggregator_agent/options/ca
-            value: /bosh-bbl-env-athabasca-2019-03-22t18-23z/cf/loggregator_ca
+            value: /bosh-((env_name))/cf/loggregator_ca
           - type: replace
             path: /variables/name=loggregator_agent/options/alternative_names
             value:
@@ -1553,10 +1550,10 @@ jobs:
             path: /variables/name=loggregator_ca
           - type: replace
             path: /variables/name=service_metrics/options/ca
-            value: /bosh-bbl-env-athabasca-2019-03-22t18-23z/cf/loggregator_ca
+            value: /bosh-((env_name))/cf/loggregator_ca
           - type: replace
             path: /variables/name=loggregator_agent/options/ca
-            value: /bosh-bbl-env-athabasca-2019-03-22t18-23z/cf/loggregator_ca
+            value: /bosh-((env_name))/cf/loggregator_ca
           - type: replace
             path: /variables/name=loggregator_agent/options/alternative_names
             value:
@@ -1570,8 +1567,7 @@ jobs:
       - task: deploy-standalone
         file: cf-deployment-concourse-tasks/bosh-deploy/task.yml
         input_mapping:
-          bbl-state: denver-locks
-          vars-store: deployments-loggregator
+          vars-store: bbl-state
           ops-files: ops-files
           cf-deployment: service-metrics-release
         params:
@@ -1585,7 +1581,6 @@ jobs:
       - task: deploy-odb
         file: cf-deployment-concourse-tasks/bosh-deploy/task.yml
         input_mapping:
-          bbl-state: denver-locks
           vars-store: deployments-loggregator
           ops-files: ops-files
           cf-deployment: service-metrics-release
@@ -1605,16 +1600,12 @@ jobs:
           ENV_URL: sample-odb.((system_domain))
       - task: register-service-broker
         file: loggregator-ci/tasks/run-errand/task.yml
-        input_mapping:
-          bbl-state: denver-locks
         params:
           BBL_STATE_DIR: ((bbl_state_dir))
           DEPLOYMENT_NAME: sample-service-metrics
           ERRAND: register-broker
       - task: upgrade-all-service-instances
         file: loggregator-ci/tasks/run-errand/task.yml
-        input_mapping:
-          bbl-state: denver-locks
         params:
           BBL_STATE_DIR: ((bbl_state_dir))
           DEPLOYMENT_NAME: sample-service-metrics
@@ -1933,7 +1924,7 @@ jobs:
     file: cf-deployment-concourse-tasks/update-integration-configs/task.yml
     input_mapping:
       bbl-state: denver-locks
-      integration-configs: deployments-loggregator
+      integration-configs: denver-locks
     params:
       CATS_INTEGRATION_CONFIG_FILE: ((bbl_state_dir))/cats-config.json
       BBL_STATE_DIR: ((bbl_state_dir))
