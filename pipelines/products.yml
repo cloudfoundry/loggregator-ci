@@ -1971,14 +1971,16 @@ jobs:
       passed: ["log-stream-cli-tests"]
       trigger: true
     - get: loggregator-ci
+    - get: bbl-state
+      resource: denver-locks
     - get: cf-drain-cli-master
   - task: run-cfar-lats
     input_mapping:
       cf-drain-cli: cf-drain-cli-master
     file: loggregator-ci/tasks/cfar-lats/task.yml
     params:
-      CF_ADMIN_USER: {{coconut-username}}
-      CF_ADMIN_PASSWORD: {{coconut-password}}
+      CF_ADMIN_USER: admin
       CF_DOMAIN: ((system_domain))
+      BBL_STATE_DIR: ((bbl_state_dir))
       SKIP_SSL_VALIDATION: true
       APP_PUSH_TIMEOUT: 180s

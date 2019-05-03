@@ -11,6 +11,8 @@ inputs:
 - name: cfar-logging-acceptance-tests
 - name: cf-drain-cli
 - name: log-stream-cli
+- name: bbl-state
+  optional: true
 
 run:
   path: loggregator-ci/tasks/cfar-lats/task
@@ -20,9 +22,13 @@ params:
   # - Username to use to login to cloud foundry.
   CF_ADMIN_USER:
 
-  # - Required
+  # - Optional
   # - The password to use to login to cloud foundry.
   CF_ADMIN_PASSWORD:
+
+  # - Optional
+  # - The path relative to bbl-state that stores bbl environment information.
+  BBL_STATE_DIR:
 
   # - Required
   # - The cloud foundry system domain.
