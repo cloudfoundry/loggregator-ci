@@ -2,8 +2,9 @@ FROM golang:1.12
 
 RUN go version
 
-RUN add-apt-repository ppa:rmescandon/yq
-RUN apt-get update; apt-get install --yes \
+RUN apt-get update && \
+    apt-add-repository ppa:rmescandon/yq && \
+    apt-get install --yes \
     bundler \
     jq \
     rsync \
