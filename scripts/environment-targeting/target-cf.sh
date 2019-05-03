@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 function credhub-get() {
     var_name=$1
-    key_name=$2
+    key_name=${2:-""}
 
     pushd "bbl-state/${BBL_STATE_DIR}" > /dev/null
         eval "$(bbl print-env)"

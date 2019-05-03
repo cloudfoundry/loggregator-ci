@@ -1506,7 +1506,7 @@ jobs:
         args:
         - "-c"
         - |
-          set -exu
+          set -exuo pipefail
 
           pushd bbl-state/${BBL_STATE_DIR}
             eval "$(bbl print-env)"
