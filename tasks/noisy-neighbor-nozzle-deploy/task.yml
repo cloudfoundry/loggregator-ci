@@ -8,6 +8,8 @@ image_resource:
 inputs:
 - name: loggregator-ci # - This repo
 - name: noisy-neighbor-nozzle # - The source repo for noisy-neighbor-nozzle
+- name: bbl-state
+  optional: true
 
 run:
   path: loggregator-ci/tasks/noisy-neighbor-nozzle-deploy/task
@@ -20,7 +22,6 @@ params:
   # - Required
   # - Cloud Foundry's system domain.
   APP_DOMAIN:
-
 
   # - Required
   # - The CF org to deploy to.
@@ -46,9 +47,13 @@ params:
   # - The CF username used to push the noisy-neighbor-nozzle app.
   USERNAME:
 
-  # - Required
+  # - Required if bbl-state is not present
   # - The CF password used to push the noisy-neighbor-nozzle app.
   PASSWORD:
+
+  # - Optional
+  # - The directory where bbl environment information is stored relative to bbl-state
+  BBL_STATE_DIR:
 
   # - Optional
   # - Use client auth to login to CF.

@@ -1353,6 +1353,8 @@ jobs:
       passed: [noisy-neighbor-nozzle-tests]
       trigger: true
     - get: loggregator-ci
+    - get: bbl-state
+      resource: denver-locks
   - task: noisy-neighbor-nozzle-deploy
     file: loggregator-ci/tasks/noisy-neighbor-nozzle-deploy/task.yml
     params:
