@@ -2,7 +2,7 @@
 
 set -o pipefail
 source loggregator-ci/scripts/environment-targeting/target-cf.sh
-export PASSWORD=$(cf-password-from-credhub)
+export CF_PASSWORD=$(cf-password-from-credhub)
 
 # This script expects to be ran at the concourse base directory
 BASE_DIR="$( cd service-metrics-release && pwd )"
