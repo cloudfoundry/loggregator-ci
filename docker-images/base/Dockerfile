@@ -17,7 +17,7 @@ RUN cd /tmp \
   && cp ./protoc /usr/local/bin/
 
 RUN wget https://s3.amazonaws.com/bosh-cli-artifacts/bosh-cli-4.0.1-linux-amd64 && cp bosh-cli-4.0.1-linux-amd64 /usr/local/bin/bosh && chmod +x /usr/local/bin/bosh
-RUN curl -L "https://cli.run.pivotal.io/stable?release=debian64&source=github" > cf.deb && dpkg -i ./cf.deb
+RUN curl -L "https://cli.run.pivotal.io/stable?release=debian64&source=github&version=6.43.0" > cf.deb && dpkg -i ./cf.deb
 
 RUN go get github.com/onsi/ginkgo/ginkgo
 RUN git config --global user.email "cf-loggregator@pivotal.io" && git config --global user.name "Loggregator CI"
