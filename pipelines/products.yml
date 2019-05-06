@@ -1362,8 +1362,7 @@ jobs:
       APP_DOMAIN: ((system_domain))
       ORG: "system"
       SPACE: "accumulators"
-      CLIENT_ID: {{noisy-neighbor-nozzle-coconut-id}}
-      CLIENT_SECRET: {{noisy-neighbor-nozzle-coconut-secret}}
+      CLIENT_ID: noisy-neighbor-nozzle
       SUBSCRIPTION_ID: {{noisy-neighbor-nozzle-subscription-id}}
       USERNAME: admin
       DATADOG_API_KEY: {{datadog-loggregator-api-key}}

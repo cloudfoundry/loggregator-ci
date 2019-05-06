@@ -1,16 +1,9 @@
 resources:
 - name: datadog-firehose-nozzle-release
   type: git
-  source: &datadog-firehose-nozzle-release
+  source:
     uri: https://github.com/datadog/datadog-firehose-nozzle-release.git
     branch: master
-
-- name: deployments-loggregator
-  type: git
-  source: &deployments_loggregator
-    uri: git@github.com:cloudfoundry/deployments-loggregator.git
-    branch: master
-    private_key: {{deployments-loggregator-key}}
 
 - name: loggregator-ci
   type: git
@@ -19,34 +12,97 @@ resources:
     branch: master
     private_key: {{cf-loggregator-oauth-bot-key}}
 
+- name: denver-locks
+  type: git
+  source:
+    uri: git@github.com:pivotal-cf/denver-locks.git
+    branch: master
+    private_key: {{cf-loggregator-oauth-bot-key}}
+
+- name: 24h
+  type: time
+  source:
+    interval: 24h
+
 jobs:
 - name: deploy-datadog-nozzle
   serial: true
   plan:
   - aggregate:
     - get: datadog-firehose-nozzle-release
-    - get: deployments-loggregator
+    - get: bbl-state
+      resource: denver-locks
     - get: loggregator-ci
+    - get: 24h
+      trigger: true
   - task: upload-release
     file: loggregator-ci/tasks/upload-release/task.yml
     params:
-      BBL_STATE_DIR: gcp/coconut-bbl
+      BBL_STATE_DIR: ((bbl_state_dir))
       CREATE_RELEASE: false
     input_mapping:
-      bbl-state: deployments-loggregator
       bosh-release-dir: datadog-firehose-nozzle-release
+  - task: prepare-ops-and-vars-files
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source:
+          repository: loggregator/base
+      inputs:
+      - name: loggregator-ci
+      - name: bbl-state
+      outputs:
+      - name: ops-files
+      - name: vars-files
+      params:
+        BBL_STATE_DIR: ((bbl_state_dir))
+        SYSTEM_DOMAIN: ((system_domain))
+        DATADOG_API_KEY: {{datadog-loggregator-api-key}}
+      run:
+        path: /bin/bash
+        args:
+        - "-c"
+        - |
+          set -exuo pipefail
+
+          pushd bbl-state/${BBL_STATE_DIR}
+            eval "$(bbl print-env)"
+          popd
+
+          source loggregator-ci/scripts/environment-targeting/target-cf.sh
+
+          cat <<EOT >> ops-files/datadog.yml
+          - type: replace
+            path: /stemcells/alias=default/os
+            value: ubuntu-xenial
+
+          - type: replace
+            path: /instance_groups/name=nozzle/jobs/name=datadog-firehose-nozzle/properties/nozzle/insecure_ssl_skip_verify
+            value: true
+
+          - type: replace
+            path: /instance_groups/name=nozzle/jobs/name=datadog-firehose-nozzle/properties/datadog/metric_prefix
+            value: coconut.datadog.nozzle.
+          EOT
+
+          cat <<EOT >> vars-files/datadog.yml
+          tc_url: "wss://doppler.${SYSTEM_DOMAIN}"
+          datadog_api: https://api.datadoghq.com/api/v1
+          datadog_key: ${DATADOG_API_KEY}
+          uaa_url: "https://uaa.${SYSTEM_DOMAIN}"
+          uaa_client: datadog-firehose-nozzle
+          uaa_secret: "$(credhub-get datadog-firehose-nozzle-client-password)"
+          EOT
   - task: deploy
     file: loggregator-ci/tasks/bosh-deploy/task.yml
     params:
-      BBL_STATE_DIR: gcp/coconut-bbl
+      BBL_STATE_DIR: ((bbl_state_dir))
       DEPLOYMENT_NAME: datadog
       MANIFEST_FILE: templates/datadog-bosh2.yml
-      OPS_FILES: gcp/coconut-bbl/ops-files/datadog.yml
-      VARS_FILES: gcp/coconut-bbl/vars-files/datadog.yml
+      OPS_FILES: datadog.yml
+      VARS_FILES: datadog.yml
       VARS_STORE_FILE: null
     input_mapping:
-      bbl-state: deployments-loggregator
       bosh-release: datadog-firehose-nozzle-release
-      ops-files: deployments-loggregator
-      vars-files: deployments-loggregator
-      vars-store: deployments-loggregator
+      vars-store: bbl-state

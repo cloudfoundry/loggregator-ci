@@ -34,7 +34,6 @@ jobs:
   - task: deploy-to-prod
     file: loggregator-ci/tasks/noisy-neighbor-nozzle-deploy/task.yml
     params:
-    params:
       APP_DOMAIN: "cfapps.io"
       SYSTEM_DOMAIN: "run.pivotal.io"
       ORG: "cf-lamb"

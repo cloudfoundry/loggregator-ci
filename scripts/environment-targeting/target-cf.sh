@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-function credhub-get() {
+function credhub-get() (
+    set -e
     var_name=$1
     key_name=${2:-""}
 
@@ -11,14 +12,17 @@ function credhub-get() {
     if [[ -n "${key_name}" ]]; then
         key=".${key_name}"
     fi
-    credhub find -j -n ${var_name} | jq -r .credentials[].name | xargs credhub get -j -n | jq -r ".value${key}"
-}
+    credhub_find_reulsts=$(credhub find -j -n ${var_name})
+    echo ${credhub_find_reulsts} | jq -r .credentials[].name | xargs credhub get -j -n | jq -r ".value${key}"
+)
 
-function cf-password-from-credhub() {
+function cf-password-from-credhub() (
+    set -e
     credhub-get cf_admin_password
-}
+)
 
-function target-cf() {
+function target-cf() (
+    set -e
     if [ "$USE_CLIENT_AUTH" == "true" ]; then
         cf api "$CF_API"
         if [ "$SKIP_CERT_VERIFY" == "true" ]; then
@@ -49,4 +53,4 @@ function target-cf() {
         fi
 
     fi
-}
+)

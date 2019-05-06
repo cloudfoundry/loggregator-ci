@@ -19,7 +19,12 @@ popd
 
 # CF Authentication
 CF_API="https://api.$SYSTEM_DOMAIN"
-source loggregator-ci/scripts/environment-targeting/target-cf.sh && target-cf
+source loggregator-ci/scripts/environment-targeting/target-cf.sh
+target-cf
+if [[ -d "bbl-state" ]]; then
+    CLIENT_SECRET=$(credhub-get noisy-neighbor-nozzle-client-password)
+fi
+
 
 # Deploy
 pushd $BINARY_PATH

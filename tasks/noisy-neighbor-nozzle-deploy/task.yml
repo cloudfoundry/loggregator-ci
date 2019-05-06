@@ -31,11 +31,11 @@ params:
   # - The CF space to deploy to.
   SPACE:
 
-  # - Required
+  # - Required if bbl-state is not present
   # - The CF client ID to connect to the firehose.
   CLIENT_ID:
 
-  # - Required
+  # - Required if bbl-state is not present
   # - The CF client secret to connect to the firehose.
   CLIENT_SECRET:
 
