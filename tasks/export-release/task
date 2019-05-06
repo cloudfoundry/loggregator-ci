@@ -11,7 +11,7 @@ popd
 
 deployed_release="$(bosh -d $DEPLOYMENT_NAME deployment | grep $RELEASE_NAME/ | awk '{print $1}')"
 
-ubuntu_stemcell="ubunut-xenial/$(bosh -d $DEPLOYMENT_NAME deployment --column="Stemcell(s)" | grep xenial | awk -F'/' '{print $2}')"
+ubuntu_stemcell="ubuntu-xenial/$(bosh -d $DEPLOYMENT_NAME deployment --column="Stemcell(s)" | grep xenial | awk -F'/' '{print $2}')"
 bosh -d $DEPLOYMENT_NAME export-release $deployed_release $ubuntu_stemcell
 
 if [[ ! -z $EXPORT_TO_WINDOWS ]]; then
