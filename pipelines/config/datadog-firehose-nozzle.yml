@@ -1,0 +1,2 @@
+bbl_state_dir: acceptance-bosh/loggregator/coconut
+system_domain: "coconut.cf-denver.com"
