@@ -21,7 +21,6 @@ function set_pipeline {
     echo setting pipeline for "$1"
     fly -t $TARGET set-pipeline -p "$1" \
         -c "pipelines/$1.yml" \
-        -l "pipelines/config/$1.yml" \
         -l <(lpass show 'Shared-Loggregator (Pivotal Only)/pipeline-secrets.yml' --notes) \
         -l ~/workspace/loggregator-ci/scripts.yml \
         ${additional_vars_file}
