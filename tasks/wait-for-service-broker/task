@@ -1,10 +1,7 @@
 #!/usr/bin/env bash
-
 set -e
-
-
 
 status="404"
 while [ $status == "404"  ]; do
-  status=$(curl -k -s -o /dev/null -w "%{http_code}" https://$ENV_URL/v2/catalog)
+  status=$(curl -k -s -o /dev/null -w "%{http_code}" https://${ENV_URL}/v2/catalog)
 done
