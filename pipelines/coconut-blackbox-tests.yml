@@ -34,56 +34,6 @@ resources:
     private_key: {{cf-loggregator-oauth-bot-key}}
 
 jobs:
-- name: floodspinner
-  public: false
-  serial: true
-  plan:
-  - get: loggregator-tools
-  - get: loggregator-ci
-  - get: bbl-state
-    resource: denver-locks
-  - get: 15m
-    trigger: true
-  - task: restage-logspinner
-    file: loggregator-ci/tasks/restage-apps.yml
-    timeout: 15m
-    params:
-      APP_NAMES: "floodspinner"
-      CF_API: ((cf_api_url))
-      ORG: "system"
-      SPACE: "blackbox-testing"
-      USERNAME: admin
-      BBL_STATE_DIR: ((bbl_state_dir))
-  - task: run-smoke-tests
-    file: loggregator-ci/tasks/cf-blackbox/task.yml
-    params:
-      CF_API: ((cf_api_url))
-      ORG: "system"
-      SPACE: "blackbox-testing"
-      USERNAME: admin
-      BBL_STATE_DIR: ((bbl_state_dir))
-      APP_DOMAIN: floodspinner.((domain))
-      APP_NAME: "floodspinner"
-      WAIT: 60
-      CYCLES: 10000
-      DATADOG_API_KEY: {{datadog-loggregator-api-key}}
-      DELAY: "2"
-      DELAY_UNIT: "us"
-      MESSAGE: "FIFTEEN-MINUTE"
-    timeout: 15m
-  - task: run-recent-logs-smoke-tests
-    file: loggregator-ci/tasks/blackbox-recent-logs/task.yml
-    params:
-      APP_NAME: "floodspinner"
-      CF_API: ((cf_api_url))
-      DATADOG_API_KEY: {{datadog-loggregator-api-key}}
-      LOGGREGATOR_ADDR: wss://doppler.((domain)):443
-      ORG: "system"
-      SPACE: "blackbox-testing"
-      USERNAME: admin
-      BBL_STATE_DIR: ((bbl_state_dir))
-    timeout: 15m
-
 - name: dripspinner
   public: false
   serial: true
@@ -160,43 +110,6 @@ jobs:
       DELAY: "1"
       DELAY_UNIT: "ms"
       MESSAGE: "HOURLY"
-    timeout: 15m
-
-- name: floodspinner-stream
-  public: false
-  serial: true
-  plan:
-  - get: loggregator-ci
-  - get: loggregator-tools
-  - get: bbl-state
-    resource: denver-locks
-  - get: 15m
-    trigger: true
-  - task: restage-logspinner
-    file: loggregator-ci/tasks/restage-apps.yml
-    timeout: 15m
-    params:
-      APP_NAMES: "floodspinner-stream"
-      CF_API: ((cf_api_url))
-      ORG: "system"
-      SPACE: "blackbox-testing"
-      USERNAME: admin
-      BBL_STATE_DIR: ((bbl_state_dir))
-  - task: run-smoke-tests
-    file: loggregator-ci/tasks/cf-log-stream-blackbox/task.yml
-    params:
-      DOMAIN: ((domain))
-      ORG: "system"
-      SPACE: "blackbox-testing"
-      USERNAME: admin
-      BBL_STATE_DIR: ((bbl_state_dir))
-      APP_NAME: "floodspinner-stream"
-      WAIT: 30
-      CYCLES: 10000
-      DATADOG_API_KEY: {{datadog-loggregator-api-key}}
-      DELAY: "2"
-      DELAY_UNIT: "us"
-      MESSAGE: "FIFTEEN-MINUTE-STREAM"
     timeout: 15m
 
 - name: dripspinner-stream
