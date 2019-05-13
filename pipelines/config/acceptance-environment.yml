@@ -1,0 +1,3 @@
+acceptance_env_name: pineapple
+acceptance_bbl_state_dir: acceptance-bosh/loggregator/pineapple
+acceptance_system_domain: pineapple.cf-denver.com

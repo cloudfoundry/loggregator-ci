@@ -49,22 +49,22 @@ jobs:
     timeout: 15m
     params:
       APP_NAMES: "dripspinner"
-      CF_API: ((cf_api_url))
+      CF_API: api.((acceptance_system_domain))
       ORG: "system"
       SPACE: "blackbox-testing"
       USERNAME: admin
-      BBL_STATE_DIR: ((bbl_state_dir))
+      BBL_STATE_DIR: ((acceptance_bbl_state_dir))
   - task: run-smoke-tests
     file: loggregator-ci/tasks/cf-blackbox/task.yml
     params:
-      CF_API: ((cf_api_url))
+      CF_API: api.((acceptance_system_domain))
       DATADOG_API_KEY: {{datadog-loggregator-api-key}}
-      LOGGREGATOR_ADDR: wss://doppler.((domain)):443
+      LOGGREGATOR_ADDR: wss://doppler.((acceptance_system_domain)):443
       ORG: "system"
       SPACE: "blackbox-testing"
       USERNAME: admin
-      BBL_STATE_DIR: ((bbl_state_dir))
-      APP_DOMAIN: dripspinner.((domain))
+      BBL_STATE_DIR: ((acceptance_bbl_state_dir))
+      APP_DOMAIN: dripspinner.((acceptance_system_domain))
       APP_NAME: "dripspinner"
       WAIT: 600
       CYCLES: 1000
@@ -88,22 +88,22 @@ jobs:
     timeout: 15m
     params:
       APP_NAMES: "flowspinner"
-      CF_API: ((cf_api_url))
+      CF_API: api.((acceptance_system_domain))
       ORG: "system"
       SPACE: "blackbox-testing"
       USERNAME: admin
-      BBL_STATE_DIR: ((bbl_state_dir))
+      BBL_STATE_DIR: ((acceptance_bbl_state_dir))
   - task: run-smoke-tests
     file: loggregator-ci/tasks/cf-blackbox/task.yml
     params:
-      CF_API: ((cf_api_url))
+      CF_API: api.((acceptance_system_domain))
       DATADOG_API_KEY: {{datadog-loggregator-api-key}}
-      LOGGREGATOR_ADDR: wss://doppler.((domain)):443
+      LOGGREGATOR_ADDR: wss://doppler.((acceptance_system_domain)):443
       ORG: "system"
       SPACE: "blackbox-testing"
       USERNAME: admin
-      BBL_STATE_DIR: ((bbl_state_dir))
-      APP_DOMAIN: flowspinner.((domain))
+      BBL_STATE_DIR: ((acceptance_bbl_state_dir))
+      APP_DOMAIN: flowspinner.((acceptance_system_domain))
       APP_NAME: "flowspinner"
       WAIT: 60
       CYCLES: 1000
@@ -127,19 +127,19 @@ jobs:
     timeout: 15m
     params:
       APP_NAMES: "dripspinner-stream"
-      CF_API: ((cf_api_url))
+      CF_API: api.((acceptance_system_domain))
       ORG: "system"
       SPACE: "blackbox-testing"
       USERNAME: admin
-      BBL_STATE_DIR: ((bbl_state_dir))
+      BBL_STATE_DIR: ((acceptance_bbl_state_dir))
   - task: run-smoke-tests
     file: loggregator-ci/tasks/cf-log-stream-blackbox/task.yml
     params:
-      DOMAIN: ((domain))
+      DOMAIN: ((acceptance_system_domain))
       ORG: "system"
       SPACE: "blackbox-testing"
       USERNAME: admin
-      BBL_STATE_DIR: ((bbl_state_dir))
+      BBL_STATE_DIR: ((acceptance_bbl_state_dir))
       APP_NAME: dripspinner-stream
       WAIT: 600
       CYCLES: 1000
@@ -164,19 +164,19 @@ jobs:
     timeout: 15m
     params:
       APP_NAMES: "flowspinner-stream"
-      CF_API: ((cf_api_url))
+      CF_API: api.((acceptance_system_domain))
       ORG: "system"
       SPACE: "blackbox-testing"
       USERNAME: admin
-      BBL_STATE_DIR: ((bbl_state_dir))
+      BBL_STATE_DIR: ((acceptance_bbl_state_dir))
   - task: run-smoke-tests
     file: loggregator-ci/tasks/cf-log-stream-blackbox/task.yml
     params:
-      DOMAIN: ((domain))
+      DOMAIN: ((acceptance_system_domain))
       ORG: "system"
       SPACE: "blackbox-testing"
       USERNAME: admin
-      BBL_STATE_DIR: ((bbl_state_dir))
+      BBL_STATE_DIR: ((acceptance_bbl_state_dir))
       APP_NAME: flowspinner-stream
       WAIT: 30
       CYCLES: 1000
@@ -201,10 +201,10 @@ jobs:
     params:
       CF_ORG: system
       CF_SPACE: blackbox-testing
-      CF_APP_DOMAIN: ((domain))
-      CF_SYSTEM_DOMAIN: ((domain))
+      CF_APP_DOMAIN: ((acceptance_system_domain))
+      CF_SYSTEM_DOMAIN: ((acceptance_system_domain))
       CF_USERNAME: admin
-      BBL_STATE_DIR: ((bbl_state_dir))
+      BBL_STATE_DIR: ((acceptance_bbl_state_dir))
       DATADOG_API_KEY: {{datadog-loggregator-api-key}}
       DRAIN_VERSION: "2.0"
       DRAIN_TYPE: "https"
@@ -227,10 +227,10 @@ jobs:
       TEARDOWN: false
       CF_ORG: system
       CF_SPACE: blackbox-testing
-      CF_APP_DOMAIN: ((domain))
-      CF_SYSTEM_DOMAIN: ((domain))
+      CF_APP_DOMAIN: ((acceptance_system_domain))
+      CF_SYSTEM_DOMAIN: ((acceptance_system_domain))
       CF_USERNAME: admin
-      BBL_STATE_DIR: ((bbl_state_dir))
+      BBL_STATE_DIR: ((acceptance_bbl_state_dir))
       DATADOG_API_KEY: {{datadog-loggregator-api-key}}
       DRAIN_VERSION: "2.0"
       DRAIN_TYPE: "https"
@@ -250,14 +250,14 @@ jobs:
   - task: run-latency-tests
     file: loggregator-ci/tasks/latency-test.yml
     params:
-      APP_DOMAIN: loggregator-latency.((domain))
+      APP_DOMAIN: loggregator-latency.((acceptance_system_domain))
       APP_NAME: "loggregator-latency"
-      CF_API: ((cf_api_url))
+      CF_API: api.((acceptance_system_domain))
       DATADOG_API_KEY: {{datadog-loggregator-api-key}}
       ORG: system
       SPACE: blackbox-testing
       USERNAME: admin
-      BBL_STATE_DIR: ((bbl_state_dir))
+      BBL_STATE_DIR: ((acceptance_bbl_state_dir))
     timeout: 15m
 
 - name: vm-health-metrics
@@ -275,5 +275,5 @@ jobs:
     input_mapping:
       bbl-state: denver-locks
     params:
-      BBL_STATE_DIR: ((bbl_state_dir))
+      BBL_STATE_DIR: ((acceptance_bbl_state_dir))
       DEPLOYMENT_NAME: cf

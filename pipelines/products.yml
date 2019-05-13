@@ -1421,8 +1421,8 @@ jobs:
   - task: noisy-neighbor-nozzle-deploy
     file: loggregator-ci/tasks/noisy-neighbor-nozzle-deploy/task.yml
     params:
-      SYSTEM_DOMAIN: ((system_domain))
-      APP_DOMAIN: ((system_domain))
+      SYSTEM_DOMAIN: ((acceptance_system_domain))
+      APP_DOMAIN: ((acceptance_system_domain))
       ORG: "system"
       SPACE: "accumulators"
       CLIENT_ID: noisy-neighbor-nozzle
@@ -1430,7 +1430,7 @@ jobs:
       USERNAME: admin
       DATADOG_API_KEY: {{datadog-loggregator-api-key}}
       NOZZLE_COUNT: 4
-      BBL_STATE_DIR: ((bbl_state_dir))
+      BBL_STATE_DIR: ((acceptance_bbl_state_dir))
 
 ###############################################################################
 # SERVICE METRICS INJECTOR
@@ -1541,13 +1541,13 @@ jobs:
     input_mapping:
       bosh-release-dir: service-metrics-release
     params:
-      BBL_STATE_DIR: ((bbl_state_dir))
+      BBL_STATE_DIR: ((acceptance_bbl_state_dir))
   - task: upload-on-demand-service-broker-release
     file: loggregator-ci/tasks/upload-release/task.yml
     input_mapping:
       bosh-release-dir: on-demand-service-broker-release
     params:
-      BBL_STATE_DIR: ((bbl_state_dir))
+      BBL_STATE_DIR: ((acceptance_bbl_state_dir))
       CREATE_RELEASE: false
   - task: copy-ops-files
     config:
@@ -1564,7 +1564,7 @@ jobs:
       - name: ops-files
       - name: vars-files
       params:
-        BBL_STATE_DIR: ((bbl_state_dir))
+        BBL_STATE_DIR: ((acceptance_bbl_state_dir))
       run:
         path: /bin/bash
         args:
@@ -1587,7 +1587,7 @@ jobs:
           disable_ssl_cert_verification: false
 
           broker_name: sample-odb
-          broker_uri:  sample-odb.((system_domain))
+          broker_uri:  sample-odb.((acceptance_system_domain))
           broker_route_name: sample-odb
 
           service_catalog_id: 91f32375-980f-4b70-9e62-bef43423823e
@@ -1601,10 +1601,10 @@ jobs:
               password: "$(yq read bbl-state/${BBL_STATE_DIR}/vars/director-vars-store.yml admin_password)"
 
           cf:
-            api_url: https://api.((system_domain))
+            api_url: https://api.((acceptance_system_domain))
             root_ca_cert: ""
             uaa:
-              url: https://uaa.((system_domain))
+              url: https://uaa.((acceptance_system_domain))
             user_credentials:
               username: admin
               password: "$(cf-password-from-credhub)"
@@ -1631,10 +1631,10 @@ jobs:
             path: /variables/name=loggregator_ca
           - type: replace
             path: /variables/name=service-metrics/options/ca
-            value: /bosh-((env_name))/cf/loggregator_ca
+            value: /bosh-((acceptance_env_name))/cf/loggregator_ca
           - type: replace
             path: /variables/name=loggregator_agent/options/ca
-            value: /bosh-((env_name))/cf/loggregator_ca
+            value: /bosh-((acceptance_env_name))/cf/loggregator_ca
           - type: replace
             path: /variables/name=loggregator_agent/options/alternative_names
             value:
@@ -1649,10 +1649,10 @@ jobs:
             path: /variables/name=loggregator_ca
           - type: replace
             path: /variables/name=service_metrics/options/ca
-            value: /bosh-((env_name))/cf/loggregator_ca
+            value: /bosh-((acceptance_env_name))/cf/loggregator_ca
           - type: replace
             path: /variables/name=loggregator_agent/options/ca
-            value: /bosh-((env_name))/cf/loggregator_ca
+            value: /bosh-((acceptance_env_name))/cf/loggregator_ca
           - type: replace
             path: /variables/name=loggregator_agent/options/alternative_names
             value:
@@ -1670,8 +1670,8 @@ jobs:
           ops-files: ops-files
           cf-deployment: service-metrics-release
         params:
-          SYSTEM_DOMAIN: ((system_domain))
-          BBL_STATE_DIR: ((bbl_state_dir))
+          SYSTEM_DOMAIN: ((acceptance_system_domain))
+          BBL_STATE_DIR: ((acceptance_bbl_state_dir))
           DEPLOYMENT_NAME: service-metrics-injector
           MANIFEST_FILE: manifests/manifest.yml
           OPS_FILES: |
@@ -1684,8 +1684,8 @@ jobs:
           ops-files: ops-files
           cf-deployment: service-metrics-release
         params:
-          SYSTEM_DOMAIN: ((system_domain))
-          BBL_STATE_DIR: ((bbl_state_dir))
+          SYSTEM_DOMAIN: ((acceptance_system_domain))
+          BBL_STATE_DIR: ((acceptance_bbl_state_dir))
           DEPLOYMENT_NAME: sample-service-metrics
           MANIFEST_FILE: manifests/sample-service-metrics.yml
           VARS_FILES: service-metrics-version.yml service-metrics-broker-vars.yml
@@ -1696,17 +1696,17 @@ jobs:
         timeout: 10m
         file: loggregator-ci/tasks/wait-for-service-broker/task.yml
         params:
-          ENV_URL: sample-odb.((system_domain))
+          ENV_URL: sample-odb.((acceptance_system_domain))
       - task: register-service-broker
         file: loggregator-ci/tasks/run-errand/task.yml
         params:
-          BBL_STATE_DIR: ((bbl_state_dir))
+          BBL_STATE_DIR: ((acceptance_bbl_state_dir))
           DEPLOYMENT_NAME: sample-service-metrics
           ERRAND: register-broker
       - task: upgrade-all-service-instances
         file: loggregator-ci/tasks/run-errand/task.yml
         params:
-          BBL_STATE_DIR: ((bbl_state_dir))
+          BBL_STATE_DIR: ((acceptance_bbl_state_dir))
           DEPLOYMENT_NAME: sample-service-metrics
           ERRAND: upgrade-all-service-instances
 
@@ -1726,11 +1726,11 @@ jobs:
   - task: system-tests
     file: loggregator-ci/tasks/service-metrics-release/system-tests.yml
     params:
-      CF_API: https://api.((system_domain))
+      CF_API: https://api.((acceptance_system_domain))
       CF_USERNAME: admin
-      BBL_STATE_DIR: ((bbl_state_dir))
+      BBL_STATE_DIR: ((acceptance_bbl_state_dir))
       DEPLOYMENT_NAME: service-metrics-injector
-      DOPPLER_ADDR: wss://doppler.((system_domain)):443
+      DOPPLER_ADDR: wss://doppler.((acceptance_system_domain)):443
       ORIGIN: service-metrics-injector
 
 - name: service-metrics-promotion
@@ -1813,31 +1813,31 @@ jobs:
       input_mapping:
         bosh-release-dir: loggregator-release
       params:
-        BBL_STATE_DIR: ((bbl_state_dir))
+        BBL_STATE_DIR: ((acceptance_bbl_state_dir))
     - task: upload-loggregator-agent-release
       file: loggregator-ci/tasks/upload-release/task.yml
       input_mapping:
         bosh-release-dir: loggregator-agent-release
       params:
-        BBL_STATE_DIR: ((bbl_state_dir))
+        BBL_STATE_DIR: ((acceptance_bbl_state_dir))
     - task: upload-cf-syslog-drain-release
       file: loggregator-ci/tasks/upload-release/task.yml
       input_mapping:
         bosh-release-dir: cf-syslog-drain-release
       params:
-        BBL_STATE_DIR: ((bbl_state_dir))
+        BBL_STATE_DIR: ((acceptance_bbl_state_dir))
     - task: upload-statsd-injector-release
       file: loggregator-ci/tasks/upload-release/task.yml
       input_mapping:
         bosh-release-dir: statsd-injector-release
       params:
-        BBL_STATE_DIR: ((bbl_state_dir))
+        BBL_STATE_DIR: ((acceptance_bbl_state_dir))
     - task: upload-leadership-election-release
       file: loggregator-ci/tasks/upload-release/task.yml
       input_mapping:
         bosh-release-dir: leadership-election-release
       params:
-        BBL_STATE_DIR: ((bbl_state_dir))
+        BBL_STATE_DIR: ((acceptance_bbl_state_dir))
   - task: add-windows-stemcell-to-manifest
     config:
       platform: linux
@@ -1872,7 +1872,7 @@ jobs:
     input_mapping:
       cf-deployment: modified-cf-deployment
     params:
-      BBL_STATE_DIR: ((bbl_state_dir))
+      BBL_STATE_DIR: ((acceptance_bbl_state_dir))
   - task: copy-ops-files
     config:
       platform: linux
@@ -1889,7 +1889,7 @@ jobs:
       outputs:
       - name: ops-files
       params:
-        BBL_STATE_DIR: ((bbl_state_dir))
+        BBL_STATE_DIR: ((acceptance_bbl_state_dir))
       run:
         path: /bin/bash
         args:
@@ -1919,8 +1919,8 @@ jobs:
     input_mapping:
       vars-files: bbl-state
     params:
-      BBL_STATE_DIR: ((bbl_state_dir))
-      SYSTEM_DOMAIN: ((system_domain))
+      BBL_STATE_DIR: ((acceptance_bbl_state_dir))
+      SYSTEM_DOMAIN: ((acceptance_system_domain))
       OPS_FILES: |
         scale-to-one-az.yml
         use-compiled-releases.yml
@@ -1946,59 +1946,59 @@ jobs:
   - task: export-loggregator-release
     file: loggregator-ci/tasks/export-release/task.yml
     params:
-      BBL_STATE_DIR: ((bbl_state_dir))
+      BBL_STATE_DIR: ((acceptance_bbl_state_dir))
       DEPLOYMENT_NAME: cf
       RELEASE_NAME: loggregator
   - task: export-loggregator-agent-release
     file: loggregator-ci/tasks/export-release/task.yml
     params:
-      BBL_STATE_DIR: ((bbl_state_dir))
+      BBL_STATE_DIR: ((acceptance_bbl_state_dir))
       DEPLOYMENT_NAME: cf
       RELEASE_NAME: loggregator-agent
       EXPORT_TO_WINDOWS: true
   - task: export-cf-syslog-drain-release
     file: loggregator-ci/tasks/export-release/task.yml
     params:
-      BBL_STATE_DIR: ((bbl_state_dir))
+      BBL_STATE_DIR: ((acceptance_bbl_state_dir))
       DEPLOYMENT_NAME: cf
       RELEASE_NAME: cf-syslog-drain
   - task: export-statsd-injector-release
     file: loggregator-ci/tasks/export-release/task.yml
     params:
-      BBL_STATE_DIR: ((bbl_state_dir))
+      BBL_STATE_DIR: ((acceptance_bbl_state_dir))
       DEPLOYMENT_NAME: cf
       RELEASE_NAME: statsd-injector
   - task: export-leadership-election-release
     file: loggregator-ci/tasks/export-release/task.yml
     params:
-      BBL_STATE_DIR: ((bbl_state_dir))
+      BBL_STATE_DIR: ((acceptance_bbl_state_dir))
       DEPLOYMENT_NAME: cf
       RELEASE_NAME: leadership-election
   - task: enable-feature-flags
     file: cf-deployment-concourse-tasks/set-feature-flags/task.yml
     attempts: 3
     params:
-      SYSTEM_DOMAIN: ((system_domain))
-      BBL_STATE_DIR: ((bbl_state_dir))
+      SYSTEM_DOMAIN: ((acceptance_system_domain))
+      BBL_STATE_DIR: ((acceptance_bbl_state_dir))
       ENABLED_FEATURE_FLAGS: diego_docker
   - task: cleanup
     file: cf-deployment-concourse-tasks/bosh-cleanup/task.yml
     params:
-      BBL_STATE_DIR: ((bbl_state_dir))
+      BBL_STATE_DIR: ((acceptance_bbl_state_dir))
   - task: create-blackbox-space
     file: loggregator-ci/tasks/create-org-and-space/task.yml
     params:
-      BBL_STATE_DIR: ((bbl_state_dir))
+      BBL_STATE_DIR: ((acceptance_bbl_state_dir))
       ORG: system
       SPACE: blackbox-testing
-      SYSTEM_DOMAIN: ((system_domain))
+      SYSTEM_DOMAIN: ((acceptance_system_domain))
   - task: create-accumulators-space
     file: loggregator-ci/tasks/create-org-and-space/task.yml
     params:
-      BBL_STATE_DIR: ((bbl_state_dir))
+      BBL_STATE_DIR: ((acceptance_bbl_state_dir))
       ORG: system
       SPACE: accumulators
-      SYSTEM_DOMAIN: ((system_domain))
+      SYSTEM_DOMAIN: ((acceptance_system_domain))
 
 - name: cats
   serial: true
@@ -2025,16 +2025,16 @@ jobs:
       bbl-state: denver-locks
       integration-configs: denver-locks
     params:
-      CATS_INTEGRATION_CONFIG_FILE: ((bbl_state_dir))/cats-config.json
-      BBL_STATE_DIR: ((bbl_state_dir))
-      SYSTEM_DOMAIN: ((system_domain))
+      CATS_INTEGRATION_CONFIG_FILE: ((acceptance_bbl_state_dir))/cats-config.json
+      BBL_STATE_DIR: ((acceptance_bbl_state_dir))
+      SYSTEM_DOMAIN: ((acceptance_system_domain))
   - task: run-cats
     file: cf-deployment-concourse-tasks/run-cats/task.yml
     input_mapping:
       integration-config: updated-integration-configs
       cf-acceptance-tests: cf-acceptance-tests
     params:
-      CONFIG_FILE_PATH: ((bbl_state_dir))/cats-config.json
+      CONFIG_FILE_PATH: ((acceptance_bbl_state_dir))/cats-config.json
       NODES: 9
 
 - name: cfar-lats
@@ -2070,7 +2070,7 @@ jobs:
     file: loggregator-ci/tasks/cfar-lats/task.yml
     params:
       CF_ADMIN_USER: admin
-      CF_DOMAIN: ((system_domain))
-      BBL_STATE_DIR: ((bbl_state_dir))
+      CF_DOMAIN: ((acceptance_system_domain))
+      BBL_STATE_DIR: ((acceptance_bbl_state_dir))
       SKIP_SSL_VALIDATION: true
       APP_PUSH_TIMEOUT: 180s
