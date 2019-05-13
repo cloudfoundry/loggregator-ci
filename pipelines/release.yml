@@ -663,7 +663,7 @@ jobs:
       S3_SECRET_KEY: {{s3-secret-access-key}}
       BLOBSTORE_BUCKET: cf-syslog-drain-release-blobs
       SSH_KEY: {{loggregator-key}}
-      NEW_VERSION: "10.1"
+      NEW_VERSION: "10.2"
       RELEASE_NAME: "CF Syslog Drain Release"
       TO_BRANCH: develop
       FROM_BRANCH: master
