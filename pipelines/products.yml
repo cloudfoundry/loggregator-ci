@@ -2009,6 +2009,7 @@ jobs:
   - bosh-cf-cats
   plan:
   - aggregate:
+    - get: loggregator-ci
     - get: cf-deployment-concourse-tasks
     - get: deployments-loggregator
     - get: cf-acceptance-tests
