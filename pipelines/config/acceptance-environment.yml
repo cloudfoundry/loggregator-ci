@@ -1,3 +1,3 @@
 acceptance_env_name: coconut
-acceptance_bbl_state_dir: acceptance-bosh/loggregator/coconut
-acceptance_system_domain: coconut.cf-denver.com
+acceptance_bbl_state_dir: gcp/coconut
+acceptance_system_domain: coconut.loggr.cf-app.com

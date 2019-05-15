@@ -210,10 +210,10 @@ resources:
     branch: master
     private_key: {{deployments-loggregator-key}}
 
-- name: denver-locks
+- name: denver-deployments
   type: git
   source:
-    uri: git@github.com:pivotal-cf/denver-locks.git
+    uri: git@github.com:pivotal-cf/denver-deployments.git
     branch: master
     private_key: {{cf-loggregator-oauth-bot-key}}
 
@@ -1417,7 +1417,7 @@ jobs:
       trigger: true
     - get: loggregator-ci
     - get: bbl-state
-      resource: denver-locks
+      resource: deployments-loggregator
   - task: noisy-neighbor-nozzle-deploy
     file: loggregator-ci/tasks/noisy-neighbor-nozzle-deploy/task.yml
     params:
@@ -1527,7 +1527,7 @@ jobs:
       passed: ["service-metrics-bump-submodule"]
     - get: deployments-loggregator
     - get: bbl-state
-      resource: denver-locks
+      resource: deployments-loggregator
     - get: loggregator-ci
     - get: on-demand-service-broker-release
       trigger: true
@@ -1720,7 +1720,7 @@ jobs:
     trigger: true
   - get: loggregator-ci
   - get: bbl-state
-    resource: denver-locks
+    resource: deployments-loggregator
   - get: 10m
     trigger: true
   - task: system-tests
@@ -1782,8 +1782,9 @@ jobs:
   plan:
   - aggregate:
     - get: loggregator-ci
+    - get: denver-deployments
     - get: bbl-state
-      resource: denver-locks
+      resource: deployments-loggregator
     - get: cf-deployment
       trigger: true
     - get: cf-deployment-concourse-tasks
@@ -1886,6 +1887,7 @@ jobs:
       - name: cf-deployment
       - name: loggregator-agent-release
       - name: loggregator-release
+      - name: denver-deployments
       outputs:
       - name: ops-files
       params:
@@ -1901,7 +1903,8 @@ jobs:
           cp cf-deployment/operations/use-compiled-releases.yml ops-files/
           cp cf-deployment/operations/experimental/use-compiled-releases-windows.yml ops-files/
           cp cf-deployment/operations/experimental/add-metric-store.yml ops-files/
-          cp bbl-state/${BBL_STATE_DIR}/ops-files/*.yml ops-files/
+          cp denver-deployments/bosh-cf-deployment/operations/loggregator/*.yml ops-files/
+          cp denver-deployments/bosh-cf-deployment/operations/default/use-provided-router-certs.yml ops-files/
 
           cp cf-deployment/operations/windows1803-cell.yml ops-files/
           cp cf-deployment/operations/use-latest-windows1803-stemcell.yml ops-files/
@@ -2008,7 +2011,6 @@ jobs:
   - aggregate:
     - get: cf-deployment-concourse-tasks
     - get: deployments-loggregator
-    - get: denver-locks
     - get: cf-acceptance-tests
     - get: loggregator-release
       trigger: true
@@ -2019,22 +2021,20 @@ jobs:
     - get: cf-syslog-drain-release
       passed: ["cf-deploy"]
       trigger: true
-  - task: update-config
-    file: cf-deployment-concourse-tasks/update-integration-configs/task.yml
+  - task: generate-config
+    file: loggregator-ci/tasks/generate-cats-config/task.yml
     input_mapping:
-      bbl-state: denver-locks
-      integration-configs: denver-locks
+      bbl-state: deployments-loggregator
     params:
-      CATS_INTEGRATION_CONFIG_FILE: ((acceptance_bbl_state_dir))/cats-config.json
       BBL_STATE_DIR: ((acceptance_bbl_state_dir))
       SYSTEM_DOMAIN: ((acceptance_system_domain))
   - task: run-cats
     file: cf-deployment-concourse-tasks/run-cats/task.yml
     input_mapping:
-      integration-config: updated-integration-configs
+      integration-config: cats-config
       cf-acceptance-tests: cf-acceptance-tests
     params:
-      CONFIG_FILE_PATH: ((acceptance_bbl_state_dir))/cats-config.json
+      CONFIG_FILE_PATH: cats-config.json
       NODES: 9
 
 - name: cfar-lats
@@ -2062,7 +2062,7 @@ jobs:
       trigger: true
     - get: loggregator-ci
     - get: bbl-state
-      resource: denver-locks
+      resource: deployments-loggregator
     - get: cf-drain-cli-master
   - task: run-cfar-lats
     input_mapping:

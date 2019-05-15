@@ -12,10 +12,10 @@ resources:
     branch: master
     private_key: {{cf-loggregator-oauth-bot-key}}
 
-- name: denver-locks
+- name: deployments-loggregator
   type: git
   source:
-    uri: git@github.com:pivotal-cf/denver-locks.git
+    uri: git@github.com:pivotal-cf/deployments-loggregator.git
     branch: master
     private_key: {{cf-loggregator-oauth-bot-key}}
 
@@ -31,7 +31,7 @@ jobs:
   - aggregate:
     - get: datadog-firehose-nozzle-release
     - get: bbl-state
-      resource: denver-locks
+      resource: deployments-loggregator
     - get: loggregator-ci
     - get: 24h
       trigger: true
