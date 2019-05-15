@@ -85,11 +85,11 @@ groups:
   - statsd-injector-promotion
   - statsd-injector-master-promotion
 
-- name: noisy-neighbor-nozzle
+- name: noisy-neighbor
   jobs:
   - noisy-neighbor-nozzle-tests
   - noisy-neighbor-nozzle-deploy
-- name: service-metrics-injector
+- name: service-metrics
   jobs:
   - service-metrics-tests
   - service-metrics-bump-submodule
