@@ -26,13 +26,6 @@ resources:
     branch: master
     private_key: {{deployments-loggregator-key}}
 
-- name: denver-locks
-  type: git
-  source:
-    uri: git@github.com:pivotal-cf/denver-locks.git
-    branch: master
-    private_key: {{cf-loggregator-oauth-bot-key}}
-
 jobs:
 - name: dripspinner
   public: false
@@ -41,7 +34,7 @@ jobs:
   - get: loggregator-ci
   - get: loggregator-tools
   - get: bbl-state
-    resource: denver-locks
+    resource: deployments-loggregator
   - get: 1h
     trigger: true
   - task: restage-logspinner
@@ -80,7 +73,7 @@ jobs:
   - get: loggregator-ci
   - get: loggregator-tools
   - get: bbl-state
-    resource: denver-locks
+    resource: deployments-loggregator
   - get: 1h
     trigger: true
   - task: restage-logspinner
@@ -119,7 +112,7 @@ jobs:
   - get: loggregator-ci
   - get: loggregator-tools
   - get: bbl-state
-    resource: denver-locks
+    resource: deployments-loggregator
   - get: 1h
     trigger: true
   - task: restage-logspinner
@@ -156,7 +149,7 @@ jobs:
   - get: loggregator-ci
   - get: loggregator-tools
   - get: bbl-state
-    resource: denver-locks
+    resource: deployments-loggregator
   - get: 1h
     trigger: true
   - task: restage-logspinner
@@ -193,7 +186,7 @@ jobs:
   - get: loggregator-ci
   - get: loggregator-tools
   - get: bbl-state
-    resource: denver-locks
+    resource: deployments-loggregator
   - get: 1h
     trigger: true
   - task: v2-drain
@@ -218,7 +211,7 @@ jobs:
   - get: loggregator-ci
   - get: loggregator-tools
   - get: bbl-state
-    resource: denver-locks
+    resource: deployments-loggregator
   - get: 1h
     trigger: true
   - task: v2-drain
@@ -243,7 +236,7 @@ jobs:
   plan:
   - get: loggregator-tools
   - get: bbl-state
-    resource: denver-locks
+    resource: deployments-loggregator
   - get: loggregator-ci
   - get: 15m
     trigger: true
@@ -267,13 +260,12 @@ jobs:
   - aggregate:
     - get: loggregator-ci
     - get: deployments-loggregator
-    - get: denver-locks
     - get: 10m
       trigger: true
   - task: health-check
     file: loggregator-ci/tasks/bosh-vm-health-check/task.yml
     input_mapping:
-      bbl-state: denver-locks
+      bbl-state: deployments-loggregator
     params:
       BBL_STATE_DIR: ((acceptance_bbl_state_dir))
       DEPLOYMENT_NAME: cf
