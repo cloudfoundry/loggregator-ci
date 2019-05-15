@@ -42,7 +42,6 @@ groups:
   - leadership-election-promotion
   - leadership-election-master-promotion
 
-  - service-logs-bump-submodule
   - service-logs-promotion
   - service-logs-master-promotion
 
@@ -107,7 +106,6 @@ groups:
 
 - name: service-logs
   jobs:
-  - service-logs-bump-submodule
   - service-logs-promotion
   - service-logs-master-promotion
 
@@ -424,12 +422,6 @@ resources:
     branch: master
     private_key: ((cf-loggregator-oauth-bot-key))
     disable_ci_skip: true
-
-- name: fluentbit-loggr-plugin
-  type: git
-  source:
-    uri: git@github.com:cloudfoundry/fluentbit-loggr-plugin
-    private_key: {{cf-loggregator-oauth-bot-key}}
 
 - name: service-logs-release
   type: git
@@ -1319,40 +1311,6 @@ jobs:
 ###############################################################################
 # SERVICE LOGS
 ###############################################################################
-- name: service-logs-bump-submodule
-  serial: true
-  plan:
-  - aggregate:
-    - get: loggregator-ci
-    - get: service-logs-release
-      trigger: true
-    - get: fluentbit-loggr-plugin
-      trigger: true
-  - task: update-submodule
-    file: loggregator-ci/tasks/bump-submodule/task.yml
-    input_mapping:
-      release-repo: service-logs-release
-      source-repo: fluentbit-loggr-plugin
-    output_mapping:
-      bumped-release-repo: bumped-service-logs-release
-    params:
-      SUBMODULE_PATH: src/code.cloudfoundry.org/fluentbit-loggr-plugin
-  - task: commit
-    file: loggregator-ci/tasks/commit-with-shortlog/task.yml
-    input_mapping:
-      release-repo: bumped-service-logs-release
-    output_mapping:
-      committed-repo: committed-service-logs-release
-    params:
-      PATHS: |
-        src/code.cloudfoundry.org/fluentbit-loggr-plugin
-        packages
-
-  - put: service-logs-release
-    params:
-      repository: committed-service-logs-release
-      rebase: true
-
 - name: service-logs-promotion
   serial: true
   plan:
@@ -1360,7 +1318,6 @@ jobs:
     - get: develop
       resource: service-logs-release
       trigger: true
-      passed: ["service-logs-bump-submodule"]
     - get: service-logs-release-release-elect
   - put: service-logs-release-release-elect
     params:
