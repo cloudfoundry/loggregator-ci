@@ -17,7 +17,7 @@ resources:
   source:
     uri: git@github.com:cloudfoundry/deployments-loggregator.git
     branch: master
-    private_key: {{cf-loggregator-oauth-bot-key}}
+    private_key: {{deployments-loggregator-key}}
 
 - name: 24h
   type: time

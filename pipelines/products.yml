@@ -42,6 +42,8 @@ groups:
   - leadership-election-promotion
   - leadership-election-master-promotion
 
+  - service-logs-deploy
+  - service-logs-test
   - service-logs-promotion
   - service-logs-master-promotion
 
@@ -106,6 +108,8 @@ groups:
 
 - name: service-logs
   jobs:
+  - service-logs-deploy
+  - service-logs-test
   - service-logs-promotion
   - service-logs-master-promotion
 
@@ -1311,12 +1315,119 @@ jobs:
 ###############################################################################
 # SERVICE LOGS
 ###############################################################################
+- name: service-logs-deploy
+  serial: true
+  plan:
+  - aggregate:
+    - get: 24h
+      trigger: true
+    - get: cf-deployment-concourse-tasks
+    - get: service-logs-release
+      trigger: true
+    - get: bbl-state
+      resource: deployments-loggregator
+    - get: loggregator-ci
+  - task: upload-service-logs-release
+    file: loggregator-ci/tasks/upload-release/task.yml
+    input_mapping:
+      bosh-release-dir: service-logs-release
+    params:
+      BBL_STATE_DIR: ((acceptance_bbl_state_dir))
+  - task: copy-ops-files
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source:
+          repository: loggregator/base
+      outputs:
+      - name: ops-files
+      run:
+        path: /bin/bash
+        args:
+        - "-c"
+        - |
+          set -exuo pipefail
+
+          cat <<EOT >> ops-files/on-the-fly.yml
+          - type: replace
+            path: /variables/name=loggregator_tls_agent/options/ca
+            value: /bosh-((acceptance_env_name))/cf/loggregator_ca
+          EOT
+  - task: deploy-standalone
+    file: cf-deployment-concourse-tasks/bosh-deploy/task.yml
+    input_mapping:
+      vars-store: bbl-state
+      ops-files: ops-files
+      vars-files: bbl-state
+      cf-deployment: service-logs-release
+    params:
+      SYSTEM_DOMAIN: ((acceptance_system_domain))
+      BBL_STATE_DIR: ((acceptance_bbl_state_dir))
+      DEPLOYMENT_NAME: test-service-logs
+      MANIFEST_FILE: manifests/test-service-logs.yml
+      OPS_FILES: |
+        on-the-fly.yml
+- name: service-logs-test
+  serial: true
+  plan:
+  - aggregate:
+    - get: 24h
+      trigger: true
+    - get: cf-deployment-concourse-tasks
+    - get: service-logs-release
+      passed: [service-logs-deploy]
+      trigger: true
+    - get: bbl-state
+      resource: deployments-loggregator
+    - get: loggregator-ci
+  - task: test-service-logs
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source:
+          repository: loggregator/base
+      inputs:
+      - name: bbl-state
+      run:
+        path: /bin/bash
+        args:
+        - "-c"
+        - |
+          set -exuo pipefail
+
+          source loggregator-ci/scripts/environment-targeting/target-cf.sh && target-cf
+          cf install-plugin -f -r "CF-Community" log-stream
+
+          cf log-stream service-logs-test > log-stream.log &
+          if [[ $(cat log-stream.log | grep test-logger | wc -l) -lt 1 ]]; then
+            echo "No test-logger logs were received"
+            exit 1
+          fi
+
+  - task: deploy-standalone
+    file: cf-deployment-concourse-tasks/bosh-deploy/task.yml
+    input_mapping:
+      vars-store: bbl-state
+      ops-files: ops-files
+      vars-files: bbl-state
+      cf-deployment: service-logs-release
+    params:
+      SYSTEM_DOMAIN: ((acceptance_system_domain))
+      BBL_STATE_DIR: ((acceptance_bbl_state_dir))
+      DEPLOYMENT_NAME: test-service-logs
+      MANIFEST_FILE: manifests/test-service-logs.yml
+      OPS_FILES: |
+        on-the-fly.yml
+
 - name: service-logs-promotion
   serial: true
   plan:
   - aggregate:
     - get: develop
       resource: service-logs-release
+      passed: [service-logs-test]
       trigger: true
     - get: service-logs-release-release-elect
   - put: service-logs-release-release-elect
