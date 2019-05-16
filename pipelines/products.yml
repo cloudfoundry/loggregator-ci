@@ -1404,10 +1404,11 @@ jobs:
           log_stream_pid=$!
 
           function cleanup() {
-            kill -9 ${log_stream_pid}
+            kill ${log_stream_pid}
           }
           trap cleanup EXIT
 
+          sleep 10
           if [[ $(cat log-stream.log | grep test-logger | wc -l) -lt 1 ]]; then
             echo "No test-logger logs were received"
             exit 1
