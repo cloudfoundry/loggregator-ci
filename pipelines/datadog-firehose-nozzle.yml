@@ -15,7 +15,7 @@ resources:
 - name: deployments-loggregator
   type: git
   source:
-    uri: git@github.com:pivotal-cf/deployments-loggregator.git
+    uri: git@github.com:cloudfoundry/deployments-loggregator.git
     branch: master
     private_key: {{cf-loggregator-oauth-bot-key}}
 
