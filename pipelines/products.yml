@@ -1390,6 +1390,7 @@ jobs:
           repository: loggregator/base
       inputs:
       - name: bbl-state
+      - name: loggregator-ci
       run:
         path: /bin/bash
         args:
