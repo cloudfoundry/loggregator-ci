@@ -23,34 +23,25 @@ function cf-password-from-credhub() (
 
 function target-cf() (
     set -e
-    if [[ -n $USE_CLIENT_AUTH && "$USE_CLIENT_AUTH" == "true" ]]; then
-        cf api "$CF_API"
-        if [ "$SKIP_CERT_VERIFY" == "true" ]; then
-            cf auth "$USERNAME" "$PASSWORD" --client-credentials --skip-ssl-validation
-        else
-            cf auth "$USERNAME" "$PASSWORD" --client-credentials
-        fi
-        cf target -o "$ORG" -s "$SPACE"
-    else
-        if [[ -d "bbl-state" ]]; then
-            PASSWORD=$(cf-password-from-credhub)
-        fi
-        if [ "$SKIP_CERT_VERIFY" == "true" ]; then
-            cf login \
-            -a "$CF_API" \
-            -u "$USERNAME" \
-            -p "$PASSWORD" \
-            -s "$SPACE" \
-            -o "$ORG" \
-            --skip-ssl-validation
-        else
-            cf login \
-            -a "$CF_API" \
-            -u "$USERNAME" \
-            -p "$PASSWORD" \
-            -s "$SPACE" \
-            -o "$ORG"
-        fi
 
+    cf_flags=""
+    if [ "$SKIP_CERT_VERIFY" == "true" ]; then
+        cf_flags="${cf_flags} --skip-ssl-validation"
+    fi
+
+    cf api "$CF_API" ${cf_flags}
+
+    if [[ -n ${USE_CLIENT_AUTH} && "$USE_CLIENT_AUTH" == "true" ]]; then
+        cf_flags="${cf_flags} --client-credentials"
+    fi
+
+    if [[ -d "bbl-state" ]]; then
+        PASSWORD=$(cf-password-from-credhub)
+    fi
+
+    cf auth "$USERNAME" "$PASSWORD" ${cf_flags}
+
+    if [[ -n ${ORG} && -n ${SPACE} ]]; then
+        cf target -o "$ORG" -s "$SPACE"
     fi
 )

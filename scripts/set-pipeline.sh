@@ -46,4 +46,6 @@ function main {
     sync_fly
     set_pipelines
 }
+
+lpass ls 1>/dev/null
 main $1 $2

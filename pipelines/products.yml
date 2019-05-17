@@ -1391,12 +1391,16 @@ jobs:
       inputs:
       - name: bbl-state
       - name: loggregator-ci
+      params:
+        BBL_STATE_DIR: ((acceptance_bbl_state_dir))
+        CF_API: https://api.((acceptance_system_domain))
+        USERNAME: admin
       run:
         path: /bin/bash
         args:
         - "-c"
         - |
-          set -exuo pipefail
+          set -exo pipefail
 
           source loggregator-ci/scripts/environment-targeting/target-cf.sh && target-cf
           cf install-plugin -f -r "CF-Community" log-stream
