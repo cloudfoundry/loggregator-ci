@@ -1565,26 +1565,12 @@ jobs:
     - get: bbl-state
       resource: deployments-loggregator
     - get: loggregator-ci
-    - get: on-demand-service-broker-release
-      trigger: true
-      params:
-        submodules:
-        - src/github.com/pivotal-cf/on-demand-services-sdk
-        - src/github.com/pivotal-cf/on-demand-service-broker
-        - src/github.com/pivotal-cf/brokerapi
   - task: upload-service-metrics-release
     file: loggregator-ci/tasks/upload-release/task.yml
     input_mapping:
       bosh-release-dir: service-metrics-release
     params:
       BBL_STATE_DIR: ((acceptance_bbl_state_dir))
-  - task: upload-on-demand-service-broker-release
-    file: loggregator-ci/tasks/upload-release/task.yml
-    input_mapping:
-      bosh-release-dir: on-demand-service-broker-release
-    params:
-      BBL_STATE_DIR: ((acceptance_bbl_state_dir))
-      CREATE_RELEASE: false
   - task: copy-ops-files
     config:
       platform: linux
@@ -1619,43 +1605,6 @@ jobs:
           service-metrics-release-version: $service_metrics_version
           EOT
 
-          cat <<EOT >> vars-files/service-metrics-broker-vars.yml
-          disable_ssl_cert_verification: false
-
-          broker_name: sample-odb
-          broker_uri:  sample-odb.((acceptance_system_domain))
-          broker_route_name: sample-odb
-
-          service_catalog_id: 91f32375-980f-4b70-9e62-bef43423823e
-          service_catalog_service_name: sample-odb
-
-          bosh:
-            url: https://10.0.0.6:25555
-            root_ca_cert: ""
-            authentication:
-              username: admin
-              password: "$(yq read bbl-state/${BBL_STATE_DIR}/vars/director-vars-store.yml admin_password)"
-
-          cf:
-            api_url: https://api.((acceptance_system_domain))
-            root_ca_cert: ""
-            uaa:
-              url: https://uaa.((acceptance_system_domain))
-            user_credentials:
-              username: admin
-              password: "$(cf-password-from-credhub)"
-          EOT
-
-          yq w -i vars-files/service-metrics-broker-vars.yml bosh.root_ca_cert "\"$(yq read bbl-state/${BBL_STATE_DIR}/vars/director-vars-store.yml default_ca.ca)\""
-          yq w -i vars-files/service-metrics-broker-vars.yml cf.root_ca_cert "\"$(credhub-get service_cf_internal_ca ca)\""
-
-          odb_version=$(bosh releases | grep on-demand-service-broker | head -n1 | awk '{print $2}' | cut -d '*' -f 1)
-          cat <<EOT >> ops-files/odb-version.yml
-          - type: replace
-            path: /releases/name=on-demand-service-broker/version
-            value: $odb_version
-          EOT
-
           cat <<EOT >> ops-files/on-the-fly.yml
           - type: replace
             path: /instance_groups/name=service-metrics/jobs/name=loggregator_agent/consumes/doppler/deployment
@@ -1680,94 +1629,40 @@ jobs:
             - 127.0.0.1
           EOT
 
-          cat <<EOT >> ops-files/on-the-fly-odb.yml
-          - type: remove
-            path: /variables/name=loggregator_ca
-          - type: replace
-            path: /variables/name=service_metrics/options/ca
-            value: /bosh-((acceptance_env_name))/cf/loggregator_ca
-          - type: replace
-            path: /variables/name=loggregator_agent/options/ca
-            value: /bosh-((acceptance_env_name))/cf/loggregator_ca
-          - type: replace
-            path: /variables/name=loggregator_agent/options/alternative_names
-            value:
-            - metron
-            - agent
-            - localhost
-            - 127.0.0.1
-          EOT
-  - aggregate:
-    - do:
-      - task: deploy-standalone
-        file: cf-deployment-concourse-tasks/bosh-deploy/task.yml
-        input_mapping:
-          vars-store: bbl-state
-          ops-files: ops-files
-          cf-deployment: service-metrics-release
-        params:
-          SYSTEM_DOMAIN: ((acceptance_system_domain))
-          BBL_STATE_DIR: ((acceptance_bbl_state_dir))
-          DEPLOYMENT_NAME: service-metrics-injector
-          MANIFEST_FILE: manifests/manifest.yml
-          OPS_FILES: |
-            on-the-fly.yml
-    - do:
-      - task: deploy-odb
-        file: cf-deployment-concourse-tasks/bosh-deploy/task.yml
-        input_mapping:
-          vars-store: deployments-loggregator
-          ops-files: ops-files
-          cf-deployment: service-metrics-release
-        params:
-          SYSTEM_DOMAIN: ((acceptance_system_domain))
-          BBL_STATE_DIR: ((acceptance_bbl_state_dir))
-          DEPLOYMENT_NAME: sample-service-metrics
-          MANIFEST_FILE: manifests/sample-service-metrics.yml
-          VARS_FILES: service-metrics-version.yml service-metrics-broker-vars.yml
-          OPS_FILES: |
-            odb-version.yml
-            on-the-fly-odb.yml
-      - task: wait-for-service-broker
-        timeout: 10m
-        file: loggregator-ci/tasks/wait-for-service-broker/task.yml
-        params:
-          ENV_URL: sample-odb.((acceptance_system_domain))
-      - task: register-service-broker
-        file: loggregator-ci/tasks/run-errand/task.yml
-        params:
-          BBL_STATE_DIR: ((acceptance_bbl_state_dir))
-          DEPLOYMENT_NAME: sample-service-metrics
-          ERRAND: register-broker
-      - task: upgrade-all-service-instances
-        file: loggregator-ci/tasks/run-errand/task.yml
-        params:
-          BBL_STATE_DIR: ((acceptance_bbl_state_dir))
-          DEPLOYMENT_NAME: sample-service-metrics
-          ERRAND: upgrade-all-service-instances
-
-- name: service-metrics-system-tests
-  public: false
-  serial: true
-  serial_groups: ["cf-deploy"]
-  plan:
-  - get: service-metrics-release
-    passed: ["service-metrics-deploy"]
-    trigger: true
-  - get: loggregator-ci
-  - get: bbl-state
-    resource: deployments-loggregator
-  - get: 10m
-    trigger: true
-  - task: system-tests
-    file: loggregator-ci/tasks/service-metrics-release/system-tests.yml
+  - task: deploy-standalone
+    file: cf-deployment-concourse-tasks/bosh-deploy/task.yml
+    input_mapping:
+      vars-store: bbl-state
+      ops-files: ops-files
+      cf-deployment: service-metrics-release
     params:
-      CF_API: https://api.((acceptance_system_domain))
-      CF_USERNAME: admin
+      SYSTEM_DOMAIN: ((acceptance_system_domain))
       BBL_STATE_DIR: ((acceptance_bbl_state_dir))
       DEPLOYMENT_NAME: service-metrics-injector
-      DOPPLER_ADDR: wss://doppler.((acceptance_system_domain)):443
-      ORIGIN: service-metrics-injector
+      MANIFEST_FILE: manifests/manifest.yml
+      OPS_FILES: |
+        on-the-fly.yml
+
+- name: service-metrics-smoke-tests
+  serial: true
+  plan:
+    - aggregate:
+        - get: 24h
+          trigger: true
+        - get: cf-deployment-concourse-tasks
+        - get: service-metrics-release
+          passed: [service-metrics-deploy]
+          trigger: true
+        - get: bbl-state
+          resource: deployments-loggregator
+        - get: loggregator-ci
+    - task: test-service-metrics
+      file: loggregator-ci/tasks/service-metrics-smoke-test/task.yml
+      params:
+        BBL_STATE_DIR: ((acceptance_bbl_state_dir))
+        CF_API: https://api.((acceptance_system_domain))
+        USERNAME: admin
+        SOURCE_ID: dummy-source-id
 
 - name: service-metrics-promotion
   serial: true

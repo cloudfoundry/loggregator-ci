@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+set -exo pipefail
+
+source loggregator-ci/scripts/environment-targeting/target-cf.sh && target-cf
+cf install-plugin -f -r "CF-Community" log-stream
+
+cf log-stream ${SOURCE_ID} > log-stream.log &
+log_stream_pid=$!
+
+function cleanup() {
+    kill ${log_stream_pid}
+}
+trap cleanup EXIT
+
+sleep 10
+if [[ $(cat log-stream.log | grep service-dummy | wc -l) -lt 1 ]]; then
+    echo "No service-dummy metrics were received"
+    exit 1
+fi
