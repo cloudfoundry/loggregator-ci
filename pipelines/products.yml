@@ -9,7 +9,7 @@ groups:
   - service-metrics-tests
   - service-metrics-bump-submodule
   - service-metrics-deploy
-  - service-metrics-system-tests
+  - service-metrics-smoke-tests
   - service-metrics-promotion
   - service-metrics-master-promotion
 
@@ -95,7 +95,7 @@ groups:
   - service-metrics-tests
   - service-metrics-bump-submodule
   - service-metrics-deploy
-  - service-metrics-system-tests
+  - service-metrics-smoke-tests
   - service-metrics-promotion
   - service-metrics-master-promotion
 
@@ -118,11 +118,6 @@ resources:
   type: time
   source:
     interval: 5m
-
-- name: 10m
-  type: time
-  source:
-    interval: 10m
 
 - name: 20m
   type: time
@@ -314,12 +309,6 @@ resources:
   type: git
   source:
     uri: https://github.com/cloudfoundry/noisy-neighbor-nozzle
-
-- name: on-demand-service-broker-release
-  type: git
-  source:
-    uri: https://github.com/pivotal-cf/on-demand-service-broker-release
-    tag_filter: v0.*
 
 - name: scalable-syslog
   type: git
@@ -1671,7 +1660,7 @@ jobs:
     - get: develop
       resource: service-metrics-release
       trigger: true
-      passed: ["service-metrics-system-tests"]
+      passed: ["service-metrics-smoke-tests"]
     - get: service-metrics-release-release-elect
   - put: service-metrics-release-release-elect
     params:
