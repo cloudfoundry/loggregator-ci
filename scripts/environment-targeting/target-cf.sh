@@ -23,7 +23,7 @@ function cf-password-from-credhub() (
 
 function target-cf() (
     set -e
-    if [ "$USE_CLIENT_AUTH" == "true" ]; then
+    if [[ -n $USE_CLIENT_AUTH && "$USE_CLIENT_AUTH" == "true" ]]; then
         cf api "$CF_API"
         if [ "$SKIP_CERT_VERIFY" == "true" ]; then
             cf auth "$USERNAME" "$PASSWORD" --client-credentials --skip-ssl-validation
