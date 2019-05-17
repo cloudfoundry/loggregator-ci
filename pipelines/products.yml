@@ -1368,6 +1368,7 @@ jobs:
       MANIFEST_FILE: manifests/test-service-logs.yml
       OPS_FILES: |
         on-the-fly.yml
+
 - name: service-logs-test
   serial: true
   plan:
@@ -1418,21 +1419,6 @@ jobs:
             echo "No test-logger logs were received"
             exit 1
           fi
-
-  - task: deploy-standalone
-    file: cf-deployment-concourse-tasks/bosh-deploy/task.yml
-    input_mapping:
-      vars-store: bbl-state
-      ops-files: ops-files
-      vars-files: bbl-state
-      cf-deployment: service-logs-release
-    params:
-      SYSTEM_DOMAIN: ((acceptance_system_domain))
-      BBL_STATE_DIR: ((acceptance_bbl_state_dir))
-      DEPLOYMENT_NAME: test-service-logs
-      MANIFEST_FILE: manifests/test-service-logs.yml
-      OPS_FILES: |
-        on-the-fly.yml
 
 - name: service-logs-promotion
   serial: true
