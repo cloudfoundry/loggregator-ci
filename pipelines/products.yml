@@ -46,6 +46,7 @@ groups:
   - service-logs-test
   - service-logs-promotion
   - service-logs-master-promotion
+  - test-releases-can-be-exported
 
 - name: cf-syslog-drain
   jobs:
@@ -152,6 +153,12 @@ resources:
   source:
     uri: https://github.com/cloudfoundry/cf-deployment-concourse-tasks
     tag_filter: v*
+
+- name: concourse-tasks
+  type: git
+  source:
+    branch: export-release-task
+    uri: https://github.com/pivotal-cf/concourse-tasks
 
 - name: cf-drain-cli
   type: git
@@ -1922,6 +1929,18 @@ jobs:
       ORG: system
       SPACE: accumulators
       SYSTEM_DOMAIN: ((acceptance_system_domain))
+- name: test-releases-can-be-exported
+  serial: true
+  plan:
+  - aggregate:
+    - get: concourse-tasks
+    - get: bbl-state
+      resource: deployments-loggregator
+  - task: export-loggregator-release
+    file: concourse-tasks/release/export/task.yml
+    params:
+      BBL_STATE_DIR: ((acceptance_bbl_state_dir))
+      RELEASE_NAMES: [ loggregator ]
 
 - name: cats
   serial: true
