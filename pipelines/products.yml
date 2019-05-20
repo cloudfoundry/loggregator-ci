@@ -1827,7 +1827,8 @@ jobs:
     file: concourse-tasks/release/export/task.yml
     params:
       BBL_STATE_DIR: ((acceptance_bbl_state_dir))
-      RELEASE_NAMES: [ loggregator ]
+      RELEASE_NAMES: |
+        loggregator
 
 - name: cats
   serial: true
