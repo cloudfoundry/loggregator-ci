@@ -1384,6 +1384,8 @@ jobs:
       BBL_STATE_DIR: ((acceptance_bbl_state_dir))
       CF_API: https://api.((acceptance_system_domain))
       USERNAME: admin
+      ORG: system
+      SPACE: blackbox-testing
 
 - name: service-logs-promotion
   serial: true
