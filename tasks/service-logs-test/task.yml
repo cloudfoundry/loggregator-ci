@@ -22,3 +22,9 @@ params:
 
   # Required - Username to log in to CF
   USERNAME:
+
+  # Required - Org to target in CF (log-stream CLI requires targeting a space)
+  ORG:
+
+  # Required - Space to target in CF (log-stream CLI requires targeting a space)
+  SPACE:
