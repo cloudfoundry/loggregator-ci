@@ -1,0 +1,10 @@
+#!/bin/bash
+
+set -ex
+
+pushd source_repo
+    export PROJECT_DIR=$PWD
+    export GO111MODULE=on
+
+    go test ./... -race
+popd
