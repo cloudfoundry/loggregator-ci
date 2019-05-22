@@ -2,7 +2,7 @@
 
 set -ex
 
-pushd source_repo
+pushd source-repo
     export PROJECT_DIR=$PWD
     export GO111MODULE=on
 

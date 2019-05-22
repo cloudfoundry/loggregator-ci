@@ -1185,7 +1185,7 @@ jobs:
   - task: run-tests
     file: loggregator-ci/tasks/go-mod-test/task.yml
     input_mapping:
-      source-repo: leadership-election
+      source-repo: leadership-election-release
 
 - name: leadership-election-promotion
   serial: true
