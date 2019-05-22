@@ -101,7 +101,6 @@ pushd bbl-state/$BBL_STATE_DIR
   export BOSH_CA_CERT=$(bbl director-ca-cert)
 popd
 
-check_health "adapter"
 check_health "scheduler"
 check_health "doppler"
 check_health "log-api"
