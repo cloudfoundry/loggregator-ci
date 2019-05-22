@@ -1823,13 +1823,34 @@ jobs:
     - get: concourse-tasks
     - get: bbl-state
       resource: deployments-loggregator
-  - task: export-loggregator-release
+  - task: export-releases
     file: concourse-tasks/release/export/task.yml
     params:
       BBL_STATE_DIR: ((acceptance_bbl_state_dir))
       DEBUG: true
       RELEASE_NAMES: |
         loggregator
+        loggregator-agent
+        cf-syslog-drain
+        statsd-injector
+        leadership-election
+        service-logs
+  - task: show-releases
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source:
+          repository: loggregator/base
+      inputs:
+      - name: exported-releases
+      run:
+        path: /bin/bash
+        args:
+        - "-c"
+        - |
+          set -exuo pipefail
+          ls exported-releases
 
 - name: cats
   serial: true
