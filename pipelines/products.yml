@@ -1827,6 +1827,7 @@ jobs:
     file: concourse-tasks/release/export/task.yml
     params:
       BBL_STATE_DIR: ((acceptance_bbl_state_dir))
+      DEBUG: true
       RELEASE_NAMES: |
         loggregator
 
