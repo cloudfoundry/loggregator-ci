@@ -1,10 +1,9 @@
 #!/bin/bash
-
 set -ex
 
-pushd source-repo
-    export PROJECT_DIR=$PWD
-    export GO111MODULE=on
+pushd source-repo/src
+  export PROJECT_DIR=$PWD
+  export GO111MODULE=on
 
-    go test ./... -race
+  go test -mod=vendor ./... -race
 popd
