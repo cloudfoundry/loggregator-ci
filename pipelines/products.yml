@@ -7,7 +7,6 @@ groups:
   - noisy-neighbor-nozzle-tests
   - noisy-neighbor-nozzle-deploy
   - service-metrics-tests
-  - service-metrics-bump-submodule
   - service-metrics-deploy
   - service-metrics-smoke-tests
   - service-metrics-promotion
@@ -92,7 +91,6 @@ groups:
 - name: service-metrics
   jobs:
   - service-metrics-tests
-  - service-metrics-bump-submodule
   - service-metrics-deploy
   - service-metrics-smoke-tests
   - service-metrics-promotion
@@ -313,12 +311,6 @@ resources:
   source:
     uri: git@github.com:cloudfoundry/scalable-syslog
     private_key: ((cf-loggregator-oauth-bot-key))
-    branch: master
-
-- name: service-metrics
-  type: git
-  source:
-    uri: https://github.com/cloudfoundry/service-metrics
     branch: master
 
 - name: service-metrics-release
@@ -1423,80 +1415,13 @@ jobs:
   serial: true
   plan:
   - aggregate:
-    - get: service-metrics
-      trigger: true
-    - get: loggregator-ci
-  - task: run-tests
-    file: loggregator-ci/tasks/go-test-with-latest-packages/task.yml
-    params:
-      IMPORT_PATH: code.cloudfoundry.org/service-metrics
-    input_mapping:
-      source-repo: service-metrics
-
-- name: service-metrics-bump-submodule
-  serial: true
-  plan:
-  - aggregate:
-    - get: loggregator-ci
     - get: service-metrics-release
       trigger: true
-    - get: service-metrics
-      passed: ["service-metrics-tests"]
-      trigger: true
-  - task: update-submodule
-    file: loggregator-ci/tasks/bump-submodule/task.yml
-    input_mapping:
-      release-repo: service-metrics-release
-      source-repo: service-metrics
-    output_mapping:
-      bumped-release-repo: bumped-service-metrics-release
-    params:
-      SUBMODULE_PATH: src/code.cloudfoundry.org/service-metrics
-  - task: sync-package-specs
-    file: loggregator-ci/tasks/run-release-script/task.yml
-    input_mapping:
-      release-repo: bumped-service-metrics-release
-    output_mapping:
-      updated-release-repo: synced-service-metrics-release
-    params:
-      SCRIPT: scripts/sync-package-specs
+    - get: loggregator-ci
   - task: run-tests
-    config:
-      platform: linux
-      image_resource:
-        type: docker-image
-        source:
-          repository: loggregator/base
-      inputs:
-      - name: synced-service-metrics-release
-      run:
-        path: bash
-        args:
-        - -c
-        - |
-          #!/bin/bash
-
-          set -ex
-
-          pushd synced-service-metrics-release
-            export GOPATH="$PWD"
-            export PATH="$GOPATH/bin:$PATH"
-            go test -race code.cloudfoundry.org/service-metrics/...
-          popd
-  - task: commit
-    file: loggregator-ci/tasks/commit-with-shortlog/task.yml
+    file: loggregator-ci/tasks/go-mod-test/task.yml
     input_mapping:
-      release-repo: synced-service-metrics-release
-    output_mapping:
-      committed-repo: committed-service-metrics-release
-    params:
-      PATHS: |
-        src/code.cloudfoundry.org/leadership-election
-        packages
-  - put: service-metrics-release
-    params:
-      repository: committed-service-metrics-release
-      rebase: true
+      source-repo: service-metrics-release
 
 - name: service-metrics-deploy
   serial: true
@@ -1508,7 +1433,7 @@ jobs:
     - get: cf-deployment-concourse-tasks
     - get: service-metrics-release
       trigger: true
-      passed: ["service-metrics-bump-submodule"]
+      passed: ["service-metrics-tests"]
     - get: deployments-loggregator
     - get: bbl-state
       resource: deployments-loggregator
