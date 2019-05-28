@@ -1291,6 +1291,9 @@ jobs:
           - type: replace
             path: /variables/name=loggregator_tls_agent/options/ca
             value: /bosh-((acceptance_env_name))/cf/loggregator_ca
+          - type: replace
+            path: /variables/name=loggregator_agent_client/options/ca
+            value: /bosh-((acceptance_env_name))/cf/loggregator_ca
           EOT
   - task: deploy-standalone
     file: cf-deployment-concourse-tasks/bosh-deploy/task.yml
