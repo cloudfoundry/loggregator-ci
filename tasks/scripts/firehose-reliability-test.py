@@ -69,6 +69,7 @@ def push_worker(app_name, instance_count, **kwargs):
         "-i", instance_count,
         "-m", "256M",
         "-u", "none",
+        "-s", "cflinuxfs3",
         "--no-route",
         "--no-start",
         PWD=cwd,
@@ -98,6 +99,7 @@ def push_server(app_name):
         "-c", "./server",
         "-b", "binary_buildpack",
         "-m", "256M",
+        "-s", "cflinuxfs3",
         "--no-start",
         PWD=cwd,
     )
