@@ -88,7 +88,7 @@ jobs:
 
           cat <<EOT >> vars-files/datadog.yml
           tc_url: "wss://doppler.${SYSTEM_DOMAIN}"
-          datadog_api: https://api.datadoghq.com/api/v1
+          datadog_api: https://api.datadoghq.com/api/v1/series
           datadog_key: ${DATADOG_API_KEY}
           uaa_url: "https://uaa.${SYSTEM_DOMAIN}"
           uaa_client: datadog-firehose-nozzle
