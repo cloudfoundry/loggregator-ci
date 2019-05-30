@@ -839,7 +839,7 @@ jobs:
     - get: develop
       resource: loggregator-release
       trigger: true
-      passed: ["cats", "cfar-lats"]
+      passed: ["cats", "cfar-lats", "test-releases-can-be-exported"]
     - get: loggregator-release-release-elect
   - put: loggregator-release-release-elect
     params:
@@ -852,7 +852,7 @@ jobs:
     - get: develop
       resource: loggregator-agent-release
       trigger: true
-      passed: ["cats", "cfar-lats"]
+      passed: ["cats", "cfar-lats", "test-releases-can-be-exported"]
     - get: loggregator-agent-release-elect
   - put: loggregator-agent-release-elect
     params:
@@ -1027,7 +1027,7 @@ jobs:
     - get: develop
       resource: cf-syslog-drain-release
       trigger: true
-      passed: ["cats", "cfar-lats"]
+      passed: ["cats", "cfar-lats", "test-releases-can-be-exported"]
     - get: cf-syslog-drain-release-release-elect
   - put: cf-syslog-drain-release-release-elect
     params:
@@ -1172,7 +1172,7 @@ jobs:
     - get: develop
       resource: statsd-injector-release
       trigger: true
-      passed: ["statsd-injector-bump-submodule"]
+      passed: ["statsd-injector-bump-submodule", "test-releases-can-be-exported"]
     - get: statsd-injector-release-release-elect
   - put: statsd-injector-release-release-elect
     params:
@@ -1226,7 +1226,7 @@ jobs:
     - get: develop
       resource: leadership-election-release
       trigger: true
-      passed: ["leadership-election-tests"]
+      passed: ["leadership-election-tests", "test-releases-can-be-exported"]
     - get: leadership-election-release-release-elect
   - put: leadership-election-release-release-elect
     params:
@@ -1345,7 +1345,7 @@ jobs:
   - aggregate:
     - get: develop
       resource: service-logs-release
-      passed: [service-logs-test]
+      passed: ["service-logs-test", "test-releases-can-be-exported"]
       trigger: true
     - get: service-logs-release-release-elect
   - put: service-logs-release-release-elect
@@ -1759,38 +1759,6 @@ jobs:
 
         loggregator-acceptance.yml
       VARS_FILES: ""
-
-  - task: export-loggregator-release
-    file: loggregator-ci/tasks/export-release/task.yml
-    params:
-      BBL_STATE_DIR: ((acceptance_bbl_state_dir))
-      DEPLOYMENT_NAME: cf
-      RELEASE_NAME: loggregator
-  - task: export-loggregator-agent-release
-    file: loggregator-ci/tasks/export-release/task.yml
-    params:
-      BBL_STATE_DIR: ((acceptance_bbl_state_dir))
-      DEPLOYMENT_NAME: cf
-      RELEASE_NAME: loggregator-agent
-      EXPORT_TO_WINDOWS: true
-  - task: export-cf-syslog-drain-release
-    file: loggregator-ci/tasks/export-release/task.yml
-    params:
-      BBL_STATE_DIR: ((acceptance_bbl_state_dir))
-      DEPLOYMENT_NAME: cf
-      RELEASE_NAME: cf-syslog-drain
-  - task: export-statsd-injector-release
-    file: loggregator-ci/tasks/export-release/task.yml
-    params:
-      BBL_STATE_DIR: ((acceptance_bbl_state_dir))
-      DEPLOYMENT_NAME: cf
-      RELEASE_NAME: statsd-injector
-  - task: export-leadership-election-release
-    file: loggregator-ci/tasks/export-release/task.yml
-    params:
-      BBL_STATE_DIR: ((acceptance_bbl_state_dir))
-      DEPLOYMENT_NAME: cf
-      RELEASE_NAME: leadership-election
   - task: enable-feature-flags
     file: cf-deployment-concourse-tasks/set-feature-flags/task.yml
     attempts: 3
@@ -1816,6 +1784,7 @@ jobs:
       ORG: system
       SPACE: accumulators
       SYSTEM_DOMAIN: ((acceptance_system_domain))
+
 - name: test-releases-can-be-exported
   serial: true
   plan:
@@ -1823,6 +1792,24 @@ jobs:
     - get: concourse-tasks
     - get: bbl-state
       resource: deployments-loggregator
+    - get: loggregator-release
+      trigger: true
+      passed: ["cf-deploy"]
+    - get: loggregator-agent-release
+      trigger: true
+      passed: ["cf-deploy"]
+    - get: cf-syslog-drain-release
+      passed: ["cf-deploy"]
+      trigger: true
+    - get: statsd-injector-release
+      passed: ["cf-deploy"]
+      trigger: true
+    - get: leadership-election-release
+      passed: ["cf-deploy"]
+      trigger: true
+    - get: service-logs-release
+      passed: ["service-logs-deploy"]
+      trigger: true
   - task: export-releases
     file: concourse-tasks/release/export/task.yml
     params:
