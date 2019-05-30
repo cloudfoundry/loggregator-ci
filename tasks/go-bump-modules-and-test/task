@@ -1,0 +1,9 @@
+#!/bin/bash
+set -ex
+
+pushd source-repo/src
+  export PROJECT_DIR=$PWD
+  export GO111MODULE=on
+
+  go test -mod=vendor ./... -race
+popd
