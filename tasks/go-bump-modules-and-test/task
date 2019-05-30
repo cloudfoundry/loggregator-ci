@@ -10,4 +10,4 @@ pushd source-repo/src
   go test -mod=vendor ./... -race
 popd
 
-cp -a source-repo/* bumped-source
+cp -a source-repo bumped-source

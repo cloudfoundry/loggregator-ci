@@ -1213,6 +1213,8 @@ jobs:
   plan:
   - aggregate:
     - get: loggregator-ci
+    - get: 24h
+      trigger: true
     - get: leadership-election-release
       trigger: true
   - task: run-tests
@@ -1279,6 +1281,8 @@ jobs:
   plan:
   - aggregate:
     - get: loggregator-ci
+    - get: 24h
+      trigger: true
     - get: service-logs-release
       trigger: true
   - task: run-tests
