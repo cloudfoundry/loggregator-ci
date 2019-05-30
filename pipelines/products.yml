@@ -40,6 +40,7 @@ groups:
   - leadership-election-promotion
   - leadership-election-master-promotion
 
+  - service-logs-unit-tests
   - service-logs-deploy
   - service-logs-test
   - service-logs-promotion
@@ -1215,9 +1216,21 @@ jobs:
     - get: leadership-election-release
       trigger: true
   - task: run-tests
-    file: loggregator-ci/tasks/go-mod-test/task.yml
+    file: loggregator-ci/tasks/go-bump-modules-and-test/task.yml
     input_mapping:
       source-repo: leadership-election-release
+  - task: commit
+    file: loggregator-ci/tasks/commit/task.yml
+    input_mapping:
+      release-repo: bumped-source
+    output_mapping:
+      committed-repo: committed-leadership-election-release
+    params:
+      COMMIT_MESSAGE: "Bump modules"
+  - put: leadership-election-release
+    params:
+      repository: committed-leadership-election-release
+      rebase: false
 
 - name: leadership-election-promotion
   serial: true
@@ -1260,6 +1273,31 @@ jobs:
 ###############################################################################
 # SERVICE LOGS
 ###############################################################################
+- name: service-logs-unit-tests
+  serial: true
+  public: true
+  plan:
+  - aggregate:
+    - get: loggregator-ci
+    - get: service-logs-release
+      trigger: true
+  - task: run-tests
+    file: loggregator-ci/tasks/go-bump-modules-and-test/task.yml
+    input_mapping:
+      source-repo: service-logs-release
+  - task: commit
+    file: loggregator-ci/tasks/commit/task.yml
+    input_mapping:
+      release-repo: bumped-source
+    output_mapping:
+      committed-repo: committed-service-logs-release
+    params:
+      COMMIT_MESSAGE: "Bump modules"
+  - put: service-logs-release
+    params:
+      repository: committed-service-logs-release
+      rebase: false
+
 - name: service-logs-deploy
   serial: true
   plan:
@@ -1268,6 +1306,7 @@ jobs:
       trigger: true
     - get: cf-deployment-concourse-tasks
     - get: service-logs-release
+      passed: [service-logs-unit-tests]
       trigger: true
     - get: bbl-state
       resource: deployments-loggregator
@@ -1429,7 +1468,7 @@ jobs:
       trigger: true
     - get: loggregator-ci
   - task: run-tests
-    file: loggregator-ci/tasks/go-mod-test/task.yml
+    file: loggregator-ci/tasks/go-bump-modules-and-test/task.yml
     input_mapping:
       source-repo: service-metrics-release
 

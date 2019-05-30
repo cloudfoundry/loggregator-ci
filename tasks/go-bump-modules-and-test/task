@@ -5,5 +5,9 @@ pushd source-repo/src
   export PROJECT_DIR=$PWD
   export GO111MODULE=on
 
+  go get -u ./...
+  go mod vendor
   go test -mod=vendor ./... -race
 popd
+
+cp -a source-repo/* bumped-source
