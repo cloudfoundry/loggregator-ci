@@ -106,6 +106,7 @@ groups:
 
 - name: service-logs
   jobs:
+  - service-logs-unit-tests
   - service-logs-deploy
   - service-logs-test
   - service-logs-promotion
