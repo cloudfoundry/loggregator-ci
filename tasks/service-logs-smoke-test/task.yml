@@ -11,7 +11,7 @@ inputs:
   - name: loggregator-ci
 
 run:
-  path: loggregator-ci/tasks/service-logs-test/task
+  path: loggregator-ci/tasks/service-logs-smoke-test/task
 
 params:
   # Required - path to bbl-state.json relative to bbl-state input
