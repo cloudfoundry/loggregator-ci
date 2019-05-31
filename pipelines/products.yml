@@ -58,6 +58,7 @@ groups:
   - cf-syslog-drain-promotion
   - cf-drain-cli-tests
   - cf-drain-cli-promotion
+  - test-releases-can-be-exported
 
 - name: log-stream-cli
   jobs:
