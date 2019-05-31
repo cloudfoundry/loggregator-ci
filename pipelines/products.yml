@@ -78,6 +78,7 @@ groups:
   - cats
   - loggregator-tests
   - loggregator-promotion
+  - test-releases-can-be-exported
 
 - name: statsd-injector
   jobs:
@@ -85,11 +86,14 @@ groups:
   - statsd-injector-bump-submodule
   - statsd-injector-promotion
   - statsd-injector-master-promotion
+  - test-releases-can-be-exported
 
 - name: noisy-neighbor
   jobs:
   - noisy-neighbor-nozzle-tests
   - noisy-neighbor-nozzle-deploy
+  - test-releases-can-be-exported
+
 - name: service-metrics
   jobs:
   - service-metrics-tests
@@ -97,12 +101,14 @@ groups:
   - service-metrics-smoke-tests
   - service-metrics-promotion
   - service-metrics-master-promotion
+  - test-releases-can-be-exported
 
 - name: leadership-election
   jobs:
   - leadership-election-tests
   - leadership-election-promotion
   - leadership-election-master-promotion
+  - test-releases-can-be-exported
 
 - name: service-logs
   jobs:
@@ -111,6 +117,7 @@ groups:
   - service-logs-test
   - service-logs-promotion
   - service-logs-master-promotion
+  - test-releases-can-be-exported
 
 resources:
 - name: 5m
@@ -1598,7 +1605,7 @@ jobs:
     - get: develop
       resource: service-metrics-release
       trigger: true
-      passed: ["service-metrics-smoke-tests"]
+      passed: ["service-metrics-smoke-tests", "test-releases-can-be-exported"]
     - get: service-metrics-release-release-elect
   - put: service-metrics-release-release-elect
     params:
@@ -1854,6 +1861,9 @@ jobs:
     - get: service-logs-release
       passed: ["service-logs-deploy"]
       trigger: true
+    - get: service-metrics-release
+      passed: ["service-metrics-deploy"]
+      trigger: true
   - task: export-releases
     file: concourse-tasks/release/export/task.yml
     params:
@@ -1866,6 +1876,7 @@ jobs:
         statsd-injector
         leadership-election
         service-logs
+        service-metrics
   - task: show-releases
     config:
       platform: linux
