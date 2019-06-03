@@ -6,11 +6,11 @@ platform: linux
 inputs:
   # - Required
   # - The repo to which the final releases will be merged
-- name: to-repo
+- name: develop-repo
 
   # - Required
   # - The repo from which the final release will be created
-- name: from-repo
+- name: master-repo
 
   # - Required
   # - The task repository
@@ -44,11 +44,11 @@ params:
   SSH_KEY:
 
   # - Required
-  # - The version to create. This is used to:
+  # - The major version to create. This is used to:
   #   - Set the bosh release version
   #   - Tag the commit that contains the final release artifacts
   #   - Name the github release
-  NEW_VERSION:
+  MAJOR_VERSION:
 
   # - Required
   # - Human readable name of the created release (e.g. Loggregator)
@@ -56,10 +56,10 @@ params:
 
   # - Required
   # - Branch from which the final release will be created
-  FROM_BRANCH:
+  MASTER_BRANCH:
 
   # - Required
   # - Branch to which the final release will be merged
-  TO_BRANCH:
+  DEVELOP_BRANCH:
 
 

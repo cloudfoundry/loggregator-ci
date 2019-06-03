@@ -3,12 +3,32 @@
 # vi:syntax=sh
 
 # -------------------
-# Create a release from a repo and branch: from-repo and
-# FROM_BRANCH. Merge the result back to another repo and branch:
-# to-repo, TO_BRANCH
+# Create a release from a repo and branch: master-repo and
+# MASTER_BRANCH. Merge the result back to another repo and branch:
+# develop-repo, DEVELOP_BRANCH
 
+function join_by {
+  local IFS="$1"
+  shift
+  echo "$*"
+}
 
 set -ex
+
+pushd master-repo
+  old_version=$(git describe --abbrev=0 --tags)
+  split_version=( ${old_version//./ })
+  minor=${split_version[1]}
+
+  if [[ ${major_version} -gt split_version[0] ]]; then
+    split_version[0]=${major_version}
+    split_version[1]=0
+  else
+    split_version[1]=`expr ${minor} + 1`
+  fi
+
+  NEW_VERSION=$(join_by . "${split_version[@]}")
+popd
 
 # establish version/tag strings
 tag_name="v$NEW_VERSION"
@@ -24,12 +44,12 @@ mkdir -p ~/.ssh
 echo -e "Host github.com\n\tStrictHostKeyChecking no\n" >> ~/.ssh/config
 ssh-add <(echo "$SSH_KEY")
 
-# build final release on FROM_BRANCH
-pushd from-repo
+# build final release on MASTER_BRANCH
+pushd master-repo
   # this is needed to land commits on master since the commit for
   # master is checked out as a detatched head when the git
   # resource clones it down
-  git checkout $FROM_BRANCH
+  git checkout $MASTER_BRANCH
 
   # setup private.yml used by `create-release --final`
   cat << EOF > config/private.yml
@@ -56,20 +76,20 @@ EOF
 popd
 
 # merge final release artifacts with develop
-pushd to-repo
+pushd develop-repo
   # this is needed to land commits on develop since the commit for
   # develop is checked out as a detatched head when the git
   # resource clones it down
-  git checkout $TO_BRANCH
+  git checkout $DEVELOP_BRANCH
 
   # pull from the default remote over the network
   git pull
 
   # add local remote for merge
-  git remote add -f from ../from-repo
+  git remote add -f from ../master-repo
   git merge -v -m "Merge final release artifacts" "from/$final_release_abbrev"
 popd
 
 # copy repos into output
-cp -r to-repo from-repo repos
+cp -r develop-repo master-repo repos
 

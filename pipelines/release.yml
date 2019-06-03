@@ -21,6 +21,7 @@ resources:
     uri: git@github.com:cloudfoundry/service-logs-release.git
     branch: master
     private_key: {{cf-loggregator-oauth-bot-key}}
+    clean_tags: true
 
 - name: service-logs-github-release-drafts
   type: github-release
@@ -32,7 +33,7 @@ resources:
 
 - name: loggregator-develop
   type: git
-  source: &loggregator_develop
+  source:
     uri: git@github.com:cloudfoundry/loggregator-release.git
     branch: develop
     private_key: {{loggregator-key}}
@@ -46,6 +47,7 @@ resources:
     uri: git@github.com:cloudfoundry/loggregator-release.git
     branch: master
     private_key: {{loggregator-key}}
+    clean_tags: true
 
 - name: loggregator-backport
   type: git
@@ -70,6 +72,7 @@ resources:
     uri: git@github.com:cloudfoundry/loggregator-release.git
     branch: master
     private_key: {{loggregator-key}}
+    clean_tags: true
     ignore_paths:
     - .final_builds
     - releases
@@ -108,6 +111,7 @@ resources:
     uri: git@github.com:cloudfoundry/cf-syslog-drain-release
     branch: master
     private_key: {{cf-loggregator-oauth-bot-key}}
+    clean_tags: true
     ignore_paths:
     - .final_builds
     - releases
@@ -132,6 +136,7 @@ resources:
   source:
     uri: git@github.com:cloudfoundry/service-metrics-release
     branch: master
+    clean_tags: true
     private_key: {{cf-loggregator-oauth-bot-key}}
 
 - name: service-metrics-release-develop
@@ -155,6 +160,7 @@ resources:
   source:
     uri: git@github.com:cloudfoundry/statsd-injector-release
     branch: master
+    clean_tags: true
     private_key: {{cf-loggregator-oauth-bot-key}}
 
 - name: statsd-injector-release-develop
@@ -178,6 +184,7 @@ resources:
   source:
     uri: git@github.com:cloudfoundry/leadership-election-release
     branch: master
+    clean_tags: true
     private_key: {{cf-loggregator-oauth-bot-key}}
 
 - name: leadership-election-release-develop
@@ -281,6 +288,7 @@ resources:
   source:
     uri: git@github.com:cloudfoundry/loggregator-agent-release
     branch: master
+    clean_tags: true
     private_key: {{cf-loggregator-oauth-bot-key}}
 
 - name: loggregator-agent-github-release-drafts
@@ -541,24 +549,24 @@ jobs:
   - task: create-final-release
     file: loggregator-ci/tasks/create-final-release/task.yml
     input_mapping:
-      to-repo: loggregator-develop
-      from-repo: loggregator-master
+      master-repo: loggregator-develop
+      develop-repo: loggregator-master
     params:
       S3_ACCESS_KEY: {{loggregator-team-s3-access-key}}
       S3_SECRET_KEY: {{loggregator-team-s3-secret-key}}
       BLOBSTORE_BUCKET: loggregator-release-blobs
       SSH_KEY: {{loggregator-key}}
-      NEW_VERSION: "105.5"
+      MAJOR_VERSION: "1"
       RELEASE_NAME: Loggregator
-      TO_BRANCH: develop
-      FROM_BRANCH: master
+      DEVELOP_BRANCH: develop
+      MASTER_BRANCH: master
   - put: loggregator-release-master
     params:
-      repository: repos/from-repo
+      repository: repos/develop-repo
       rebase: false
   - put: loggregator-release-develop
     params:
-      repository: repos/to-repo
+      repository: repos/master-repo
       rebase: false
   - put: loggregator-github-release-drafts
     params:
@@ -583,7 +591,7 @@ jobs:
         S3_ACCESS_KEY: {{loggregator-team-s3-access-key}}
         S3_SECRET_KEY: {{loggregator-team-s3-secret-key}}
         SSH_KEY: {{loggregator-key}}
-        NEW_VERSION: "103.4"
+        MAJOR_VERSION: "1"
         BRANCH_NAME: *backport-branch
       inputs:
       - name: loggregator-backport
@@ -599,8 +607,8 @@ jobs:
           set -ex
 
           # establish version/tag strings
-          new_version="$NEW_VERSION"
-          tag_name="v$new_version"
+          new_version="$MAJOR_VERSION"
+  "
           backport_branch="$BRANCH_NAME"
 
           # write out github release files
@@ -681,24 +689,24 @@ jobs:
   - task: create-final-release
     file: loggregator-ci/tasks/create-final-release/task.yml
     input_mapping:
-      to-repo: cf-syslog-drain-release-develop
-      from-repo: cf-syslog-drain-release-master
+      master-repo: cf-syslog-drain-release-develop
+      develop-repo: cf-syslog-drain-release-master
     params:
       S3_ACCESS_KEY: {{s3-access-key-id}}
       S3_SECRET_KEY: {{s3-secret-access-key}}
       BLOBSTORE_BUCKET: cf-syslog-drain-release-blobs
       SSH_KEY: {{loggregator-key}}
-      NEW_VERSION: "10.2"
+      MAJOR_VERSION: "1"
       RELEASE_NAME: "CF Syslog Drain Release"
-      TO_BRANCH: develop
-      FROM_BRANCH: master
+      DEVELOP_BRANCH: develop
+      MASTER_BRANCH: master
   - put: cf-syslog-drain-release-master
     params:
-      repository: repos/from-repo
+      repository: repos/develop-repo
       rebase: false
   - put: cf-syslog-drain-release-develop
     params:
-      repository: repos/to-repo
+      repository: repos/master-repo
       rebase: false
   - put: cf-syslog-drain-release-github-release-drafts
     params:
@@ -725,7 +733,7 @@ jobs:
         S3_SECRET_KEY: {{s3-secret-access-key}}
         SSH_KEY: {{loggregator-key}}
         BLOBSTORE_BUCKET: cf-syslog-drain-release-blobs
-        NEW_VERSION: "7.3"
+        MAJOR_VERSION: "7"
         BRANCH_NAME: *cf-syslog-backport-branch
       inputs:
       - name: cf-syslog-drain-release-backport
@@ -741,8 +749,8 @@ jobs:
           set -ex
 
           # establish version/tag strings
-          new_version="$NEW_VERSION"
-          tag_name="v$new_version"
+          new_version="$MAJOR_VERSION"
+  "
           backport_branch="$BRANCH_NAME"
 
           # write out github release files
@@ -823,24 +831,24 @@ jobs:
   - task: create-final-release
     file: loggregator-ci/tasks/create-final-release/task.yml
     input_mapping:
-      to-repo: service-metrics-release-develop
-      from-repo: service-metrics-release-master
+      master-repo: service-metrics-release-develop
+      develop-repo: service-metrics-release-master
     params:
       S3_ACCESS_KEY: {{loggregator-team-s3-access-key}}
       S3_SECRET_KEY: {{loggregator-team-s3-secret-key}}
       BLOBSTORE_BUCKET: oss-service-metrics-release-blobs
       SSH_KEY: {{loggregator-key}}
-      NEW_VERSION: 1.12.0
+      MAJOR_VERSION: 1.0
       RELEASE_NAME: service-metrics-release
-      TO_BRANCH: develop
-      FROM_BRANCH: master
+      DEVELOP_BRANCH: develop
+      MASTER_BRANCH: master
   - put: service-metrics-release-master
     params:
-      repository: repos/from-repo
+      repository: repos/develop-repo
       rebase: false
   - put: service-metrics-release-develop
     params:
-      repository: repos/to-repo
+      repository: repos/master-repo
       rebase: false
   - put: service-metrics-release-github-release-drafts
     params:
@@ -860,24 +868,24 @@ jobs:
   - task: create-final-release
     file: loggregator-ci/tasks/create-final-release/task.yml
     input_mapping:
-      to-repo: statsd-injector-release-develop
-      from-repo: statsd-injector-release-master
+      master-repo: statsd-injector-release-develop
+      develop-repo: statsd-injector-release-master
     params:
       S3_ACCESS_KEY: {{s3-access-key-id}}
       S3_SECRET_KEY: {{s3-secret-access-key}}
       BLOBSTORE_BUCKET: statsd-injector-release-blobs
       SSH_KEY: {{loggregator-key}}
-      NEW_VERSION: "1.10.0"
+      MAJOR_VERSION: "1"
       RELEASE_NAME: statsd-injector-release
-      TO_BRANCH: develop
-      FROM_BRANCH: master
+      DEVELOP_BRANCH: develop
+      MASTER_BRANCH: master
   - put: statsd-injector-release-master
     params:
-      repository: repos/from-repo
+      repository: repos/develop-repo
       rebase: false
   - put: statsd-injector-release-develop
     params:
-      repository: repos/to-repo
+      repository: repos/master-repo
       rebase: false
   - put: statsd-injector-release-github-release-drafts
     params:
@@ -897,24 +905,24 @@ jobs:
   - task: create-final-release
     file: loggregator-ci/tasks/create-final-release/task.yml
     input_mapping:
-      to-repo: leadership-election-release-develop
-      from-repo: leadership-election-release-master
+      master-repo: leadership-election-release-develop
+      develop-repo: leadership-election-release-master
     params:
       S3_ACCESS_KEY: {{s3-access-key-id}}
       S3_SECRET_KEY: {{s3-secret-access-key}}
       BLOBSTORE_BUCKET: leadership-election-release-blobs
       SSH_KEY: {{loggregator-key}}
-      NEW_VERSION: "1.4"
+      MAJOR_VERSION: "1"
       RELEASE_NAME: leadership-election-release
-      TO_BRANCH: develop
-      FROM_BRANCH: master
+      DEVELOP_BRANCH: develop
+      MASTER_BRANCH: master
   - put: leadership-election-release-master
     params:
-      repository: repos/from-repo
+      repository: repos/develop-repo
       rebase: false
   - put: leadership-election-release-develop
     params:
-      repository: repos/to-repo
+      repository: repos/master-repo
       rebase: false
   - put: leadership-election-release-github-release-drafts
     params:
@@ -1072,24 +1080,24 @@ jobs:
   - task: create-final-release
     file: loggregator-ci/tasks/create-final-release/task.yml
     input_mapping:
-      to-repo: loggregator-agent-release-develop
-      from-repo: loggregator-agent-release-master
+      master-repo: loggregator-agent-release-develop
+      develop-repo: loggregator-agent-release-master
     params:
       S3_ACCESS_KEY: {{loggregator-team-s3-access-key}}
       S3_SECRET_KEY: {{loggregator-team-s3-secret-key}}
       BLOBSTORE_BUCKET: loggregator-agent-release-blobs
       SSH_KEY: {{loggregator-key}}
-      NEW_VERSION: "3.14"
+      MAJOR_VERSION: "3"
       RELEASE_NAME: "Loggregator Agent"
-      TO_BRANCH: develop
-      FROM_BRANCH: master
+      DEVELOP_BRANCH: develop
+      MASTER_BRANCH: master
   - put: loggregator-agent-release-master
     params:
-      repository: repos/from-repo
+      repository: repos/develop-repo
       rebase: false
   - put: loggregator-agent-release-develop
     params:
-      repository: repos/to-repo
+      repository: repos/master-repo
       rebase: false
   - put: loggregator-agent-github-release-drafts
     params:
@@ -1110,24 +1118,24 @@ jobs:
   - task: create-final-release
     file: loggregator-ci/tasks/create-final-release/task.yml
     input_mapping:
-      to-repo: service-logs-release-develop
-      from-repo: service-logs-release-master
+      master-repo: service-logs-release-develop
+      develop-repo: service-logs-release-master
     params:
       S3_ACCESS_KEY: {{loggregator-team-s3-access-key}}
       S3_SECRET_KEY: {{loggregator-team-s3-secret-key}}
       BLOBSTORE_BUCKET: service-logs-release-blobs
       SSH_KEY: {{loggregator-key}}
-      NEW_VERSION: "1.0"
+      MAJOR_VERSION: "1"
       RELEASE_NAME: "Service Logs"
-      TO_BRANCH: develop
-      FROM_BRANCH: master
+      DEVELOP_BRANCH: develop
+      MASTER_BRANCH: master
   - put: service-logs-release-master
     params:
-      repository: repos/from-repo
+      repository: repos/develop-repo
       rebase: false
   - put: service-logs-release-develop
     params:
-      repository: repos/to-repo
+      repository: repos/master-repo
       rebase: false
   - put: service-logs-github-release-drafts
     params:
