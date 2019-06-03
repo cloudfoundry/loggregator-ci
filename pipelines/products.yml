@@ -19,7 +19,6 @@ groups:
   - loggregator-agent-master-promotion
   - loggregator-agent-tests
   - loggregator-agent-bump-submodule
-  - loggregator-bump-submodule
   - loggregator-master-promotion
   - loggregator-agent-promotion
   - loggregator-tests
@@ -66,7 +65,6 @@ groups:
 - name: loggregator
   jobs:
   - loggregator-tests
-  - loggregator-bump-submodule
   - cf-deploy
   - cfar-lats
   - cats
@@ -133,11 +131,6 @@ resources:
   type: time
   source:
     interval: 5m
-
-- name: 20m
-  type: time
-  source:
-    interval: 20m
 
 - name: 24h
   type: time
@@ -319,13 +312,6 @@ resources:
     private_key: ((loggregator-key))
     disable_ci_skip: true
 
-- name: loggregator-src
-  type: git
-  source:
-    uri: git@github.com:cloudfoundry/loggregator.git
-    branch: master
-    private_key: ((loggregator-key))
-
 - name: noisy-neighbor-nozzle
   type: git
   source:
@@ -440,13 +426,6 @@ resources:
     private_key: ((cf-loggregator-oauth-bot-key))
     disable_ci_skip: true
 
-- name: grpc-go
-  type: git
-  source:
-    uri: https://github.com/grpc/grpc-go
-    branch: v1.11.x
-    tag_filter: v1.11.1
-
 - name: gopsutil
   type: git
   source:
@@ -501,88 +480,32 @@ jobs:
 ###############################################################################
 # LOGGREGATOR
 ###############################################################################
-
 - name: loggregator-tests
   serial: true
   public: true
   plan:
   - aggregate:
-    - get: loggregator-src
+    - get: loggregator-ci
+    - get: 24h
       trigger: true
-    - get: grpc-go
-    - get: 20m
+    - get: loggregator-release
       trigger: true
-  - aggregate:
-    - task: run-tests
-      timeout: 20m
-      config:
-        platform: linux
-        image_resource:
-          type: docker-image
-          source:
-            repository: loggregator/base
-        inputs:
-        - name: loggregator-src
-        - name: grpc-go
-        run:
-          path: bash
-          args:
-          - -c
-          - |
-            #!/bin/bash
-            set -ex
-
-            mkdir -p workspace/src/code.cloudfoundry.org/loggregator
-            cp -r loggregator-src/. workspace/src/code.cloudfoundry.org/loggregator/
-
-            pushd workspace
-              export GOPATH="$PWD"
-              export PATH="$GOPATH/bin:$PATH"
-
-              pushd src/code.cloudfoundry.org/loggregator
-                go get -t -d ./...
-
-                # hack until we figure out a solution to pin versions of deps
-                rm -rf ../../../../workspace/src/google.golang.org/grpc
-                cp -r ../../../../grpc-go/. ../../../../workspace/src/google.golang.org/grpc/
-
-                go test -race $(go list ./... | grep -v integration_tests) \
-                  -ginkgo.randomizeAllSpecs \
-                  -ginkgo.slowSpecThreshold 20
-              popd
-            popd
-    - task: run-integration-tests
-      timeout: 20m
-      config:
-        platform: linux
-        image_resource:
-          type: docker-image
-          source:
-            repository: loggregator/base
-        inputs:
-        - name: loggregator-src
-        run:
-          path: bash
-          args:
-          - -c
-          - |
-            #!/bin/bash
-            set -ex
-
-            mkdir -p workspace/src/code.cloudfoundry.org/loggregator
-            cp -r loggregator-src/. workspace/src/code.cloudfoundry.org/loggregator/
-
-            pushd workspace
-              export GOPATH="$PWD"
-              export PATH="$GOPATH/bin:$PATH"
-
-              pushd src/code.cloudfoundry.org/loggregator
-                go get -t -d ./...
-                go test ./integration_tests/... -race \
-                  -ginkgo.randomizeAllSpecs \
-                  -ginkgo.slowSpecThreshold 20
-              popd
-            popd
+  - task: run-tests
+    file: loggregator-ci/tasks/go-bump-modules-and-test/task.yml
+    input_mapping:
+      source-repo: loggregator-release
+  - task: commit
+    file: loggregator-ci/tasks/commit/task.yml
+    input_mapping:
+      release-repo: bumped-source
+    output_mapping:
+      committed-repo: committed-loggregator-release
+    params:
+      COMMIT_MESSAGE: "Bump modules"
+  - put: loggregator-release
+    params:
+      repository: committed-loggregator-release
+      rebase: false
 
 - name: loggregator-agent-tests
   serial: true
@@ -692,92 +615,6 @@ jobs:
                 throw "test failed"
               }
             }
-
-- name: loggregator-bump-submodule
-  serial: true
-  plan:
-  - aggregate:
-    - get: loggregator-ci
-    - get: loggregator-release
-      trigger: true
-    - get: loggregator-src
-      trigger: true
-      passed: ["loggregator-tests"]
-    - get: go-loggregator
-      trigger: true
-  - task: update-loggregator
-    file: loggregator-ci/tasks/bump-submodule/task.yml
-    input_mapping:
-      release-repo: loggregator-release
-      source-repo: loggregator-src
-    output_mapping:
-      bumped-release-repo: bumped-loggregator-release
-    params:
-      SUBMODULE_PATH: src/code.cloudfoundry.org/loggregator
-  - task: update-go-loggregator
-    file: loggregator-ci/tasks/bump-submodule/task.yml
-    input_mapping:
-      release-repo: bumped-loggregator-release
-      source-repo: go-loggregator
-    output_mapping:
-      bumped-release-repo: bumped-go-loggregator
-    params:
-      SUBMODULE_PATH: src/code.cloudfoundry.org/go-loggregator
-  - task: sync-package-specs
-    file: loggregator-ci/tasks/run-release-script/task.yml
-    input_mapping:
-      release-repo: bumped-go-loggregator
-    output_mapping:
-      updated-release-repo: synced-loggregator-release
-    params:
-      SCRIPT: scripts/sync-package-specs
-  - aggregate:
-    - task: run-specs
-      config:
-        platform: linux
-        image_resource:
-          type: docker-image
-          source:
-            repository: ruby
-        inputs:
-        - name: synced-loggregator-release
-        run:
-          path: bash
-          args:
-          - -c
-          - |
-            #!/bin/bash
-            set -e
-            cd synced-loggregator-release
-            bundle install
-            rspec
-    - task: run-tests
-      file: loggregator-ci/tasks/run-release-script/task.yml
-      input_mapping:
-        release-repo: synced-loggregator-release
-      params:
-        SCRIPT: scripts/test ~integration
-    - task: run-integration-tests
-      file: loggregator-ci/tasks/run-release-script/task.yml
-      input_mapping:
-        release-repo: synced-loggregator-release
-      params:
-        SCRIPT: scripts/test integration
-  - task: commit
-    file: loggregator-ci/tasks/commit-with-shortlog/task.yml
-    input_mapping:
-      release-repo: synced-loggregator-release
-    output_mapping:
-      committed-repo: committed-loggregator-release
-    params:
-      PATHS: |
-        src/code.cloudfoundry.org/loggregator
-        src/code.cloudfoundry.org/go-loggregator
-        packages
-  - put: loggregator-release
-    params:
-      repository: committed-loggregator-release
-      rebase: true
 
 - name: loggregator-agent-bump-submodule
   serial: true
@@ -1534,7 +1371,7 @@ jobs:
       trigger: true
     - get: cf-deployment-concourse-tasks
     - get: loggregator-release
-      passed: ["loggregator-bump-submodule"]
+      passed: ["loggregator-tests"]
       trigger: true
     - get: loggregator-agent-release
       passed: ["loggregator-agent-bump-submodule"]

@@ -7,7 +7,7 @@ pushd source-repo/src
 
   go get -u ./...
   go mod vendor
-  go test -mod=vendor ./... -race
+  go test -mod=vendor ./... -race -ginkgo.randomizeAllSpecs
 popd
 
 cp -a source-repo/. bumped-source
