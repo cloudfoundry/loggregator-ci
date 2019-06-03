@@ -1,0 +1,11 @@
+#!/bin/bash
+set -exuo pipefail
+
+cat <<EOT >> ops-files/on-the-fly.yml
+- type: replace
+  path: /variables/name=loggregator_tls_agent/options/ca
+  value: /bosh-${ENV_NAME}/cf/loggregator_ca
+- type: replace
+  path: /variables/name=loggregator_agent_client/options/ca
+  value: /bosh-${ENV_NAME}/cf/loggregator_ca
+EOT

@@ -1,0 +1,37 @@
+#!/bin/bash
+set -exuo pipefail
+
+pushd bbl-state/${BBL_STATE_DIR}
+  eval "$(bbl print-env)"
+popd
+
+source loggregator-ci/scripts/environment-targeting/target-cf.sh
+
+service_metrics_version=$(bosh releases | grep service-metrics | grep -v service-metrics-adapter | head -n1 | awk '{print $2}' | cut -d '*' -f 1)
+cat <<EOT >> vars-files/service-metrics-version.yml
+service-metrics-release-version: $service_metrics_version
+EOT
+
+cat <<EOT >> ops-files/on-the-fly.yml
+- type: replace
+  path: /instance_groups/name=service-metrics/jobs/name=loggregator_agent/consumes/doppler/deployment
+  value: cf
+- type: replace
+  path: /instance_groups/name=service-metrics/jobs/name=service-metrics/properties/service_metrics/source_id?
+  value: dummy-source-id
+- type: remove
+  path: /variables/name=loggregator_ca
+- type: replace
+  path: /variables/name=service-metrics/options/ca
+  value: /bosh-${ENV_NAME}/cf/loggregator_ca
+- type: replace
+  path: /variables/name=loggregator_agent/options/ca
+  value: /bosh-${ENV_NAME}/cf/loggregator_ca
+- type: replace
+  path: /variables/name=loggregator_agent/options/alternative_names
+  value:
+  - metron
+  - agent
+  - localhost
+  - 127.0.0.1
+EOT

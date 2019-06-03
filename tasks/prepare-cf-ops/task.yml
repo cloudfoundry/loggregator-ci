@@ -1,0 +1,23 @@
+platform: linux
+
+image_resource:
+  type: docker-image
+  source:
+    repository: relintdockerhubpushbot/cf-deployment-concourse-tasks
+    tag: v3.19.0
+
+inputs:
+- name: bbl-state
+- name: cf-deployment
+- name: loggregator-agent-release
+- name: loggregator-release
+- name: denver-deployments
+
+outputs:
+- name: ops-files
+
+run:
+  path: /bin/bash
+
+params:
+  BBL_STATE_DIR:

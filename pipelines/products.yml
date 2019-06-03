@@ -1033,30 +1033,10 @@ jobs:
       bosh-release-dir: service-logs-release
     params:
       BBL_STATE_DIR: ((acceptance_bbl_state_dir))
-  - task: copy-ops-files
-    config:
-      platform: linux
-      image_resource:
-        type: docker-image
-        source:
-          repository: loggregator/base
-      outputs:
-      - name: ops-files
-      run:
-        path: /bin/bash
-        args:
-        - "-c"
-        - |
-          set -exuo pipefail
-
-          cat <<EOT >> ops-files/on-the-fly.yml
-          - type: replace
-            path: /variables/name=loggregator_tls_agent/options/ca
-            value: /bosh-((acceptance_env_name))/cf/loggregator_ca
-          - type: replace
-            path: /variables/name=loggregator_agent_client/options/ca
-            value: /bosh-((acceptance_env_name))/cf/loggregator_ca
-          EOT
+  - task: prepare-ops-files
+    file: loggregator-ci/tasks/prepare-service-logs-ops
+    params:
+      ENV_NAME: ((acceptance_env_name))
   - task: deploy-standalone
     file: cf-deployment-concourse-tasks/bosh-deploy/task.yml
     input_mapping:
@@ -1210,62 +1190,10 @@ jobs:
     params:
       BBL_STATE_DIR: ((acceptance_bbl_state_dir))
   - task: copy-ops-files
-    config:
-      platform: linux
-      image_resource:
-        type: docker-image
-        source:
-          repository: loggregator/base
-      inputs:
-      - name: deployments-loggregator
-      - name: loggregator-ci
-      - name: bbl-state
-      outputs:
-      - name: ops-files
-      - name: vars-files
-      params:
-        BBL_STATE_DIR: ((acceptance_bbl_state_dir))
-      run:
-        path: /bin/bash
-        args:
-        - "-c"
-        - |
-          set -exuo pipefail
-
-          pushd bbl-state/${BBL_STATE_DIR}
-            eval "$(bbl print-env)"
-          popd
-
-          source loggregator-ci/scripts/environment-targeting/target-cf.sh
-
-          service_metrics_version=$(bosh releases | grep service-metrics | grep -v service-metrics-adapter | head -n1 | awk '{print $2}' | cut -d '*' -f 1)
-          cat <<EOT >> vars-files/service-metrics-version.yml
-          service-metrics-release-version: $service_metrics_version
-          EOT
-
-          cat <<EOT >> ops-files/on-the-fly.yml
-          - type: replace
-            path: /instance_groups/name=service-metrics/jobs/name=loggregator_agent/consumes/doppler/deployment
-            value: cf
-          - type: replace
-            path: /instance_groups/name=service-metrics/jobs/name=service-metrics/properties/service_metrics/source_id?
-            value: dummy-source-id
-          - type: remove
-            path: /variables/name=loggregator_ca
-          - type: replace
-            path: /variables/name=service-metrics/options/ca
-            value: /bosh-((acceptance_env_name))/cf/loggregator_ca
-          - type: replace
-            path: /variables/name=loggregator_agent/options/ca
-            value: /bosh-((acceptance_env_name))/cf/loggregator_ca
-          - type: replace
-            path: /variables/name=loggregator_agent/options/alternative_names
-            value:
-            - metron
-            - agent
-            - localhost
-            - 127.0.0.1
-          EOT
+    file: loggregator-ci/tasks/prepare-service-metrics-ops-and-vars
+    params:
+      ENV_NAME: ((acceptance_env_name))
+      BBL_STATE_DIR: ((acceptance_bbl_state_dir))
 
   - task: deploy-standalone
     file: cf-deployment-concourse-tasks/bosh-deploy/task.yml
@@ -1408,84 +1336,10 @@ jobs:
         bosh-release-dir: leadership-election-release
       params:
         BBL_STATE_DIR: ((acceptance_bbl_state_dir))
-  - task: add-windows-stemcell-to-manifest
-    config:
-      platform: linux
-      image_resource:
-        type: docker-image
-        source:
-          repository: relintdockerhubpushbot/cf-deployment-concourse-tasks
-          tag: v3.19.0
-      inputs:
-      - name: cf-deployment
-      outputs:
-      - name: modified-cf-deployment
-      run:
-        path: "/bin/bash"
-        args:
-        - "-c"
-        - |
-          set -e
-
-          cat <<EOT >> on-the-fly.yml
-          - type: replace
-            path: /stemcells/-
-            value:
-              alias: windows1803
-              os: windows1803
-              version: "1803.7"
-          EOT
-
-          bosh int cf-deployment/cf-deployment.yml -o on-the-fly.yml > modified-cf-deployment/cf-deployment.yml
-  - task: upload-stemcell
-    file: cf-deployment-concourse-tasks/bosh-upload-stemcell-from-cf-deployment/task.yml
-    input_mapping:
-      cf-deployment: modified-cf-deployment
+  - task: copy-ops-files
+    file: loggregator-ci/tasks/prepare-cf-ops/task.yml
     params:
       BBL_STATE_DIR: ((acceptance_bbl_state_dir))
-  - task: copy-ops-files
-    config:
-      platform: linux
-      image_resource:
-        type: docker-image
-        source:
-          repository: relintdockerhubpushbot/cf-deployment-concourse-tasks
-          tag: v3.19.0
-      inputs:
-      - name: bbl-state
-      - name: cf-deployment
-      - name: loggregator-agent-release
-      - name: loggregator-release
-      - name: denver-deployments
-      outputs:
-      - name: ops-files
-      params:
-        BBL_STATE_DIR: ((acceptance_bbl_state_dir))
-      run:
-        path: /bin/bash
-        args:
-        - "-c"
-        - |
-          set -e
-
-          cp cf-deployment/operations/scale-to-one-az.yml ops-files/
-          cp cf-deployment/operations/use-compiled-releases.yml ops-files/
-          cp cf-deployment/operations/experimental/use-compiled-releases-windows.yml ops-files/
-          cp cf-deployment/operations/experimental/add-metric-store.yml ops-files/
-          cp denver-deployments/bosh-cf-deployment/operations/loggregator/*.yml ops-files/
-          cp denver-deployments/bosh-cf-deployment/operations/default/use-provided-router-certs.yml ops-files/
-
-          cp cf-deployment/operations/windows1803-cell.yml ops-files/
-          cp cf-deployment/operations/use-latest-windows1803-stemcell.yml ops-files/
-
-          cp loggregator-agent-release/manifests/operations/cf-deployment-addon.yml ops-files/
-          cp loggregator-agent-release/manifests/operations/cf-add-syslog-agent.yml ops-files/
-          cp loggregator-agent-release/manifests/operations/cf-deployment-add-system-metrics-agent.yml ops-files/
-          cp loggregator-agent-release/manifests/operations/cf-add-system-metric-scraper.yml ops-files/
-          cp loggregator-agent-release/manifests/operations/cf-syslog-agent-skip-cert-verify.yml ops-files/
-          cp loggregator-agent-release/manifests/operations/cf-deployment-windows-addon.yml ops-files/
-          cp loggregator-agent-release/manifests/operations/cf-syslog-agent-skip-cert-verify-windows.yml ops-files/
-
   - task: cf-deploy
     file: cf-deployment-concourse-tasks/bosh-deploy/task.yml
     input_mapping:
@@ -1572,7 +1426,6 @@ jobs:
     file: concourse-tasks/release/export/task.yml
     params:
       BBL_STATE_DIR: ((acceptance_bbl_state_dir))
-      DEBUG: true
       RELEASE_NAMES: |
         loggregator
         loggregator-agent
