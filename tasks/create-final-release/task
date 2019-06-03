@@ -29,6 +29,7 @@ pushd master-repo
 
   NEW_VERSION=$(join_by . "${split_version[@]}")
 
+  BUMPER_RESULT=$( (bumper --commit-range ${old_version}..HEAD --verbose) 2>&1 | grep -v "Bump modules")
   GIT_DIFF_JOBS=$(git diff ${old_version}..HEAD -- jobs)
 popd
 
@@ -38,6 +39,7 @@ tag_name="v$NEW_VERSION"
 # write out github release files
 echo "$RELEASE_NAME $NEW_VERSION" > github-release/name
 echo $tag_name > github-release/tag
+printf "BUMPER OUTPUT: \n%s\n\n" "${BUMPER_RESULT}" > github-release/body
 printf "GIT DIFF jobs directory: \n%s\n\n" "${GIT_DIFF_JOBS}" > github-release/body
 
 # setup ssh for reading from github
