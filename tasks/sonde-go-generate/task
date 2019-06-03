@@ -1,0 +1,40 @@
+#!/bin/bash -ex
+
+export GOPATH=$(pwd)
+export PATH=$PATH:$GOPATH/bin
+
+ln -s $GOPATH/sonde-go $GOPATH/src/github.com/cloudfoundry/
+go get github.com/gogo/protobuf
+
+cd $GOPATH/src/github.com/cloudfoundry/sonde-go
+
+pushd definitions
+  SHA_FROM=`git rev-parse HEAD`
+popd
+
+rm -rf definitions && cp -r $GOPATH/dropsonde-protocol definitions
+
+pushd definitions
+  SHA_TO=`git rev-parse HEAD`
+  SUBMODULE_LOG=`git log --oneline $SHA_FROM...$SHA_TO`
+popd
+
+export LD_LIBRARY_PATH=/usr/local/lib
+
+./generate-go.sh
+
+git add events definitions
+
+set +e
+git diff --quiet
+git diff-index HEAD --exit-code
+if [ $? != 0 ] ; then
+  set -e
+  git commit -m "Regenerate Go code from new version of dropsonde-protocol
+
+$SUBMODULE_LOG
+
+automatic promotion by CI workflow"
+fi
+
+rsync -ac ./ $GOPATH/bumped-sonde-go/

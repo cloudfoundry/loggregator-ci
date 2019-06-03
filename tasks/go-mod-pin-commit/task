@@ -1,0 +1,12 @@
+#!/bin/bash
+set -ex
+
+pushd package-repo
+  commit_sha=$(git rev-parse HEAD)
+popd
+
+pushd base-repo
+  go get "${PACKAGE_URL}@${commit_sha}"
+popd
+
+cp -a base-repo/. bumped-base-repo

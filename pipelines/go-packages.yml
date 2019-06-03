@@ -1,5 +1,5 @@
 resources:
-- name: loggregator-develop
+- name: loggregator-release-develop
   type: git
   source:
     uri: git@github.com:cloudfoundry/loggregator-release.git
@@ -189,7 +189,6 @@ jobs:
     params:
       IMPORT_PATH: code.cloudfoundry.org/go-orchestrator
 
-
 - name: rfc5424-tests
   serial: true
   plan:
@@ -226,49 +225,13 @@ jobs:
       trigger: true
     - get: sonde-go
       trigger: true
+    - get: loggregator-ci
   - task: unit-tests
-    config:
-      image_resource:
-        type: docker-image
-        source:
-          repository: loggregator/base
-      platform: linux
-      inputs:
-      - name: dropsonde
-      run:
-        path: bash
-        args:
-        - -c
-        - {{dropsonde_unit_tests}}
-  - get: loggregator
-    resource: loggregator-develop
-  - task: bump-dropsonde-in-loggregator
-    config:
-      platform: linux
-      image_resource:
-        type: docker-image
-        source:
-          repository: loggregator/base
-      inputs:
-      - name: dropsonde
-      - name: loggregator
-      outputs:
-      - name: bumped-loggregator
-      params:
-        PARENT: loggregator
-        OUTPUT: bumped-loggregator
-        SUBMODULE: dropsonde
-        SUBMODULE_PATH: src/github.com/cloudfoundry/dropsonde
-      run:
-        path: bash
-        args:
-        - -c
-        - {{bump_submodule}}
-
-  - put: loggregator-develop
+    file: loggregator-ci/tasks/go-test-with-latest-packages/task.yml
+    input_mapping:
+      source-repo: dropsonde
     params:
-      repository: bumped-loggregator
-      rebase: true
+      IMPORT_PATH: github.com/cloudfoundry/dropsonde
 
 - name: noaa-unit-tests
   serial: true
@@ -278,47 +241,20 @@ jobs:
       trigger: true
     - get: sonde-go
       trigger: true
+    - get: loggregator-ci
   - task: unit-tests
-    config:
-      platform: linux
-      image_resource:
-        type: docker-image
-        source:
-            repository: loggregator/base
-      inputs:
-        - name: noaa
-      run:
-        path: bash
-        args:
-        - -c
-        - {{noaa_unit_tests}}
-
+    file: loggregator-ci/tasks/go-test-with-latest-packages/task.yml
+    input_mapping:
+      source-repo: noaa
+    params:
+      IMPORT_PATH: github.com/cloudfoundry/noaa
   - get: loggregator
-    resource: loggregator-develop
+    resource: loggregator-release-develop
   - task: bump-noaa-in-loggregator
-    config:
-      platform: linux
-      image_resource:
-        type: docker-image
-        source:
-          repository: loggregator/base
-      inputs:
-      - name: noaa
-      - name: loggregator
-      outputs:
-      - name: bumped-loggregator
-      params:
-        PARENT: loggregator
-        OUTPUT: bumped-loggregator
-        SUBMODULE: noaa
-        SUBMODULE_PATH: src/github.com/cloudfoundry/noaa
-      run:
-        path: bash
-        args:
-        - -c
-        - {{bump_submodule}}
-
-  - put: loggregator-develop
+    file: loggregator-ci/tasks/go-mod-pin-commit/task.yml
+    params:
+      PACKAGE_URL: github.com/cloudfoundry/noaa
+  - put: loggregator-release-develop
     params:
       repository: bumped-loggregator
       rebase: true
@@ -330,129 +266,9 @@ jobs:
     - get: dropsonde-protocol
       trigger: true
     - get: sonde-go
-    - get: loggregator
-      resource: loggregator-develop
+    - get: loggregator-ci
   - task: generate
-    config:
-      platform: linux
-      image_resource:
-        type: docker-image
-        source:
-          repository: loggregator/base
-      inputs:
-      - name: loggregator
-      - name: sonde-go
-      - name: dropsonde-protocol
-      outputs:
-      - name: bumped-sonde-go
-      run:
-        path: bash
-        args:
-        - -c
-        - |
-          #!/bin/bash -e
-
-          set -x
-
-          export GOPATH=$(pwd)
-          export PATH=$PATH:$GOPATH/bin
-
-          mkdir -p $GOPATH/src/github.com/cloudfoundry/
-          ln -s $GOPATH/sonde-go $GOPATH/src/github.com/cloudfoundry/
-          mkdir -p $GOPATH/src/github.com/gogo
-          ln -s $GOPATH/loggregator/src/github.com/gogo/protobuf $GOPATH/src/github.com/gogo/protobuf
-
-          cd $GOPATH/src/github.com/cloudfoundry/sonde-go
-
-          pushd definitions
-            SHA_FROM=`git rev-parse HEAD`
-          popd
-
-          rm -rf definitions && cp -r $GOPATH/dropsonde-protocol definitions
-
-          pushd definitions
-            SHA_TO=`git rev-parse HEAD`
-            SUBMODULE_LOG=`git log --oneline $SHA_FROM...$SHA_TO`
-          popd
-
-          export LD_LIBRARY_PATH=/usr/local/lib
-
-          ./generate-go.sh
-
-          git add events definitions
-
-          set +e
-          git diff --quiet
-          git diff-index HEAD --exit-code
-          if [ $? != 0 ] ; then
-            set -e
-            git commit -m "Regenerate Go code from new version of dropsonde-protocol
-
-          $SUBMODULE_LOG
-
-          automatic promotion by CI workflow"
-          fi
-
-          rsync -ac ./ $GOPATH/bumped-sonde-go/
-
+    file: loggregator-ci/tasks/sonde-go-generate/task.yml
   - put: sonde-go
     params:
       repository: bumped-sonde-go
-  - aggregate:
-    - get: dropsonde
-    - get: noaa
-  - aggregate:
-    - task: dropsonde-unit-tests
-      config:
-        image_resource:
-          type: docker-image
-          source:
-            repository: loggregator/base
-        platform: linux
-        inputs:
-        - name: dropsonde
-        run:
-          path: bash
-          args:
-          - -c
-          - {{dropsonde_unit_tests}}
-    - task: noaa-unit-tests
-      config:
-        platform: linux
-        image_resource:
-          type: docker-image
-          source:
-              repository: loggregator/base
-        inputs:
-          - name: noaa
-        run:
-          path: bash
-          args:
-          - -c
-          - {{noaa_unit_tests}}
-  - task: bump-sonde-go-in-loggregator
-    config:
-      platform: linux
-      image_resource:
-        type: docker-image
-        source:
-          repository: loggregator/base
-      inputs:
-      - name: bumped-sonde-go
-      - name: loggregator
-      outputs:
-      - name: bumped-loggregator
-      params:
-        PARENT: loggregator
-        OUTPUT: bumped-loggregator
-        SUBMODULE: bumped-sonde-go
-        SUBMODULE_PATH: src/github.com/cloudfoundry/sonde-go
-      run:
-        path: bash
-        args:
-        - -c
-        - {{bump_submodule}}
-  - put: loggregator-develop
-    params:
-      repository: bumped-loggregator
-      rebase: true

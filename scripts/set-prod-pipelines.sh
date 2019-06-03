@@ -16,7 +16,6 @@ function set_pipeline {
     fly -t prod set-pipeline -p "$1" \
         -c "pipelines/$1.yml" \
         -l <(lpass show 'Shared-Loggregator (Pivotal Only)/pipeline-secrets.yml' --notes) \
-        -l ~/workspace/loggregator-ci/scripts.yml \
         -l ~/workspace/secrets-prod/ci/ci_github_resources.yml
 }
 

@@ -1,0 +1,16 @@
+platform: linux
+
+image_resource:
+  type: docker-image
+  source:
+    repository: loggregator/base
+
+inputs:
+- name: sonde-go
+- name: dropsonde-protocol
+
+outputs:
+- name: bumped-sonde-go
+
+run:
+  path: loggregator-ci/tasks/sonde-go-generate/task

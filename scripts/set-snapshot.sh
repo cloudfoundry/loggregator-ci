@@ -30,8 +30,7 @@ function set_pipeline {
     echo setting pipeline for "$snapshot_pipeline_name"
     fly -t $TARGET set-pipeline -p "$snapshot_pipeline_name" \
         -c "$snapshot_dir/pipeline.yml" \
-        -l <(lpass show 'Shared-Loggregator (Pivotal Only)/pipeline-secrets.yml' --notes) \
-        -l ~/workspace/loggregator-ci/scripts.yml
+        -l <(lpass show 'Shared-Loggregator (Pivotal Only)/pipeline-secrets.yml' --notes)
 }
 
 function sync_fly {
