@@ -28,6 +28,8 @@ pushd master-repo
   fi
 
   NEW_VERSION=$(join_by . "${split_version[@]}")
+
+  GIT_DIFF_JOBS=$(git diff ${old_version}..HEAD -- jobs)
 popd
 
 # establish version/tag strings
@@ -36,7 +38,7 @@ tag_name="v$NEW_VERSION"
 # write out github release files
 echo "$RELEASE_NAME $NEW_VERSION" > github-release/name
 echo $tag_name > github-release/tag
-echo "TBD" > github-release/body
+printf "GIT DIFF jobs directory: \n%s\n\n" "${GIT_DIFF_JOBS}" > github-release/body
 
 # setup ssh for reading from github
 eval "$(ssh-agent -s)"
