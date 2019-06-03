@@ -8,6 +8,7 @@ image_resource:
 inputs:
 - name: sonde-go
 - name: dropsonde-protocol
+- name: loggregator-ci
 
 outputs:
 - name: bumped-sonde-go
