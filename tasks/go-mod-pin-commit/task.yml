@@ -12,5 +12,8 @@ inputs:
 outputs:
 - name: bumped-base-repo
 
+run:
+  path: loggregator-ci/tasks/go-mod-pin-commit/task
+
 params:
   PACKAGE_URL:
