@@ -3,7 +3,11 @@
 export GOPATH=$(pwd)
 export PATH=$PATH:$GOPATH/bin
 
-mkdir -p $GOPATH/src/github.com/cloudfoundry/
+go get -d github.com/gogo/protobuf/...
+pushd src/github.com/gogo/protobuf
+  git checkout v0.4
+popd
+
 cd $GOPATH/src/github.com/cloudfoundry/sonde-go
 
 pushd definitions
