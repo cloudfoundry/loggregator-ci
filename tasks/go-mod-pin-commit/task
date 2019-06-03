@@ -6,6 +6,8 @@ pushd package-repo
 popd
 
 pushd base-repo
+  export PROJECT_DIR=$PWD
+  export GO111MODULE=on
   go get "${PACKAGE_URL}@${commit_sha}"
 popd
 
