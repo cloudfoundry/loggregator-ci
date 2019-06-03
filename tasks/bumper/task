@@ -3,13 +3,6 @@ set -eux
 
 workspace=$(pwd)
 
-bumper_path=$GOPATH/src/github.com/loggregator/bumper
-mkdir -p $bumper_path
-cp -R bumper-tool/. $bumper_path
-pushd $bumper_path/cmd/bumper
-    go build -o $workspace/bumper/bumper
-popd
-
 bump_sha=""
 pushd source
     git remote set-url origin $(git remote -v | grep fetch | awk '{print $2}' | sed 's|git@github.com:|https://github.com/|g')

@@ -1,9 +1,0 @@
-#!/bin/bash
-
-export BBL_STATE_DIR=$(cat environment/metadata)
-export BBL_ENV_NAME=$(cat environment/name)
-export LB_DOMAIN="$BBL_ENV_NAME.loggr.cf-app.com"
-
-mkdir -p "bbl-state/$BBL_STATE_DIR"
-
-./cf-deployment-concourse-tasks/bbl-up/task

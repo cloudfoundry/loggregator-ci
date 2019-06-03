@@ -137,11 +137,6 @@ resources:
   source:
     interval: 24h
 
-- name: bumper-tool
-  type: git
-  source:
-    uri: https://github.com/loggregator/bumper
-
 - name: cf-acceptance-tests
   type: git
   source:
@@ -463,7 +458,6 @@ jobs:
       passed: ["cfar-lats"]
       trigger: true
     - get: log-stream-cli-master
-    - get: bumper-tool
     - get: loggregator-ci
   - task: bumper
     file: loggregator-ci/tasks/bumper/task.yml
@@ -713,7 +707,6 @@ jobs:
       passed: ["loggregator-agent-promotion"]
       trigger: true
     - get: loggregator-release-master
-    - get: bumper-tool
     - get: loggregator-ci
   - task: bumper
     file: loggregator-ci/tasks/bumper/task.yml
@@ -738,7 +731,6 @@ jobs:
       passed: ["loggregator-agent-promotion"]
       trigger: true
     - get: loggregator-agent-release-master
-    - get: bumper-tool
     - get: loggregator-ci
   - task: bumper
     file: loggregator-ci/tasks/bumper/task.yml
@@ -821,7 +813,6 @@ jobs:
       passed: ["cf-syslog-drain-promotion"]
       trigger: true
     - get: cf-syslog-drain-release-master
-    - get: bumper-tool
     - get: loggregator-ci
   - task: bumper
     file: loggregator-ci/tasks/bumper/task.yml
@@ -846,7 +837,6 @@ jobs:
       passed: ["cfar-lats"]
       trigger: true
     - get: cf-drain-cli-master
-    - get: bumper-tool
     - get: loggregator-ci
   - task: bumper
     file: loggregator-ci/tasks/bumper/task.yml
@@ -913,7 +903,6 @@ jobs:
       passed: ["statsd-injector-promotion"]
       trigger: true
     - get: statsd-injector-release-master
-    - get: bumper-tool
     - get: loggregator-ci
   - task: bumper
     file: loggregator-ci/tasks/bumper/task.yml
@@ -981,7 +970,6 @@ jobs:
       passed: ["leadership-election-promotion"]
       trigger: true
     - get: leadership-election-release-master
-    - get: bumper-tool
     - get: loggregator-ci
   - task: bumper
     file: loggregator-ci/tasks/bumper/task.yml
@@ -1129,7 +1117,6 @@ jobs:
       passed: ["service-logs-promotion"]
       trigger: true
     - get: service-logs-release-master
-    - get: bumper-tool
     - get: loggregator-ci
   - task: bumper
     file: loggregator-ci/tasks/bumper/task.yml
@@ -1338,7 +1325,6 @@ jobs:
       passed: ["service-metrics-promotion"]
       trigger: true
     - get: service-metrics-release-master
-    - get: bumper-tool
     - get: loggregator-ci
   - task: bumper
     file: loggregator-ci/tasks/bumper/task.yml

@@ -1,5 +1,0 @@
-#!/bin/bash
-
-export BBL_STATE_DIR=$(cat environment/metadata)
-
-./loggregator-ci/tasks/bosh-delete-all-deployments/task
