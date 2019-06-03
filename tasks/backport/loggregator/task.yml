@@ -1,0 +1,23 @@
+image_resource:
+  type: docker-image
+  source:
+    repository: loggregator/base
+
+platform: linux
+
+inputs:
+- name: loggregator-backport
+
+outputs:
+- name: github-release
+- name: create-final-release
+
+run:
+  path: loggregator-ci/tasks/backport/loggregator/task
+
+params:
+  S3_ACCESS_KEY:
+  S3_SECRET_KEY:
+  SSH_KEY:
+  MAJOR_VERSION:
+  BRANCH_NAME:

@@ -1,0 +1,24 @@
+image_resource:
+  type: docker-image
+  source:
+    repository: loggregator/base
+
+platform: linux
+
+params:
+  S3_ACCESS_KEY:
+  S3_SECRET_KEY:
+  SSH_KEY:
+  BLOBSTORE_BUCKET:
+  MAJOR_VERSION:
+  BRANCH_NAME:
+
+inputs:
+- name: cf-syslog-drain-release-backport
+
+outputs:
+- name: github-release
+- name: create-final-release
+
+run:
+  path: loggregator-ci/tasks/backport/syslog/task

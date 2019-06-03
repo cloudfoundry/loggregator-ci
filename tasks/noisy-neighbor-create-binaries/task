@@ -1,0 +1,49 @@
+#!/bin/bash
+set -ex
+
+# establish version/tag strings
+version="{\"Major\":$VERSION_MAJOR,\"Minor\":$VERSION_MINOR,\"Build\":$VERSION_PATCH}"
+semver="v$VERSION_MAJOR.$VERSION_MINOR.$VERSION_PATCH"
+
+# write out github release files
+echo "noisy-neighbor-nozzle $semver" > github-release/name
+echo $semver > github-release/tag
+echo "TBD" > github-release/body
+cp -R noisy-neighbor-nozzle-repo/. repo-output
+
+export WORKSPACE=$PWD
+
+mkdir -p go
+pushd go
+  export GOPATH=$PWD
+  mkdir -p src/code.cloudfoundry.org
+  cp -R $WORKSPACE/noisy-neighbor-nozzle-repo/ src/code.cloudfoundry.org/
+popd
+
+mkdir $WORKSPACE/noisy-neighbor
+pushd $GOPATH/src/code.cloudfoundry.org/noisy-neighbor-nozzle-repo/
+  go get ./...
+  for c in $(ls cmd); do
+    pushd cmd/$c
+      binary_file=noisy-neighbor-$c
+      GOOS=linux go build -o $WORKSPACE/noisy-neighbor/$c
+    popd
+  done
+popd
+
+mv noisy-neighbor/deployer noisy-neighbor/deployer-linux
+cp noisy-neighbor-nozzle-repo/cmd/deployer/manifest/manifest_template.yml noisy-neighbor/.
+rm noisy-neighbor/cli-plugin
+
+pushd $GOPATH/src/code.cloudfoundry.org/noisy-neighbor-nozzle-repo/cmd/deployer
+  GOOS=darwin go build -o $WORKSPACE/noisy-neighbor/deployer-darwin
+  GOOS=windows go build -o $WORKSPACE/noisy-neighbor/deployer-windows
+popd
+
+tar czvf binary-output/noisy-neighbor.tgz noisy-neighbor
+
+pushd $GOPATH/src/code.cloudfoundry.org/noisy-neighbor-nozzle-repo/cmd/cli-plugin
+  GOOS=linux go build -ldflags "-X main.version=$version" -o $WORKSPACE/binary-output/noisy-neighbor-cli-plugin-linux
+  GOOS=darwin go build -ldflags "-X main.version=$version" -o $WORKSPACE/binary-output/noisy-neighbor-cli-plugin-darwin
+  GOOS=windows go build -ldflags "-X main.version=$version" -o $WORKSPACE/binary-output/noisy-neighbor-cli-plugin-windows
+popd
