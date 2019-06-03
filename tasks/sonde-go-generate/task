@@ -5,7 +5,6 @@ export PATH=$PATH:$GOPATH/bin
 
 mkdir -p $GOPATH/src/github.com/cloudfoundry/
 ln -s $GOPATH/sonde-go $GOPATH/src/github.com/cloudfoundry/
-go get github.com/gogo/protobuf
 
 cd $GOPATH/src/github.com/cloudfoundry/sonde-go
 
