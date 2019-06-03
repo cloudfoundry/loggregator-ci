@@ -10,8 +10,8 @@ pushd source
     git fetch origin
     git checkout ${DEST_BRANCH}
 
-    $workspace/bumper/bumper --commit-range ${DEST_BRANCH}..${SOURCE_BRANCH} --verbose
-    bump_sha=$($workspace/bumper/bumper --commit-range ${DEST_BRANCH}..${SOURCE_BRANCH})
+    bumper --commit-range ${DEST_BRANCH}..${SOURCE_BRANCH} --verbose
+    bump_sha=$(bumper --commit-range ${DEST_BRANCH}..${SOURCE_BRANCH})
 popd
 
 if [ -z $bump_sha ]; then
