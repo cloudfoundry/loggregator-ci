@@ -253,8 +253,8 @@ jobs:
   - task: bump-noaa-in-loggregator
     file: loggregator-ci/tasks/go-mod-pin-commit/task.yml
     input_mapping:
-      base_repo: loggregator
-      package_repo: noaa
+      base-repo: loggregator
+      package-repo: noaa
     params:
       PACKAGE_URL: github.com/cloudfoundry/noaa
   - put: loggregator-release-develop

@@ -8,6 +8,7 @@ image_resource:
 inputs:
 - name: base-repo
 - name: package-repo
+- name: loggregator-ci
 
 outputs:
 - name: bumped-base-repo
