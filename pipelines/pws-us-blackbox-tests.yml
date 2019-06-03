@@ -39,7 +39,7 @@ jobs:
   - get: loggregator-ci
   - get: loggregator-tools
   - task: restage-logspinner
-    file: loggregator-ci/tasks/restage-apps.yml
+    file: loggregator-ci/tasks/blackbox/restage-apps/task.yml
     params:
       APP_NAMES: "floodspinner dripspinner flowspinner"
       CF_API: "api.run.pivotal.io"
@@ -58,7 +58,7 @@ jobs:
   - get: 20m
     trigger: true
   - task: run-smoke-tests
-    file: loggregator-ci/tasks/cf-blackbox/task.yml
+    file: loggregator-ci/tasks/blackbox/logspinner/task.yml
     params:
       CF_API: "api.run.pivotal.io"
       APP_DOMAIN: "floodspinner.cfapps.io"
@@ -76,7 +76,7 @@ jobs:
       USE_CLIENT_AUTH: true
     timeout: 20m
   - task: run-recent-logs-smoke-tests
-    file: loggregator-ci/tasks/blackbox-recent-logs/task.yml
+    file: loggregator-ci/tasks/blackbox/recent-logs/task.yml
     params:
       APP_NAME: "floodspinner"
       CF_API: "api.run.pivotal.io"
@@ -98,7 +98,7 @@ jobs:
   - get: 1h
     trigger: true
   - task: run-smoke-tests
-    file: loggregator-ci/tasks/cf-blackbox/task.yml
+    file: loggregator-ci/tasks/blackbox/logspinner/task.yml
     params:
       CF_API: "api.run.pivotal.io"
       APP_DOMAIN: "dripspinner.cfapps.io"
@@ -125,7 +125,7 @@ jobs:
   - get: 1h
     trigger: true
   - task: run-smoke-tests
-    file: loggregator-ci/tasks/cf-blackbox/task.yml
+    file: loggregator-ci/tasks/blackbox/logspinner/task.yml
     params:
       CF_API: "api.run.pivotal.io"
       APP_DOMAIN: "flowspinner.cfapps.io"
@@ -152,7 +152,7 @@ jobs:
   - get: 20m
     trigger: true
   - task: v2-drain
-    file: loggregator-ci/tasks/cf-syslog-drain-smoke-test.yml
+    file: loggregator-ci/tasks/blackbox/cf-syslog-drain/task.yml
     params:
       CF_ORG: cf-lamb
       CF_PASSWORD: {{pws-password}}
@@ -176,7 +176,7 @@ jobs:
   - get: 20m
     trigger: true
   - task: v2-drain
-    file: loggregator-ci/tasks/cf-syslog-drain-smoke-test.yml
+    file: loggregator-ci/tasks/blackbox/cf-syslog-drain/task.yml
     params:
       CF_ORG: cf-lamb
       CF_PASSWORD: {{pws-password}}
@@ -200,7 +200,7 @@ jobs:
   - get: 20m
     trigger: true
   - task: v2-drain
-    file: loggregator-ci/tasks/cf-syslog-drain-smoke-test.yml
+    file: loggregator-ci/tasks/blackbox/cf-syslog-drain/task.yml
     params:
       TEARDOWN: false
       CF_ORG: cf-lamb
@@ -225,7 +225,7 @@ jobs:
   - get: 20m
     trigger: true
   - task: v2-drain-loggregator
-    file: loggregator-ci/tasks/cf-syslog-drain-smoke-test.yml
+    file: loggregator-ci/tasks/blackbox/cf-syslog-drain/task.yml
     params:
       TEARDOWN: false
       CF_ORG: cf-lamb
@@ -250,7 +250,7 @@ jobs:
   - get: 20m
     trigger: true
   - task: run-latency-tests
-    file: loggregator-ci/tasks/latency-test.yml
+    file: loggregator-ci/tasks/blackbox/latency-test/task.yml
     params:
       APP_DOMAIN: "loggregator-latency.cfapps.io"
       APP_NAME: "loggregator-latency"
@@ -274,7 +274,7 @@ jobs:
   - get: 10m
     trigger: true
   - task: run-firehose-reliability
-    file: loggregator-ci/tasks/firehose-reliability-test.yml
+    file: loggregator-ci/tasks/blackbox/firehose-reliability/task.yml
     params:
       APP_DOMAIN: "loggregator-firehose-reliability.cfapps.io"
       APP_NAME: "loggregator-firehose-reliability"

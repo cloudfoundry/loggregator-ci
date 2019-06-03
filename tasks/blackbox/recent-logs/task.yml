@@ -18,4 +18,4 @@ params:
   USERNAME:
   BBL_STATE_DIR:
 run:
-  path: loggregator-ci/tasks/blackbox-recent-logs/task
+  path: loggregator-ci/tasks/blackbox/recent-logs/task

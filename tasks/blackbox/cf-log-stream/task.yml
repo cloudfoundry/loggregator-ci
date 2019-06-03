@@ -1,0 +1,19 @@
+platform: linux
+image_resource:
+  type: docker-image
+  source:
+    repository: loggregator/blackbox
+inputs:
+- name: loggregator-ci
+- name: bbl-state
+  optional: true
+params:
+  DOMAIN:
+  DATADOG_API_KEY:
+  BBL_STATE_DIR:
+  APP_NAME:
+  CYCLES: 10000
+  DELAY: 20
+  DELAY_UNIT: ms
+run:
+  path: loggregator-ci/tasks/cf-log-stream-blackbox/task

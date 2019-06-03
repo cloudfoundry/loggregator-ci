@@ -13,7 +13,7 @@ inputs:
 - name: bbl-state      # - The Director's `bbl-state.json`
 
 run:
-  path: loggregator-ci/tasks/bosh-vm-health-check/task
+  path: loggregator-ci/tasks/blackbox/bosh-vm-health-check/task
 
 params:
   # - Optional

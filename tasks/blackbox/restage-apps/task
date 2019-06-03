@@ -1,0 +1,27 @@
+#!/bin/bash
+set -ex
+
+source loggregator-ci/scripts/environment-targeting/target-cf.sh && target-cf
+
+for app_name in $APP_NAMES; do
+  set +x
+  echo "##################################################"
+  echo "#"
+  echo "# Setting up $app_name"
+  echo "#"
+  echo "##################################################"
+  set -x
+  set +e
+  cf app $app_name
+  ret=$?
+  set -e
+
+  if [ $ret -ne 0 ]; then
+    pushd loggregator-tools/logspinner
+      go build
+      cf push $app_name -b binary_buildpack -c ./logspinner -m 64M
+    popd
+  else
+    cf restage $app_name
+  fi
+done

@@ -18,4 +18,4 @@ params:
   USE_CLIENT_AUTH: false
   SKIP_CERT_VERIFY: false
 run:
-  path: loggregator-ci/tasks/cf-blackbox/task
+  path: loggregator-ci/tasks/blackbox/logspinner/task

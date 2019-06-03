@@ -1,0 +1,73 @@
+#!/bin/bash
+
+set -e
+if [[ -d "bbl-state" ]]; then
+  source loggregator-ci/scripts/environment-targeting/target-cf.sh
+  export CF_PASSWORD=$(cf-password-from-credhub)
+fi
+
+cd loggregator-tools
+export GOPATH=$PWD
+export PATH=$GOPATH/bin:$PATH
+
+go get code.cloudfoundry.org/rfc5424
+
+function teardown {
+  set +e
+  ./report.sh
+  exit_code=$?
+
+  ./teardown.sh
+
+  exit $exit_code
+}
+
+function restart {
+  set +e
+  ./report.sh
+  exit_code=$?
+
+  ./restart.sh
+
+  exit $exit_code
+}
+
+function cleanup {
+  ./report.sh
+  if [ "$TEARDOWN" = "true" ]; then
+    ./teardown.sh
+  else
+    ./restart.sh
+  fi
+}
+
+if [ "$TEARDOWN" = "true" ]; then
+  trap teardown EXIT
+else
+  trap restart EXIT
+fi
+
+cd smoke_tests
+echo "Flood Spinner"
+export CYCLES=10000
+export DELAY_US=2
+export WAIT=60
+./push.sh
+./hammer.sh
+cleanup
+
+echo "Flow Spinner"
+export CYCLES=1000
+export DELAY_US=1000
+export WAIT=60
+./push.sh
+./hammer.sh
+cleanup
+
+echo "Drip Spinner"
+export CYCLES=1000
+export DELAY_US=500000
+export WAIT=600
+./push.sh
+./hammer.sh
+# We'll let the trap report and teardown

@@ -38,7 +38,7 @@ jobs:
   - get: 1h
     trigger: true
   - task: restage-logspinner
-    file: loggregator-ci/tasks/restage-apps.yml
+    file: loggregator-ci/tasks/blackbox/restage-apps/task.yml
     timeout: 15m
     params:
       APP_NAMES: "dripspinner"
@@ -48,7 +48,7 @@ jobs:
       USERNAME: admin
       BBL_STATE_DIR: ((acceptance_bbl_state_dir))
   - task: run-smoke-tests
-    file: loggregator-ci/tasks/cf-blackbox/task.yml
+    file: loggregator-ci/tasks/blackbox/logspinner/task.yml
     params:
       CF_API: api.((acceptance_system_domain))
       DATADOG_API_KEY: {{datadog-loggregator-api-key}}
@@ -77,7 +77,7 @@ jobs:
   - get: 1h
     trigger: true
   - task: restage-logspinner
-    file: loggregator-ci/tasks/restage-apps.yml
+    file: loggregator-ci/tasks/blackbox/restage-apps/task.yml
     timeout: 15m
     params:
       APP_NAMES: "flowspinner"
@@ -87,7 +87,7 @@ jobs:
       USERNAME: admin
       BBL_STATE_DIR: ((acceptance_bbl_state_dir))
   - task: run-smoke-tests
-    file: loggregator-ci/tasks/cf-blackbox/task.yml
+    file: loggregator-ci/tasks/blackbox/logspinner/task.yml
     params:
       CF_API: api.((acceptance_system_domain))
       DATADOG_API_KEY: {{datadog-loggregator-api-key}}
@@ -116,7 +116,7 @@ jobs:
   - get: 1h
     trigger: true
   - task: restage-logspinner
-    file: loggregator-ci/tasks/restage-apps.yml
+    file: loggregator-ci/tasks/blackbox/restage-apps/task.yml
     timeout: 15m
     params:
       APP_NAMES: "dripspinner-stream"
@@ -126,7 +126,7 @@ jobs:
       USERNAME: admin
       BBL_STATE_DIR: ((acceptance_bbl_state_dir))
   - task: run-smoke-tests
-    file: loggregator-ci/tasks/cf-log-stream-blackbox/task.yml
+    file: loggregator-ci/tasks/blackbox/cf-log-stream/task.yml
     params:
       DOMAIN: ((acceptance_system_domain))
       ORG: "system"
@@ -153,7 +153,7 @@ jobs:
   - get: 1h
     trigger: true
   - task: restage-logspinner
-    file: loggregator-ci/tasks/restage-apps.yml
+    file: loggregator-ci/tasks/blackbox/restage-apps/task.yml
     timeout: 15m
     params:
       APP_NAMES: "flowspinner-stream"
@@ -163,7 +163,7 @@ jobs:
       USERNAME: admin
       BBL_STATE_DIR: ((acceptance_bbl_state_dir))
   - task: run-smoke-tests
-    file: loggregator-ci/tasks/cf-log-stream-blackbox/task.yml
+    file: loggregator-ci/tasks/blackbox/cf-log-stream/task.yml
     params:
       DOMAIN: ((acceptance_system_domain))
       ORG: "system"
@@ -190,7 +190,7 @@ jobs:
   - get: 1h
     trigger: true
   - task: v2-drain
-    file: loggregator-ci/tasks/cf-syslog-drain-smoke-test.yml
+    file: loggregator-ci/tasks/blackbox/cf-syslog-drain/task.yml
     params:
       CF_ORG: system
       CF_SPACE: blackbox-testing
@@ -215,7 +215,7 @@ jobs:
   - get: 1h
     trigger: true
   - task: v2-drain
-    file: loggregator-ci/tasks/cf-syslog-drain-smoke-test.yml
+    file: loggregator-ci/tasks/blackbox/cf-syslog-drain/task.yml
     params:
       TEARDOWN: false
       CF_ORG: system
@@ -241,7 +241,7 @@ jobs:
   - get: 15m
     trigger: true
   - task: run-latency-tests
-    file: loggregator-ci/tasks/latency-test.yml
+    file: loggregator-ci/tasks/blackbox/latency-test/task.yml
     params:
       APP_DOMAIN: loggregator-latency.((acceptance_system_domain))
       APP_NAME: "loggregator-latency"
@@ -263,7 +263,7 @@ jobs:
     - get: 10m
       trigger: true
   - task: health-check
-    file: loggregator-ci/tasks/bosh-vm-health-check/task.yml
+    file: loggregator-ci/tasks/blackbox/bosh-vm-health-check/task.yml
     input_mapping:
       bbl-state: deployments-loggregator
     params:

@@ -1,0 +1,22 @@
+platform: linux
+image_resource:
+  type: docker-image
+  source:
+    repository: loggregator/base
+params:
+  CF_API:
+  ORG:
+  SPACE:
+  APP_NAMES:
+  USERNAME:
+  PASSWORD:
+  BBL_STATE_DIR:
+  USE_CLIENT_AUTH: false
+  SKIP_CERT_VERIFY: false
+inputs:
+- name: loggregator-tools
+- name: loggregator-ci
+- name: bbl-state
+  optional: true
+run:
+  path: loggregator-ci/tasks/blackbox/restage-apps/task
