@@ -16,7 +16,8 @@ function join_by {
 set -ex
 
 pushd master-repo
-  old_version=$(git describe --abbrev=0 --tags)
+  old_tag=$(git describe --abbrev=0 --tags)
+  old_version=${old_tag//v}
   split_version=( ${old_version//./ })
   minor=${split_version[1]}
 
