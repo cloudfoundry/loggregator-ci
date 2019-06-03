@@ -1,0 +1,31 @@
+#!/bin/bash
+set -exuo pipefail
+
+pushd bbl-state/${BBL_STATE_DIR}
+  eval "$(bbl print-env)"
+popd
+
+source loggregator-ci/scripts/environment-targeting/target-cf.sh
+
+cat <<EOT >> ops-files/datadog.yml
+- type: replace
+  path: /stemcells/alias=default/os
+  value: ubuntu-xenial
+
+- type: replace
+  path: /instance_groups/name=nozzle/jobs/name=datadog-firehose-nozzle/properties/nozzle/insecure_ssl_skip_verify
+  value: true
+
+- type: replace
+  path: /instance_groups/name=nozzle/jobs/name=datadog-firehose-nozzle/properties/datadog/metric_prefix
+  value: coconut.datadog.nozzle.
+EOT
+
+cat <<EOT >> vars-files/datadog.yml
+tc_url: "wss://doppler.${SYSTEM_DOMAIN}"
+datadog_api: https://api.datadoghq.com/api/v1/series
+datadog_key: ${DATADOG_API_KEY}
+uaa_url: "https://uaa.${SYSTEM_DOMAIN}"
+uaa_client: datadog-firehose-nozzle
+uaa_secret: "$(credhub-get datadog-firehose-nozzle-client-password)"
+EOT

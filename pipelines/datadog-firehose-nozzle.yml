@@ -43,57 +43,11 @@ jobs:
     input_mapping:
       bosh-release-dir: datadog-firehose-nozzle-release
   - task: prepare-ops-and-vars-files
-    config:
-      platform: linux
-      image_resource:
-        type: docker-image
-        source:
-          repository: loggregator/base
-      inputs:
-      - name: loggregator-ci
-      - name: bbl-state
-      outputs:
-      - name: ops-files
-      - name: vars-files
-      params:
-        BBL_STATE_DIR: ((acceptance_bbl_state_dir))
-        SYSTEM_DOMAIN: ((acceptance_system_domain))
-        DATADOG_API_KEY: {{datadog-loggregator-api-key}}
-      run:
-        path: /bin/bash
-        args:
-        - "-c"
-        - |
-          set -exuo pipefail
-
-          pushd bbl-state/${BBL_STATE_DIR}
-            eval "$(bbl print-env)"
-          popd
-
-          source loggregator-ci/scripts/environment-targeting/target-cf.sh
-
-          cat <<EOT >> ops-files/datadog.yml
-          - type: replace
-            path: /stemcells/alias=default/os
-            value: ubuntu-xenial
-
-          - type: replace
-            path: /instance_groups/name=nozzle/jobs/name=datadog-firehose-nozzle/properties/nozzle/insecure_ssl_skip_verify
-            value: true
-
-          - type: replace
-            path: /instance_groups/name=nozzle/jobs/name=datadog-firehose-nozzle/properties/datadog/metric_prefix
-            value: coconut.datadog.nozzle.
-          EOT
-
-          cat <<EOT >> vars-files/datadog.yml
-          tc_url: "wss://doppler.${SYSTEM_DOMAIN}"
-          datadog_api: https://api.datadoghq.com/api/v1/series
-          datadog_key: ${DATADOG_API_KEY}
-          uaa_url: "https://uaa.${SYSTEM_DOMAIN}"
-          uaa_client: datadog-firehose-nozzle
-          uaa_secret: "$(credhub-get datadog-firehose-nozzle-client-password)"
-          EOT
+    file: loggregator-ci/tasks/prepare-datadog-ops-and-vars/task.yml
+    params:
+      BBL_STATE_DIR: ((acceptance_bbl_state_dir))
+      SYSTEM_DOMAIN: ((acceptance_system_domain))
+      DATADOG_API_KEY: {{datadog-loggregator-api-key}}
   - task: deploy
     file: loggregator-ci/tasks/bosh-deploy/task.yml
     params:
