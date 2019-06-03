@@ -4,8 +4,6 @@ export GOPATH=$(pwd)
 export PATH=$PATH:$GOPATH/bin
 
 mkdir -p $GOPATH/src/github.com/cloudfoundry/
-ln -s $GOPATH/sonde-go $GOPATH/src/github.com/cloudfoundry/
-
 cd $GOPATH/src/github.com/cloudfoundry/sonde-go
 
 pushd definitions

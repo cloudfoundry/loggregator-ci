@@ -255,6 +255,8 @@ jobs:
     input_mapping:
       base-repo: loggregator
       package-repo: noaa
+    output_mapping:
+      bumped-base_repo: bumped-loggregator
     params:
       PACKAGE_URL: github.com/cloudfoundry/noaa
   - put: loggregator-release-develop
