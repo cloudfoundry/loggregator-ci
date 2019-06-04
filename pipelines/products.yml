@@ -1034,7 +1034,7 @@ jobs:
     params:
       BBL_STATE_DIR: ((acceptance_bbl_state_dir))
   - task: prepare-ops-files
-    file: loggregator-ci/tasks/prepare-service-logs-ops
+    file: loggregator-ci/tasks/prepare-service-logs-ops/task.yml
     params:
       ENV_NAME: ((acceptance_env_name))
   - task: deploy-standalone

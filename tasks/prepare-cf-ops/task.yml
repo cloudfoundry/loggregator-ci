@@ -17,7 +17,7 @@ outputs:
 - name: ops-files
 
 run:
-  path: /bin/bash
+  path: loggregator-ci/tasks/prepare-cf-ops/task
 
 params:
   BBL_STATE_DIR:
