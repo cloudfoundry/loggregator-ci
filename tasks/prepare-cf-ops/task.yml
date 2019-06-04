@@ -12,6 +12,7 @@ inputs:
 - name: loggregator-agent-release
 - name: loggregator-release
 - name: denver-deployments
+- name: loggregator-ci
 
 outputs:
 - name: ops-files

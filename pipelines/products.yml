@@ -1190,7 +1190,7 @@ jobs:
     params:
       BBL_STATE_DIR: ((acceptance_bbl_state_dir))
   - task: copy-ops-files
-    file: loggregator-ci/tasks/prepare-service-metrics-ops-and-vars
+    file: loggregator-ci/tasks/prepare-service-metrics-ops-and-vars.yml
     params:
       ENV_NAME: ((acceptance_env_name))
       BBL_STATE_DIR: ((acceptance_bbl_state_dir))
