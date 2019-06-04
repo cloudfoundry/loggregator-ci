@@ -30,8 +30,8 @@ pushd master-repo
 
   NEW_VERSION=$(join_by . "${split_version[@]}")
 
-  BUMPER_RESULT=$( (bumper --commit-range ${old_version}..HEAD --verbose) 2>&1 | grep -v "Bump modules")
-  GIT_DIFF_JOBS=$(git diff ${old_version}..HEAD -- jobs)
+  BUMPER_RESULT=$( (bumper --commit-range v${old_version}..HEAD --verbose) 2>&1 | grep -v "Bump modules")
+  GIT_DIFF_JOBS=$(git diff v${old_version}..HEAD -- jobs)
 popd
 
 # establish version/tag strings
