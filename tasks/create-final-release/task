@@ -30,11 +30,10 @@ pushd master-repo
 
   NEW_VERSION=$(join_by . "${split_version[@]}")
 
-  BUMPER_RESULT=$( (bumper --commit-range v${old_version}..HEAD --verbose) 2>&1 | grep -v "Bump modules")
-  GIT_DIFF_JOBS=$(git diff v${old_version}..HEAD -- jobs)
+  BUMPER_RESULT=$( (bumper --commit-range ${old_tag}..HEAD --verbose) 2>&1 | grep -v "Bump modules")
+  GIT_DIFF_JOBS=$(git diff ${old_tag}..HEAD -- jobs)
 popd
 
-# establish version/tag strings
 tag_name="v$NEW_VERSION"
 
 # write out github release files
@@ -97,4 +96,3 @@ popd
 
 # copy repos into output
 cp -r develop-repo master-repo repos
-
