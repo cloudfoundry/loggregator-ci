@@ -2,8 +2,8 @@ groups:
 - name: concourse
   jobs:
   - build-base-image
-  - bosh10
   - blackbox
+
 - name: tools
   jobs:
   - emitter
@@ -36,21 +36,6 @@ resources:
   source:
     uri: https://github.com/cloudfoundry/loggregator-ci
     branch: master
-
-- name: bosh10-image-docker-build-context
-  type: git
-  source:
-    uri: https://github.com/cloudfoundry/loggregator-ci
-    branch: master
-    paths:
-    - docker-images/bosh10
-
-- name: bosh10-image
-  type: docker-image
-  source:
-    repository: loggregator/bosh10
-    username: {{docker-hub-username}}
-    password: {{docker-hub-password}}
 
 - name: blackbox-image-docker-build-context
   type: git
@@ -107,16 +92,6 @@ jobs:
   - put: base-image
     params:
       build: base-image-docker-build-context/docker-images/base
-      tag_as_latest: true
-      cache_tag: latest
-
-- name: bosh10
-  plan:
-  - get: bosh10-image-docker-build-context
-    trigger: true
-  - put: bosh10-image
-    params:
-      build: bosh10-image-docker-build-context/docker-images/bosh10
       tag_as_latest: true
       cache_tag: latest
 
