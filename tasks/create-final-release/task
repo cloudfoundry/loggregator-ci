@@ -13,10 +13,10 @@ function join_by {
   echo "$*"
 }
 
-set -ex
+set -exo pipefail
 
 pushd master-repo
-  old_tag=$(git describe --abbrev=0 --tags)
+  old_tag=$(git describe --abbrev=0 --tags --match v*)
   old_version=${old_tag//v}
   split_version=( ${old_version//./ })
   minor=${split_version[1]}
@@ -30,8 +30,12 @@ pushd master-repo
 
   NEW_VERSION=$(join_by . "${split_version[@]}")
 
-  BUMPER_RESULT=$( (bumper --commit-range ${old_tag}..HEAD --verbose) 2>&1 | grep -v "Bump modules")
+  set +x
+  BUMPER_RESULT=$( (bumper --commit-range ${old_tag}..HEAD --verbose --no-color) 2>&1 | grep -v "Bump modules")
+  BUMPER_RESULT=${BUMPER_RESULT//  / &nbsp; &nbsp;}
+  BUMPER_RESULT=${BUMPER_RESULT//... / &nbsp; &nbsp;}
   GIT_DIFF_JOBS=$(git diff ${old_tag}..HEAD -- jobs)
+  set -x
 popd
 
 tag_name="v$NEW_VERSION"
@@ -39,8 +43,8 @@ tag_name="v$NEW_VERSION"
 # write out github release files
 echo "$RELEASE_NAME $NEW_VERSION" > github-release/name
 echo $tag_name > github-release/tag
-printf "BUMPER OUTPUT: \n%s\n\n" "${BUMPER_RESULT}" >> github-release/body
-printf "GIT DIFF jobs directory: \n%s\n\n" "${GIT_DIFF_JOBS}" >> github-release/body
+printf '## BUMPER OUTPUT\n%s\n\n' "$BUMPER_RESULT" >> github-release/body
+printf '## GIT DIFF jobs directory\n```diff\n%s\n```\n\n' "${GIT_DIFF_JOBS}" >> github-release/body
 
 # setup ssh for reading from github
 eval "$(ssh-agent -s)"
