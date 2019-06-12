@@ -1,0 +1,748 @@
+
+
+resources:
+
+- name: backup-and-restore-sdk
+  type: s3
+  source:
+    bucket: compiled-releases
+    region_name: us-west-1
+    access_key_id: ((aws_access_key_id))
+    secret_access_key: ((aws_secret_access_key))
+    regexp: ^2.7/.+/backup-and-restore-sdk-(?P<release_version>v?[0-9\.]+)-ubuntu-xenial-315.13(\.0)?\.tgz$
+
+- name: binary-offline-buildpack
+  type: s3
+  source:
+    bucket: compiled-releases
+    region_name: us-west-1
+    access_key_id: ((aws_access_key_id))
+    secret_access_key: ((aws_secret_access_key))
+    regexp: ^2.7/.+/binary-offline-buildpack-(?P<release_version>v?[0-9\.]+)-ubuntu-xenial-315.13(\.0)?\.tgz$
+
+- name: bosh-dns-aliases
+  type: s3
+  source:
+    bucket: compiled-releases
+    region_name: us-west-1
+    access_key_id: ((aws_access_key_id))
+    secret_access_key: ((aws_secret_access_key))
+    regexp: ^2.7/.+/bosh-dns-aliases-(?P<release_version>v?[0-9\.]+)-ubuntu-xenial-315.13(\.0)?\.tgz$
+
+- name: bosh-system-metrics-forwarder
+  type: s3
+  source:
+    bucket: compiled-releases
+    region_name: us-west-1
+    access_key_id: ((aws_access_key_id))
+    secret_access_key: ((aws_secret_access_key))
+    regexp: ^2.7/.+/bosh-system-metrics-forwarder-(?P<release_version>v?[0-9\.]+)-ubuntu-xenial-315.13(\.0)?\.tgz$
+
+- name: bpm
+  type: s3
+  source:
+    bucket: compiled-releases
+    region_name: us-west-1
+    access_key_id: ((aws_access_key_id))
+    secret_access_key: ((aws_secret_access_key))
+    regexp: ^2.7/.+/bpm-(?P<release_version>v?[0-9\.]+)-ubuntu-xenial-315.13(\.0)?\.tgz$
+
+- name: capi
+  type: s3
+  source:
+    bucket: compiled-releases
+    region_name: us-west-1
+    access_key_id: ((aws_access_key_id))
+    secret_access_key: ((aws_secret_access_key))
+    regexp: ^2.7/.+/capi-(?P<release_version>v?[0-9\.]+)-ubuntu-xenial-315.13(\.0)?\.tgz$
+
+- name: cf-autoscaling
+  type: s3
+  source:
+    bucket: compiled-releases
+    region_name: us-west-1
+    access_key_id: ((aws_access_key_id))
+    secret_access_key: ((aws_secret_access_key))
+    regexp: ^2.7/.+/cf-autoscaling-(?P<release_version>v?[0-9\.]+)-ubuntu-xenial-315.13(\.0)?\.tgz$
+
+- name: cf-backup-and-restore
+  type: s3
+  source:
+    bucket: compiled-releases
+    region_name: us-west-1
+    access_key_id: ((aws_access_key_id))
+    secret_access_key: ((aws_secret_access_key))
+    regexp: ^2.7/.+/cf-backup-and-restore-(?P<release_version>v?[0-9\.]+)-ubuntu-xenial-315.13(\.0)?\.tgz$
+
+- name: cf-cli
+  type: s3
+  source:
+    bucket: compiled-releases
+    region_name: us-west-1
+    access_key_id: ((aws_access_key_id))
+    secret_access_key: ((aws_secret_access_key))
+    regexp: ^2.7/.+/cf-cli-(?P<release_version>v?[0-9\.]+)-ubuntu-xenial-315.13(\.0)?\.tgz$
+
+- name: cf-networking
+  type: s3
+  source:
+    bucket: compiled-releases
+    region_name: us-west-1
+    access_key_id: ((aws_access_key_id))
+    secret_access_key: ((aws_secret_access_key))
+    regexp: ^2.7/.+/cf-networking-(?P<release_version>v?[0-9\.]+)-ubuntu-xenial-315.13(\.0)?\.tgz$
+
+- name: cf-smoke-tests
+  type: s3
+  source:
+    bucket: compiled-releases
+    region_name: us-west-1
+    access_key_id: ((aws_access_key_id))
+    secret_access_key: ((aws_secret_access_key))
+    regexp: ^2.7/.+/cf-smoke-tests-(?P<release_version>v?[0-9\.]+)-ubuntu-xenial-315.13(\.0)?\.tgz$
+
+- name: cf-syslog-drain
+  type: s3
+  source:
+    bucket: compiled-releases
+    region_name: us-west-1
+    access_key_id: ((aws_access_key_id))
+    secret_access_key: ((aws_secret_access_key))
+    regexp: ^2.7/.+/cf-syslog-drain-(?P<release_version>v?[0-9\.]+)-ubuntu-xenial-315.13(\.0)?\.tgz$
+
+- name: cflinuxfs3
+  type: s3
+  source:
+    bucket: compiled-releases
+    region_name: us-west-1
+    access_key_id: ((aws_access_key_id))
+    secret_access_key: ((aws_secret_access_key))
+    regexp: ^2.7/.+/cflinuxfs3-(?P<release_version>v?[0-9\.]+)-ubuntu-xenial-315.13(\.0)?\.tgz$
+
+- name: consul
+  type: s3
+  source:
+    bucket: compiled-releases
+    region_name: us-west-1
+    access_key_id: ((aws_access_key_id))
+    secret_access_key: ((aws_secret_access_key))
+    regexp: ^2.7/.+/consul-(?P<release_version>v?[0-9\.]+)-ubuntu-xenial-315.13(\.0)?\.tgz$
+
+- name: consul-drain
+  type: s3
+  source:
+    bucket: compiled-releases
+    region_name: us-west-1
+    access_key_id: ((aws_access_key_id))
+    secret_access_key: ((aws_secret_access_key))
+    regexp: ^2.7/.+/consul-drain-(?P<release_version>v?[0-9\.]+)-ubuntu-xenial-315.13(\.0)?\.tgz$
+
+- name: credhub
+  type: s3
+  source:
+    bucket: compiled-releases
+    region_name: us-west-1
+    access_key_id: ((aws_access_key_id))
+    secret_access_key: ((aws_secret_access_key))
+    regexp: ^2.7/.+/credhub-(?P<release_version>v?[0-9\.]+)-ubuntu-xenial-315.13(\.0)?\.tgz$
+
+- name: diego
+  type: s3
+  source:
+    bucket: compiled-releases
+    region_name: us-west-1
+    access_key_id: ((aws_access_key_id))
+    secret_access_key: ((aws_secret_access_key))
+    regexp: ^2.7/.+/diego-(?P<release_version>v?[0-9\.]+)-ubuntu-xenial-315.13(\.0)?\.tgz$
+
+- name: dotnet-core-offline-buildpack
+  type: s3
+  source:
+    bucket: compiled-releases
+    region_name: us-west-1
+    access_key_id: ((aws_access_key_id))
+    secret_access_key: ((aws_secret_access_key))
+    regexp: ^2.7/.+/dotnet-core-offline-buildpack-(?P<release_version>v?[0-9\.]+)-ubuntu-xenial-315.13(\.0)?\.tgz$
+
+- name: garden-runc
+  type: s3
+  source:
+    bucket: compiled-releases
+    region_name: us-west-1
+    access_key_id: ((aws_access_key_id))
+    secret_access_key: ((aws_secret_access_key))
+    regexp: ^2.7/.+/garden-runc-(?P<release_version>v?[0-9\.]+)-ubuntu-xenial-315.13(\.0)?\.tgz$
+
+- name: go-offline-buildpack
+  type: s3
+  source:
+    bucket: compiled-releases
+    region_name: us-west-1
+    access_key_id: ((aws_access_key_id))
+    secret_access_key: ((aws_secret_access_key))
+    regexp: ^2.7/.+/go-offline-buildpack-(?P<release_version>v?[0-9\.]+)-ubuntu-xenial-315.13(\.0)?\.tgz$
+
+- name: haproxy
+  type: s3
+  source:
+    bucket: compiled-releases
+    region_name: us-west-1
+    access_key_id: ((aws_access_key_id))
+    secret_access_key: ((aws_secret_access_key))
+    regexp: ^2.7/.+/haproxy-(?P<release_version>v?[0-9\.]+)-ubuntu-xenial-315.13(\.0)?\.tgz$
+
+- name: istio
+  type: s3
+  source:
+    bucket: compiled-releases
+    region_name: us-west-1
+    access_key_id: ((aws_access_key_id))
+    secret_access_key: ((aws_secret_access_key))
+    regexp: ^2.7/.+/istio-(?P<release_version>v?[0-9\.]+)-ubuntu-xenial-315.13(\.0)?\.tgz$
+
+- name: java-offline-buildpack
+  type: s3
+  source:
+    bucket: compiled-releases
+    region_name: us-west-1
+    access_key_id: ((aws_access_key_id))
+    secret_access_key: ((aws_secret_access_key))
+    regexp: ^2.7/.+/java-offline-buildpack-(?P<release_version>v?[0-9\.]+)-ubuntu-xenial-315.13(\.0)?\.tgz$
+
+- name: leadership-election
+  type: s3
+  source:
+    bucket: compiled-releases
+    region_name: us-west-1
+    access_key_id: ((aws_access_key_id))
+    secret_access_key: ((aws_secret_access_key))
+    regexp: ^2.7/.+/leadership-election-(?P<release_version>v?[0-9\.]+)-ubuntu-xenial-315.13(\.0)?\.tgz$
+
+- name: log-cache
+  type: s3
+  source:
+    bucket: compiled-releases
+    region_name: us-west-1
+    access_key_id: ((aws_access_key_id))
+    secret_access_key: ((aws_secret_access_key))
+    regexp: ^2.7/.+/log-cache-(?P<release_version>v?[0-9\.]+)-ubuntu-xenial-315.13(\.0)?\.tgz$
+
+- name: loggregator
+  type: s3
+  source:
+    bucket: compiled-releases
+    region_name: us-west-1
+    access_key_id: ((aws_access_key_id))
+    secret_access_key: ((aws_secret_access_key))
+    regexp: ^2.7/.+/loggregator-(?P<release_version>v?[0-9\.]+)-ubuntu-xenial-315.13(\.0)?\.tgz$
+
+- name: loggregator-agent
+  type: s3
+  source:
+    bucket: compiled-releases
+    region_name: us-west-1
+    access_key_id: ((aws_access_key_id))
+    secret_access_key: ((aws_secret_access_key))
+    regexp: ^2.7/.+/loggregator-agent-(?P<release_version>v?[0-9\.]+)-ubuntu-xenial-315.13(\.0)?\.tgz$
+
+- name: mapfs
+  type: s3
+  source:
+    bucket: compiled-releases
+    region_name: us-west-1
+    access_key_id: ((aws_access_key_id))
+    secret_access_key: ((aws_secret_access_key))
+    regexp: ^2.7/.+/mapfs-(?P<release_version>v?[0-9\.]+)-ubuntu-xenial-315.13(\.0)?\.tgz$
+
+- name: metric-registrar
+  type: s3
+  source:
+    bucket: compiled-releases
+    region_name: us-west-1
+    access_key_id: ((aws_access_key_id))
+    secret_access_key: ((aws_secret_access_key))
+    regexp: ^2.7/.+/metric-registrar-(?P<release_version>v?[0-9\.]+)-ubuntu-xenial-315.13(\.0)?\.tgz$
+
+- name: mysql-monitoring
+  type: s3
+  source:
+    bucket: compiled-releases
+    region_name: us-west-1
+    access_key_id: ((aws_access_key_id))
+    secret_access_key: ((aws_secret_access_key))
+    regexp: ^2.7/.+/mysql-monitoring-(?P<release_version>v?[0-9\.]+)-ubuntu-xenial-315.13(\.0)?\.tgz$
+
+- name: nats
+  type: s3
+  source:
+    bucket: compiled-releases
+    region_name: us-west-1
+    access_key_id: ((aws_access_key_id))
+    secret_access_key: ((aws_secret_access_key))
+    regexp: ^2.7/.+/nats-(?P<release_version>v?[0-9\.]+)-ubuntu-xenial-315.13(\.0)?\.tgz$
+
+- name: nfs-volume
+  type: s3
+  source:
+    bucket: compiled-releases
+    region_name: us-west-1
+    access_key_id: ((aws_access_key_id))
+    secret_access_key: ((aws_secret_access_key))
+    regexp: ^2.7/.+/nfs-volume-(?P<release_version>v?[0-9\.]+)-ubuntu-xenial-315.13(\.0)?\.tgz$
+
+- name: nginx-offline-buildpack
+  type: s3
+  source:
+    bucket: compiled-releases
+    region_name: us-west-1
+    access_key_id: ((aws_access_key_id))
+    secret_access_key: ((aws_secret_access_key))
+    regexp: ^2.7/.+/nginx-offline-buildpack-(?P<release_version>v?[0-9\.]+)-ubuntu-xenial-315.13(\.0)?\.tgz$
+
+- name: nodejs-offline-buildpack
+  type: s3
+  source:
+    bucket: compiled-releases
+    region_name: us-west-1
+    access_key_id: ((aws_access_key_id))
+    secret_access_key: ((aws_secret_access_key))
+    regexp: ^2.7/.+/nodejs-offline-buildpack-(?P<release_version>v?[0-9\.]+)-ubuntu-xenial-315.13(\.0)?\.tgz$
+
+- name: notifications
+  type: s3
+  source:
+    bucket: compiled-releases
+    region_name: us-west-1
+    access_key_id: ((aws_access_key_id))
+    secret_access_key: ((aws_secret_access_key))
+    regexp: ^2.7/.+/notifications-(?P<release_version>v?[0-9\.]+)-ubuntu-xenial-315.13(\.0)?\.tgz$
+
+- name: notifications-ui
+  type: s3
+  source:
+    bucket: compiled-releases
+    region_name: us-west-1
+    access_key_id: ((aws_access_key_id))
+    secret_access_key: ((aws_secret_access_key))
+    regexp: ^2.7/.+/notifications-ui-(?P<release_version>v?[0-9\.]+)-ubuntu-xenial-315.13(\.0)?\.tgz$
+
+- name: php-offline-buildpack
+  type: s3
+  source:
+    bucket: compiled-releases
+    region_name: us-west-1
+    access_key_id: ((aws_access_key_id))
+    secret_access_key: ((aws_secret_access_key))
+    regexp: ^2.7/.+/php-offline-buildpack-(?P<release_version>v?[0-9\.]+)-ubuntu-xenial-315.13(\.0)?\.tgz$
+
+- name: push-apps-manager-release
+  type: s3
+  source:
+    bucket: compiled-releases
+    region_name: us-west-1
+    access_key_id: ((aws_access_key_id))
+    secret_access_key: ((aws_secret_access_key))
+    regexp: ^2.7/.+/push-apps-manager-release-(?P<release_version>v?[0-9\.]+)-ubuntu-xenial-315.13(\.0)?\.tgz$
+
+- name: push-usage-service-release
+  type: s3
+  source:
+    bucket: compiled-releases
+    region_name: us-west-1
+    access_key_id: ((aws_access_key_id))
+    secret_access_key: ((aws_secret_access_key))
+    regexp: ^2.7/.+/push-usage-service-release-(?P<release_version>v?[0-9\.]+)-ubuntu-xenial-315.13(\.0)?\.tgz$
+
+- name: pxc
+  type: s3
+  source:
+    bucket: compiled-releases
+    region_name: us-west-1
+    access_key_id: ((aws_access_key_id))
+    secret_access_key: ((aws_secret_access_key))
+    regexp: ^2.7/.+/pxc-(?P<release_version>v?[0-9\.]+)-ubuntu-xenial-315.13(\.0)?\.tgz$
+
+- name: python-offline-buildpack
+  type: s3
+  source:
+    bucket: compiled-releases
+    region_name: us-west-1
+    access_key_id: ((aws_access_key_id))
+    secret_access_key: ((aws_secret_access_key))
+    regexp: ^2.7/.+/python-offline-buildpack-(?P<release_version>v?[0-9\.]+)-ubuntu-xenial-315.13(\.0)?\.tgz$
+
+- name: r-offline-buildpack
+  type: s3
+  source:
+    bucket: compiled-releases
+    region_name: us-west-1
+    access_key_id: ((aws_access_key_id))
+    secret_access_key: ((aws_secret_access_key))
+    regexp: ^2.7/.+/r-offline-buildpack-(?P<release_version>v?[0-9\.]+)-ubuntu-xenial-315.13(\.0)?\.tgz$
+
+- name: routing
+  type: s3
+  source:
+    bucket: compiled-releases
+    region_name: us-west-1
+    access_key_id: ((aws_access_key_id))
+    secret_access_key: ((aws_secret_access_key))
+    regexp: ^2.7/.+/routing-(?P<release_version>v?[0-9\.]+)-ubuntu-xenial-315.13(\.0)?\.tgz$
+
+- name: ruby-offline-buildpack
+  type: s3
+  source:
+    bucket: compiled-releases
+    region_name: us-west-1
+    access_key_id: ((aws_access_key_id))
+    secret_access_key: ((aws_secret_access_key))
+    regexp: ^2.7/.+/ruby-offline-buildpack-(?P<release_version>v?[0-9\.]+)-ubuntu-xenial-315.13(\.0)?\.tgz$
+
+- name: silk
+  type: s3
+  source:
+    bucket: compiled-releases
+    region_name: us-west-1
+    access_key_id: ((aws_access_key_id))
+    secret_access_key: ((aws_secret_access_key))
+    regexp: ^2.7/.+/silk-(?P<release_version>v?[0-9\.]+)-ubuntu-xenial-315.13(\.0)?\.tgz$
+
+- name: smb-volume
+  type: s3
+  source:
+    bucket: compiled-releases
+    region_name: us-west-1
+    access_key_id: ((aws_access_key_id))
+    secret_access_key: ((aws_secret_access_key))
+    regexp: ^2.7/.+/smb-volume-(?P<release_version>v?[0-9\.]+)-ubuntu-xenial-315.13(\.0)?\.tgz$
+
+- name: staticfile-offline-buildpack
+  type: s3
+  source:
+    bucket: compiled-releases
+    region_name: us-west-1
+    access_key_id: ((aws_access_key_id))
+    secret_access_key: ((aws_secret_access_key))
+    regexp: ^2.7/.+/staticfile-offline-buildpack-(?P<release_version>v?[0-9\.]+)-ubuntu-xenial-315.13(\.0)?\.tgz$
+
+- name: statsd-injector
+  type: s3
+  source:
+    bucket: compiled-releases
+    region_name: us-west-1
+    access_key_id: ((aws_access_key_id))
+    secret_access_key: ((aws_secret_access_key))
+    regexp: ^2.7/.+/statsd-injector-(?P<release_version>v?[0-9\.]+)-ubuntu-xenial-315.13(\.0)?\.tgz$
+
+- name: syslog
+  type: s3
+  source:
+    bucket: compiled-releases
+    region_name: us-west-1
+    access_key_id: ((aws_access_key_id))
+    secret_access_key: ((aws_secret_access_key))
+    regexp: ^2.7/.+/syslog-(?P<release_version>v?[0-9\.]+)-ubuntu-xenial-315.13(\.0)?\.tgz$
+
+- name: uaa
+  type: s3
+  source:
+    bucket: compiled-releases
+    region_name: us-west-1
+    access_key_id: ((aws_access_key_id))
+    secret_access_key: ((aws_secret_access_key))
+    regexp: ^2.7/.+/uaa-(?P<release_version>v?[0-9\.]+)-ubuntu-xenial-315.13(\.0)?\.tgz$
+
+- name: p-runtime
+  type: git
+  source:
+    uri: git@github.com:pivotal-cf/p-runtime.git
+    branch: add-syslog-agent
+    private_key: {{loggregator-pivotal-ci-key}}
+
+jobs:
+- name: build
+  public: false
+  serial: true
+  plan:
+    - aggregate:
+
+      - get: backup-and-restore-sdk
+
+      - get: binary-offline-buildpack
+
+      - get: bosh-dns-aliases
+
+      - get: bosh-system-metrics-forwarder
+
+      - get: bpm
+
+      - get: capi
+
+      - get: cf-autoscaling
+
+      - get: cf-backup-and-restore
+
+      - get: cf-cli
+
+      - get: cf-networking
+
+      - get: cf-smoke-tests
+
+      - get: cf-syslog-drain
+
+      - get: cflinuxfs3
+
+      - get: consul
+
+      - get: consul-drain
+
+      - get: credhub
+
+      - get: diego
+
+      - get: dotnet-core-offline-buildpack
+
+      - get: garden-runc
+
+      - get: go-offline-buildpack
+
+      - get: haproxy
+
+      - get: istio
+
+      - get: java-offline-buildpack
+
+      - get: leadership-election
+
+      - get: log-cache
+
+      - get: loggregator
+
+      - get: loggregator-agent
+
+      - get: mapfs
+
+      - get: metric-registrar
+
+      - get: mysql-monitoring
+
+      - get: nats
+
+      - get: nfs-volume
+
+      - get: nginx-offline-buildpack
+
+      - get: nodejs-offline-buildpack
+
+      - get: notifications
+
+      - get: notifications-ui
+
+      - get: php-offline-buildpack
+
+      - get: push-apps-manager-release
+
+      - get: push-usage-service-release
+
+      - get: pxc
+
+      - get: python-offline-buildpack
+
+      - get: r-offline-buildpack
+
+      - get: routing
+
+      - get: ruby-offline-buildpack
+
+      - get: silk
+
+      - get: smb-volume
+
+      - get: staticfile-offline-buildpack
+
+      - get: statsd-injector
+
+      - get: syslog
+
+      - get: uaa
+
+      - get: p-runtime
+    - task: build-pas
+      config:
+        platform: linux
+        image_resource:
+          type: docker-image
+          source:
+            repository: pivotalcfreleng/ruby
+        outputs:
+          - name: tile-output
+        inputs:
+          - name: p-runtime
+
+          - name: backup-and-restore-sdk
+            path: releases/backup-and-restore-sdk
+
+          - name: binary-offline-buildpack
+            path: releases/binary-offline-buildpack
+
+          - name: bosh-dns-aliases
+            path: releases/bosh-dns-aliases
+
+          - name: bosh-system-metrics-forwarder
+            path: releases/bosh-system-metrics-forwarder
+
+          - name: bpm
+            path: releases/bpm
+
+          - name: capi
+            path: releases/capi
+
+          - name: cf-autoscaling
+            path: releases/cf-autoscaling
+
+          - name: cf-backup-and-restore
+            path: releases/cf-backup-and-restore
+
+          - name: cf-cli
+            path: releases/cf-cli
+
+          - name: cf-networking
+            path: releases/cf-networking
+
+          - name: cf-smoke-tests
+            path: releases/cf-smoke-tests
+
+          - name: cf-syslog-drain
+            path: releases/cf-syslog-drain
+
+          - name: cflinuxfs3
+            path: releases/cflinuxfs3
+
+          - name: consul
+            path: releases/consul
+
+          - name: consul-drain
+            path: releases/consul-drain
+
+          - name: credhub
+            path: releases/credhub
+
+          - name: diego
+            path: releases/diego
+
+          - name: dotnet-core-offline-buildpack
+            path: releases/dotnet-core-offline-buildpack
+
+          - name: garden-runc
+            path: releases/garden-runc
+
+          - name: go-offline-buildpack
+            path: releases/go-offline-buildpack
+
+          - name: haproxy
+            path: releases/haproxy
+
+          - name: istio
+            path: releases/istio
+
+          - name: java-offline-buildpack
+            path: releases/java-offline-buildpack
+
+          - name: leadership-election
+            path: releases/leadership-election
+
+          - name: log-cache
+            path: releases/log-cache
+
+          - name: loggregator
+            path: releases/loggregator
+
+          - name: loggregator-agent
+            path: releases/loggregator-agent
+
+          - name: mapfs
+            path: releases/mapfs
+
+          - name: metric-registrar
+            path: releases/metric-registrar
+
+          - name: mysql-monitoring
+            path: releases/mysql-monitoring
+
+          - name: nats
+            path: releases/nats
+
+          - name: nfs-volume
+            path: releases/nfs-volume
+
+          - name: nginx-offline-buildpack
+            path: releases/nginx-offline-buildpack
+
+          - name: nodejs-offline-buildpack
+            path: releases/nodejs-offline-buildpack
+
+          - name: notifications
+            path: releases/notifications
+
+          - name: notifications-ui
+            path: releases/notifications-ui
+
+          - name: php-offline-buildpack
+            path: releases/php-offline-buildpack
+
+          - name: push-apps-manager-release
+            path: releases/push-apps-manager-release
+
+          - name: push-usage-service-release
+            path: releases/push-usage-service-release
+
+          - name: pxc
+            path: releases/pxc
+
+          - name: python-offline-buildpack
+            path: releases/python-offline-buildpack
+
+          - name: r-offline-buildpack
+            path: releases/r-offline-buildpack
+
+          - name: routing
+            path: releases/routing
+
+          - name: ruby-offline-buildpack
+            path: releases/ruby-offline-buildpack
+
+          - name: silk
+            path: releases/silk
+
+          - name: smb-volume
+            path: releases/smb-volume
+
+          - name: staticfile-offline-buildpack
+            path: releases/staticfile-offline-buildpack
+
+          - name: statsd-injector
+            path: releases/statsd-injector
+
+          - name: syslog
+            path: releases/syslog
+
+          - name: uaa
+            path: releases/uaa
+
+        run:
+          path: bash
+          args:
+            - -c
+            - |
+              #!/bin/bash
+              set -ex
+
+              workspace=$PWD
+              mkdir -p p-runtime/releases
+              cp releases/**/*.tgz p-runtime/releases
+
+              pushd p-runtime
+                ./bin/build $workspace/tile-output
+              popd
+
+
