@@ -18,7 +18,6 @@ groups:
 
   - loggregator-agent-master-promotion
   - loggregator-agent-tests
-  - loggregator-agent-bump-submodule
   - loggregator-master-promotion
   - loggregator-agent-promotion
   - loggregator-tests
@@ -75,7 +74,6 @@ groups:
 - name: agent
   jobs:
   - loggregator-agent-tests
-  - loggregator-agent-bump-submodule
   - cf-deploy
   - cfar-lats
   - cats
@@ -609,64 +607,6 @@ jobs:
                 throw "test failed"
               }
             }
-
-- name: loggregator-agent-bump-submodule
-  serial: true
-  plan:
-  - aggregate:
-    - get: loggregator-ci
-    - get: loggregator-agent-release
-      trigger: true
-    - get: loggregator-agent
-      trigger: true
-      passed: ["loggregator-agent-tests"]
-    - get: go-loggregator
-      trigger: true
-  - task: update-submodule
-    file: loggregator-ci/tasks/bump-submodule/task.yml
-    input_mapping:
-      release-repo: loggregator-agent-release
-      source-repo: loggregator-agent
-    output_mapping:
-      bumped-release-repo: bumped-loggregator-agent-release
-    params:
-      SUBMODULE_PATH: src/code.cloudfoundry.org/loggregator-agent
-  - task: update-go-loggregator
-    file: loggregator-ci/tasks/bump-submodule/task.yml
-    input_mapping:
-      release-repo: bumped-loggregator-agent-release
-      source-repo: go-loggregator
-    output_mapping:
-      bumped-release-repo: bumped-go-loggregator-release
-    params:
-      SUBMODULE_PATH: src/code.cloudfoundry.org/go-loggregator
-  - task: sync-package-specs
-    file: loggregator-ci/tasks/run-release-script/task.yml
-    input_mapping:
-      release-repo: bumped-go-loggregator-release
-    output_mapping:
-      updated-release-repo: synced-loggregator-agent-release
-    params:
-      SCRIPT: scripts/sync-package-specs
-  - aggregate:
-    - task: run-tests
-      file: loggregator-ci/tasks/run-release-script/task.yml
-      input_mapping:
-        release-repo: synced-loggregator-agent-release
-      params:
-        SCRIPT: scripts/test
-  - task: commit
-    file: loggregator-ci/tasks/commit-with-shortlog/task.yml
-    input_mapping:
-      release-repo: synced-loggregator-agent-release
-    output_mapping:
-      committed-repo: committed-loggregator-agent-release
-    params:
-      PATHS: "src/code.cloudfoundry.org/loggregator-agent src/code.cloudfoundry.org/go-loggregator packages"
-  - put: loggregator-agent-release
-    params:
-      repository: committed-loggregator-agent-release
-      rebase: true
 
 - name: loggregator-promotion
   serial: true
@@ -1288,8 +1228,6 @@ jobs:
       passed: ["loggregator-tests"]
       trigger: true
     - get: loggregator-agent-release
-      passed: ["loggregator-agent-bump-submodule"]
-      trigger: true
     - get: cf-syslog-drain-release
       trigger: true
       passed: [cf-syslog-drain-tests]
