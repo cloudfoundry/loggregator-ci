@@ -1,116 +1,215 @@
 <%
-releases = [
-  'backup-and-restore-sdk',
-  'binary-offline-buildpack',
-  'bosh-dns-aliases',
-  'bosh-system-metrics-forwarder',
-  'bpm',
-  'capi',
-  'cf-autoscaling',
-  'cf-backup-and-restore',
-  'cf-cli',
-  'cf-networking',
-  'cf-smoke-tests',
-  'cf-syslog-drain',
-  'cflinuxfs3',
-  'consul',
-  'consul-drain',
-  'credhub',
-  'diego',
-  'dotnet-core-offline-buildpack',
-  'garden-runc',
-  'go-offline-buildpack',
-  'haproxy',
-  'istio',
-  'java-offline-buildpack',
-  'leadership-election',
-  'log-cache',
-  'loggregator',
-  'loggregator-agent',
-  'mapfs',
-  'metric-registrar',
-  'mysql-monitoring',
-  'nats',
-  'nfs-volume',
-  'nginx-offline-buildpack',
-  'nodejs-offline-buildpack',
-  'notifications',
-  'notifications-ui',
-  'php-offline-buildpack',
-  'push-apps-manager-release',
-  'push-usage-service-release',
-  'pxc',
-  'python-offline-buildpack',
-  'r-offline-buildpack',
-  'routing',
-  'ruby-offline-buildpack',
-  'silk',
-  'smb-volume',
-  'staticfile-offline-buildpack',
-  'statsd-injector',
-  'syslog',
-  'uaa',
-]
-
-  stemcell_version = '315.13'
+loggregator_releases = %w(
+  loggregator
+  loggregator-agent
+  cf-syslog-drain
+  statsd-injector
+  leadership-election
+)
 %>
 
-resources:
-<% releases.each do |name| %>
-- name: <%= name %>
-  type: s3
+resource_types:
+- name: pcf-pool
+  type: docker-image
   source:
-    bucket: compiled-releases
-    region_name: us-west-1
-    access_key_id: ((aws_access_key_id))
-    secret_access_key: ((aws_secret_access_key))
-    regexp: ^2.7/.+/<%= name %>-(?P<release_version>v?[0-9\.]+)-ubuntu-xenial-<%= stemcell_version %>(\.0)?\.tgz$
+    repository: cftoolsmiths/toolsmiths-envs-resource
+
+- name: pivnet
+  type: docker-image
+  source:
+    repository: pivotalcf/pivnet-resource
+    tag: latest-final
+
+resources:
+<% loggregator_releases.each do |name| %>
+- name: <%= name %>-release
+  type: git
+  source:
+    uri: git@github.com:cloudfoundry/<%= name %>-release.git
+    branch: develop
+    private_key: ((loggregator-key))
+    ignore_paths:
+    - .final_builds
+    - releases
 <% end %>
+
 - name: p-runtime
   type: git
   source:
     uri: git@github.com:pivotal-cf/p-runtime.git
     private_key: {{loggregator-pivotal-ci-key}}
 
+- name: ((pas-version))-env
+  type: pcf-pool
+  source:
+    api_token: ((toolsmiths-api-key))
+    hostname: environments.toolsmiths.cf-app.com
+    pool_name: us_((pas-version-underscored))
+  tags: [ ((toolsmiths-workers-tag)) ]
+
+- name: concourse-tasks
+  type: git
+  source:
+    uri: https://github.com/pivotal-cf/concourse-tasks
+    branch: master
+
+- name: pas-pivnet
+  type: pivnet
+  source:
+    api_token: ((pivnet-refresh-token))
+    product_slug: elastic-runtime
+    sort_by: semver
+
 jobs:
 - name: build
   public: false
   serial: true
   plan:
-    - aggregate:
-<% releases.each do |name| %>
-      - get: <%= name %>
-<% end %>
-      - get: p-runtime
-    - task: build-pas
+  - aggregate:
+    - get: pas-pivnet
+      params:
+        globs: ["cf-*.pivotal"]
+    - get: p-runtime
+  <% loggregator_releases.each do |name| %>
+    - get: <%= name %>-release
+      trigger: true
+  <% end %>
+  - aggregate:
+  <% loggregator_releases.each do |name| %>
+    - task: create-<%= name %>-release
       config:
         platform: linux
         image_resource:
           type: docker-image
           source:
-            repository: pivotalcfreleng/ruby
-        outputs:
-          - name: tile-output
+            repository: loggregator/base
         inputs:
-          - name: p-runtime
-<% releases.each do |name| %>
-          - name: <%= name %>
-            path: releases/<%= name %>
-<% end %>
+        - name: <%= name %>-release
+        outputs:
+        - name: <%= name %>-release-tarball
+        params:
+          RELEASE_NAME: <%= name %>
         run:
           path: bash
           args:
-            - -c
-            - |
-              #!/bin/bash
-              set -ex
+          - -c
+          - |
+            #!/bin/bash
+            set -ex
 
-              workspace=$PWD
-              mkdir -p p-runtime/releases
-              cp releases/**/*.tgz p-runtime/releases
+            workspace=$PWD
 
-              pushd p-runtime
-                ./bin/build $workspace/tile-output
-              popd
+            pushd ${RELEASE_NAME}-release
+              old_version=$(yq r <(cat releases/${RELEASE_NAME}/index.yml) --tojson | jq -r  .builds[].version | sort -V | tail -n 1)
+              split_version=( ${old_version//./ })
+              split_version[1]=`expr ${split_version[1]} + 1`
+              new_version="${split_version[0]}.${split_version[1]}"
 
+              bosh create-release \
+                --tarball ${workspace}/${RELEASE_NAME}-release-tarball/${RELEASE_NAME}-release-${new_version}.tgz \
+                --version=${new_version}
+            popd
+  <% end %>
+  - task: build-pas
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source:
+          repository: pivotalcfreleng/ruby
+      outputs:
+      - name: tile-output
+      inputs:
+      - name: p-runtime
+      - name: pas-pivnet
+      <% loggregator_releases.each do |name| %>
+      - name: <%= name %>-release-tarball
+        path: releases/<%= name %>
+      <% end %>
+      params:
+        PAS_VERSION: ((pas-version))
+      run:
+        path: bash
+        args:
+        - -c
+        - |
+          #!/bin/bash
+          set -ex
 
+          workspace=$PWD
+          unzip pas-pivnet/*.pivotal -d p-runtime 'releases/*.tgz'
+          stemcell_version=$(unzip -p pas-pivnet/*.pivotal 'metadata/metadata.yml' | yq -r .stemcell_criteria.version)
+          echo ${stemcell_version} > tile-output/stemcell-version
+
+          <% loggregator_releases.each do |name| %>
+          rm p-runtime/releases/<%= name %>*.tgz || true
+          <% end %>
+          cp releases/**/*.tgz p-runtime/releases
+
+          export STEMCELL_PATH="${workspace}/light-bosh-stemcell-${stemcell_version}-google-kvm-ubuntu-xenial-go_agent.tgz"
+          wget -O ${STEMCELL_PATH} \
+            "https://bosh.io/d/stemcells/bosh-google-kvm-ubuntu-xenial-go_agent?v=${stemcell_version}"
+
+          pushd p-runtime
+            sed -i 's/metadata_version.*/metadata_version: 2.5/g' base.yml
+            sed -i 's/minimum_version_for_upgrade.*/minimum_version_for_upgrade: 2.5/g' base.yml
+
+            ./bin/build-raw ${workspace}/tile-output
+            cp version ${workspace}/tile-output
+          popd
+
+  - aggregate:
+    - get: concourse-tasks
+    - put: ((pas-version))-env
+      inputs: []
+      params:
+        action: claim
+      tags: [ ((toolsmiths-workers-tag)) ]
+
+  - task: output-env-details
+    file: concourse-tasks/toolsmiths/claim-pooled-env/task.yml
+    input_mapping:
+      pooled-env: ((pas-version))-env
+  - task: deploy-pas
+    input_mapping:
+      pcf-env: ((pas-version))-env
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source:
+          repository: relintdockerhubpushbot/cf-deployment-concourse-tasks
+      inputs:
+      - name: pcf-env
+      - name: tile-output
+      - name: concourse-tasks
+      run:
+        path: bash
+        args:
+        - -c
+        - |
+          #!/bin/bash
+          set -ex
+
+          source concourse-tasks/helpers/toolsmiths.sh
+          install-om
+          target-om pcf-env/metadata
+
+          om upload-product --product tile-output/*.pivotal
+
+          stemcell_version=$(cat tile-output/stemcell-version)
+          stemcell_path="light-bosh-stemcell-${stemcell_version}-google-kvm-ubuntu-xenial-go_agent.tgz"
+          wget -O ${stemcell_path} \
+            "https://bosh.io/d/stemcells/bosh-google-kvm-ubuntu-xenial-go_agent?v=${stemcell_version}"
+          om upload-stemcell --stemcell ${stemcell_path}
+          om stage-product --product-name cf --product-version $(cat $PWD/tile-output/version)
+          om apply-changes --product-name cf
+- name: unclaim-pas-env
+  plan:
+    - get: ((pas-version))-env
+      tags: [ ((toolsmiths-workers-tag)) ]
+    - put: ((pas-version))-env
+      params:
+        action: unclaim
+        env_file: ((pas-version))-env/metadata
+      tags: [ ((toolsmiths-workers-tag)) ]

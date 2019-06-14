@@ -18,7 +18,6 @@ groups:
 
   - loggregator-agent-master-promotion
   - loggregator-agent-tests
-  - loggregator-agent-bump-submodule
   - loggregator-master-promotion
   - loggregator-agent-promotion
   - loggregator-tests
@@ -75,7 +74,6 @@ groups:
 - name: agent
   jobs:
   - loggregator-agent-tests
-  - loggregator-agent-bump-submodule
   - cf-deploy
   - cfar-lats
   - cats
@@ -223,12 +221,6 @@ resources:
     branch: master
     private_key: {{cf-loggregator-oauth-bot-key}}
 
-- name: go-loggregator
-  type: git
-  source:
-    uri: https://github.com/cloudfoundry/go-loggregator
-    branch: master
-
 - name: log-stream-cli
   type: git
   source:
@@ -239,13 +231,6 @@ resources:
   type: git
   source:
     uri: git@github.com:cloudfoundry/log-stream-cli
-    branch: master
-    private_key: ((cf-loggregator-oauth-bot-key))
-
-- name: loggregator-agent
-  type: git
-  source:
-    uri: git@github.com:cloudfoundry/loggregator-agent.git
     branch: master
     private_key: ((cf-loggregator-oauth-bot-key))
 
@@ -507,166 +492,95 @@ jobs:
   plan:
   - aggregate:
     - get: loggregator-ci
-    - get: loggregator-agent
-      trigger: true
-    - get: gopsutil
-  - do:
-    - task: run-tests
-      config:
-        platform: linux
-        image_resource:
-          type: docker-image
-          source:
-            repository: loggregator/base
-        inputs:
-        - name: loggregator-agent
-          path: src/code.cloudfoundry.org/loggregator-agent
-        - name: gopsutil
-          path: src/github.com/shirou/gopsutil
-        params:
-          IMPORT_PATH: code.cloudfoundry.org/loggregator-agent
-        run:
-          path: bash
-          args:
-          - -c
-          - |
-            #!/bin/bash
-            set -ex
-
-            export GOPATH="$PWD"
-            export PATH="$GOPATH/bin:$PATH"
-
-            pushd "src/$IMPORT_PATH"
-              go get -t -d ./...
-              go test ./... -race
-            popd
-  - do:
-    - task: build-windows-test-binary
-      config:
-        platform: linux
-        image_resource:
-          type: docker-image
-          source:
-            repository: loggregator/base
-        inputs:
-        - name: loggregator-agent
-        - name: gopsutil
-          path: workspace/src/github.com/shirou/gopsutil
-        outputs:
-        - name: binaries
-        - name: test-binaries
-        run:
-          path: bash
-          args:
-          - -c
-          - |
-            #!/bin/bash
-            set -ex
-
-            ci_root=$PWD
-            mkdir -p workspace/src/code.cloudfoundry.org/loggregator-agent
-            cp -r loggregator-agent/. workspace/src/code.cloudfoundry.org/loggregator-agent/
-
-            function munge {
-              echo $1 | tr '/' '_'
-            }
-
-            pushd workspace
-              export GOOS=windows
-              export GOPATH="$PWD"
-              export PATH="$GOPATH/bin:$PATH"
-
-              pushd src/code.cloudfoundry.org/loggregator-agent/cmd
-                go get -t -d ./...
-                for pkg in $(go list ./... | grep -vE metric-scraper\|syslog-binding-cache\|udp-forwarder); do
-                  go test -c -o $ci_root/test-binaries/$(munge $pkg)_test.exe $pkg &
-                done
-              popd
-            popd
-            wait
-    - task: run-windows-tests
-      config:
-        platform: windows
-        inputs:
-        - name: binaries
-        - name: test-binaries
-        run:
-          path: powershell
-          args:
-          - "-command"
-          - |
-            trap {
-              write-error $_
-              exit 1
-            }
-
-            $env:SKIP_BUILD = "true"
-
-            # Run all test binaries
-            Get-ChildItem -Filter test-binaries\*.exe | ForEach {
-              &$_.Fullname /s
-              if ($LastExitCode -ne 0) {
-                throw "test failed"
-              }
-            }
-
-- name: loggregator-agent-bump-submodule
-  serial: true
-  plan:
-  - aggregate:
-    - get: loggregator-ci
     - get: loggregator-agent-release
       trigger: true
-    - get: loggregator-agent
-      trigger: true
-      passed: ["loggregator-agent-tests"]
-    - get: go-loggregator
-      trigger: true
-  - task: update-submodule
-    file: loggregator-ci/tasks/bump-submodule/task.yml
-    input_mapping:
-      release-repo: loggregator-agent-release
-      source-repo: loggregator-agent
-    output_mapping:
-      bumped-release-repo: bumped-loggregator-agent-release
-    params:
-      SUBMODULE_PATH: src/code.cloudfoundry.org/loggregator-agent
-  - task: update-go-loggregator
-    file: loggregator-ci/tasks/bump-submodule/task.yml
-    input_mapping:
-      release-repo: bumped-loggregator-agent-release
-      source-repo: go-loggregator
-    output_mapping:
-      bumped-release-repo: bumped-go-loggregator-release
-    params:
-      SUBMODULE_PATH: src/code.cloudfoundry.org/go-loggregator
-  - task: sync-package-specs
-    file: loggregator-ci/tasks/run-release-script/task.yml
-    input_mapping:
-      release-repo: bumped-go-loggregator-release
-    output_mapping:
-      updated-release-repo: synced-loggregator-agent-release
-    params:
-      SCRIPT: scripts/sync-package-specs
+    - get: gopsutil
   - aggregate:
     - task: run-tests
-      file: loggregator-ci/tasks/run-release-script/task.yml
+      file: loggregator-ci/tasks/go-bump-modules-and-test/task.yml
       input_mapping:
-        release-repo: synced-loggregator-agent-release
-      params:
-        SCRIPT: scripts/test
+        source-repo: loggregator-agent-release
+    - do:
+      - task: build-windows-test-binary
+        config:
+          platform: linux
+          image_resource:
+            type: docker-image
+            source:
+              repository: loggregator/base
+          inputs:
+          - name: loggregator-agent-release
+          - name: gopsutil
+            path: workspace/src/github.com/shirou/gopsutil
+          outputs:
+          - name: binaries
+          - name: test-binaries
+          run:
+            path: bash
+            args:
+            - -c
+            - |
+              #!/bin/bash
+              set -ex
+
+              ci_root=$PWD
+              function munge {
+                echo $1 | tr '/' '_'
+              }
+
+              export GOOS=windows
+              export PATH="$GOPATH/bin:$PATH"
+              export GO111MODULE=on
+
+              pushd loggregator-agent-release/src
+                go get -u ./...
+                go mod tidy
+                go mod vendor
+
+                pushd src/cmd
+                  for pkg in $(go list ./... | grep -vE metric-scraper\|syslog-binding-cache\|udp-forwarder); do
+                    go test -mod=vendor -c -o $ci_root/test-binaries/$(munge $pkg)_test.exe $pkg &
+                  done
+                popd
+              popd
+              wait
+      - task: run-windows-tests
+        config:
+          platform: windows
+          inputs:
+          - name: binaries
+          - name: test-binaries
+          run:
+            path: powershell
+            args:
+            - "-command"
+            - |
+              trap {
+                write-error $_
+                exit 1
+              }
+
+              $env:SKIP_BUILD = "true"
+
+              # Run all test binaries
+              Get-ChildItem -Filter test-binaries\*.exe | ForEach {
+                &$_.Fullname /s
+                if ($LastExitCode -ne 0) {
+                  throw "test failed"
+                }
+              }
   - task: commit
-    file: loggregator-ci/tasks/commit-with-shortlog/task.yml
+    file: loggregator-ci/tasks/commit/task.yml
     input_mapping:
-      release-repo: synced-loggregator-agent-release
+      release-repo: bumped-source
     output_mapping:
       committed-repo: committed-loggregator-agent-release
     params:
-      PATHS: "src/code.cloudfoundry.org/loggregator-agent src/code.cloudfoundry.org/go-loggregator packages"
+      COMMIT_MESSAGE: "Bump modules"
   - put: loggregator-agent-release
     params:
       repository: committed-loggregator-agent-release
-      rebase: true
+      rebase: false
 
 - name: loggregator-promotion
   serial: true
@@ -1288,7 +1202,7 @@ jobs:
       passed: ["loggregator-tests"]
       trigger: true
     - get: loggregator-agent-release
-      passed: ["loggregator-agent-bump-submodule"]
+      passed: ["loggregator-agent-tests"]
       trigger: true
     - get: cf-syslog-drain-release
       trigger: true

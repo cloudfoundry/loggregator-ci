@@ -1,4 +1,5 @@
 #!/bin/bash
+set -eo pipefail
 
 function set_globals {
     pipeline=$1
