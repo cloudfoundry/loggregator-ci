@@ -1,0 +1,26 @@
+---
+platform: windows
+
+inputs:
+- name: test-binaries
+- name: loggregator-ci
+
+run:
+  path: powershell
+  args:
+    - "-command"
+    - |
+      trap {
+        write-error $_
+        exit 1
+      }
+
+      $env:SKIP_BUILD = "true"
+
+      # Run all test binaries
+      Get-ChildItem -Filter test-binaries\*.exe | ForEach {
+        &$_.Fullname /s
+        if ($LastExitCode -ne 0) {
+          throw "test failed"
+        }
+      }
