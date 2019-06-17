@@ -14,9 +14,16 @@ function validate {
 }
 
 function set_pipeline {
-    echo setting pipeline for "$1"
-    fly -t $TARGET set-pipeline -p "$1" \
-        -c "pipelines/$1.yml" \
+    pipeline_name=$1
+    pipeline_file="pipelines/$(ls pipelines | grep ${pipeline_name})"
+
+    if [[ ${pipeline_file} = *.erb ]]; then
+        pipeline_file=<(erb ${pipeline_file})
+    fi
+
+    echo setting pipeline for "$pipeline_name"
+    fly -t $TARGET set-pipeline -p "$pipeline_name" \
+        -c "$pipeline_file" \
         -l <(lpass show 'Shared-Loggregator (Pivotal Only)/pipeline-secrets.yml' --notes) \
         -l pipelines/config/acceptance-environment.yml
 }
@@ -28,7 +35,7 @@ function sync_fly {
 function set_pipelines {
     if [ "$pipeline" = all ]; then
         for pipeline_file in $(ls "pipelines/"); do
-            set_pipeline "${pipeline_file%.yml}"
+            set_pipeline "${pipeline_file%%.*}"
         done
         exit 0
     fi
