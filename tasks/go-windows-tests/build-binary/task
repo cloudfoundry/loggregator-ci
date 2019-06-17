@@ -1,0 +1,24 @@
+#!/bin/bash
+set -ex
+
+ci_root=$PWD
+function munge {
+  echo $1 | tr '/' '_'
+}
+
+export GOOS=windows
+export PATH="$GOPATH/bin:$PATH"
+export GO111MODULE=on
+
+pushd release/src
+  go get -u ./...
+  go mod tidy
+  go mod vendor
+
+  pushd cmd
+    for pkg in $(go list ./... | grep -vE metric-scraper\|syslog-binding-cache\|udp-forwarder); do
+      go test -mod=vendor -c -o $ci_root/test-binaries/$(munge $pkg)_test.exe $pkg &
+    done
+  popd
+popd
+wait
