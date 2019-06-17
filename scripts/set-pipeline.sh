@@ -18,7 +18,8 @@ function set_pipeline {
     pipeline_file="pipelines/$(ls pipelines | grep ${pipeline_name})"
 
     if [[ ${pipeline_file} = *.erb ]]; then
-        pipeline_file=<(erb ${pipeline_file})
+      erb ${pipeline_file} > /dev/null # this way if the erb fails the script bails
+      pipeline_file=<(erb ${pipeline_file})
     fi
 
     echo setting pipeline for "$pipeline_name"
