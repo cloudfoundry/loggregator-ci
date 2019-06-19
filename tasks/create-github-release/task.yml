@@ -1,0 +1,33 @@
+platform: linux
+
+image_resource:
+  type: docker-image
+  source:
+    repository: loggregator/base
+
+inputs:
+  # - Required
+  # - The repo to cut a github release from
+- name: repo
+
+  # - Required
+  # - The task repository
+- name: loggregator-ci
+
+outputs:
+  # - The artifacts used to create the github release
+- name: github-release
+
+run:
+  path: loggregator-ci/tasks/create-final-release/task
+
+params:
+  # - Required
+  # - The major version to create. This is used to:
+  #   - Tag the latest commit
+  #   - Name the github release
+  MAJOR_VERSION:
+
+  # - Required
+  # - Human readable name of the created release (e.g. Loggregator)
+  RELEASE_NAME:

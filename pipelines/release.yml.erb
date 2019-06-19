@@ -113,6 +113,22 @@ resources:
     branch: master
     private_key: {{cf-loggregator-oauth-bot-key}}
 
+- name: go-loggregator
+  type: git
+  source:
+    uri: git@github.com:cloudfoundry/go-loggregator
+    branch: master
+    private_key: {{cf-loggregator-oauth-bot-key}}
+    clean_tags: true
+
+- name: go-loggregator-github-release-drafts
+  type: github-release
+  source:
+    user: cloudfoundry
+    repository: go-loggregator
+    access_token: {{access-token}}
+    drafts: true
+
 <% releases.each do |release| %>
 - name: <%= release.name %>-release
   type: git
@@ -344,3 +360,23 @@ jobs:
       body: github-release/body
       globs:
       - binary-output/*
+
+- name: go-loggregator
+  serial: true
+  plan:
+  - aggregate:
+    - get: loggregator-ci
+    - get: go-loggregator
+
+  - task: cut-release
+    file: loggregator-ci/tasks/create-github-release/task.yml
+    params:
+      MAJOR_VERSION: 7
+      RELEASE_NAME: "Go Loggregator"
+    input_mapping:
+      repo: go-loggregator
+  - put: go-loggregator-github-release-drafts
+    params:
+      name: github-release/name
+      tag: github-release/tag
+      body: github-release/body

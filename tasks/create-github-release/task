@@ -1,0 +1,40 @@
+#!/bin/bash
+set -exo pipefail
+
+function join_by {
+  local IFS="$1"
+  shift
+  echo "$*"
+}
+
+pushd repo
+  old_tag=$(git describe --abbrev=0 --tags --match 'v*')
+  old_version=${old_tag//v}
+  split_version=( ${old_version//./ })
+  minor=${split_version[1]}
+
+  if [[ ${MAJOR_VERSION} -gt split_version[0] ]]; then
+    split_version[0]=${MAJOR_VERSION}
+    split_version[1]=0
+  else
+    split_version[1]=`expr ${minor} + 1`
+  fi
+
+  NEW_VERSION=$(join_by . "${split_version[@]}")
+
+  set +x
+  BUMPER_RESULT=$( (bumper --commit-range ${old_tag}..HEAD --verbose --no-color) 2>&1 | grep -v "Bump modules")
+  BUMPER_RESULT=${BUMPER_RESULT//  / &nbsp; &nbsp;}
+  BUMPER_RESULT=${BUMPER_RESULT//... / &nbsp; &nbsp;}
+
+  set -x
+popd
+
+tag_name="v$NEW_VERSION"
+
+# write out github release files
+echo "$RELEASE_NAME $NEW_VERSION" > github-release/name
+echo $tag_name > github-release/tag
+printf '## BUMPER OUTPUT\n%s\n\n' "$BUMPER_RESULT" >> github-release/body
+
+

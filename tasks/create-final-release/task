@@ -16,13 +16,13 @@ function join_by {
 set -exo pipefail
 
 pushd master-repo
-  old_tag=$(git describe --abbrev=0 --tags --match v*)
+  old_tag=$(git describe --abbrev=0 --tags --match 'v*')
   old_version=${old_tag//v}
   split_version=( ${old_version//./ })
   minor=${split_version[1]}
 
-  if [[ ${major_version} -gt split_version[0] ]]; then
-    split_version[0]=${major_version}
+  if [[ ${MAJOR_VERSION} -gt split_version[0] ]]; then
+    split_version[0]=${MAJOR_VERSION}
     split_version[1]=0
   else
     split_version[1]=`expr ${minor} + 1`
