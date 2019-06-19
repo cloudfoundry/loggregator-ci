@@ -35,13 +35,13 @@ groups:
   - noisy-neighbor-nozzle-deploy
 
 <% bosh_releases.each do |release| %>
-  - <%= release %>-tests
+  - <%= release %>-tests-with-bumped-modules
   - <%= release %>-promotion
   - <%= release %>-master-promotion
 <% end %>
 
 <% standalone_releases.each do |release| %>
-  - <%= release %>-tests
+  - <%= release %>-tests-with-bumped-modules
   - <%= release %>-deploy
   - <%= release %>-smoke-tests
   - <%= release %>-promotion
@@ -66,7 +66,7 @@ groups:
 <% bosh_releases.each do |release| %>
 - name: <%= release %>
   jobs:
-  - <%= release %>-tests
+  - <%= release %>-tests-with-bumped-modules
   - cf-deploy
   - cfar-lats
   - cats
@@ -78,7 +78,7 @@ groups:
 <% standalone_releases.each do |release| %>
 - name: <%= release %>
   jobs:
-  - <%= release %>-tests
+  - <%= release %>-tests-with-bumped-modules
   - <%= release %>-deploy
   - <%= release %>-smoke-tests
   - test-releases-can-be-exported
@@ -251,8 +251,9 @@ jobs:
 # BOSH RELEASES
 ###############################################################################
 <% (bosh_releases + standalone_releases).each do |release| %>
-- name: <%= release %>-tests
+- name: <%= release %>-tests-with-bumped-modules
   public: true
+  serial: true
   plan:
   - aggregate:
     - get: loggregator-ci
@@ -335,7 +336,7 @@ jobs:
       trigger: true
     - get: cf-deployment-concourse-tasks
     - get: service-logs-release
-      passed: [service-logs-tests]
+      passed: [service-logs-tests-with-bumped-modules]
       trigger: true
     - get: bbl-state
       resource: deployments-loggregator
@@ -400,7 +401,7 @@ jobs:
     - get: cf-deployment-concourse-tasks
     - get: service-metrics-release
       trigger: true
-      passed: ["service-metrics-tests"]
+      passed: ["service-metrics-tests-with-bumped-modules"]
     - get: deployments-loggregator
     - get: bbl-state
       resource: deployments-loggregator
@@ -472,7 +473,7 @@ jobs:
     - get: cf-deployment-concourse-tasks
     <% bosh_releases.each do |release| %>
     - get: <%= release %>-release
-      passed: ["<%= release %>-tests"]
+      passed: ["<%= release %>-tests-with-bumped-modules"]
       trigger: true
     <% end %>
     <% clis.each_key do |cli| %>
