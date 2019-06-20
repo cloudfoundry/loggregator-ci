@@ -32,31 +32,9 @@ resources:
     uri: https://github.com/cloudfoundry-incubator/loggregator-tools
 
 jobs:
-- name: restage-logspinners
+- name: restage-logemitter
   public: false
   serial: true
-  serial_groups: ["restage"]
-  plan:
-  - get: daily
-    trigger: true
-  - get: loggregator-ci
-  - get: loggregator-tools
-  - task: restage-logspinner
-    file: loggregator-ci/tasks/blackbox/restage-apps/task.yml
-    params:
-      APP_NAMES: "floodspinner dripspinner flowspinner"
-      APP: "logspinner"
-      CF_API: "api.run.pivotal.io"
-      ORG: "cf-lamb"
-      PASSWORD: {{pws-password}}
-      SPACE: "development"
-      USERNAME: {{pws-username}}
-      USE_CLIENT_AUTH: true
-
-- name: restage-logemitters
-  public: false
-  serial: true
-  serial_groups: ["restage"]
   plan:
   - get: daily
     trigger: true
@@ -73,11 +51,22 @@ jobs:
       SPACE: "development"
       USERNAME: {{pws-username}}
       USE_CLIENT_AUTH: true
+  - task: ensure-drain
+    file: loggregator-ci/tasks/blackbox/ensure-drain/task.yml
+    params:
+      EMITTER_NAME: logemitter
+      DRAIN_NAME: "papertrail-drain"
+      DRAIN_URL: ((papertrail-drain-url))
+      CF_API: "api.run.pivotal.io"
+      ORG: "cf-lamb"
+      PASSWORD: {{pws-password}}
+      SPACE: "development"
+      USERNAME: {{pws-username}}
+      USE_CLIENT_AUTH: true
 
 - name: restage-logcounter
   public: false
   serial: true
-  serial_groups: ["restage"]
   plan:
   - get: daily
     trigger: true
@@ -94,11 +83,22 @@ jobs:
       SPACE: "development"
       USERNAME: {{pws-username}}
       USE_CLIENT_AUTH: true
+  - task: ensure-drain
+    file: loggregator-ci/tasks/blackbox/ensure-drain/task.yml
+    params:
+      EMITTER_NAME: logemitter
+      DRAIN_NAME: "postcounter-drain"
+      DRAIN_URL: ((postcounter-drain-url))
+      CF_API: "api.run.pivotal.io"
+      ORG: "cf-lamb"
+      PASSWORD: {{pws-password}}
+      SPACE: "development"
+      USERNAME: {{pws-username}}
+      USE_CLIENT_AUTH: true
 
 - name: floodspinner
   public: false
   serial: true
-  serial_groups: ["restage"]
   plan:
   - get: loggregator-ci
   - get: 20m
@@ -138,7 +138,6 @@ jobs:
 - name: dripspinner
   public: false
   serial: true
-  serial_groups: ["restage"]
   plan:
   - get: loggregator-ci
   - get: 1h
@@ -165,7 +164,6 @@ jobs:
 - name: flowspinner
   public: false
   serial: true
-  serial_groups: ["restage"]
   plan:
   - get: loggregator-ci
   - get: 1h
@@ -291,104 +289,6 @@ jobs:
 
           datadog_url=$DATADOG_API_URL?api_key=$DATADOG_API_KEY
           curl -X POST -H "Content-type: application/json" -d "$payload" $datadog_url
-
-- name: https-syslog-drain
-  public: false
-  serial: true
-  plan:
-  - get: loggregator-ci
-  - get: loggregator-tools
-  - get: 20m
-    trigger: true
-  - task: v2-drain
-    file: loggregator-ci/tasks/blackbox/cf-syslog-drain/task.yml
-    params:
-      CF_ORG: cf-lamb
-      CF_PASSWORD: {{pws-password}}
-      CF_SPACE: development
-      CF_APP_DOMAIN: cfapps.io
-      CF_SYSTEM_DOMAIN: run.pivotal.io
-      CF_USERNAME: {{pws-username}}
-      DATADOG_API_KEY: "((datadog-loggregator-api-key)) ((datadog-prod-api-key))"
-      DRAIN_VERSION: "2.0"
-      DRAIN_TYPE: "https"
-      JOB_NAME: "https-teardown"
-      USE_CLIENT_AUTH: true
-    timeout: 30m
-
-- name: tcp-syslog-drain
-  public: false
-  serial: true
-  plan:
-  - get: loggregator-ci
-  - get: loggregator-tools
-  - get: 20m
-    trigger: true
-  - task: v2-drain
-    file: loggregator-ci/tasks/blackbox/cf-syslog-drain/task.yml
-    params:
-      CF_ORG: cf-lamb
-      CF_PASSWORD: {{pws-password}}
-      CF_SPACE: development
-      CF_APP_DOMAIN: cf-tcpapps.io
-      CF_SYSTEM_DOMAIN: run.pivotal.io
-      CF_USERNAME: {{pws-username}}
-      DATADOG_API_KEY: "((datadog-loggregator-api-key)) ((datadog-prod-api-key))"
-      DRAIN_VERSION: "2.0"
-      DRAIN_TYPE: "syslog"
-      JOB_NAME: "syslog-teardown"
-      USE_CLIENT_AUTH: true
-    timeout: 30m
-
-- name: https-syslog-drain-no-teardown
-  public: false
-  serial: true
-  plan:
-  - get: loggregator-ci
-  - get: loggregator-tools
-  - get: 20m
-    trigger: true
-  - task: v2-drain
-    file: loggregator-ci/tasks/blackbox/cf-syslog-drain/task.yml
-    params:
-      TEARDOWN: false
-      CF_ORG: cf-lamb
-      CF_PASSWORD: {{pws-password}}
-      CF_SPACE: development
-      CF_APP_DOMAIN: cfapps.io
-      CF_SYSTEM_DOMAIN: run.pivotal.io
-      CF_USERNAME: {{pws-username}}
-      DATADOG_API_KEY: "((datadog-loggregator-api-key)) ((datadog-prod-api-key))"
-      DRAIN_VERSION: "2.0"
-      DRAIN_TYPE: "https"
-      JOB_NAME: "https-no-teardown"
-      USE_CLIENT_AUTH: true
-    timeout: 30m
-
-- name: tcp-syslog-drain-no-teardown
-  public: false
-  serial: true
-  plan:
-  - get: loggregator-ci
-  - get: loggregator-tools
-  - get: 20m
-    trigger: true
-  - task: v2-drain-loggregator
-    file: loggregator-ci/tasks/blackbox/cf-syslog-drain/task.yml
-    params:
-      TEARDOWN: false
-      CF_ORG: cf-lamb
-      CF_PASSWORD: {{pws-password}}
-      CF_SPACE: development
-      CF_APP_DOMAIN: cf-tcpapps.io
-      CF_SYSTEM_DOMAIN: run.pivotal.io
-      CF_USERNAME: {{pws-username}}
-      DATADOG_API_KEY: "((datadog-loggregator-api-key)) ((datadog-prod-api-key))"
-      DRAIN_VERSION: "2.0"
-      DRAIN_TYPE: "syslog"
-      JOB_NAME: "syslog-no-teardown"
-      USE_CLIENT_AUTH: true
-    timeout: 30m
 
 - name: latency
   public: false

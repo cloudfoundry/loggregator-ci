@@ -1,0 +1,8 @@
+#!/bin/bash
+
+set -e
+source loggregator-ci/scripts/environment-targeting/target-cf.sh && target-cf
+if ! cf service $DRAIN_NAME &> /dev/null; then
+    cf create-user-provided-service $DRAIN_NAME -l $DRAIN_URL
+    cf bind-service $EMITTER_NAME $DRAIN_NAME
+fi
