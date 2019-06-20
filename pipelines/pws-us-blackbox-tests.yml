@@ -1,4 +1,7 @@
 resources:
+- name: 5m
+  type: time
+  source: {interval: 5m}
 - name: 10m
   type: time
   source: {interval: 10m}
@@ -142,6 +145,59 @@ jobs:
       MESSAGE: "HOURLY"
       USE_CLIENT_AUTH: true
     timeout: 20m
+
+- name: tcp-syslog-monitor
+  public: false
+  serial: true
+  plan:
+  - get: 5m
+    trigger: true
+  - task: measure
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source:
+          repository: loggregator/base
+      params:
+        API_TOKEN: ((papertrail-api-token))
+        PAPERTRAIL_GROUP: loggregator-smoke-tests
+        DATADOG_API_KEY: {{datadog-prod-api-key}}
+        DATADOG_API_URL: https://app.datadoghq.com/api/v1/series
+        CF_SYSTEM_DOMAIN: run.pivotal.io
+        DRAIN_VERSION: "2.0"
+        DRAIN_TYPE: "tcp"
+      run:
+        path: bash
+        args:
+        - -c
+        - |
+          #!/bin/bash
+          set -e
+
+          gem install papertrail
+          echo "token: $API_TOKEN" > config.yml
+          log_count=$(papertrail -c config.yml -g $PAPERTRAIL_GROUP --min-time '59 seconds ago' --max-time 'now' | wc -l)
+
+          echo "posting to datadog. value = $log_count"
+
+          payload=$(cat <<JSON
+          {
+              "series": [{
+                  "metric": "smoke_test.syslog.log_count",
+                  "points": [[$(date +%s), $log_count]],
+                  "type": "gauge",
+                  "host": "$CF_SYSTEM_DOMAIN",
+                  "tags": [
+                      "drain_version:$DRAIN_VERSION",
+                      "drain_type:$DRAIN_TYPE"
+                  ]
+              }]
+          }
+          JSON)
+
+          datadog_url=$DATADOG_API_URL?api_key=$DATADOG_API_KEY
+          curl -X POST -H "Content-type: application/json" -d "$payload" $datadog_url
 
 - name: https-syslog-drain
   public: false

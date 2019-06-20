@@ -19,6 +19,7 @@ params:
   ORG:
   SPACE:
   APP_NAMES:
+  APP:
   USERNAME:
   PASSWORD:
   BBL_STATE_DIR:
