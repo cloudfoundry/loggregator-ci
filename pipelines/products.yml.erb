@@ -286,7 +286,7 @@ jobs:
   - put: <%= release %>-release
     params:
       repository: committed-<%= release %>-release
-      rebase: false
+      rebase: true
 
 - name: <%= release %>-promotion
   serial: true
