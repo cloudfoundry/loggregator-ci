@@ -91,6 +91,13 @@ groups:
   - noisy-neighbor-nozzle-tests
   - noisy-neighbor-nozzle-deploy
 
+- name: log-cache
+  jobs:
+  - log-cache-tests
+  - cf-deploy
+  - cats
+  - cfar-lats
+
 resources:
 - name: 5m
   type: time
@@ -151,6 +158,20 @@ resources:
   type: git
   source:
     uri: git@github.com:cloudfoundry/loggregator-ci
+    branch: master
+    private_key: ((cf-loggregator-oauth-bot-key))
+
+- name: log-cache-release
+  type: git
+  source:
+    uri: git@github.com:cloudfoundry/log-cache-release
+    branch: syslog-server
+    private_key: ((cf-loggregator-oauth-bot-key))
+
+- name: log-cache-ci
+  type: git
+  source:
+    uri: git@github.com:cloudfoundry/log-cache-ci
     branch: master
     private_key: ((cf-loggregator-oauth-bot-key))
 
@@ -246,6 +267,38 @@ jobs:
     params:
       repository: merged-dest
 <% end %>
+
+
+###############################################################################
+# LOG CACHE TESTS
+###############################################################################
+- name: log-cache-tests
+  public: true
+  plan:
+  - aggregate:
+    - get: loggregator-ci
+    - get: log-cache-release
+      trigger: true
+  - task: run-tests
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source:
+          repository: loggregator/base
+      inputs:
+      - name: log-cache-release
+      run:
+        path: /bin/bash
+        args:
+        - "-c"
+        - |
+          set -exuo pipefail
+
+          export GOPATH=$PWD/log-cache-release
+          pushd log-cache-release/src/code.cloudfoundry.org/log-cache
+            ginkgo -r -race
+          popd
 
 ###############################################################################
 # BOSH RELEASES
@@ -471,6 +524,10 @@ jobs:
     - get: cf-deployment
       trigger: true
     - get: cf-deployment-concourse-tasks
+    - get: log-cache-ci
+    - get: log-cache-release
+      trigger: true
+      passed: [log-cache-tests]
     <% bosh_releases.each do |release| %>
     - get: <%= release %>-release
       passed: ["<%= release %>-tests-with-bumped-modules"]
@@ -490,6 +547,12 @@ jobs:
       params:
         BBL_STATE_DIR: ((acceptance_bbl_state_dir))
     <% end %>
+    - task: upload-log-cache-release
+      file: loggregator-ci/tasks/upload-release/task.yml
+      input_mapping:
+        bosh-release-dir: log-cache-release
+      params:
+        BBL_STATE_DIR: ((acceptance_bbl_state_dir))
   - task: copy-ops-files
     file: loggregator-ci/tasks/prepare-cf-ops/task.yml
     params:
@@ -519,6 +582,8 @@ jobs:
         cf-deployment-windows-addon.yml
         cf-syslog-agent-skip-cert-verify-windows.yml
         use-provided-router-certs.yml
+        log-cache-syslog-server.yml
+        awaiting-cf-deployment-prs.yml
 
         loggregator-acceptance.yml
       VARS_FILES: ""

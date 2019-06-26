@@ -1,20 +1,10 @@
 #!/bin/bash
 set -ex
                                                                                                          
-cp cf-deployment/operations/scale-to-one-az.yml ops-files/
-cp cf-deployment/operations/use-compiled-releases.yml ops-files/
-cp cf-deployment/operations/experimental/use-compiled-releases-windows.yml ops-files/
-cp cf-deployment/operations/experimental/add-metric-store.yml ops-files/
+cp cf-deployment/operations/experimental/*.yml ops-files/
+cp cf-deployment/operations/*.yml ops-files/
 cp denver-deployments/bosh-cf-deployment/operations/loggregator/*.yml ops-files/
 cp denver-deployments/bosh-cf-deployment/operations/default/use-provided-router-certs.yml ops-files/
-                                                                                                         
-cp cf-deployment/operations/windows1803-cell.yml ops-files/
-cp cf-deployment/operations/use-latest-windows1803-stemcell.yml ops-files/
-                                                                                                         
-cp loggregator-agent-release/manifests/operations/cf-deployment-addon.yml ops-files/
-cp loggregator-agent-release/manifests/operations/cf-add-syslog-agent.yml ops-files/
-cp loggregator-agent-release/manifests/operations/cf-deployment-add-system-metrics-agent.yml ops-files/
-cp loggregator-agent-release/manifests/operations/cf-add-system-metric-scraper.yml ops-files/
-cp loggregator-agent-release/manifests/operations/cf-syslog-agent-skip-cert-verify.yml ops-files/
-cp loggregator-agent-release/manifests/operations/cf-deployment-windows-addon.yml ops-files/
-cp loggregator-agent-release/manifests/operations/cf-syslog-agent-skip-cert-verify-windows.yml ops-files/
+cp loggregator-agent-release/manifests/operations/*.yml ops-files/
+cp log-cache-release/manifests/operations/*.yml ops-files/
+cp log-cache-ci/ops-files/awaiting-cf-deployment-prs.yml ops-files/
