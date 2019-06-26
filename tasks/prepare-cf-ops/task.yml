@@ -13,6 +13,8 @@ inputs:
 - name: loggregator-release
 - name: denver-deployments
 - name: loggregator-ci
+- name: log-cache-release
+- name: log-cache-ci
 
 outputs:
 - name: ops-files
