@@ -274,6 +274,7 @@ jobs:
 ###############################################################################
 - name: log-cache-tests
   public: true
+  serial: true
   plan:
   - aggregate:
     - get: loggregator-ci
