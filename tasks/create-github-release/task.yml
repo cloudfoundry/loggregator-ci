@@ -19,7 +19,7 @@ outputs:
 - name: github-release
 
 run:
-  path: loggregator-ci/tasks/create-final-release/task
+  path: loggregator-ci/tasks/create-github-release/task
 
 params:
   # - Required
