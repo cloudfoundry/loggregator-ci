@@ -6,6 +6,7 @@ pushd source-repo/src
   export GO111MODULE=on
 
   go get -u ./...
+  go mod tidy
   go mod vendor
   go test -mod=vendor ./... -race -ginkgo.randomizeAllSpecs
 popd
