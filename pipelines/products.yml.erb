@@ -604,6 +604,7 @@ jobs:
         log-cache-syslog-server.yml
 
         loggregator-acceptance.yml
+        log-cache-test-clients.yml
       VARS_FILES: ""
   - task: enable-feature-flags
     file: cf-deployment-concourse-tasks/set-feature-flags/task.yml
@@ -754,7 +755,7 @@ jobs:
     file: loggregator-ci/tasks/upload-release/task.yml
     image: cf-deployment-concourse-tasks-image
     params:
-      BBL_STATE_DIR: ((bbl_state_dir))
+      BBL_STATE_DIR: ((acceptance_bbl_state_dir))
     input_mapping:
       bbl-state: deployments-loggregator
       bosh-release-dir: log-cache-acceptance-tests-release
@@ -784,6 +785,7 @@ jobs:
       DEPLOYMENT_NAME: lcats
       MANIFEST_FILE: manifests/manifest.yml
       OPS_FILES: lcats.yml
+      SYSTEM_DOMAIN: ((acceptance_system_domain))
     input_mapping:
       bbl-state: deployments-loggregator
       cf-deployment: log-cache-acceptance-tests-release
