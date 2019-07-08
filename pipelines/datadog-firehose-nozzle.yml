@@ -42,13 +42,6 @@ jobs:
     - get: 24h
       trigger: true
     - get: cf-deployment-concourse-tasks
-  - task: upload-release
-    file: loggregator-ci/tasks/upload-release/task.yml
-    params:
-      BBL_STATE_DIR: ((acceptance_bbl_state_dir))
-      CREATE_RELEASE: false
-    input_mapping:
-      bosh-release-dir: datadog-firehose-nozzle-release
   - task: prepare-ops-and-vars-files
     file: loggregator-ci/tasks/prepare-datadog-ops-and-vars/task.yml
     params:

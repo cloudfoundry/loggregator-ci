@@ -3,7 +3,7 @@
 set -exu
 
 pushd "bbl-state/$BBL_STATE_DIR"
-  eval $(bbl print-env)
+  eval "$(bbl print-env)"
   export BOSH_CA_CERT=$(bbl director-ca-cert)
 popd
 
