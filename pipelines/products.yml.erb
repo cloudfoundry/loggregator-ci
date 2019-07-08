@@ -29,6 +29,7 @@ groups:
   - cf-deploy
   - cfar-lats
   - cats
+  - lcats
   - test-releases-can-be-exported
 
   - noisy-neighbor-nozzle-tests
@@ -98,6 +99,7 @@ groups:
   - cf-deploy
   - cats
   - cfar-lats
+  - lcats
 
 resources:
 - name: 5m
@@ -175,6 +177,19 @@ resources:
     uri: git@github.com:cloudfoundry/log-cache-ci
     branch: master
     private_key: ((cf-loggregator-oauth-bot-key))
+
+- name: log-cache-acceptance-tests-release
+  type: git
+  source:
+    uri: git@github.com:cloudfoundry/log-cache-acceptance-tests-release
+    branch: master
+    private_key: ((cf-loggregator-oauth-bot-key))
+
+- name: cf-deployment-concourse-tasks-image
+  type: docker-image
+  source:
+    repository: relintdockerhubpushbot/cf-deployment-concourse-tasks
+    tag: latest
 
 - name: noisy-neighbor-nozzle
   type: git
@@ -581,6 +596,7 @@ jobs:
         cf-deployment-add-system-metrics-agent.yml
         cf-add-system-metric-scraper.yml
         cf-syslog-agent-skip-cert-verify.yml
+        cf-deployment-add-metrics-agent.yml
         cf-deployment-windows-addon.yml
         cf-syslog-agent-skip-cert-verify-windows.yml
         use-provided-router-certs.yml
@@ -718,6 +734,71 @@ jobs:
       BBL_STATE_DIR: ((acceptance_bbl_state_dir))
       SKIP_SSL_VALIDATION: true
       APP_PUSH_TIMEOUT: 180s
+
+- name: lcats
+  serial_groups:
+  - bosh-cf-cats
+  plan:
+  - aggregate:
+    - get: log-cache-release
+      passed:
+      - cf-deploy
+      trigger: true
+    - get: deployments-loggregator
+    - get: loggregator-ci
+    - get: log-cache-ci
+    - get: cf-deployment-concourse-tasks
+    - get: cf-deployment-concourse-tasks-image
+    - get: log-cache-acceptance-tests-release
+  - task: upload-lcats
+    file: loggregator-ci/tasks/upload-release/task.yml
+    image: cf-deployment-concourse-tasks-image
+    params:
+      BBL_STATE_DIR: ((bbl_state_dir))
+    input_mapping:
+      bbl-state: deployments-loggregator
+      bosh-release-dir: log-cache-acceptance-tests-release
+  - task: create-ops-files
+    image: cf-deployment-concourse-tasks-image
+    config:
+      platform: linux
+      inputs:
+      - name: log-cache-ci
+      outputs:
+      - name: ops-files
+      run:
+        path: /bin/bash
+        args:
+        - "-c"
+        - |
+          set -e
+          erb log-cache-ci/ops-files/lcats.yml.erb > ops-files/lcats.yml
+    params:
+      ENV_NAME: ((acceptance_env_name))
+      SYS_DOMAIN: ((acceptance_system_domain))
+  - task: lcats-deploy
+    file: cf-deployment-concourse-tasks/bosh-deploy/task.yml
+    image: cf-deployment-concourse-tasks-image
+    params:
+      BBL_STATE_DIR: ((acceptance_bbl_state_dir))
+      DEPLOYMENT_NAME: lcats
+      MANIFEST_FILE: manifests/manifest.yml
+      OPS_FILES: lcats.yml
+    input_mapping:
+      bbl-state: deployments-loggregator
+      cf-deployment: log-cache-acceptance-tests-release
+      ops-files: ops-files
+      vars-files: ops-files
+  - task: run-lcats
+    file: log-cache-ci/tasks/run-errand/task.yml
+    image: cf-deployment-concourse-tasks-image
+    params:
+      BBL_STATE_DIR: ((acceptance_bbl_state_dir))
+      DEPLOYMENT_NAME: lcats
+      ERRAND: lcats
+      KEEP_ALIVE: true
+    input_mapping:
+      bbl-state: deployments-loggregator
 
 ###############################################################################
 # NOISY NEIGHBOR NOZZLE
