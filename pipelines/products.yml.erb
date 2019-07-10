@@ -548,10 +548,10 @@ jobs:
         cf-deployment-windows-addon.yml
         cf-syslog-agent-skip-cert-verify-windows.yml
         use-provided-router-certs.yml
-        log-cache-syslog-server.yml
 
-        loggregator-acceptance.yml
         log-cache-acceptance.yml
+        log-cache-syslog-server.yml
+        loggregator-acceptance.yml
       VARS_FILES: ""
   - task: enable-feature-flags
     file: cf-deployment-concourse-tasks/set-feature-flags/task.yml
