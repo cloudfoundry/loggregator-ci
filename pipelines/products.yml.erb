@@ -1,11 +1,12 @@
 <%
-bosh_releases = %w(loggregator loggregator-agent statsd-injector cf-syslog-drain leadership-election)
+bosh_releases = %w(loggregator loggregator-agent statsd-injector cf-syslog-drain leadership-election log-cache)
 standalone_releases = %w(service-metrics service-logs)
 
-cfd_smoke_tests = %w(cats cfar-lats)
+cfd_smoke_tests = %w(cats cfar-lats lcats)
 smoke_tests = {
   "loggregator" => cfd_smoke_tests,
   "loggregator-agent" => cfd_smoke_tests,
+  "log-cache" => cfd_smoke_tests,
   "statsd-injector" => cfd_smoke_tests,
   "cf-syslog-drain" => cfd_smoke_tests,
   "leadership-election" => cfd_smoke_tests,
@@ -34,7 +35,6 @@ groups:
 
   - noisy-neighbor-nozzle-tests
   - noisy-neighbor-nozzle-deploy
-  - log-cache-tests
 
 <% bosh_releases.each do |release| %>
   - <%= release %>-tests-with-bumped-modules
@@ -92,14 +92,6 @@ groups:
   jobs:
   - noisy-neighbor-nozzle-tests
   - noisy-neighbor-nozzle-deploy
-
-- name: log-cache
-  jobs:
-  - log-cache-tests
-  - cf-deploy
-  - cats
-  - cfar-lats
-  - lcats
 
 resources:
 - name: 5m
@@ -162,13 +154,6 @@ resources:
   source:
     uri: git@github.com:cloudfoundry/loggregator-ci
     branch: master
-    private_key: ((cf-loggregator-oauth-bot-key))
-
-- name: log-cache-release
-  type: git
-  source:
-    uri: git@github.com:cloudfoundry/log-cache-release
-    branch: syslog-server
     private_key: ((cf-loggregator-oauth-bot-key))
 
 - name: log-cache-ci
@@ -283,39 +268,6 @@ jobs:
     params:
       repository: merged-dest
 <% end %>
-
-
-###############################################################################
-# LOG CACHE TESTS
-###############################################################################
-- name: log-cache-tests
-  public: true
-  serial: true
-  plan:
-  - aggregate:
-    - get: loggregator-ci
-    - get: log-cache-release
-      trigger: true
-  - task: run-tests
-    config:
-      platform: linux
-      image_resource:
-        type: docker-image
-        source:
-          repository: loggregator/base
-      inputs:
-      - name: log-cache-release
-      run:
-        path: /bin/bash
-        args:
-        - "-c"
-        - |
-          set -exuo pipefail
-
-          export GOPATH=$PWD/log-cache-release
-          pushd log-cache-release/src/code.cloudfoundry.org/log-cache
-            ginkgo -r -race
-          popd
 
 ###############################################################################
 # BOSH RELEASES
@@ -541,10 +493,6 @@ jobs:
     - get: cf-deployment
       trigger: true
     - get: cf-deployment-concourse-tasks
-    - get: log-cache-ci
-    - get: log-cache-release
-      trigger: true
-      passed: [log-cache-tests]
     <% bosh_releases.each do |release| %>
     - get: <%= release %>-release
       passed: ["<%= release %>-tests-with-bumped-modules"]
@@ -600,11 +548,10 @@ jobs:
         cf-deployment-windows-addon.yml
         cf-syslog-agent-skip-cert-verify-windows.yml
         use-provided-router-certs.yml
-        awaiting-cf-deployment-prs.yml
         log-cache-syslog-server.yml
 
         loggregator-acceptance.yml
-        log-cache-test-clients.yml
+        log-cache-acceptance.yml
       VARS_FILES: ""
   - task: enable-feature-flags
     file: cf-deployment-concourse-tasks/set-feature-flags/task.yml
@@ -741,10 +688,11 @@ jobs:
   - bosh-cf-cats
   plan:
   - aggregate:
-    - get: log-cache-release
-      passed:
-      - cf-deploy
+    <% bosh_releases.each do |release| %>
+    - get: <%= release %>-release
       trigger: true
+      passed: ["cf-deploy"]
+    <% end %>
     - get: deployments-loggregator
     - get: loggregator-ci
     - get: log-cache-ci
