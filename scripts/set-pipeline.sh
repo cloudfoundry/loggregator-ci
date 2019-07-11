@@ -4,6 +4,7 @@ set -eo pipefail
 function set_globals {
     pipeline=$1
     TARGET="${TARGET:-loggregator}"
+    FLY_URL="https://loggregator.ci.cf-app.com"
 }
 
 function validate {
@@ -23,14 +24,18 @@ function set_pipeline {
     fi
 
     echo setting pipeline for "$pipeline_name"
-    fly -t $TARGET set-pipeline -p "$pipeline_name" \
+
+    fly -t ${TARGET} set-pipeline -p "$pipeline_name" \
         -c "$pipeline_file" \
         -l <(lpass show 'Shared-Loggregator (Pivotal Only)/pipeline-secrets.yml' --notes) \
         -l pipelines/config/acceptance-environment.yml
 }
 
 function sync_fly {
-    fly -t $TARGET sync
+    if ! fly -t ${TARGET} status; then
+      fly -t ${TARGET} login -b -c ${FLY_URL}
+    fi
+    fly -t ${TARGET} sync
 }
 
 function set_pipelines {
