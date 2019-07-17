@@ -485,6 +485,7 @@ jobs:
   - bosh-cf-cats
   - bosh-cfar-lats
   - bosh-lcats
+  - bosh-export-releases
   plan:
   - in_parallel:
     - get: loggregator-ci
@@ -576,6 +577,8 @@ jobs:
 
 - name: test-releases-can-be-exported
   serial: true
+  serial_groups:
+  - bosh-export-releases
   plan:
   - in_parallel:
     - get: concourse-tasks
