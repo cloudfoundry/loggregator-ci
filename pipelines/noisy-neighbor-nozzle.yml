@@ -13,7 +13,7 @@ jobs:
 - name: run-tests
   serial: true
   plan:
-  - aggregate:
+  - in_parallel:
     - get: noisy-neighbor-nozzle
       trigger: true
     - get: loggregator-ci
@@ -27,7 +27,7 @@ jobs:
 - name: deploy-to-prod
   serial: true
   plan:
-  - aggregate:
+  - in_parallel:
     - get: noisy-neighbor-nozzle
       passed: [run-tests]
       trigger: true

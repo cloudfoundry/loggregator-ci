@@ -261,7 +261,7 @@ jobs:
   public: false
   serial: true
   plan:
-  - aggregate:
+  - in_parallel:
     - get: loggregator-ci
     - get: deployments-loggregator
     - get: 10m

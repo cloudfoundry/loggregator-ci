@@ -86,7 +86,7 @@ jobs:
 - name: build-base-image
   public: true
   plan:
-  - aggregate:
+  - in_parallel:
     - get: base-image-docker-build-context
       trigger: true
   - put: base-image
@@ -107,7 +107,7 @@ jobs:
 
 - name: emitter
   plan:
-  - aggregate:
+  - in_parallel:
     - get: emitter-image-docker-build-context
       trigger: true
     - get: loggregator-tools
@@ -132,7 +132,7 @@ jobs:
 
 - name: logspinner
   plan:
-  - aggregate:
+  - in_parallel:
     - get: logspinner-image-docker-build-context
       trigger: true
     - get: loggregator-tools

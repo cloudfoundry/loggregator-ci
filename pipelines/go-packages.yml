@@ -94,7 +94,7 @@ jobs:
 - name: loggregator-tools-tests
   serial: true
   plan:
-  - aggregate:
+  - in_parallel:
     - get: loggregator-tools
       trigger: true
     - get: loggregator-ci
@@ -108,7 +108,7 @@ jobs:
 - name: go-loggregator-tests
   serial: true
   plan:
-  - aggregate:
+  - in_parallel:
     - get: go-loggregator
       trigger: true
     - get: loggregator-ci
@@ -122,7 +122,7 @@ jobs:
 - name: go-diodes-tests
   serial: true
   plan:
-  - aggregate:
+  - in_parallel:
     - get: go-diodes
       trigger: true
     - get: loggregator-ci
@@ -136,7 +136,7 @@ jobs:
 - name: go-batching-tests
   serial: true
   plan:
-  - aggregate:
+  - in_parallel:
     - get: go-batching
       trigger: true
     - get: loggregator-ci
@@ -150,7 +150,7 @@ jobs:
 - name: go-pubsub-tests
   serial: true
   plan:
-  - aggregate:
+  - in_parallel:
     - get: go-pubsub
       trigger: true
     - get: loggregator-ci
@@ -164,7 +164,7 @@ jobs:
 - name: go-envstruct-tests
   serial: true
   plan:
-  - aggregate:
+  - in_parallel:
     - get: go-envstruct
       trigger: true
     - get: loggregator-ci
@@ -178,7 +178,7 @@ jobs:
 - name: go-orchestrator-tests
   serial: true
   plan:
-  - aggregate:
+  - in_parallel:
     - get: go-orchestrator
       trigger: true
     - get: loggregator-ci
@@ -192,7 +192,7 @@ jobs:
 - name: rfc5424-tests
   serial: true
   plan:
-  - aggregate:
+  - in_parallel:
     - get: rfc5424
       trigger: true
     - get: loggregator-ci
@@ -206,7 +206,7 @@ jobs:
 - name: grpc-throughputlb-tests
   serial: true
   plan:
-  - aggregate:
+  - in_parallel:
     - get: grpc-throughputlb
       trigger: true
     - get: loggregator-ci
@@ -220,7 +220,7 @@ jobs:
 - name: dropsonde-unit-tests
   serial: true
   plan:
-  - aggregate:
+  - in_parallel:
     - get: dropsonde
       trigger: true
     - get: sonde-go
@@ -236,7 +236,7 @@ jobs:
 - name: noaa-unit-tests
   serial: true
   plan:
-  - aggregate:
+  - in_parallel:
     - get: noaa
       trigger: true
     - get: sonde-go
@@ -267,7 +267,7 @@ jobs:
 - name: sonde-go-generate
   serial: true
   plan:
-  - aggregate:
+  - in_parallel:
     - get: dropsonde-protocol
       trigger: true
     - get: sonde-go

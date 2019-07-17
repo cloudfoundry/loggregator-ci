@@ -159,7 +159,7 @@ jobs:
 - name: bump-golang
   serial: true
   plan:
-  - aggregate:
+  - in_parallel:
     - get: loggregator-ci
   <% bump_golang_releases.each do |release| %>
     - get: <%= release.name %>-release
@@ -168,7 +168,7 @@ jobs:
     file: loggregator-ci/tasks/download-golang/task.yml
     params:
       VERSION: &golang-version 1.12.4
-  - aggregate:
+  - in_parallel:
     <% bump_golang_releases.each do |release| %>
     - do:
       - task: bump-<%= release.name %>-release
@@ -203,7 +203,7 @@ jobs:
 - name: <%= release.name %>-create-final-release
   serial: true
   plan:
-  - aggregate:
+  - in_parallel:
     - get: <%= release.name %>-release
     - get: <%= release.name %>-release-master
     - get: loggregator-ci
@@ -291,7 +291,7 @@ jobs:
 - name: cf-drain-cli
   serial: true
   plan:
-  - aggregate:
+  - in_parallel:
     - get: loggregator-ci
     - get: cf-drain-cli
     - get: loggregator-tools-master
@@ -317,7 +317,7 @@ jobs:
 - name: log-stream-cli
   serial: true
   plan:
-  - aggregate:
+  - in_parallel:
     - get: loggregator-ci
     - get: log-stream-cli
   - task: create-binaries
@@ -340,7 +340,7 @@ jobs:
 - name: noisy-neighbor-binaries
   serial: true
   plan:
-  - aggregate:
+  - in_parallel:
     - get: noisy-neighbor-nozzle-repo
   - task: create-binaries
     file: loggregator-ci/tasks/noisy-neighbor-create-binaries/task.yml
@@ -364,7 +364,7 @@ jobs:
 - name: go-loggregator
   serial: true
   plan:
-  - aggregate:
+  - in_parallel:
     - get: loggregator-ci
     - get: go-loggregator
 

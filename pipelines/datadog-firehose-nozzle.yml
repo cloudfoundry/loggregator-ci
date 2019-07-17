@@ -34,7 +34,7 @@ jobs:
 - name: deploy-datadog-nozzle
   serial: true
   plan:
-  - aggregate:
+  - in_parallel:
     - get: datadog-firehose-nozzle-release
     - get: bbl-state
       resource: deployments-loggregator

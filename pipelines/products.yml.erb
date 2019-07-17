@@ -234,7 +234,7 @@ jobs:
 - name: <%= cli %>-cli-tests
   public: true
   plan:
-  - aggregate:
+  - in_parallel:
     - get: loggregator-ci
     - get: <%= cli %>-cli
       trigger: true
@@ -250,7 +250,7 @@ jobs:
   plan:
   - get: 5m
     trigger: true
-  - aggregate:
+  - in_parallel:
     - get: <%= cli %>-cli
       passed: ["cfar-lats"]
       trigger: true
@@ -277,13 +277,13 @@ jobs:
   public: true
   serial: true
   plan:
-  - aggregate:
+  - in_parallel:
     - get: loggregator-ci
     - get: 24h
       trigger: true
     - get: <%= release %>-release
       trigger: true
-  - aggregate:
+  - in_parallel:
     - task: run-tests
       file: loggregator-ci/tasks/go-bump-modules-and-test/task.yml
       input_mapping:
@@ -313,7 +313,7 @@ jobs:
 - name: <%= release %>-promotion
   serial: true
   plan:
-  - aggregate:
+  - in_parallel:
     - get: develop
       resource: <%= release %>-release
       trigger: true
@@ -326,7 +326,7 @@ jobs:
 - name: <%= release %>-master-promotion
   serial: true
   plan:
-  - aggregate:
+  - in_parallel:
     - get: 5m
       trigger: true
     - get: <%= release %>-release-elect
@@ -353,7 +353,7 @@ jobs:
 - name: service-logs-deploy
   serial: true
   plan:
-  - aggregate:
+  - in_parallel:
     - get: 24h
       trigger: true
     - get: cf-deployment-concourse-tasks
@@ -391,7 +391,7 @@ jobs:
 - name: service-logs-smoke-tests
   serial: true
   plan:
-  - aggregate:
+  - in_parallel:
     - get: 24h
       trigger: true
     - get: cf-deployment-concourse-tasks
@@ -417,7 +417,7 @@ jobs:
   serial: true
   serial_groups: ["cf-deploy"]
   plan:
-  - aggregate:
+  - in_parallel:
     - get: 24h
       trigger: true
     - get: cf-deployment-concourse-tasks
@@ -457,7 +457,7 @@ jobs:
 - name: service-metrics-smoke-tests
   serial: true
   plan:
-  - aggregate:
+  - in_parallel:
     - get: 24h
       trigger: true
     - get: cf-deployment-concourse-tasks
@@ -486,7 +486,7 @@ jobs:
   - bosh-cfar-lats
   - bosh-lcats
   plan:
-  - aggregate:
+  - in_parallel:
     - get: loggregator-ci
     - get: denver-deployments
     - get: bbl-state
@@ -504,7 +504,7 @@ jobs:
       passed:
       - <%= cli %>-cli-tests
     <% end %>
-  - aggregate:
+  - in_parallel:
     <% bosh_releases.each do |release| %>
     - task: upload-<%= release %>-release
       file: loggregator-ci/tasks/upload-release/task.yml
@@ -577,7 +577,7 @@ jobs:
 - name: test-releases-can-be-exported
   serial: true
   plan:
-  - aggregate:
+  - in_parallel:
     - get: concourse-tasks
     - get: bbl-state
       resource: deployments-loggregator
@@ -620,7 +620,7 @@ jobs:
   serial_groups:
   - bosh-cf-cats
   plan:
-  - aggregate:
+  - in_parallel:
     - get: loggregator-ci
     - get: cf-deployment-concourse-tasks
     - get: deployments-loggregator
@@ -651,7 +651,7 @@ jobs:
   serial_groups:
   - bosh-cfar-lats
   plan:
-  - aggregate:
+  - in_parallel:
     - get: cfar-logging-acceptance-tests
       trigger: true
     - get: loggregator-ci
@@ -682,7 +682,7 @@ jobs:
   serial_groups:
   - bosh-lcats
   plan:
-  - aggregate:
+  - in_parallel:
     <% bosh_releases.each do |release| %>
     - get: <%= release %>-release
       trigger: true
@@ -752,7 +752,7 @@ jobs:
   serial: true
   public: true
   plan:
-  - aggregate:
+  - in_parallel:
     - get: loggregator-ci
     - get: noisy-neighbor-nozzle
       trigger: true
@@ -766,7 +766,7 @@ jobs:
 - name: noisy-neighbor-nozzle-deploy
   serial: true
   plan:
-  - aggregate:
+  - in_parallel:
     - get: noisy-neighbor-nozzle
       passed: [noisy-neighbor-nozzle-tests]
       trigger: true

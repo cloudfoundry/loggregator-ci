@@ -316,7 +316,7 @@ jobs:
   public: false
   serial: true
   plan:
-  - aggregate:
+  - in_parallel:
     - get: loggregator
     - get: loggregator-ci
     - get: loggregator-tools
