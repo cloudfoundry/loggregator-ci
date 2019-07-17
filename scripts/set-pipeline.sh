@@ -8,7 +8,7 @@ function set_globals {
 }
 
 function validate {
-    if [ "$pipeline" = "-h" ] || [ "$pipeline" = "--help" ] || [ -z "$pipeline" ]; then
+    if [[ "$pipeline" = "-h" ]] || [[ "$pipeline" = "--help" ]] || [[ -z "$pipeline" ]]; then
         print_usage
         exit 1
     fi
@@ -39,9 +39,10 @@ function sync_fly {
 }
 
 function set_pipelines {
-    if [ "$pipeline" = all ]; then
-        for pipeline_file in $(ls "pipelines/"); do
-            set_pipeline "${pipeline_file%%.*}"
+    if [[ "$pipeline" = all ]]; then
+        for pipeline_path in $(find pipelines -maxdepth 1 -type f); do
+          pipeline_file=$(basename ${pipeline_path})
+          set_pipeline "${pipeline_file%%.*}"
         done
         exit 0
     fi
