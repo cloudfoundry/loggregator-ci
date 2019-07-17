@@ -513,12 +513,6 @@ jobs:
       params:
         BBL_STATE_DIR: ((acceptance_bbl_state_dir))
     <% end %>
-    - task: upload-log-cache-release
-      file: loggregator-ci/tasks/upload-release/task.yml
-      input_mapping:
-        bosh-release-dir: log-cache-release
-      params:
-        BBL_STATE_DIR: ((acceptance_bbl_state_dir))
   - task: copy-ops-files
     file: loggregator-ci/tasks/prepare-cf-ops/task.yml
     params:
