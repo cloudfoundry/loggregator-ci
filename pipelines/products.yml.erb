@@ -1,5 +1,5 @@
 <%
-bosh_releases = %w(loggregator loggregator-agent statsd-injector cf-syslog-drain leadership-election log-cache)
+bosh_releases = %w(loggregator loggregator-agent statsd-injector cf-syslog-drain leadership-election log-cache metrics-discovery)
 standalone_releases = %w(service-metrics service-logs)
 
 cfd_smoke_tests = %w(cats cfar-lats lcats)
@@ -12,6 +12,7 @@ smoke_tests = {
   "leadership-election" => cfd_smoke_tests,
   "service-metrics" => ["service-metrics-smoke-tests"],
   "service-logs" => ["service-logs-smoke-tests"],
+  "metrics-discovery" => cfd_smoke_tests,
 }
 
 run_windows_tests = {
