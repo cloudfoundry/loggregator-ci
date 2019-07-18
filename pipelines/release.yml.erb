@@ -20,7 +20,10 @@ releases = [
   Release.new("service-logs", false, "service-logs-release-blobs", "1", "Service Logs"),
 ]
 
-bump_golang_releases = releases + [Release.new("reference-nozzle", false, "reference-nozzle-release-blobs", "1", "reference-nozzle")]
+bump_golang_releases = releases + [
+  Release.new("reference-nozzle", false, "reference-nozzle-release-blobs", "1", "reference-nozzle"),
+  Release.new("log-cache-acceptance-tests", false, "log-cache-acceptance-tests-blobs", "1", "log-cache-acceptance-tests"),
+]
 %>
 
 resources:
@@ -128,6 +131,13 @@ resources:
     repository: go-loggregator
     access_token: {{access-token}}
     drafts: true
+
+- name: log-cache-acceptance-tests-release
+  type: git
+  source:
+    uri: git@github.com:cloudfoundry/log-cache-acceptance-tests-release
+    branch: master
+    private_key: ((cf-loggregator-oauth-bot-key))
 
 <% releases.each do |release| %>
 - name: <%= release.name %>-release
