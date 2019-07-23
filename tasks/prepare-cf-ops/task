@@ -6,4 +6,5 @@ cp cf-deployment/operations/*.yml ops-files/
 cp denver-deployments/bosh-cf-deployment/operations/loggregator/*.yml ops-files/
 cp denver-deployments/bosh-cf-deployment/operations/default/use-provided-router-certs.yml ops-files/
 cp loggregator-agent-release/manifests/operations/*.yml ops-files/
+cp metrics-discovery-release/manifests/operations/*.yml ops-files/
 cp log-cache-release/manifests/operations/*.yml ops-files/

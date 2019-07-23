@@ -14,6 +14,7 @@ inputs:
 - name: denver-deployments
 - name: loggregator-ci
 - name: log-cache-release
+- name: metrics-discovery-release
 
 outputs:
 - name: ops-files
