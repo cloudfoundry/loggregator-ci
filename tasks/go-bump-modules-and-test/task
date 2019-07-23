@@ -5,7 +5,8 @@ pushd source-repo/src
   export PROJECT_DIR=$PWD
   export GO111MODULE=on
 
-  go get -u ./...
+  # do not bump pinned dependencies
+  go get -u $(awk '/require/{y=1;next}y' go.mod | grep -v ')' | grep -v pinned | awk '{print $1}')
   go mod tidy
   go mod vendor
   go test -mod=vendor ./... -race -ginkgo.randomizeAllSpecs
