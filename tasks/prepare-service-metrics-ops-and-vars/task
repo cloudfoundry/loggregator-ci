@@ -12,6 +12,9 @@ cat <<EOT >> vars-files/service-metrics-version.yml
 service-metrics-release-version: $service_metrics_version
 EOT
 
+stemcell_version=$(bosh -d cf deployment --column 'Stemcell(s)' | grep xenial | awk -F '/' '{print $2}')
+bpm_version=$(bosh -d cf deployment --column 'Release(s)' | grep bpm | awk -F '/' '{print $2}')
+
 cat <<EOT >> ops-files/on-the-fly.yml
 - type: replace
   path: /instance_groups/name=service-metrics/jobs/name=loggregator_agent/consumes/doppler/deployment
@@ -34,4 +37,10 @@ cat <<EOT >> ops-files/on-the-fly.yml
   - agent
   - localhost
   - 127.0.0.1
+- type: replace
+  path: /stemcells/os=ubuntu-xenial/version
+  value: ${stemcell_version}
+- type: replace
+  path: /releases/name=bpm/version
+  value: ${bpm_version}
 EOT

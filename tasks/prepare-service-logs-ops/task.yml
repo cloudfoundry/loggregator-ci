@@ -7,6 +7,7 @@ image_resource:
 
 inputs:
 - name: loggregator-ci
+- name: bbl-state
 
 outputs:
 - name: ops-files
@@ -16,3 +17,4 @@ run:
 
 params:
   ENV_NAME:
+  BBL_STATE_DIR:

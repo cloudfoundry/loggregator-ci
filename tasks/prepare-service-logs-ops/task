@@ -1,6 +1,13 @@
 #!/bin/bash
 set -exuo pipefail
 
+pushd "bbl-state/${BBL_STATE_DIR}" > /dev/null
+  eval "$(bbl print-env)"
+popd > /dev/null
+
+stemcell_version=$(bosh -d cf deployment --column 'Stemcell(s)' | grep xenial | awk -F '/' '{print $2}')
+bpm_version=$(bosh -d cf deployment --column 'Release(s)' | grep bpm | awk -F '/' '{print $2}')
+
 cat <<EOT >> ops-files/on-the-fly.yml
 - type: replace
   path: /variables/name=loggregator_tls_agent/options/ca
@@ -8,4 +15,10 @@ cat <<EOT >> ops-files/on-the-fly.yml
 - type: replace
   path: /variables/name=loggregator_agent_client/options/ca
   value: /bosh-${ENV_NAME}/cf/loggregator_ca
+- type: replace
+  path: /stemcells/os=ubuntu-xenial/version
+  value: ${stemcell_version}
+- type: replace
+  path: /releases/name=bpm/version
+  value: ${bpm_version}
 EOT

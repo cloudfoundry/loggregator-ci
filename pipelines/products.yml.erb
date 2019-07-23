@@ -380,6 +380,7 @@ jobs:
     file: loggregator-ci/tasks/prepare-service-logs-ops/task.yml
     params:
       ENV_NAME: ((acceptance_env_name))
+      BBL_STATE_DIR: ((acceptance_bbl_state_dir))
   - task: deploy-standalone
     file: cf-deployment-concourse-tasks/bosh-deploy/task.yml
     input_mapping:
