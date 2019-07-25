@@ -11,13 +11,14 @@ class Release
 end
 
 releases = [
-  Release.new("leadership-election", true, "leadership-election-release-blobs", "1", "Leadership Election"),
-  Release.new("loggregator", true, "loggregator-release-blobs", "1", "Loggregator"),
+  Release.new("leadership-election", false, "leadership-election-release-blobs", "1", "Leadership Election"),
+  Release.new("loggregator", false, "loggregator-release-blobs", "1", "Loggregator"),
   Release.new("loggregator-agent", true, "loggregator-agent-release-blobs", "3", "Loggregator Agent"),
   Release.new("cf-syslog-drain", false, "cf-syslog-drain-release-blobs", "10", "CF Syslog Drain"),
   Release.new("statsd-injector", false, "statsd-injector-release-blobs", "1", "Statsd Injector"),
   Release.new("service-metrics", false, "oss-service-metrics-release-blobs", "1", "Service Metrics"),
   Release.new("service-logs", false, "service-logs-release-blobs", "1", "Service Logs"),
+  Release.new("metrics-discovery", false, "metrics-discovery-release-blobs", "1", "Metrics Discovery"),
 ]
 
 bump_golang_releases = releases + [
@@ -139,6 +140,20 @@ resources:
     branch: master
     private_key: ((cf-loggregator-oauth-bot-key))
 
+- name: concourse-tasks
+  type: git
+  source:
+    branch: multi-os-go
+    uri: https://github.com/pivotal-cf/concourse-tasks
+
+- name: golang-release
+  type: git
+  source:
+    uri: git@github.com:bosh-packages/golang-release
+    branch: master
+    tag_filter: v*
+    private_key: ((cf-loggregator-oauth-bot-key))
+
 <% releases.each do |release| %>
 - name: <%= release.name %>-release
   type: git
@@ -171,41 +186,36 @@ jobs:
   plan:
   - in_parallel:
     - get: loggregator-ci
+    - get: concourse-tasks
+    - get: golang-release
+      trigger: true
   <% bump_golang_releases.each do |release| %>
     - get: <%= release.name %>-release
   <% end %>
-  - task: download-go
-    file: loggregator-ci/tasks/download-golang/task.yml
-    params:
-      VERSION: &golang-version 1.12.4
   - in_parallel:
     <% bump_golang_releases.each do |release| %>
     - do:
       - task: bump-<%= release.name %>-release
-        file: loggregator-ci/tasks/bump-golang/task.yml
+        file: concourse-tasks/go/bump-vendored-golang/task.yml
         input_mapping:
-          release-repo: <%= release.name %>-release
+          release: <%= release.name %>-release
         output_mapping:
-          updated-release-repo: updated-<%= release.name %>-release
+          output-repo: updated-<%= release.name %>-release
         params:
-          VERSION: *golang-version
-          ACCESS_KEY_ID: {{s3-access-key-id}}
-          SECRET_ACCESS_KEY: {{s3-secret-access-key}}
-          BUCKET_NAME: <%= release.s3_bucket %>
+          BLOBSTORE_ACCESS_KEY_ID: {{s3-access-key-id}}
+          BLOBSTORE_SECRET_ACCESS_KEY: {{s3-secret-access-key}}
+          GIT_USER_EMAIL: cf-loggregator@pivotal.io
+          GIT_USER_NAME: Loggregator CI
+          GOLANG_DIR: golang-release
+          RELEASE_DIR: release
           <% if release.include_windows %>
-          INCLUDE_WINDOWS: true
+          GOLANG_OS_S: |
+            linux
+            windows
           <% end %>
-      - task: commit-<%= release.name %>-release
-        file: loggregator-ci/tasks/commit/task.yml
-        input_mapping:
-          release-repo: updated-<%= release.name %>-release
-        output_mapping:
-          committed-repo: committed-<%= release.name %>-release
-        params:
-          COMMIT_MESSAGE: "Bump golang version"
       - put: <%= release.name %>-release
         params:
-          repository: committed-<%= release.name %>-release
+          repository: updated-<%= release.name %>-release
           rebase: false
     <% end %>
 
