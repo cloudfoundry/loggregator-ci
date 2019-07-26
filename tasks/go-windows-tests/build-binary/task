@@ -11,12 +11,13 @@ export PATH="$GOPATH/bin:$PATH"
 export GO111MODULE=on
 
 pushd release/src
-  go get -u ./...
+  # do not bump pinned dependencies
+  go get -u -m $(awk '/require/{y=1;next}y' go.mod | grep -v ')' | grep -v pinned | awk '{print $1}')
   go mod tidy
   go mod vendor
 
   pushd cmd
-    for pkg in $(go list ./... | grep -vE metric-scraper\|syslog-binding-cache\|udp-forwarder); do
+    for pkg in $(go list ./... | grep -vE ${IGNORE_PACKAGE_REGEX}); do
       go test -mod=vendor -c -o $ci_root/test-binaries/$(munge $pkg)_test.exe $pkg &
     done
   popd

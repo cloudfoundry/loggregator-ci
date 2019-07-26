@@ -13,6 +13,9 @@ inputs:
 outputs:
 - name: test-binaries
 
+params:
+  IGNORE_PACKAGE_REGEX:
+
 run:
   path: loggregator-ci/tasks/go-windows-tests/build-binary/task
 

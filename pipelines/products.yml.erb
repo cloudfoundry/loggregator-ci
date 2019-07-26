@@ -16,7 +16,10 @@ smoke_tests = {
 }
 
 run_windows_tests = {
-  "loggregator-agent" => true,
+  "loggregator-agent" => {
+    :package_ignore_regex => 'metric-scraper\|syslog-binding-cache\|udp-forwarder',
+   },
+  "metrics-discovery" => {},
 }
 
 clis = {
@@ -295,6 +298,10 @@ jobs:
         file: loggregator-ci/tasks/go-windows-tests/build-binary/task.yml
         input_mapping:
           release: <%= release %>-release
+        <% if run_windows_tests[release][:package_ignore_regex] %>
+        params:
+          IGNORE_PACKAGE_REGEX: <%= run_windows_tests[release][:package_ignore_regex] %>
+        <% end %>
       - task: run-windows-tests
         file: loggregator-ci/tasks/go-windows-tests/run-tests/task.yml
   <% end %>
