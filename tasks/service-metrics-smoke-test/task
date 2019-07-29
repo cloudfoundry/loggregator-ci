@@ -13,7 +13,7 @@ function cleanup() {
 trap cleanup EXIT
 
 sleep 10
-if [[ $(cat log-stream.log | grep service-dummy | wc -l) -lt 1 ]]; then
-    echo "No service-dummy metrics were received"
+if [[ $(cat log-stream.log | grep service_dummy | wc -l) -lt 1 ]]; then
+    echo "No service_dummy metrics were received"
     exit 1
 fi
