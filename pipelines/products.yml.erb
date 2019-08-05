@@ -111,7 +111,7 @@ resources:
 - name: cf-acceptance-tests
   type: git
   source:
-    branch: master
+    branch: tail-retry
     uri: https://github.com/cloudfoundry/cf-acceptance-tests.git
 
 - name: cf-deployment
@@ -370,6 +370,7 @@ jobs:
       trigger: true
     - get: bbl-state
       resource: deployments-loggregator
+      passed: [cf-deploy]
     - get: loggregator-ci
   - task: upload-service-logs-release
     file: loggregator-ci/tasks/upload-release/task.yml
@@ -434,6 +435,7 @@ jobs:
       trigger: true
       passed: ["service-metrics-tests-with-bumped-modules"]
     - get: deployments-loggregator
+      passed: [cf-deploy]
     - get: bbl-state
       resource: deployments-loggregator
     - get: loggregator-ci
@@ -554,8 +556,8 @@ jobs:
         cf-syslog-agent-skip-cert-verify-windows.yml
         cf-add-metrics-discovery.yml
         cf-add-metrics-discovery-windows.yml
-        log-cache-syslog-server.yml
         remove-scheduler.yml
+        log-cache-syslog-server.yml
 
         use-provided-router-certs.yml
         fast-deploy-with-downtime-and-danger.yml
