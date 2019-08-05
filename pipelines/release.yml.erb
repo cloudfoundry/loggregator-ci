@@ -235,7 +235,7 @@ jobs:
     params:
       S3_ACCESS_KEY: {{s3-access-key-id}}
       S3_SECRET_KEY: {{s3-secret-access-key}}
-      BLOBSTORE_BUCKET: <%= release.name %>-release-blobs
+      BLOBSTORE_BUCKET: <%= release.s3_bucket %>
       SSH_KEY: {{loggregator-key}}
       MAJOR_VERSION: <%= release.major_version %>
       RELEASE_NAME: <%= release.release_name %>
