@@ -28,7 +28,8 @@ function set_pipeline {
     fly -t ${TARGET} set-pipeline -p "$pipeline_name" \
         -c "$pipeline_file" \
         -l <(lpass show 'Shared-Loggregator (Pivotal Only)/pipeline-secrets.yml' --notes) \
-        -l pipelines/config/acceptance-environment.yml
+        -l pipelines/config/acceptance-environment.yml \
+        -l pipelines/config/development-environment.yml
 }
 
 function sync_fly {
