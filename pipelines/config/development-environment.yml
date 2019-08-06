@@ -1,0 +1,7 @@
+kiwi_env_name: kiwi
+kiwi_bbl_state_dir: gcp/kiwi
+kiwi_system_domain: kiwi.loggr.cf-app.com
+
+banana_env_name: banana
+banana_bbl_state_dir: gcp/banana
+banana_system_domain: banana.loggr.cf-app.com
