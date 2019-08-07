@@ -39,7 +39,7 @@ pushd master-repo
   NEW_VERSION=$(join_by . "${split_version[@]}")
 
   commit_range="${old_tag}..HEAD"
-  if [[ old_tag = "v0.0.0" ]]; then #Get all commits on first cut
+  if [[ old_tag == "v0.0.0" ]]; then #Get all commits on first cut
     commit_range="HEAD"
   fi
 
