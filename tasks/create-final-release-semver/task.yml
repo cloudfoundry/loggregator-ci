@@ -24,7 +24,7 @@ outputs:
 - name: repos
 
 run:
-  path: loggregator-ci/tasks/create-final-release/task
+  path: loggregator-ci/tasks/create-final-release-semver/task
 
 params:
   # - Required
