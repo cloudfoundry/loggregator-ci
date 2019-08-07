@@ -16,7 +16,7 @@ function join_by {
 set -exo pipefail
 
 pushd master-repo
-  old_tag=$(git describe --abbrev=0 --tags --match 'v*')
+  old_tag=$(git describe --abbrev=0 --tags --match 'v*' || true)
   if [[ $old_tag == "" ]]; then
     old_tag="v0.0.0"
   fi
