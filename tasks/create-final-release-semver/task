@@ -38,8 +38,13 @@ pushd master-repo
 
   NEW_VERSION=$(join_by . "${split_version[@]}")
 
+  commit_range="${old_tag}..HEAD"
+  if [[ old_tag = "v0.0.0" ]]; then #Get all commits on first cut
+    commit_range="HEAD"
+  fi
+
   set +x
-  BUMPER_RESULT=$( (bumper --commit-range ${old_tag}..HEAD --verbose --no-color) 2>&1 | grep -v "Bump modules")
+  BUMPER_RESULT=$( (bumper --commit-range ${commit_range} --verbose --no-color) 2>&1 | grep -v "Bump modules")
   BUMPER_RESULT=${BUMPER_RESULT//  / &nbsp; &nbsp;}
   BUMPER_RESULT=${BUMPER_RESULT//... / &nbsp; &nbsp;}
   GIT_DIFF_JOBS=$(git diff ${old_tag}..HEAD -- jobs)
