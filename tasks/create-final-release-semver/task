@@ -47,7 +47,7 @@ pushd master-repo
   BUMPER_RESULT=$( (bumper --commit-range ${commit_range} --verbose --no-color) 2>&1 | grep -v "Bump modules")
   BUMPER_RESULT=${BUMPER_RESULT//  / &nbsp; &nbsp;}
   BUMPER_RESULT=${BUMPER_RESULT//... / &nbsp; &nbsp;}
-  GIT_DIFF_JOBS=$(git diff ${old_tag}..HEAD -- jobs)
+  GIT_DIFF_JOBS=$(git diff ${commit_range} -- jobs)
   set -x
 popd
 
