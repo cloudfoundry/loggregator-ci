@@ -8,7 +8,8 @@ RUN apt-get update; apt-get install --yes \
     rsync \
     unzip \
     psmisc \
-    vim
+    vim \
+    bzr
 
 # get v3 protoc from github, it was in beta at the time of writing
 RUN cd /tmp \
