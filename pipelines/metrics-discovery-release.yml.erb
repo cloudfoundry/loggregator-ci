@@ -1,0 +1,153 @@
+groups:
+  - name: all
+    jobs:
+      - metrics-discovery-release-create-final-release-major
+      - metrics-discovery-release-create-final-release-minor
+      - metrics-discovery-release-create-final-release-patch
+
+resources:
+  - name: loggregator-ci
+    type: git
+    source:
+      uri: git@github.com:cloudfoundry/loggregator-ci.git
+      private_key: {{loggregator-key}}
+
+  - name: metrics-discovery-release
+    type: git
+    source:
+      uri: git@github.com:cloudfoundry/metrics-discovery-release
+      branch: develop
+      private_key: {{cf-loggregator-oauth-bot-key}}
+      disable_ci_skip: true
+
+  - name: metrics-discovery-release-master
+    type: git
+    source:
+      uri: git@github.com:cloudfoundry/metrics-discovery-release
+      branch: master
+      clean_tags: true
+      private_key: {{cf-loggregator-oauth-bot-key}}
+
+  - name: metrics-discovery-github-release-drafts
+    type: github-release
+    source:
+      user: cloudfoundry
+      repository: metrics-discovery-release
+      access_token: {{access-token}}
+      drafts: true
+
+jobs:
+  - name: metrics-discovery-release-create-final-release-major
+    serial: true
+    serial_groups: [cut-release]
+    plan:
+      - in_parallel:
+          - get: metrics-discovery-release
+          - get: metrics-discovery-release-master
+          - get: loggregator-ci
+      - task: create-final-release
+        file: loggregator-ci/tasks/create-final-release-semver/task.yml
+        input_mapping:
+          master-repo: metrics-discovery-release-master
+          develop-repo: metrics-discovery-release
+        params:
+          S3_ACCESS_KEY: {{s3-access-key-id}}
+          S3_SECRET_KEY: {{s3-secret-access-key}}
+          BLOBSTORE_BUCKET: metrics-discovery-release-blobs
+          SSH_KEY: {{loggregator-key}}
+          VERSION: major
+          RELEASE_NAME: "Metrics Discovery"
+          DEVELOP_BRANCH: develop
+          MASTER_BRANCH: master
+      - put: metrics-discovery-release-master
+        params:
+          repository: repos/master-repo
+          rebase: false
+      - put: metrics-discovery-release
+        params:
+          repository: repos/develop-repo
+          rebase: false
+      - put: metrics-discovery-github-release-drafts
+        params:
+          name: github-release/name
+          tag: github-release/tag
+          body: github-release/body
+          globs:
+            - github-release/*.tgz
+
+  - name: metrics-discovery-release-create-final-release-minor
+    serial: true
+    serial_groups: [cut-release]
+    plan:
+      - in_parallel:
+          - get: metrics-discovery-release
+          - get: metrics-discovery-release-master
+          - get: loggregator-ci
+      - task: create-final-release
+        file: loggregator-ci/tasks/create-final-release-semver/task.yml
+        input_mapping:
+          master-repo: metrics-discovery-release-master
+          develop-repo: metrics-discovery-release
+        params:
+          S3_ACCESS_KEY: {{s3-access-key-id}}
+          S3_SECRET_KEY: {{s3-secret-access-key}}
+          BLOBSTORE_BUCKET: metrics-discovery-release-blobs
+          SSH_KEY: {{loggregator-key}}
+          VERSION: minor
+          RELEASE_NAME: "Metrics Discovery"
+          DEVELOP_BRANCH: develop
+          MASTER_BRANCH: master
+      - put: metrics-discovery-release-master
+        params:
+          repository: repos/master-repo
+          rebase: false
+      - put: metrics-discovery-release
+        params:
+          repository: repos/develop-repo
+          rebase: false
+      - put: metrics-discovery-github-release-drafts
+        params:
+          name: github-release/name
+          tag: github-release/tag
+          body: github-release/body
+          globs:
+            - github-release/*.tgz
+
+  - name: metrics-discovery-release-create-final-release-patch
+    serial: true
+    serial_groups: [cut-release]
+    plan:
+      - in_parallel:
+          - get: metrics-discovery-release
+          - get: metrics-discovery-release-master
+          - get: loggregator-ci
+      - task: create-final-release
+        file: loggregator-ci/tasks/create-final-release-semver/task.yml
+        input_mapping:
+          master-repo: metrics-discovery-release-master
+          develop-repo: metrics-discovery-release
+        params:
+          S3_ACCESS_KEY: {{s3-access-key-id}}
+          S3_SECRET_KEY: {{s3-secret-access-key}}
+          BLOBSTORE_BUCKET: metrics-discovery-release-blobs
+          SSH_KEY: {{loggregator-key}}
+          VERSION: patch
+          RELEASE_NAME: "Metrics Discovery"
+          DEVELOP_BRANCH: develop
+          MASTER_BRANCH: master
+      - put: metrics-discovery-release-master
+        params:
+          repository: repos/master-repo
+          rebase: false
+      - put: metrics-discovery-release
+        params:
+          repository: repos/develop-repo
+          rebase: false
+      - put: metrics-discovery-github-release-drafts
+        params:
+          name: github-release/name
+          tag: github-release/tag
+          body: github-release/body
+          globs:
+            - github-release/*.tgz
+
