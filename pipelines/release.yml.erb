@@ -178,6 +178,13 @@ resources:
     repository: <%= release.name %>-release
     access_token: {{access-token}}
     drafts: true
+
+- name: <%= release.name %>-github-releases
+  type: github-release
+  source:
+    user: cloudfoundry
+    repository: <%= release.name %>-release
+    access_token: {{access-token}}
 <% end %>
 
 jobs:
@@ -245,10 +252,6 @@ jobs:
     params:
       repository: repos/master-repo
       rebase: false
-  - put: <%= release.name %>-release
-    params:
-      repository: repos/develop-repo
-      rebase: false
   - put: <%= release.name %>-github-release-drafts
     params:
       name: github-release/name
@@ -256,6 +259,72 @@ jobs:
       body: github-release/body
       globs:
       - github-release/*.tgz
+
+#- name: <%#= release.name %>-merge-release-artifacts
+#  serial: true
+#  plan:
+#  - in_parallel:
+#      - get: <%#= release.name %>-release
+#      - get: <%#= release.name %>-release-master
+#        passed: [<%= release.name %>-create-final-release]
+#      - get: loggregator-ci
+#  - put: <%#= release.name %>-release
+#    params:
+#      repository: repos/develop-repo
+#      rebase: false
+#  - put: <%#= release.name %>-github-release-drafts
+#    params:
+#      name: github-release/name
+#      tag: github-release/tag
+#      body: github-release/body
+#      globs:
+#        - github-release/*.tgz
+
+- name: test-releases-can-be-exported
+  serial: true
+  serial_groups:
+    - bosh-export-releases
+  plan:
+    - in_parallel:
+        - get: <%= release.name %>-release-master
+          passed: [<%= release.name %>-create-final-release]
+    - task: branch-merge
+      config:
+        platform: linux
+        image_resource:
+          type: docker-image
+          source:
+            repository: loggregator/base
+        inputs:
+          - name: <%= release.name %>-release-master
+        outputs:
+          - name: merged
+        params:
+          SOURCE_BRANCH: master
+          DEST_BRANCH: develop
+        run:
+          path: /bin/bash
+          args:
+            - "-c"
+            - |
+              set -exo pipefail
+
+              # merge final release artifacts with develop
+              pushd <%= release.name %>-release-master
+                # this is needed to land commits on develop since the commit for
+                # develop is checked out as a detatched head when the git
+                # resource clones it down
+                git checkout ${SOURCE_BRANCH}
+                git pull
+
+                git checkout ${DEST_BRANCH}
+                git pull
+
+                git merge ${SOURCE_BRANCH} -v -m "Merge brances" "from/${SOURCE}"
+              popd
+
+              # copy repos into output
+              cp -r repo merged
 <% end %>
 
 - name: loggregator-create-backport-release

@@ -1,0 +1,28 @@
+image_resource:
+  type: docker-image
+  source:
+    repository: loggregator/base
+platform: linux
+inputs:
+  # - Required
+  # - The repo from which will be merged to
+- name: repo
+
+  # - Required
+  # - The task repository
+- name: loggregator-ci
+
+outputs:
+  - name: merged
+
+run:
+  path: loggregator-ci/tasks/branch-merge/task
+
+params:
+  # - branch on the dest repo which will be merged to
+  DEST_BRANCH:
+
+  # - branch on the source repo which will be merged from
+  SOURCE_BRANCH:
+
+

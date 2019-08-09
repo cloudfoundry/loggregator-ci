@@ -1,0 +1,29 @@
+#!/bin/bash
+
+# vi:syntax=sh
+
+# -------------------
+# Create a release from a repo and branch: master-repo and
+# MASTER_BRANCH. Merge the result back to another repo and branch:
+# develop-repo, DEVELOP_BRANCH
+
+
+
+set -exo pipefail
+
+# merge final release artifacts with develop
+pushd repo
+  # this is needed to land commits on develop since the commit for
+  # develop is checked out as a detatched head when the git
+  # resource clones it down
+  git checkout ${SOURCE_BRANCH}
+  git pull
+
+  git checkout ${DEST_BRANCH}
+  git pull
+
+  git merge ${SOURCE_BRANCH} -v -m "Merge brances" "from/${SOURCE}"
+popd
+
+# copy repos into output
+cp -r repo merged
