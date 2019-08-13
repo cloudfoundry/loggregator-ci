@@ -1,0 +1,36 @@
+#!/bin/bash
+set -euo pipefail
+
+pushd "bbl-state/$BBL_STATE_DIR"
+  eval "$(bbl print-env)"
+popd
+
+router_ip=$(bosh -d cf --column Instance --column IPs vms | grep '^router' | head -n 1 | awk '{print $2}')
+
+curl_command=""
+bosh -d cf ssh doppler/0 -c \
+  "curl https://${router_ip}:${METRICS_AGENT_PORT}/metrics -k --cert /var/vcap/jobs/loggr-metrics-agent/config/certs/metrics.crt --key /var/vcap/jobs/loggr-metrics-agent/config/certs/metrics.key --cacert /var/vcap/jobs/loggr-metrics-agent/config/certs/metrics_ca.crt" \
+  > metrics_results
+
+exit_status=0
+if ! grep http_seconds_count metrics_results; then
+  echo 'no http_seconds histogram metrics received'
+  exit_status=1
+fi
+
+if ! grep '# TYPE .* gauge' metrics_results; then
+  echo 'no gauge metrics received'
+  exit_status=1
+fi
+
+if ! grep '# TYPE .* counter' metrics_results; then
+  echo 'no counter metrics received'
+  exit_status=1
+fi
+
+if [[ ${exit_status} -ne 0 ]]; then
+  echo '**** Metrics Results ****'
+  cat metrics_results
+fi
+
+exit $exit_status

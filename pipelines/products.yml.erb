@@ -3,7 +3,7 @@ bosh_releases = %w(loggregator loggregator-agent statsd-injector cf-syslog-drain
 standalone_releases = %w(service-metrics service-logs)
 dev_envs = %w(kiwi banana)
 
-cfd_smoke_tests = %w(cats cfar-lats lcats)
+cfd_smoke_tests = %w(cats cfar-lats lcats test-metrics-agent)
 smoke_tests = {
   "loggregator" => cfd_smoke_tests,
   "loggregator-agent" => cfd_smoke_tests,
@@ -37,6 +37,7 @@ groups:
   - cats
   - lcats
   - test-releases-can-be-exported
+  - test-metrics-agent
   - upload-releases-to-dev-envs
 
   - noisy-neighbor-nozzle-tests
@@ -499,6 +500,7 @@ jobs:
   - bosh-cfar-lats
   - bosh-lcats
   - bosh-export-releases
+  - bosh-metrics-agent
   plan:
   - in_parallel:
     - get: loggregator-ci
@@ -635,6 +637,27 @@ jobs:
         - |
           set -exuo pipefail
           ls exported-releases
+
+- name: test-metrics-agent
+  serial: true
+  serial_groups:
+  - bosh-metrics-agent
+  plan:
+  - in_parallel:
+    - get: bbl-state
+      resource: deployments-loggregator
+    <% bosh_releases.each do |release| %>
+    - get: <%= release %>-release
+      trigger: true
+      passed: ["cf-deploy"]
+    <% end %>
+  - task: test-metrics-agent
+    file: loggregator-ci/tasks/test-metrics-agent/task.yml
+    inputs:
+    - name: bbl-state
+    params:
+      BBL_STATE_DIR: ((acceptance_bbl_state_dir))
+      METRICS_AGENT_PORT: 14826
 
 - name: cats
   serial: true

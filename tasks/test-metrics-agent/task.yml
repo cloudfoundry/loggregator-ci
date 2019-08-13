@@ -1,0 +1,16 @@
+platform: linux
+
+image_resource:
+  type: docker-image
+  source:
+    repository: relintdockerhubpushbot/cf-deployment-concourse-tasks
+
+inputs:
+- name: bbl-state
+
+params:
+  BBL_STATE_DIR:
+  METRICS_AGENT_PORT:
+
+run:
+  path: loggregator-ci/tasks/test-metrics-agent/task
