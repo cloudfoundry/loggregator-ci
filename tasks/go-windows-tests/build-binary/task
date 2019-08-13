@@ -12,7 +12,7 @@ export GO111MODULE=on
 
 pushd release/src
   # do not bump pinned dependencies
-  go get -u -m $(awk '/require/{y=1;next}y' go.mod | grep -v ')' | grep -v pinned | awk '{print $1}')
+  go get -u -m $(awk '/require/{y=1;next}y' go.mod | grep -v ')' | grep -v pinned | grep -v replace | awk '{print $1}')
   go mod tidy
   go mod vendor
 
