@@ -644,6 +644,7 @@ jobs:
   - bosh-metrics-agent
   plan:
   - in_parallel:
+    - get: loggregator-ci
     - get: bbl-state
       resource: deployments-loggregator
     <% bosh_releases.each do |release| %>

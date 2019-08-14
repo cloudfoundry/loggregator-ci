@@ -6,6 +6,7 @@ image_resource:
     repository: relintdockerhubpushbot/cf-deployment-concourse-tasks
 
 inputs:
+- name: loggregator-ci
 - name: bbl-state
 
 params:
