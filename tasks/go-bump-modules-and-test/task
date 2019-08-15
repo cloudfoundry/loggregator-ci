@@ -1,13 +1,17 @@
 #!/bin/bash
 set -ex
 
+source $(dirname ${BASH_SOURCE})/../../scripts/helpers/retry.sh
+
 pushd source-repo/src
   export PROJECT_DIR=$PWD
   export GO111MODULE=on
 
   # do not bump pinned dependencies
-  go get -u -m $(awk '/require/{y=1;next}y' go.mod | grep -v ')' | grep -v pinned | grep -v replace | awk '{print $1}')
-  go mod tidy
+  retry 3 go get -u -m $(awk '/require/{y=1;next}y' go.mod | grep -v ')' | grep -v pinned | grep -v replace | awk '{print $1}')
+  retry 3 go mod tidy
+
+  export GOPROXY=off
   go mod vendor
   go test -mod=vendor ./... -race -ginkgo.randomizeAllSpecs
 popd
