@@ -1,7 +1,7 @@
 #!/bin/bash
 set -ex
 
-source $(cd $(dirname ${BASH_SOURCE})/../../scripts/helpers && pwd)/retry.sh
+source $(cd $(dirname ${BASH_SOURCE})/../../../scripts/helpers && pwd)/retry.sh
 ci_root=$PWD
 function munge {
   echo $1 | tr '/' '_'
