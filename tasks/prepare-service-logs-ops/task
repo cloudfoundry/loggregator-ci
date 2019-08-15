@@ -21,4 +21,9 @@ cat <<EOT >> ops-files/on-the-fly.yml
 - type: replace
   path: /releases/name=bpm/version
   value: ${bpm_version}
+- type: remove
+  path: /variables/name=metric_scraper_ca
+- type: replace
+  path: /variables/name=loggregator-agent-metrics/options/ca
+  value: /bosh-${ENV_NAME}/cf/metric_scraper_ca
 EOT
