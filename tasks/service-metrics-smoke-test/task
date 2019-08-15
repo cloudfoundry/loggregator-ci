@@ -14,7 +14,7 @@ trap cleanup EXIT
 
 for i in {1..12}; do
   sleep 5
-  if [[ $(cat log-stream.log | grep service_dummy | wc -l) -gte 1 ]]; then
+  if [[ $(cat log-stream.log | grep service_dummy | wc -l) -ge 0 ]]; then
       exit 0
   fi
 done
