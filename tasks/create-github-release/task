@@ -24,8 +24,6 @@ pushd repo
 
   set +x
   BUMPER_RESULT=$( (bumper --commit-range ${old_tag}..HEAD --verbose --no-color) 2>&1 | grep -v "Bump modules")
-  BUMPER_RESULT=${BUMPER_RESULT//  / &nbsp; &nbsp;}
-  BUMPER_RESULT=${BUMPER_RESULT//... / &nbsp; &nbsp;}
 
   set -x
 popd
