@@ -679,70 +679,36 @@ jobs:
       passed: ["cf-deploy"]
     <% end %>
   - task: check-metrics
-    image: cf-deployment-concourse-tasks-image
-    config:
-      platform: linux
-      inputs:
-      - name: loggregator-ci
-      - name: bbl-state
-      <% bosh_releases.each do |release| %>
-      - name: <%= release %>-release
-        path: releases/<%= release %>-release
-      <% end %>
-      run:
-        path: /bin/bash
-        args:
-        - "-c"
-        - |
-          set -e
-          source loggregator-ci/scripts/environment-targeting/target-cf.sh
-          target-cf
-
-          log_meta_output=$(curl --silent log-cache.coconut.loggr.cf-app.com/api/v1/meta -H "Authorization: $(cf oauth-token)")
-
-          expected_source_ids=()
-          for j in releases/**/jobs/*; do
-            if [[ $j != *"windows"* ]] && [[ $j != *"fake"* ]]; then
-              expected_source_ids+=($(basename $j))
-            fi
-          done
-
-          exit_code=0
-          found_source_ids=()
-          missing_source_ids=()
-          five_minutes_ago_seconds=$(date --date '-5 min' +%s)
-
-          set +e
-          for source_id in ${expected_source_ids[@]}; do
-            source_id_without_loggr_prefix=${source_id#loggr}
-            source_id_regex=${source_id_without_loggr_prefix//-/'[-_]'}
-            source_id_last_emitted_seconds=$(echo ${log_meta_output} | jq -r '.meta | to_entries | map(select(.key | test("'${source_id_regex}'")).value) | .[].newestTimestamp' | cut -b1-10)
-            if [[ ${source_id_last_emitted_seconds} -lt ${five_minutes_ago_seconds} ]]; then
-              exit_code=1
-              missing_source_ids+=(${source_id})
-            else
-              found_source_ids+=(${source_id})
-            fi
-          done
-
-          printf '\nFound metrics for the following source ids:\n'
-          printf '\t%s\n' "${found_source_ids[@]}"
-
-          printf '\nNo metrics were found for the following source ids:\n'
-          printf '\t%s\n' "${missing_source_ids[@]}"
-
-          exit ${exit_code}
-
-
-
-          loggregator_trafficcontroller -> traffic_controller
-
-      params:
-        CF_API: https://api.((acceptance_system_domain))
-        USERNAME: admin
-        ORG: system
-        SPACE: blackbox-testing
-        BBL_STATE_DIR: ((acceptance_bbl_state_dir))
+    inputs:
+    <% bosh_releases.each do |release| %>
+    - name: <%= release %>-release
+      path: releases/<%= release %>-release
+    <% end %>
+    file: loggregator-ci/tasks/generate-cats-config/task.yml
+    params:
+      CF_API: https://api.((acceptance_system_domain))
+      USERNAME: admin
+      ORG: system
+      SPACE: blackbox-testing
+      BBL_STATE_DIR: ((acceptance_bbl_state_dir))
+      STATIC_SOURCE_IDS: |
+        metrics_scraper
+        metron
+        traffic_controller
+      JOB_BLACKLIST: |
+        adapter
+        leadership-election
+        log-cache-blackbox
+        log-cache-nozzle
+        loggr-metric-scraper
+        loggregator_agent
+        loggregator_trafficcontroller
+        metrics-discovery-registrar
+        prom_scraper
+        reverse_log_proxy_gateway
+        scheduler
+        scrape-config-generator
+        statsd_injector
 
 - name: cats
   serial: true
