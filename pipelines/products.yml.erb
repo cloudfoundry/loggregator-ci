@@ -161,7 +161,7 @@ resources:
   type: git
   source:
     uri: git@github.com:cloudfoundry/loggregator-ci
-    branch: master
+    branch: metrics-smoke-test
     private_key: ((cf-loggregator-oauth-bot-key))
 
 - name: log-cache-ci
@@ -678,13 +678,26 @@ jobs:
       trigger: true
       passed: ["cf-deploy"]
     <% end %>
+  - task: move-releases
+    image: cf-deployment-concourse-tasks-image
+    config:
+      platform: linux
+      inputs:
+      <% bosh_releases.each do |release| %>
+      - name: <%= release %>-release
+        path: input-releases/<%= release %>-release
+      <% end %>
+      outputs:
+      - name: releases
+      run:
+        path: /bin/bash
+        args:
+        - "-c"
+        - |
+          set -e
+          cp -a input-releases/* releases
   - task: check-metrics
-    inputs:
-    <% bosh_releases.each do |release| %>
-    - name: <%= release %>-release
-      path: releases/<%= release %>-release
-    <% end %>
-    file: loggregator-ci/tasks/generate-cats-config/task.yml
+    file: loggregator-ci/tasks/check-metrics/task.yml
     params:
       CF_API: https://api.((acceptance_system_domain))
       USERNAME: admin
