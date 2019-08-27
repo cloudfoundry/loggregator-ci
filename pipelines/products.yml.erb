@@ -858,26 +858,26 @@ jobs:
   serial: true
   plan:
     - in_parallel:
-        - get: loggregator-ci
-        - get: bbl-state
-          resource: deployments-loggregator
-        - get: cf-acceptance-tests
-          <% bosh_releases.each do |release| %>
-        - get: <%= release %>-release
-          trigger: true
-          passed: ["cats", "cfar-lats", "lcats"]
+      - get: loggregator-ci
+      - get: bbl-state
+        resource: deployments-loggregator
+      - get: cf-acceptance-tests
+      <% bosh_releases.each do |release| %>
+      - get: <%= release %>-release
+        trigger: true
+        passed: ["cats", "cfar-lats", "lcats"]
       <% end %>
     - in_parallel:
-        <% bosh_releases.each do |release| %>
-          <% dev_envs.each do |env| %>
-        - task: upload-<%= release %>-release
-          file: loggregator-ci/tasks/upload-release/task.yml
-          input_mapping:
-            bosh-release-dir: <%= release %>-release
-          params:
-            BBL_STATE_DIR: ((<%= env %>_bbl_state_dir))
-          <% end %>
+      <% bosh_releases.each do |release| %>
+        <% dev_envs.each do |env| %>
+      - task: <%= env %>-upload-<%= release %>-release
+        file: loggregator-ci/tasks/upload-release/task.yml
+        input_mapping:
+          bosh-release-dir: <%= release %>-release
+        params:
+          BBL_STATE_DIR: ((<%= env %>_bbl_state_dir))
         <% end %>
+      <% end %>
 
 ###############################################################################
 # NOISY NEIGHBOR NOZZLE
