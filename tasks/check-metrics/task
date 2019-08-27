@@ -33,6 +33,8 @@ for source_id in ${expected_source_ids[@]}; do
   source_id_last_emitted_seconds=$(echo ${log_meta_output} | jq -r '.meta | to_entries | map(select(.key | test("'${source_id_regex}'")).value) | .[].newestTimestamp' | cut -b1-10)
   if [[ ${source_id_last_emitted_seconds} -lt ${five_minutes_ago_seconds} ]]; then
     exit_code=1
+
+    echo "$source_id was missing or too old. Last emitted seconds was $source_id_last_emitted_seconds"
     missing_source_ids+=(${source_id})
   else
     found_source_ids+=(${source_id})
