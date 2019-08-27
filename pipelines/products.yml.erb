@@ -36,6 +36,7 @@ groups:
   - cfar-lats
   - cats
   - lcats
+  - metrics-smoke-test
   - test-releases-can-be-exported
   - test-metrics-agent
   - upload-releases-to-dev-envs
@@ -501,6 +502,7 @@ jobs:
   - bosh-lcats
   - bosh-export-releases
   - bosh-metrics-agent
+  - bosh-metrics-test
   plan:
   - in_parallel:
     - get: loggregator-ci
@@ -660,6 +662,66 @@ jobs:
     params:
       BBL_STATE_DIR: ((acceptance_bbl_state_dir))
       METRICS_AGENT_PORT: 14826
+
+- name: metrics-smoke-test
+  serial: true
+#  serial_groups:
+#  - bosh-metrics-test
+  plan:
+  - in_parallel:
+    - get: loggregator-ci
+    - get: bbl-state
+      resource: deployments-loggregator
+    - get: cf-deployment-concourse-tasks-image
+    <% bosh_releases.each do |release| %>
+    - get: <%= release %>-release
+      trigger: true
+      passed: ["cf-deploy"]
+    <% end %>
+  - task: move-releases
+    image: cf-deployment-concourse-tasks-image
+    config:
+      platform: linux
+      inputs:
+      <% bosh_releases.each do |release| %>
+      - name: <%= release %>-release
+        path: input-releases/<%= release %>-release
+      <% end %>
+      outputs:
+      - name: releases
+      run:
+        path: /bin/bash
+        args:
+        - "-c"
+        - |
+          set -e
+          cp -a input-releases/* releases
+  - task: check-metrics
+    file: loggregator-ci/tasks/check-metrics/task.yml
+    params:
+      CF_API: https://api.((acceptance_system_domain))
+      USERNAME: admin
+      ORG: system
+      SPACE: blackbox-testing
+      BBL_STATE_DIR: ((acceptance_bbl_state_dir))
+      STATIC_SOURCE_IDS: |
+        metrics_scraper
+        metron
+        traffic_controller
+      JOB_BLACKLIST: |
+        adapter
+        leadership-election
+        log-cache-blackbox
+        log-cache-nozzle
+        loggr-metric-scraper
+        loggregator_agent
+        loggregator_trafficcontroller
+        metrics-discovery-registrar
+        prom_scraper
+        reverse_log_proxy_gateway
+        scheduler
+        scrape-config-generator
+        statsd_injector
 
 - name: cats
   serial: true

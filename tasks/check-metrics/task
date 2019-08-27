@@ -1,0 +1,48 @@
+#!/usr/bin/env bash
+set -e
+source loggregator-ci/scripts/environment-targeting/target-cf.sh
+target-cf
+
+function contains() {
+  if [[ $1 =~ (^|[[:space:]])$2($|[[:space:]]) ]]; then
+    return 0
+  else
+    return 1
+  fi
+}
+
+log_meta_output=$(curl --silent log-cache.coconut.loggr.cf-app.com/api/v1/meta -H "Authorization: $(cf oauth-token)")
+
+expected_source_ids=${STATIC_SOURCE_IDS}
+for j in releases/**/jobs/*; do
+  job_name=$(basename $j)
+  if ! contains "${JOB_BLACKLIST}" ${job_name} && [[ $j != *"windows"* ]] && [[ $j != *"fake"* ]]; then
+    expected_source_ids+=(${job_name})
+  fi
+done
+
+exit_code=0
+found_source_ids=()
+missing_source_ids=()
+five_minutes_ago_seconds=$(date --date '-5 min' +%s)
+
+set +e
+for source_id in ${expected_source_ids[@]}; do
+  source_id_without_loggr_prefix=${source_id#loggr-}
+  source_id_regex="^${source_id_without_loggr_prefix//-/'[-_]'}$"
+  source_id_last_emitted_seconds=$(echo ${log_meta_output} | jq -r '.meta | to_entries | map(select(.key | test("'${source_id_regex}'")).value) | .[].newestTimestamp' | cut -b1-10)
+  if [[ ${source_id_last_emitted_seconds} -lt ${five_minutes_ago_seconds} ]]; then
+    exit_code=1
+    missing_source_ids+=(${source_id})
+  else
+    found_source_ids+=(${source_id})
+  fi
+done
+
+printf '\nFound metrics for the following source ids:\n'
+printf '\t%s\n' "${found_source_ids[@]}"
+
+printf '\nNo metrics were found for the following source ids:\n'
+printf '\t%s\n' "${missing_source_ids[@]}"
+
+exit ${exit_code}

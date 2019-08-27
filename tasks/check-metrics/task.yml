@@ -1,0 +1,28 @@
+---
+platform: linux
+
+image_resource:
+  type: docker-image
+  source:
+    repository: relintdockerhubpushbot/cf-deployment-concourse-tasks
+
+inputs:
+- name: loggregator-ci
+- name: bbl-state
+- name: releases
+
+run:
+  path: loggregator-ci/tasks/check-metrics/task
+
+params:
+  CF_API:
+  USERNAME:
+  ORG:
+  SPACE:
+  BBL_STATE_DIR:
+
+  # source IDs that will always be checked regardless of job names
+  STATIC_SOURCE_IDS:
+
+  # jobs that will be omitted when checking for source ids
+  JOB_BLACKLIST:
