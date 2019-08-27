@@ -26,6 +26,8 @@ found_source_ids=()
 missing_source_ids=()
 five_minutes_ago_seconds=$(date --date '-5 min' +%s)
 
+echo ${log_meta_output} | jq .
+
 set +e
 for source_id in ${expected_source_ids[@]}; do
   source_id_without_loggr_prefix=${source_id#loggr-}
