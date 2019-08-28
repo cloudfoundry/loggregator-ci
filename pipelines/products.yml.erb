@@ -666,8 +666,8 @@ jobs:
 
 - name: metrics-smoke-test
   serial: true
-#  serial_groups:
-#  - bosh-metrics-test
+  serial_groups:
+  - bosh-metrics-test
   plan:
   - in_parallel:
     - get: loggregator-ci
@@ -718,7 +718,6 @@ jobs:
         loggregator_agent
         loggregator_trafficcontroller
         metrics-discovery-registrar
-        prom_scraper
         reverse_log_proxy_gateway
         scheduler
         scrape-config-generator
