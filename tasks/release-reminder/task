@@ -1,0 +1,43 @@
+#!/bin/bash
+set -e
+
+# setup ssh for reading from github
+eval "$(ssh-agent -s)"
+mkdir -p ~/.ssh
+echo -e "Host github.com\n\tStrictHostKeyChecking no\n" >> ~/.ssh/config
+ssh-add <(echo "$SSH_KEY")
+
+too_long_ago=()
+lots_of_commit_since=()
+
+pushd releases > /dev/null
+  for rel in $(ls)
+  do
+    published_tag=$(cat ../published-releases/${rel}/tag)
+    pushd ${rel} > /dev/null
+      commit_count=$(git log ${published_tag}..HEAD --pretty=oneline --abbrev-commit | wc -l)
+      commit_count_ignoring_bump_modules=$(git log ${published_tag}..HEAD --pretty=oneline --abbrev-commit | grep -v "Bump modules" | wc -l)
+
+      if [[ ${commit_count_ignoring_bump_modules} -gt ${COMMITS_BEFORE_RELEASE} ]]; then
+        lots_of_commit_since+=(${rel})
+      fi
+
+      published_release_timestamp=$(git show --no-patch --no-notes --pretty='%ct' ${published_tag})
+      two_weeks_ago_timestamp=$(date --date '-14 day' +%s)
+      if [[ ${published_release_timestamp} -ge ${two_weeks_ago_timestamp} ]]; then
+        too_long_ago+=(${rel})
+      fi
+    popd
+  done
+popd
+
+if [[ ${#too_long_ago[@]} -gt 0 ]] || [[ ${#lots_of_commit_since[@]} -gt 0 ]]; then
+  printf '\n⏱ *It has been too long since releases were cut for* ⏱\n' >> slack/message.txt
+  printf '\t\t`%s`\n' "${too_long_ago[@]}" >> slack/message.txt
+
+  printf '\n😬 *There have been a lot of commits for* 😡\n' >> slack/message.txt
+  printf '\t\t`%s`\n' "${lots_of_commit_since[@]}" >> slack/message.txt
+
+  cat slack/message.txt
+  exit 1
+fi
