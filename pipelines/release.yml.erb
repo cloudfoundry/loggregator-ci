@@ -178,6 +178,13 @@ resources:
     repository: <%= release.name %>-release
     access_token: {{access-token}}
     drafts: true
+
+- name: <%= release.name %>-github-release-published
+  type: github-release
+  source:
+    user: cloudfoundry
+    repository: <%= release.name %>-release
+    access_token: {{access-token}}
 <% end %>
 
 jobs:
@@ -224,14 +231,12 @@ jobs:
   serial: true
   plan:
   - in_parallel:
-    - get: <%= release.name %>-release
     - get: <%= release.name %>-release-master
     - get: loggregator-ci
   - task: create-final-release
     file: loggregator-ci/tasks/create-final-release/task.yml
     input_mapping:
       master-repo: <%= release.name %>-release-master
-      develop-repo: <%= release.name %>-release
     params:
       S3_ACCESS_KEY: {{s3-access-key-id}}
       S3_SECRET_KEY: {{s3-secret-access-key}}
@@ -239,15 +244,10 @@ jobs:
       SSH_KEY: {{loggregator-key}}
       MAJOR_VERSION: <%= release.major_version %>
       RELEASE_NAME: <%= release.release_name %>
-      DEVELOP_BRANCH: develop
       MASTER_BRANCH: master
   - put: <%= release.name %>-release-master
     params:
       repository: repos/master-repo
-      rebase: false
-  - put: <%= release.name %>-release
-    params:
-      repository: repos/develop-repo
       rebase: false
   - put: <%= release.name %>-github-release-drafts
     params:
@@ -256,6 +256,30 @@ jobs:
       body: github-release/body
       globs:
       - github-release/*.tgz
+
+- name: <%= release.name %>-merge-to-develop
+  serial: true
+  plan:
+  - in_parallel:
+    - get: <%= release.name %>-release
+    - get: <%= release.name %>-release-master
+      passed: [ <%= release.name %>-create-final-release ]
+    - get: loggregator-ci
+    - get: <%= release.name %>-github-release-published
+      trigger: true
+  - task: merge-back-to-develop
+    file: loggregator-ci/tasks/merge-to-develop/task.yml
+    input_mapping:
+      master-repo: <%= release.name %>-release-master
+      develop-repo: <%= release.name %>-release
+    params:
+      SSH_KEY: {{loggregator-key}}
+      MASTER_BRANCH: master
+      DEVELOP_BRANCH: develop
+  - put: <%= release.name %>-release
+    params:
+      repository: repos/develop-repo
+      rebase: false
 <% end %>
 
 - name: loggregator-create-backport-release

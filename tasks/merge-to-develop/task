@@ -1,0 +1,27 @@
+#!/bin/bash
+
+set -exo pipefail
+
+pushd master-repo
+  git checkout $MASTER_BRANCH
+
+  final_release_abbrev=$(git rev-parse --abbrev-ref HEAD)
+popd
+
+# merge final release artifacts with develop
+pushd develop-repo
+  # this is needed to land commits on develop since the commit for
+  # develop is checked out as a detatched head when the git
+  # resource clones it down
+  git checkout $DEVELOP_BRANCH
+
+  # pull from the default remote over the network
+  git pull
+
+  # add local remote for merge
+  git remote add -f from ../master-repo
+  git merge -v -m "Merge final release artifacts" "from/$final_release_abbrev"
+popd
+
+# copy repos into output
+cp -r develop-repo repos

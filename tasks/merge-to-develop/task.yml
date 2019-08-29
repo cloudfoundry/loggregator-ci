@@ -1,0 +1,39 @@
+image_resource:
+  type: docker-image
+  source:
+    repository: loggregator/base
+platform: linux
+inputs:
+  # - Required
+  # - The repo to which the final releases will be merged
+- name: develop-repo
+
+  # - Required
+  # - The repo from which the final release will be created
+- name: master-repo
+
+  # - Required
+  # - The task repository
+- name: loggregator-ci
+
+outputs:
+  # - The modified repos that need to be pushed back to github
+- name: repos
+
+run:
+  path: loggregator-ci/tasks/merge-to-develop/task
+
+params:
+  # - Required
+  # - The ssh key used to talk to github to pull latest branch version
+  SSH_KEY:
+
+  # - Required
+  # - Branch from which the final release will be created
+  MASTER_BRANCH:
+
+  # - Required
+  # - Branch to which the final release will be merged
+  DEVELOP_BRANCH:
+
+

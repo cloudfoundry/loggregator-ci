@@ -5,10 +5,6 @@ image_resource:
 platform: linux
 inputs:
   # - Required
-  # - The repo to which the final releases will be merged
-- name: develop-repo
-
-  # - Required
   # - The repo from which the final release will be created
 - name: master-repo
 
@@ -57,9 +53,3 @@ params:
   # - Required
   # - Branch from which the final release will be created
   MASTER_BRANCH:
-
-  # - Required
-  # - Branch to which the final release will be merged
-  DEVELOP_BRANCH:
-
-

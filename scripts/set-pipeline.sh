@@ -16,7 +16,7 @@ function validate {
 
 function set_pipeline {
     pipeline_name=$1
-    pipeline_file="pipelines/$(ls pipelines | grep ${pipeline_name})"
+    pipeline_file="pipelines/$(ls pipelines | grep ^${pipeline_name})"
 
     if [[ ${pipeline_file} = *.erb ]]; then
       erb ${pipeline_file} > /dev/null # this way if the erb fails the script bails

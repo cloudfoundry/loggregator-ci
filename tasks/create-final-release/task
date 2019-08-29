@@ -4,8 +4,7 @@
 
 # -------------------
 # Create a release from a repo and branch: master-repo and
-# MASTER_BRANCH. Merge the result back to another repo and branch:
-# develop-repo, DEVELOP_BRANCH
+# MASTER_BRANCH.
 
 function join_by {
   local IFS="$1"
@@ -83,20 +82,5 @@ EOF
   git tag "$tag_name" $final_release_sha
 popd
 
-# merge final release artifacts with develop
-pushd develop-repo
-  # this is needed to land commits on develop since the commit for
-  # develop is checked out as a detatched head when the git
-  # resource clones it down
-  git checkout $DEVELOP_BRANCH
-
-  # pull from the default remote over the network
-  git pull
-
-  # add local remote for merge
-  git remote add -f from ../master-repo
-  git merge -v -m "Merge final release artifacts" "from/$final_release_abbrev"
-popd
-
 # copy repos into output
-cp -r develop-repo master-repo repos
+cp -r master-repo repos
