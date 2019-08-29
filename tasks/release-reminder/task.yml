@@ -6,6 +6,7 @@ image_resource:
     repository: loggregator/base
 
 inputs:
+- name: loggregator-ci
 - name: releases
 - name: published-releases
 
