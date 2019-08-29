@@ -1,6 +1,11 @@
 #!/bin/bash
-
 set -exo pipefail
+
+# setup ssh for reading from github
+eval "$(ssh-agent -s)"
+mkdir -p ~/.ssh
+echo -e "Host github.com\n\tStrictHostKeyChecking no\n" >> ~/.ssh/config
+ssh-add <(echo "$SSH_KEY")
 
 pushd master-repo
   git checkout $MASTER_BRANCH
