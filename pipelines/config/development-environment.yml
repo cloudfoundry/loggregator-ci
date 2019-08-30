@@ -5,3 +5,7 @@ kiwi_system_domain: kiwi.loggr.cf-app.com
 banana_env_name: banana
 banana_bbl_state_dir: gcp/banana
 banana_system_domain: banana.loggr.cf-app.com
+
+papaya_env_name: papaya
+papaya_bbl_state_dir: gcp/papaya
+papaya_system_domain: papaya.loggr.cf-app.com
