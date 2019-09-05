@@ -31,13 +31,17 @@ pushd releases > /dev/null
   done
 popd
 
-if [[ ${#too_long_ago[@]} -gt 0 ]] || [[ ${#lots_of_commit_since[@]} -gt 0 ]]; then
-  printf '\n⏱ *It has been too long since releases were cut for* ⏱\n' >> slack/message.txt
-  printf '\t\t`%s`\n' "${too_long_ago[@]}" >> slack/message.txt
-
+if [[ ${#too_long_ago[@]} -gt 0 ]]
   printf '\n😬 *There have been a lot of commits for* 😡\n' >> slack/message.txt
   printf '\t\t`%s`\n' "${lots_of_commit_since[@]}" >> slack/message.txt
+fi
 
+if [[ ${#lots_of_commit_since[@]} -gt 0 ]]; then
+  printf '\n😬 *There have been a lot of commits for* 😡\n' >> slack/message.txt
+  printf '\t\t`%s`\n' "${lots_of_commit_since[@]}" >> slack/message.txt
+fi
+
+if [[ ${#too_long_ago[@]} -gt 0 ]] || [[ ${#lots_of_commit_since[@]} -gt 0 ]]; then
   cat slack/message.txt
   exit 1
 fi
