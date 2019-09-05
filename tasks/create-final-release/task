@@ -15,26 +15,7 @@ function join_by {
 set -exo pipefail
 
 pushd master-repo
-  old_tag=$(git describe --abbrev=0 --tags --match 'v*')
-  old_version=${old_tag//v}
-  split_version=( ${old_version//./ })
-  minor=${split_version[1]}
-
-  if [[ ${MAJOR_VERSION} -gt split_version[0] ]]; then
-    split_version[0]=${MAJOR_VERSION}
-    split_version[1]=0
-  else
-    split_version[1]=`expr ${minor} + 1`
-  fi
-
-  NEW_VERSION=$(join_by . "${split_version[@]}")
-
-  set +x
-  BUMPER_RESULT=$( (bumper --commit-range ${old_tag}..HEAD --verbose --no-color) 2>&1 | grep -v "Bump modules")
-  BUMPER_RESULT=${BUMPER_RESULT//  / &nbsp; &nbsp;}
-  BUMPER_RESULT=${BUMPER_RESULT//... / &nbsp; &nbsp;}
-  GIT_DIFF_JOBS=$(git diff ${old_tag}..HEAD -- jobs)
-  set -x
+  NEW_VERSION=$(cat src/version)
 popd
 
 tag_name="v$NEW_VERSION"

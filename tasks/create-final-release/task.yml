@@ -44,13 +44,6 @@ params:
   SSH_KEY:
 
   # - Required
-  # - The major version to create. This is used to:
-  #   - Set the bosh release version
-  #   - Tag the commit that contains the final release artifacts
-  #   - Name the github release
-  MAJOR_VERSION:
-
-  # - Required
   # - Human readable name of the created release (e.g. Loggregator)
   RELEASE_NAME:
 
