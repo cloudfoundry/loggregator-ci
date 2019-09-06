@@ -546,31 +546,32 @@ jobs:
         scale-to-one-az.yml
         use-compiled-releases.yml
         use-compiled-releases-windows.yml
-        add-metric-store.yml
-        loggregator-clients.yml
-
-        windows1803-cell.yml
-        use-latest-windows1803-stemcell.yml
-
-        cf-deployment-addon.yml
-        cf-add-syslog-agent.yml
-        cf-deployment-add-system-metrics-agent.yml
-        cf-add-system-metric-scraper.yml
-
-        cf-deployment-add-metrics-certs.yml
-        cf-deployment-windows-addon.yml
-        cf-add-metrics-discovery.yml
-        cf-add-metrics-discovery-windows.yml
-        cf-add-metrics-agent.yml
-        cf-add-metrics-agent-windows.yml
-        remove-scheduler.yml
-        log-cache-syslog-server.yml
-        log-cache-syslog-server-windows.yml
-        log-cache-add-metrics-certs.yml
-
         use-provided-router-certs.yml
         fast-deploy-with-downtime-and-danger.yml
 
+        add-metric-store.yml
+        add-syslog-agent.yml
+        add-system-metrics-agent.yml
+
+        windows1803-cell.yml
+        use-latest-windows1803-stemcell.yml
+        add-syslog-agent-windows1803.yml
+        add-system-metrics-agent-windows1803.yml
+
+        cf-deployment-add-metrics-certs.yml
+        cf-add-metrics-discovery.yml
+        cf-add-metrics-agent.yml
+
+        remove-scheduler.yml
+        log-cache-syslog-server.yml
+        log-cache-add-metrics-certs.yml
+
+        cf-deployment-windows-addon.yml
+        cf-add-metrics-agent-windows.yml
+        cf-add-metrics-discovery-windows.yml
+        log-cache-syslog-server-windows.yml
+
+        loggregator-clients.yml
         log-cache-acceptance.yml
         loggregator-acceptance.yml
       VARS_FILES: ""

@@ -49,4 +49,16 @@ printf '\t%s\n' "${found_source_ids[@]}"
 printf '\nNo metrics were found for the following source ids:\n'
 printf '\t%s\n' "${missing_source_ids[@]}"
 
+prom_scraper_failures=$(curl --silent -G \
+  https://metric-store.coconut.loggr.cf-app.com/api/v1/query \
+  --data-urlencode 'query=sum(rate(failed_scrapes_total{source_id="prom_scraper"}[1m])) by (scrape_target_source_id) > 10' \
+  -H "Authorization: $(cf oauth-token)" | jq .data.result)
+
+if [[ ${prom_scraper_failures} -ne "null" ]]; then
+  exit_code=1
+
+  printf '\nProm Scraper is failing to scrape the following\n'
+  echo ${prom_scraper_failures}
+fi
+
 exit ${exit_code}
