@@ -22,6 +22,27 @@ releases = [
 ]
 %>
 
+groups:
+- name: all
+  jobs:
+  <% releases.sort_by { |release| release.name }.each do |release| %>
+  - <%= release.name %>-cut-patch
+  - <%= release.name %>-cut-minor
+  - <%= release.name %>-cut-major
+  - <%= release.name %>-create-final-release
+  - <%= release.name %>-merge-to-develop
+  <% end %>
+
+  <% releases.sort_by { |release| release.name }.each do |release| %>
+- name: <%= release.name %>
+  jobs:
+  - <%= release.name %>-cut-patch
+  - <%= release.name %>-cut-minor
+  - <%= release.name %>-cut-major
+  - <%= release.name %>-create-final-release
+  - <%= release.name %>-merge-to-develop
+  <% end %>
+
 resources:
 - name: loggregator-ci
   type: git
@@ -92,6 +113,8 @@ jobs:
   - in_parallel:
     - get: <%= release.name %>-release-master
     - get: loggregator-ci
+    - get: <%= release.name %>-version
+      trigger: true
   - task: create-final-release
     file: loggregator-ci/tasks/create-final-release/task.yml
     input_mapping:
