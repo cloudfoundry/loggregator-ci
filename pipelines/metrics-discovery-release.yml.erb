@@ -42,9 +42,9 @@ jobs:
     serial_groups: [cut-release]
     plan:
       - in_parallel:
-          - get: metrics-discovery-release
-          - get: metrics-discovery-release-master
-          - get: loggregator-ci
+        - get: metrics-discovery-release
+        - get: metrics-discovery-release-master
+        - get: loggregator-ci
       - task: create-final-release
         file: loggregator-ci/tasks/create-final-release-semver/task.yml
         input_mapping:

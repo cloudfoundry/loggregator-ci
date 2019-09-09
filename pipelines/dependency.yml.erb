@@ -1,0 +1,438 @@
+<%
+class Release
+  attr_reader :name, :include_windows, :s3_bucket, :major_version, :release_name
+  def initialize(name, include_windows, s3_bucket, major_version, release_name)
+    @name = name
+    @include_windows = include_windows
+    @s3_bucket = s3_bucket
+    @major_version = major_version
+    @release_name = release_name
+  end
+end
+
+releases = [
+  Release.new("leadership-election", false, "leadership-election-release-blobs", "1", "Leadership Election"),
+  Release.new("loggregator", false, "loggregator-release-blobs", "1", "Loggregator"),
+  Release.new("loggregator-agent", true, "loggregator-agent-release-blobs", "3", "Loggregator Agent"),
+  Release.new("cf-syslog-drain", false, "cf-syslog-drain-release-blobs", "10", "CF Syslog Drain"),
+  Release.new("statsd-injector", false, "statsd-injector-release-blobs", "1", "Statsd Injector"),
+  Release.new("service-metrics", false, "oss-service-metrics-release-blobs", "1", "Service Metrics"),
+  Release.new("service-logs", false, "service-logs-release-blobs", "1", "Service Logs"),
+  Release.new("metrics-discovery", false, "metrics-discovery-release-blobs", "1", "Metrics Discovery"),
+]
+
+bump_golang_releases = releases + [
+  Release.new("reference-nozzle", false, "reference-nozzle-release-blobs", "1", "reference-nozzle"),
+  Release.new("log-cache-acceptance-tests", false, "log-cache-acceptance-tests-blobs", "1", "log-cache-acceptance-tests"),
+]
+%>
+
+resource_types:
+- name: slack-notification
+  type: docker-image
+  source:
+    repository: cfcommunity/slack-notification-resource
+    tag: latest
+
+resources:
+- name: 48h
+  type: time
+  source:
+    interval: 48h
+
+- name: cf-deployment-concourse-tasks-image
+  type: docker-image
+  source:
+    repository: relintdockerhubpushbot/cf-deployment-concourse-tasks
+    tag: latest
+
+- name: slack-alert
+  type: slack-notification
+  source:
+    url: ((slack-url))
+
+- name: loggregator-ci
+  type: git
+  source:
+    uri: git@github.com:cloudfoundry/loggregator-ci.git
+    private_key: {{loggregator-key}}
+
+- name: loggregator-backport
+  type: git
+  source:
+    uri: git@github.com:cloudfoundry/loggregator-release.git
+    branch: &backport-branch v103.x
+    private_key: {{loggregator-key}}
+
+- name: loggregator-release-backport
+  type: git
+  source:
+    uri: git@github.com:cloudfoundry/loggregator-release.git
+    branch: *backport-branch
+    private_key: {{loggregator-key}}
+    ignore_paths:
+    - .final_builds
+    - releases
+
+- name: cf-syslog-drain-release-backport
+  type: git
+  source:
+    branch: &cf-syslog-backport-branch v7.x
+    uri: git@github.com:cloudfoundry/cf-syslog-drain-release
+    private_key: {{cf-loggregator-oauth-bot-key}}
+
+- name: cf-drain-cli
+  type: git
+  source:
+    uri: git@github.com:cloudfoundry/cf-drain-cli
+    branch: master
+    private_key: {{cf-loggregator-oauth-bot-key}}
+
+- name: cf-drain-cli-github-release-drafts
+  type: github-release
+  source:
+    user: cloudfoundry
+    repository: cf-drain-cli
+    access_token: {{access-token}}
+    drafts: true
+
+- name: log-stream-cli
+  type: git
+  source:
+    uri: git@github.com:cloudfoundry/log-stream-cli
+    branch: master
+    private_key: {{cf-loggregator-oauth-bot-key}}
+
+- name: log-stream-cli-github-release-drafts
+  type: github-release
+  source:
+    user: cloudfoundry
+    repository: log-stream-cli
+    access_token: {{access-token}}
+    drafts: true
+
+- name: loggregator-tools-master
+  type: git
+  source:
+    uri: git@github.com:cloudfoundry-incubator/loggregator-tools
+    branch: master
+    private_key: {{cf-loggregator-oauth-bot-key}}
+
+- name: noisy-neighbor-nozzle-repo
+  type: git
+  source:
+    uri: git@github.com:cloudfoundry/noisy-neighbor-nozzle
+    branch: master
+    private_key: {{cf-loggregator-oauth-bot-key}}
+
+- name: noisy-neighbor-release-drafts
+  type: github-release
+  source:
+    user: cloudfoundry
+    repository: noisy-neighbor-nozzle
+    access_token: {{access-token}}
+    drafts: true
+
+- name: reference-nozzle-release
+  type: git
+  source:
+    uri: git@github.com:cloudfoundry-incubator/reference-nozzle-release
+    branch: master
+    private_key: {{cf-loggregator-oauth-bot-key}}
+
+- name: go-loggregator
+  type: git
+  source:
+    uri: git@github.com:cloudfoundry/go-loggregator
+    branch: master
+    private_key: {{cf-loggregator-oauth-bot-key}}
+    clean_tags: true
+
+- name: go-loggregator-github-release-drafts
+  type: github-release
+  source:
+    user: cloudfoundry
+    repository: go-loggregator
+    access_token: {{access-token}}
+    drafts: true
+
+- name: log-cache-acceptance-tests-release
+  type: git
+  source:
+    uri: git@github.com:cloudfoundry/log-cache-acceptance-tests-release
+    branch: master
+    private_key: ((cf-loggregator-oauth-bot-key))
+
+- name: concourse-tasks
+  type: git
+  source:
+    branch: master
+    uri: https://github.com/pivotal-cf/concourse-tasks
+
+- name: golang-release
+  type: git
+  source:
+    uri: git@github.com:bosh-packages/golang-release
+    branch: master
+    tag_filter: v*
+    private_key: ((cf-loggregator-oauth-bot-key))
+
+<% releases.each do |release| %>
+- name: <%= release.name %>-release
+  type: git
+  source:
+    uri: git@github.com:cloudfoundry/<%= release.name %>-release
+    branch: develop
+    private_key: {{cf-loggregator-oauth-bot-key}}
+    disable_ci_skip: true
+
+- name: <%= release.name %>-github-release-published
+  type: github-release
+  source:
+    user: cloudfoundry
+    repository: <%= release.name %>-release
+    access_token: {{access-token}}
+<% end %>
+
+- name: loggregator-github-release-drafts
+  type: github-release
+  source:
+    user: cloudfoundry
+    repository: loggregator-release
+    access_token: {{access-token}}
+    drafts: true
+
+- name: cf-syslog-drain-github-release-drafts
+  type: github-release
+  source:
+    user: cloudfoundry
+    repository: cf-syslog-drain-release
+    access_token: {{access-token}}
+    drafts: true
+
+jobs:
+- name: bump-golang
+  serial: true
+  plan:
+  - in_parallel:
+    - get: loggregator-ci
+    - get: concourse-tasks
+    - get: golang-release
+      trigger: true
+  <% bump_golang_releases.each do |release| %>
+    - get: <%= release.name %>-release
+  <% end %>
+  - in_parallel:
+    <% bump_golang_releases.each do |release| %>
+    - do:
+      - task: bump-<%= release.name %>-release
+        file: concourse-tasks/go/bump-vendored-golang/task.yml
+        input_mapping:
+          release: <%= release.name %>-release
+        output_mapping:
+          output-repo: updated-<%= release.name %>-release
+        params:
+          BLOBSTORE_ACCESS_KEY_ID: {{s3-access-key-id}}
+          BLOBSTORE_SECRET_ACCESS_KEY: {{s3-secret-access-key}}
+          GIT_USER_EMAIL: cf-loggregator@pivotal.io
+          GIT_USER_NAME: Loggregator CI
+          GOLANG_DIR: golang-release
+          RELEASE_DIR: release
+          <% if release.include_windows %>
+          GOLANG_OS_S: |
+            linux
+            windows
+          <% end %>
+      - put: <%= release.name %>-release
+        params:
+          repository: updated-<%= release.name %>-release
+          rebase: false
+    <% end %>
+
+- name: cut-releases-reminder
+  serial: true
+  plan:
+  - in_parallel:
+    - get: 48h
+      trigger: true
+    - get: loggregator-ci
+    - get: cf-deployment-concourse-tasks-image
+    <% releases.each do |release| %>
+    - get: <%= release.name %>-release
+    - get: <%= release.name %>-github-release-published
+    <% end %>
+  - task: move-releases
+    image: cf-deployment-concourse-tasks-image
+    config:
+      platform: linux
+      inputs:
+      <% releases.each do |release| %>
+      - name: <%= release.name %>-release
+        path: input-releases/<%= release.name %>-release
+      - name: <%= release.name %>-github-release-published
+        path: input-github-releases/<%= release.name %>-release
+      <% end %>
+      outputs:
+      - name: releases
+      - name: published-releases
+      run:
+        path: /bin/bash
+        args:
+        - "-c"
+        - |
+          set -e
+          cp -a input-releases/* releases
+          cp -a input-github-releases/* published-releases
+  - task: diff-master-last-release
+    file: loggregator-ci/tasks/release-reminder/task.yml
+    params:
+      SSH_KEY: {{loggregator-key}}
+      MASTER_BRANCH: master
+      COMMITS_BEFORE_RELEASE: 5
+    on_failure:
+      put: slack-alert
+      params:
+        text_file: slack/message.txt
+
+- name: loggregator-create-backport-release
+  serial: true
+  plan:
+  - get: loggregator-backport
+  - task: create-backport
+    file: loggregator-ci/tasks/backport/loggregator/task.yml
+    params:
+      S3_ACCESS_KEY: {{loggregator-team-s3-access-key}}
+      S3_SECRET_KEY: {{loggregator-team-s3-secret-key}}
+      SSH_KEY: {{loggregator-key}}
+      MAJOR_VERSION: "1"
+      BRANCH_NAME: *backport-branch
+  - put: loggregator-release-backport
+    params:
+      repository: create-final-release/loggregator-backport
+      rebase: false
+  - put: loggregator-github-release-drafts
+    params:
+      name: github-release/name
+      tag: github-release/tag
+      body: github-release/body
+      globs:
+      - github-release/*.tgz
+
+- name: cf-syslog-release-create-backport
+  serial: true
+  plan:
+  - get: cf-syslog-drain-release-backport
+    trigger: false
+  - task: create-backport
+    file: loggregator-ci/tasks/backport/syslog/task.yml
+    params:
+      S3_ACCESS_KEY: {{s3-access-key-id}}
+      S3_SECRET_KEY: {{s3-secret-access-key}}
+      SSH_KEY: {{loggregator-key}}
+      BLOBSTORE_BUCKET: cf-syslog-drain-release-blobs
+      MAJOR_VERSION: "7"
+      BRANCH_NAME: *cf-syslog-backport-branch
+  - put: cf-syslog-drain-release-backport
+    params:
+      repository: create-final-release/cf-syslog-drain-release-backport
+      rebase: false
+  - put: cf-syslog-drain-github-release-drafts
+    params:
+      name: github-release/name
+      tag: github-release/tag
+      body: github-release/body
+      globs:
+      - github-release/*.tgz
+
+- name: cf-drain-cli
+  serial: true
+  plan:
+  - in_parallel:
+    - get: loggregator-ci
+    - get: cf-drain-cli
+    - get: loggregator-tools-master
+  - task: create-binaries
+    file: loggregator-ci/tasks/release-cf-drain-cli/task.yml
+    params:
+      VERSION_MAJOR: 1
+      VERSION_MINOR: 2
+    input_mapping:
+      loggregator-tools: loggregator-tools-master
+  - put: cf-drain-cli
+    params:
+      repository: output-repo/cf-drain-cli
+      rebase: false
+  - put: cf-drain-cli-github-release-drafts
+    params:
+      name: github-release/name
+      tag: github-release/tag
+      body: github-release/body
+      globs:
+      - github-release/builds/*
+
+- name: log-stream-cli
+  serial: true
+  plan:
+  - in_parallel:
+    - get: loggregator-ci
+    - get: log-stream-cli
+  - task: create-binaries
+    file: loggregator-ci/tasks/release-log-stream-cli/task.yml
+    params:
+      VERSION_MAJOR: 0
+      VERSION_MINOR: 4
+  - put: log-stream-cli
+    params:
+      repository: output-repo/log-stream-cli
+      rebase: false
+  - put: log-stream-cli-github-release-drafts
+    params:
+      name: github-release/name
+      tag: github-release/tag
+      body: github-release/body
+      globs:
+      - github-release/builds/*
+
+- name: noisy-neighbor-binaries
+  serial: true
+  plan:
+  - in_parallel:
+    - get: noisy-neighbor-nozzle-repo
+  - task: create-binaries
+    file: loggregator-ci/tasks/noisy-neighbor-create-binaries/task.yml
+    params:
+      VERSION_MAJOR: 1
+      VERSION_MINOR: 5
+      VERSION_PATCH: 1
+  - put: noisy-neighbor-nozzle-repo
+    params:
+      repository: repo-output
+      rebase: false
+      tag: github-release/tag
+  - put: noisy-neighbor-release-drafts
+    params:
+      name: github-release/name
+      tag: github-release/tag
+      body: github-release/body
+      globs:
+      - binary-output/*
+
+- name: go-loggregator
+  serial: true
+  plan:
+  - in_parallel:
+    - get: loggregator-ci
+    - get: go-loggregator
+
+  - task: cut-release
+    file: loggregator-ci/tasks/create-github-release/task.yml
+    params:
+      MAJOR_VERSION: 7
+      RELEASE_NAME: "Go Loggregator"
+    input_mapping:
+      repo: go-loggregator
+  - put: go-loggregator-github-release-drafts
+    params:
+      name: github-release/name
+      tag: github-release/tag
+      body: github-release/body
