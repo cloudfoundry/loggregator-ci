@@ -7,9 +7,8 @@ popd
 
 router_ip=$(bosh -d cf --column Instance --column IPs vms | grep '^router' | head -n 1 | awk '{print $2}')
 
-curl_command=""
 bosh -d cf ssh doppler/0 -c \
-  "curl https://${router_ip}:${METRICS_AGENT_PORT}/metrics -k --cert /var/vcap/jobs/metrics-agent/config/certs/metrics.crt --key /var/vcap/jobs/metrics-agent/config/certs/metrics.key --cacert /var/vcap/jobs/metrics-agent/config/certs/metrics_ca.crt" \
+  "curl https://${router_ip}:${METRICS_AGENT_PORT}/metrics -k --cert /var/vcap/jobs/metrics-agent/config/certs/scrape.crt --key /var/vcap/jobs/metrics-agent/config/certs/scrape.key --cacert /var/vcap/jobs/metrics-agent/config/certs/scrape_ca.crt" \
   > metrics_results
 
 exit_status=0
