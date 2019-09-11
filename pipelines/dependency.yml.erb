@@ -288,7 +288,7 @@ jobs:
     params:
       SSH_KEY: {{loggregator-key}}
       MASTER_BRANCH: master
-      COMMITS_BEFORE_RELEASE: 5
+      COMMITS_BEFORE_RELEASE: 10
     on_failure:
       put: slack-alert
       params:

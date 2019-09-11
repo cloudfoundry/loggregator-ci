@@ -24,7 +24,7 @@ pushd releases > /dev/null
 
       published_release_timestamp=$(git show --no-patch --no-notes --pretty='%ct' ${published_tag})
       two_weeks_ago_timestamp=$(date --date '-14 day' +%s)
-      if [[ ${published_release_timestamp} -ge ${two_weeks_ago_timestamp} ]]; then
+      if [[ ${published_release_timestamp} -lt ${two_weeks_ago_timestamp} ]]; then
         too_long_ago+=(${rel})
       fi
     popd
