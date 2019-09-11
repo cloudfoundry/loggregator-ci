@@ -12,15 +12,15 @@ inputs:
   # - The task repository
 - name: loggregator-ci
 
+  # - The version that is expected to be cut to compare with the version in the repo
+- name: version
+
 outputs:
   # - The artifacts used to create the github release
 - name: github-release
 
   # - The modified repos that need to be pushed back to github
 - name: repos
-
-  # - The version that is expected to be cut to compare with the version in the repo
-- name: version
 
 run:
   path: loggregator-ci/tasks/create-final-release/task
