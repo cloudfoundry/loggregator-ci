@@ -119,6 +119,7 @@ jobs:
     file: loggregator-ci/tasks/create-final-release/task.yml
     input_mapping:
       master-repo: <%= release.name %>-release-master
+      version: <%= release.name %>-version
     params:
       S3_ACCESS_KEY: {{s3-access-key-id}}
       S3_SECRET_KEY: {{s3-secret-access-key}}

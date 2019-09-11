@@ -14,8 +14,15 @@ function join_by {
 
 set -exo pipefail
 
+expected_version=$(cat version/version)
+
 pushd master-repo
   NEW_VERSION=$(cat src/version)
+  if [[ ${NEW_VERSION} -ne ${expected_version} ]]; then
+    echo "Version in master-repo (${NEW_VERSION}) does not equal expected version from version resource (${expected_version})"
+    exit 1
+  fi
+
   old_tag=$(git describe --abbrev=0 --tags --match v*)
   set +x
   BUMPER_RESULT=$( (bumper --commit-range ${old_tag}..HEAD --verbose --no-color) 2>&1 | grep -v "Bump modules")
