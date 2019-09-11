@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -e
+set -eo pipefail
 source loggregator-ci/scripts/environment-targeting/target-cf.sh
 target-cf
 
