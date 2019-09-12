@@ -356,7 +356,10 @@ jobs:
   plan:
   - get: service-metrics-release-backport
     trigger: false
+  - get: loggregator-ci
   - task: create-backport
+    input_mapping:
+      release-repo: service-metrics-release-backport
     file: loggregator-ci/tasks/create-final-release-backport/task.yml
     params:
       S3_ACCESS_KEY: {{s3-access-key-id}}
