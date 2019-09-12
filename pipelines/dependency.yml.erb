@@ -81,6 +81,13 @@ resources:
     uri: git@github.com:cloudfoundry/cf-syslog-drain-release
     private_key: {{cf-loggregator-oauth-bot-key}}
 
+- name: service-metrics-release-backport
+  type: git
+  source:
+    branch: &service-metrics-release-backport-branch v1.12.x
+    uri: git@github.com:cloudfoundry/service-metrics-release
+    private_key: {{cf-loggregator-oauth-bot-key}}
+
 - name: cf-drain-cli
   type: git
   source:
@@ -343,6 +350,20 @@ jobs:
       body: github-release/body
       globs:
       - github-release/*.tgz
+
+- name: service-metrics-create-backport
+  serial: true
+  plan:
+  - get: service-metrics-release-backport
+    trigger: false
+  - task: create-backport
+    file: loggregator-ci/tasks/create-final-release-backport/task.yml
+    params:
+      S3_ACCESS_KEY: {{s3-access-key-id}}
+      S3_SECRET_KEY: {{s3-secret-access-key}}
+      SSH_KEY: {{loggregator-key}}
+      BLOBSTORE_BUCKET: oss-service-metrics-release-blobs
+      BRANCH_NAME: *service-metrics-release-backport-branch
 
 - name: cf-drain-cli
   serial: true
