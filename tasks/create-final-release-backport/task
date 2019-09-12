@@ -78,4 +78,4 @@ EOF
   git tag "$tag_name" $final_release_sha
 popd
 
-exit 1
+cp -r release-repo repos
