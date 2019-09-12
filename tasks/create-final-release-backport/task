@@ -23,11 +23,16 @@ pushd release-repo
 
   old_version=${old_tag//v}
   split_version=( ${old_version//./ })
-  patch=${split_version[2]}
 
-  # bump patch
-  split_version[2]=`expr ${patch} + 1`
+  length="${#split_version[@]}"
+  if [[ $length -lt 3 ]]; then
+    patch=0
+  else
+    # bump patch
+    patch=`expr ${split_version[2]} + 1`
+  fi
 
+  split_version[2]=${patch}
   NEW_VERSION=$(join_by . "${split_version[@]}")
   commit_range="${old_tag}..HEAD"
 
