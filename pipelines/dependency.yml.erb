@@ -16,6 +16,7 @@ releases = [
   Release.new("service-metrics", false),
   Release.new("service-logs", false),
   Release.new("metrics-discovery", false),
+  Release.new("log-cache", false),
 ]
 
 bump_golang_releases = releases + [
@@ -139,7 +140,7 @@ resources:
 - name: concourse-tasks
   type: git
   source:
-    branch: master
+    branch: gcs-bump-golang
     uri: https://github.com/pivotal-cf/concourse-tasks
 
 - name: golang-release
@@ -191,6 +192,7 @@ jobs:
         params:
           BLOBSTORE_ACCESS_KEY_ID: {{s3-access-key-id}}
           BLOBSTORE_SECRET_ACCESS_KEY: {{s3-secret-access-key}}
+          GCS_JSON_KEY: {{gcp-service-account-key}}
           GIT_USER_EMAIL: cf-loggregator@pivotal.io
           GIT_USER_NAME: Loggregator CI
           GOLANG_DIR: golang-release
