@@ -560,6 +560,7 @@ jobs:
         add-system-metrics-agent-windows1803.yml
 
         cf-deployment-add-metrics-certs.yml
+        loggregator-add-metrics-certs.yml
         cf-add-metrics-discovery.yml
         cf-add-metrics-agent.yml
 
@@ -712,16 +713,13 @@ jobs:
         metron
         traffic_controller
       JOB_BLACKLIST: |
-        adapter
-        log-cache-blackbox
-        log-cache-nozzle
         loggr-metric-scraper
         loggregator_agent
         loggregator_trafficcontroller
-        metrics-discovery-registrar
-        reverse_log_proxy_gateway
+        adapter
         scheduler
-        scrape-config-generator
+        log-cache-blackbox
+        log-cache-nozzle
         statsd_injector
 
 - name: cats
