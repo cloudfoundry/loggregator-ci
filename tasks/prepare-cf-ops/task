@@ -1,6 +1,15 @@
 #!/bin/bash
 set -ex
-                                                                                                         
+
+mkdir -p \
+  ops-files/denver/ \
+  ops-files/experimental/ \
+  ops-files/loggregator \
+  ops-files/loggregator-agent \
+  ops-files/metrics-discovery \
+  ops-files/log-cache \
+  ops-files/system-metrics
+
 cp cf-deployment/operations/*.yml ops-files/
 cp denver-deployments/bosh-cf-deployment/operations/default/use-provided-router-certs.yml ops-files/
 
