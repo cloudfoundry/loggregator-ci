@@ -1,5 +1,5 @@
 <%
-bosh_releases = %w(loggregator loggregator-agent statsd-injector cf-syslog-drain leadership-election log-cache metrics-discovery)
+bosh_releases = %w(loggregator loggregator-agent statsd-injector cf-syslog-drain leadership-election log-cache metrics-discovery system-metrics)
 standalone_releases = %w(service-metrics service-logs)
 dev_envs = %w(kiwi banana papaya)
 
@@ -14,6 +14,7 @@ smoke_tests = {
   "service-metrics" => ["service-metrics-smoke-tests"],
   "service-logs" => ["service-logs-smoke-tests"],
   "metrics-discovery" => cfd_smoke_tests,
+  "system-metrics" => cfd_smoke_tests,
 }
 
 run_windows_tests = {
@@ -21,6 +22,7 @@ run_windows_tests = {
     :package_ignore_regex => 'metric-scraper\|syslog-binding-cache\|udp-forwarder',
    },
   "metrics-discovery" => {},
+  "system-metrics" => {},
 }
 
 clis = {
@@ -547,35 +549,33 @@ jobs:
         use-compiled-releases.yml
         use-compiled-releases-windows.yml
         use-provided-router-certs.yml
-        fast-deploy-with-downtime-and-danger.yml
+        experimental/fast-deploy-with-downtime-and-danger.yml
 
-        add-metric-store.yml
-        add-grafana.yml
-        add-syslog-agent.yml
-        add-system-metrics-agent.yml
+        experimental/add-metric-store.yml
+        denver/add-grafana.yml
+        experimental/add-syslog-agent.yml
+        system-metrics/add-system-metrics.yml
 
         windows1803-cell.yml
         use-latest-windows1803-stemcell.yml
-        add-syslog-agent-windows1803.yml
-        add-system-metrics-agent-windows1803.yml
+        experimental/add-syslog-agent-windows1803.yml
+        system-metrics/system-metrics-agent-windows.yml
 
-        cf-deployment-add-metrics-certs.yml
-        loggregator-add-metrics-certs.yml
-        cf-add-metrics-discovery.yml
-        cf-add-metrics-agent.yml
+        loggregator/loggregator-add-metrics-certs.yml
+        metrics-discovery/cf-add-metrics-discovery.yml
+        metrics-discovery/cf-add-metrics-agent.yml
 
-        remove-scheduler.yml
-        log-cache-syslog-server.yml
-        log-cache-add-metrics-certs.yml
+        log-cache/remove-scheduler.yml
+        log-cache/log-cache-syslog-server.yml
 
-        cf-deployment-windows-addon.yml
-        cf-add-metrics-agent-windows.yml
-        cf-add-metrics-discovery-windows.yml
-        log-cache-syslog-server-windows.yml
+        loggregator-agent/cf-deployment-windows-addon.yml
+        loggregator-agent/cf-add-metrics-agent-windows.yml
+        loggregator-agent/cf-add-metrics-discovery-windows.yml
+        log-cache/log-cache-syslog-server-windows.yml
 
-        loggregator-clients.yml
-        log-cache-acceptance.yml
-        loggregator-acceptance.yml
+        denver/loggregator-clients.yml
+        denver/log-cache-acceptance.yml
+        denver/loggregator-acceptance.yml
       VARS_FILES: ""
   - task: enable-feature-flags
     file: cf-deployment-concourse-tasks/set-feature-flags/task.yml

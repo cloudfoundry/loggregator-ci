@@ -15,6 +15,7 @@ inputs:
 - name: loggregator-ci
 - name: log-cache-release
 - name: metrics-discovery-release
+- name: service-metrics-release
 
 outputs:
 - name: ops-files
