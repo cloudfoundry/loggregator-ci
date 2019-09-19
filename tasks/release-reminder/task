@@ -1,6 +1,8 @@
 #!/bin/bash
 set -e
 
+ci_root=$PWD
+
 # setup ssh for reading from github
 eval "$(ssh-agent -s)"
 mkdir -p ~/.ssh
@@ -11,9 +13,9 @@ too_long_ago=()
 lots_of_commit_since=()
 too_long_and_lots_of_commits=()
 
-pushd releases > /dev/null
+pushd releases
   for rel in $(ls); do
-    published_tag=$(cat ../published-releases/${rel}/tag)
+    published_tag=$(cat ${ci_root}/published-releases/${rel}/tag)
     pushd ${rel} > /dev/null
       commit_count=$(git log ${published_tag}..HEAD --pretty=oneline --abbrev-commit | wc -l)
       commit_count_ignoring_bump_modules=$(git log ${published_tag}..HEAD --pretty=oneline --abbrev-commit | grep -v "Bump modules" | wc -l)
