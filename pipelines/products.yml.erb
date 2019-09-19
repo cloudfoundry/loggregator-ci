@@ -708,11 +708,9 @@ jobs:
       SPACE: blackbox-testing
       BBL_STATE_DIR: ((acceptance_bbl_state_dir))
       STATIC_SOURCE_IDS: |
-        metrics_scraper
         metron
         traffic_controller
       JOB_BLACKLIST: |
-        loggr-metric-scraper
         loggregator_agent
         loggregator_trafficcontroller
         adapter
