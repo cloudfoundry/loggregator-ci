@@ -1,5 +1,5 @@
 <%
-bosh_releases = %w(loggregator loggregator-agent statsd-injector cf-syslog-drain leadership-election log-cache metrics-discovery system-metrics)
+bosh_releases = %w(loggregator loggregator-agent statsd-injector cf-syslog-drain log-cache metrics-discovery system-metrics)
 standalone_releases = %w(service-metrics service-logs)
 dev_envs = %w(kiwi banana papaya)
 
@@ -10,7 +10,6 @@ smoke_tests = {
   "log-cache" => cfd_smoke_tests,
   "statsd-injector" => cfd_smoke_tests,
   "cf-syslog-drain" => cfd_smoke_tests,
-  "leadership-election" => cfd_smoke_tests,
   "service-metrics" => ["service-metrics-smoke-tests"],
   "service-logs" => ["service-logs-smoke-tests"],
   "metrics-discovery" => cfd_smoke_tests,
@@ -547,7 +546,7 @@ jobs:
       OPS_FILES: |
         scale-to-one-az.yml
         use-compiled-releases.yml
-        use-compiled-releases-windows.yml
+        experimental/use-compiled-releases-windows.yml
         use-provided-router-certs.yml
         experimental/fast-deploy-with-downtime-and-danger.yml
 
@@ -569,8 +568,8 @@ jobs:
         log-cache/log-cache-syslog-server.yml
 
         loggregator-agent/cf-deployment-windows-addon.yml
-        loggregator-agent/cf-add-metrics-agent-windows.yml
-        loggregator-agent/cf-add-metrics-discovery-windows.yml
+        metrics-discovery/cf-add-metrics-agent-windows.yml
+        metrics-discovery/cf-add-metrics-discovery-windows.yml
         log-cache/log-cache-syslog-server-windows.yml
 
         denver/loggregator-clients.yml
