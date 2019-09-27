@@ -218,24 +218,43 @@ jobs:
 
           gem install papertrail
           echo "token: $API_TOKEN" > config.yml
-          log_count=$(papertrail -c config.yml -g $PAPERTRAIL_GROUP --min-time '59 seconds ago' --max-time 'now' | wc -l)
+          log_count=$(papertrail -c config.yml -g $PAPERTRAIL_GROUP --min-time '359 seconds ago' --max-time '60 seconds ago' | wc -l)
+          logs_per_minute=$((log_count / 5))
 
-          echo "posting to datadog. value = $log_count"
+          smoke_test_success=0
+          if [[ $logs_per_minute -ge 9900 ]]; then
+            smoke_test_success=1
+          fi
+
+          echo "posting to datadog. value = $logs_per_minute success = $smoke_test_success"
 
           payload=$(cat <<JSON
           {
-              "series": [{
-                  "metric": "smoke_test.syslog.log_count",
-                  "points": [[$(date +%s), $log_count]],
-                  "type": "gauge",
-                  "host": "$CF_SYSTEM_DOMAIN",
-                  "tags": [
-                      "drain_version:$DRAIN_VERSION",
-                      "drain_type:$DRAIN_TYPE"
-                  ]
-              }]
+              "series": [
+                {
+                    "metric": "smoke_test.syslog.log_count",
+                    "points": [[$(date +%s), $logs_per_minute]],
+                    "type": "gauge",
+                    "host": "$CF_SYSTEM_DOMAIN",
+                    "tags": [
+                        "drain_version:$DRAIN_VERSION",
+                        "drain_type:$DRAIN_TYPE"
+                    ]
+                },
+                {
+                    "metric": "smoke_test.syslog.success",
+                    "points": [[$(date +%s), $smoke_test_success]],
+                    "type": "gauge",
+                    "host": "$CF_SYSTEM_DOMAIN",
+                    "tags": [
+                        "drain_version:$DRAIN_VERSION",
+                        "drain_type:$DRAIN_TYPE"
+                    ]
+                }
+              ]
           }
-          JSON)
+          JSON
+          )
 
           datadog_url=$DATADOG_API_URL?api_key=$DATADOG_API_KEY
           curl -X POST -H "Content-type: application/json" -d "$payload" $datadog_url
@@ -285,7 +304,8 @@ jobs:
                   ]
               }]
           }
-          JSON)
+          JSON
+          )
 
           datadog_url=$DATADOG_API_URL?api_key=$DATADOG_API_KEY
           curl -X POST -H "Content-type: application/json" -d "$payload" $datadog_url
