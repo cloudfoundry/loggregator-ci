@@ -25,14 +25,9 @@ pushd releases
 
       if [[ ${commit_count_ignoring_bump_modules} -gt ${COMMITS_BEFORE_RELEASE} && ${published_release_timestamp} -lt ${two_weeks_ago_timestamp} ]]; then
         too_long_and_lots_of_commits+=(${rel})
-        continue
-      fi
-
-      if [[ ${commit_count_ignoring_bump_modules} -gt ${COMMITS_BEFORE_RELEASE} ]]; then
+      elif [[ ${commit_count_ignoring_bump_modules} -gt ${COMMITS_BEFORE_RELEASE} ]]; then
         lots_of_commit_since+=(${rel})
-      fi
-
-      if [[ ${published_release_timestamp} -lt ${two_weeks_ago_timestamp} ]]; then
+      elif [[ ${published_release_timestamp} -lt ${two_weeks_ago_timestamp} ]]; then
         too_long_ago+=(${rel})
       fi
     popd
