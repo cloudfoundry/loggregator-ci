@@ -23,7 +23,7 @@ pushd master-repo
     exit 1
   fi
 
-  old_tag=$(git describe --abbrev=0 --tags --match v*)
+  old_tag=$(git describe --abbrev=0 --tags --match v* || git rev-list --max-parents=0 HEAD)
   set +x
   BUMPER_RESULT=$( (bumper --commit-range ${old_tag}..HEAD --verbose --no-color) 2>&1 | grep -v "Bump modules")
   GIT_DIFF_JOBS=$(git diff ${old_tag}..HEAD -- jobs)
