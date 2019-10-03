@@ -53,7 +53,7 @@ pushd master-repo
 
   blobstore_provider=$(yq r config/final.yml blobstore.provider)
 
-  if [[$blobstore_provider eq "gcs"]]; then
+  if [[ $blobstore_provider == "gcs" ]]; then
     cat << EOF > config/private.yml
 ---
 blobstore:
