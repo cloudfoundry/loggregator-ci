@@ -54,8 +54,20 @@ printf '## GIT DIFF jobs directory\n```diff\n%s\n```\n\n' "${GIT_DIFF_JOBS}" >> 
 
 # build final release on BACKPORT_BRANCH
 pushd release-repo
+  blobstore_provider=$(yq r config/final.yml blobstore.provider)
+
+  if [[ $blobstore_provider == "gcs" ]]; then
+    cat << EOF > config/private.yml
+---
+blobstore:
+  options:
+    credentials_source: static
+    json_key: |
+      $(echo ${JSON_KEY})
+EOF
+  else
   # setup private.yml used by `create-release --final`
-  cat << EOF > config/private.yml
+    cat << EOF > config/private.yml
 ---
 blobstore:
   provider: s3
@@ -65,6 +77,7 @@ blobstore:
     secret_access_key: $S3_SECRET_KEY
     credentials_source: static
 EOF
+  fi
 
   # create final release and commit artifcats
   bosh -n create-release --sha2 --final \

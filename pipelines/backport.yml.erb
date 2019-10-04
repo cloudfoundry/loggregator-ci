@@ -13,6 +13,7 @@ releases = [
   Release.new("loggregator-agent", "v3.21.x", "loggregator-agent-release-blobs"),
   Release.new("service-metrics", "v1.12.x", "oss-service-metrics-release-blobs"),
   Release.new("cf-syslog-drain", "v7.x", "cf-syslog-drain-release-blobs"),
+  Release.new("log-cache", "v2.1.x", "log-cache-release-blobs"),
 ]
 %>
 
@@ -55,6 +56,7 @@ jobs:
     params:
       S3_ACCESS_KEY: {{s3-access-key-id}}
       S3_SECRET_KEY: {{s3-secret-access-key}}
+      JSON_KEY: {{gcp-service-account-key}}
       SSH_KEY: {{loggregator-key}}
       BLOBSTORE_BUCKET: <%= release.s3_bucket %>
       BRANCH_NAME: <%= release.backport_branch %>
