@@ -159,6 +159,7 @@ resources:
     branch: develop
     private_key: {{cf-loggregator-oauth-bot-key}}
     disable_ci_skip: true
+    clean_tags: true
 
 - name: <%= release.name %>-github-release-published
   type: github-release
