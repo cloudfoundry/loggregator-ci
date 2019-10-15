@@ -66,12 +66,12 @@ function query_metric_store() {
 function check_for_metrics_from_all_instances() {
   printf 'Checking for metrics from all instances\n\n'
   exit_code=0
-  prom_scraper_failures=$(query_metric_store 'sum(rate(failed_scrapes_total{source_id="prom_scraper"}[3m])) by (index)')
+  prom_scraper_metrics=$(query_metric_store 'sum(rate(failed_scrapes_total{source_id="prom_scraper"}[3m])) by (index)')
   instances=$(bosh -d cf instances --column=Instance --json | jq -r .Tables[0].Rows[].instance)
 
   missing_instances=()
   for instance in "${instances}"; do
-    instance_found=$(jq '.[] | select(.metric.index == "'"${instance##*/}"'")' <<< "${prom_scraper_failures}")
+    instance_found=$(jq '.[] | select(.metric.index == "'${instance##*/}'")' <<< "$prom_scraper_metrics")
     if [[ "$instance_found" -eq "null" && "$instance_found" -eq "" ]]; then
       missing_instances+=(${instance})
 
@@ -79,15 +79,17 @@ function check_for_metrics_from_all_instances() {
     fi
   done
 
-  printf '\Missing metrics for the following instances:\n'
-  printf '\t%s\n' "${missing_instances[@]}"
+  if [[ ${exit_code} -eq 1 ]]; then
+    printf '\Missing metrics for the following instances:\n'
+    printf '\t%s\n' "${missing_instances[@]}"
+  fi
 
   return ${exit_code}
 }
 
 function check_for_prom_scraper_failures() {
   printf 'Checking for prom scraper failures\n\n'
-  prom_scraper_failures=$(query_metric_store 'rate(failed_scrapes_total{source_id="prom_scraper"}[3m])) by (scrape_target_source_id) > 10')
+  prom_scraper_failures=$(query_metric_store 'sum(rate(failed_scrapes_total{source_id="prom_scraper"}[3m])) by (scrape_target_source_id) > 10')
 
   if [[ "$prom_scraper_failures" -ne "null" && "$prom_scraper_failures" -ne "[]" ]]; then
     printf '\nProm Scraper is failing to scrape the following\n'
