@@ -12,6 +12,7 @@ function contains() {
 }
 
 function check_for_expected_source_ids() {
+  printf 'Checking for expected source IDs\n\n'
   exit_code=0
 
   log_meta_output=$(curl --silent log-cache.${DOMAIN}/api/v1/meta -H "Authorization: $(cf oauth-token)")
@@ -63,14 +64,13 @@ function query_metric_store() {
 }
 
 function check_for_metrics_from_all_instances() {
-  source loggregator-ci/scripts/environment-targeting/target-cf.sh && target-cf
-
+  printf 'Checking for metrics from all instances\n\n'
   exit_code=0
   prom_scraper_failures=$(query_metric_store 'sum(rate(failed_scrapes_total{source_id="prom_scraper"}[3m])) by (index)')
   instances=$(bosh -d cf instances --column=Instance --json | jq -r .Tables[0].Rows[].instance)
 
   missing_instances=()
-  for instance in ${instances}; do
+  for instance in "${instances}"; do
     instance_found=$(jq '.[] | select(.metric.index == "'"${instance##*/}"'")' <<< "${prom_scraper_failures}")
     if [[ "$instance_found" -eq "null" && "$instance_found" -eq "" ]]; then
       missing_instances+=(${instance})
@@ -86,6 +86,7 @@ function check_for_metrics_from_all_instances() {
 }
 
 function check_for_prom_scraper_failures() {
+  printf 'Checking for prom scraper failures\n\n'
   prom_scraper_failures=$(query_metric_store 'rate(failed_scrapes_total{source_id="prom_scraper"}[3m])) by (scrape_target_source_id) > 10')
 
   if [[ "$prom_scraper_failures" -ne "null" && "$prom_scraper_failures" -ne "[]" ]]; then
