@@ -13,7 +13,7 @@ function contains() {
 
 function check_for_expected_source_ids() {
   printf 'Checking for expected source IDs\n\n'
-  exit_code=0
+  local exit_code=0
 
   log_meta_output=$(curl --silent log-cache.${DOMAIN}/api/v1/meta -H "Authorization: $(cf oauth-token)")
 
@@ -65,7 +65,7 @@ function query_metric_store() {
 
 function check_for_metrics_from_all_instances() {
   printf 'Checking for metrics from all instances\n\n'
-  exit_code=0
+  local exit_code=0
   prom_scraper_metrics=$(query_metric_store 'sum(rate(failed_scrapes_total{source_id="prom_scraper"}[3m])) by (index)')
   instances=$(bosh -d cf instances --column=Instance --json | jq -r .Tables[0].Rows[].instance)
 
