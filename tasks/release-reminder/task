@@ -15,6 +15,8 @@ too_long_and_lots_of_commits=()
 
 pushd releases
   for rel in $(ls) ; do
+    echo "checking $rel"
+
     published_tag=$(cat ${ci_root}/published-releases/${rel}/tag)
     pushd ${rel} > /dev/null
       commit_count=$(git log ${published_tag}..HEAD --pretty=oneline --abbrev-commit | wc -l)
