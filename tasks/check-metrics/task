@@ -11,54 +11,90 @@ function contains() {
   fi
 }
 
-log_meta_output=$(curl --silent log-cache.${DOMAIN}/api/v1/meta -H "Authorization: $(cf oauth-token)")
+function check_for_expected_source_ids() {
+  exit_code=0
 
-expected_source_ids=${STATIC_SOURCE_IDS}
-for j in releases/**/jobs/*; do
-  job_name=$(basename $j)
-  if ! contains "${JOB_BLACKLIST}" ${job_name} && [[ $j != *"windows"* ]] && [[ $j != *"fake"* ]]; then
-    expected_source_ids+=(${job_name})
+  log_meta_output=$(curl --silent log-cache.${DOMAIN}/api/v1/meta -H "Authorization: $(cf oauth-token)")
+
+  expected_source_ids=${STATIC_SOURCE_IDS}
+  for j in releases/**/jobs/*; do
+    job_name=$(basename $j)
+    if ! contains "${JOB_BLACKLIST}" ${job_name} && [[ $j != *"windows"* ]] && [[ $j != *"fake"* ]]; then
+      expected_source_ids+=(${job_name})
+    fi
+  done
+
+  found_source_ids=()
+  missing_source_ids=()
+  five_minutes_ago_seconds=$(date --date '-5 min' +%s)
+
+  set +e
+  for source_id in ${expected_source_ids[@]}; do
+    source_id_without_loggr_prefix=${source_id#loggr-}
+    source_id_regex="^(?:loggr-)?${source_id_without_loggr_prefix//-/'[-_]'}$"
+    source_id_last_emitted_seconds=$(echo ${log_meta_output} | jq -r '.meta | to_entries | map(select(.key | test("'${source_id_regex}'")).value) | .[].newestTimestamp' | cut -b1-10)
+    if [[ ${source_id_last_emitted_seconds} -lt ${five_minutes_ago_seconds} ]]; then
+      exit_code=1
+      missing_source_ids+=(${source_id})
+    else
+      found_source_ids+=(${source_id})
+    fi
+  done
+
+  if [[ ${exit_code} -eq 1 ]]; then
+    echo ${log_meta_output} | jq .
   fi
-done
 
-exit_code=0
-found_source_ids=()
-missing_source_ids=()
-five_minutes_ago_seconds=$(date --date '-5 min' +%s)
+  printf '\nFound metrics for the following source ids:\n'
+  printf '\t%s\n' "${found_source_ids[@]}"
 
-set +e
-for source_id in ${expected_source_ids[@]}; do
-  source_id_without_loggr_prefix=${source_id#loggr-}
-  source_id_regex="^(?:loggr-)?${source_id_without_loggr_prefix//-/'[-_]'}$"
-  source_id_last_emitted_seconds=$(echo ${log_meta_output} | jq -r '.meta | to_entries | map(select(.key | test("'${source_id_regex}'")).value) | .[].newestTimestamp' | cut -b1-10)
-  if [[ ${source_id_last_emitted_seconds} -lt ${five_minutes_ago_seconds} ]]; then
-    exit_code=1
-    missing_source_ids+=(${source_id})
-  else
-    found_source_ids+=(${source_id})
+  printf '\nNo metrics were found for the following source ids:\n'
+  printf '\t%s\n' "${missing_source_ids[@]}"
+
+  return ${exit_code}
+}
+
+function query_metric_store() {
+  query=$1
+  curl --silent -G \
+    https://metric-store.${DOMAIN}/api/v1/query \
+    --data-urlencode 'query='"$query"'' \
+    -H "Authorization: $(cf oauth-token)" | jq .data.result
+}
+
+function check_for_metrics_from_all_instances() {
+  source loggregator-ci/scripts/environment-targeting/target-cf.sh && target-cf
+
+  exit_code=0
+  prom_scraper_failures=$(query_metric_store 'sum(rate(failed_scrapes_total{source_id="prom_scraper"}[3m])) by (index)')
+  instances=$(bosh -d cf instances --column=Instance --json | jq -r .Tables[0].Rows[].instance)
+
+  missing_instances=()
+  for instance in ${instances}; do
+    instance_found=$(jq '.[] | select(.metric.index == "'"${instance##*/}"'")' <<< "${prom_scraper_failures}")
+    if [[ "$instance_found" -eq "null" && "$instance_found" -eq "" ]]; then
+      missing_instances+=(${instance})
+
+      exit_code=1
+    fi
+  done
+
+  printf '\Missing metrics for the following instances:\n'
+  printf '\t%s\n' "${missing_instances[@]}"
+
+  return ${exit_code}
+}
+
+function check_for_prom_scraper_failures() {
+  prom_scraper_failures=$(query_metric_store 'rate(failed_scrapes_total{source_id="prom_scraper"}[3m])) by (scrape_target_source_id) > 10')
+
+  if [[ "$prom_scraper_failures" -ne "null" && "$prom_scraper_failures" -ne "[]" ]]; then
+    printf '\nProm Scraper is failing to scrape the following\n'
+    echo ${prom_scraper_failures}
+
+    return 1
   fi
-done
+}
 
-if [[ ${exit_code} -eq 1 ]]; then
-  echo ${log_meta_output} | jq .
-fi
-
-printf '\nFound metrics for the following source ids:\n'
-printf '\t%s\n' "${found_source_ids[@]}"
-
-printf '\nNo metrics were found for the following source ids:\n'
-printf '\t%s\n' "${missing_source_ids[@]}"
-
-prom_scraper_failures=$(curl --silent -G \
-  https://metric-store.${DOMAIN}/api/v1/query \
-  --data-urlencode 'query=sum(rate(failed_scrapes_total{source_id="prom_scraper"}[3m])) by (scrape_target_source_id) > 10' \
-  -H "Authorization: $(cf oauth-token)" | jq .data.result)
-
-if [[ "$prom_scraper_failures" -ne "null" && "$prom_scraper_failures" -ne "[]" ]]; then
-  exit_code=1
-
-  printf '\nProm Scraper is failing to scrape the following\n'
-  echo ${prom_scraper_failures}
-fi
-
+exit_code=$(check_for_expected_source_ids)+$(check_for_metrics_from_all_instances)+$(check_for_prom_scraper_failures)
 exit ${exit_code}
