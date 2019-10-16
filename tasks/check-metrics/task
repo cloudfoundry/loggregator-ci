@@ -46,15 +46,15 @@ function check_for_expected_source_ids() {
   done
   set -e
 
-  if [[ ${exit_code} -eq 1 ]]; then
-    echo ${log_meta_output} | jq .
-  fi
-
   printf '\nFound metrics for the following source ids:\n'
   printf '\t%s\n' "${found_source_ids[@]}"
 
-  printf '\nNo metrics were found for the following source ids:\n'
-  printf '\t%s\n' "${missing_source_ids[@]}"
+  if [[ ${exit_code} -eq 1 ]]; then
+    echo ${log_meta_output} | jq .
+
+    printf '\nNo metrics were found for the following source ids:\n'
+    printf '\t%s\n' "${missing_source_ids[@]}"
+  fi
 
   return ${exit_code}
 }
