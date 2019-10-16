@@ -106,12 +106,12 @@ function check_for_prom_scraper_failures() {
 
 exit_code=0
 check_for_expected_source_ids
-let "exit_code+=$?"
+exit_code=$((exit_code+ $?))
 
 check_for_metrics_from_all_instances
-let "exit_code+=$?"
+exit_code=$((exit_code+ $?))
 
 check_for_prom_scraper_failures
-let "exit_code+=$?"
+exit_code=$((exit_code+ $?))
 
 exit ${exit_code}
