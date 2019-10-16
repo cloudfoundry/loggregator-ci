@@ -44,6 +44,7 @@ function check_for_expected_source_ids() {
       found_source_ids+=(${source_id})
     fi
   done
+  set -e
 
   if [[ ${exit_code} -eq 1 ]]; then
     echo ${log_meta_output} | jq .
