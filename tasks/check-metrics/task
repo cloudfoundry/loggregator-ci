@@ -70,13 +70,13 @@ function query_metric_store() {
 function check_for_metrics_from_all_instances() {
   printf 'Checking for metrics from all instances\n\n'
   local exit_code=0
-  prom_scraper_metrics=$(query_metric_store 'sum(rate(failed_scrapes_total{source_id="prom_scraper"}[3m])) by (index)')
+  prom_scraper_metrics=$(query_metric_store 'sum(failed_scrapes_total{source_id="prom_scraper"}) by (index)')
   instances=$(bosh -d cf instances --column=Instance --json | jq -r .Tables[0].Rows[].instance)
 
   missing_instances=()
   for instance in "${instances}"; do
-    instance_found=$(jq '.[] | select(.metric.index == "'${instance##*/}'")' <<< "$prom_scraper_metrics")
-    if [[ "$instance_found" -eq "null" && "$instance_found" -eq "" ]]; then
+    instance_found=$(jq '.[] | select(.metric.index == "'${instance##*/}'") | length' <<< "$prom_scraper_metrics")
+    if [[ "$instance_found" -gt 0 ]]; then
       missing_instances+=(${instance})
 
       exit_code=1
