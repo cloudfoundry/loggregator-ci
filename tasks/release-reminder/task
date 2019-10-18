@@ -39,7 +39,7 @@ popd
 
 if [[ ${#too_long_and_lots_of_commits[@]} -gt 0 ]]; then
   printf '\n⏱😬 *It has been too long and there have been lots of commits since releases were cut for* 😡⏱\n' >> slack/message.txt
-  printf '\t\t`%s`\n' "${too_long_ago[@]}" >> slack/message.txt
+  printf '\t\t`%s`\n' "${too_long_and_lots_of_commits[@]}" >> slack/message.txt
 fi
 
 if [[ ${#too_long_ago[@]} -gt 0 ]]; then
