@@ -3,11 +3,13 @@ bosh_releases = %w(loggregator loggregator-agent statsd-injector log-cache metri
 standalone_releases = %w(service-metrics service-logs)
 dev_envs = %w(kiwi banana papaya)
 
-cfd_smoke_tests = %w(cats cfar-lats lcats test-metrics-agent)
+cfd_smoke_tests = %w(cats cfar-lats test-metrics-agent)
+log_cache_smoke_tests = %w(cats cfar-lats lcats test-metrics-agent)
+
 smoke_tests = {
   "loggregator" => cfd_smoke_tests,
   "loggregator-agent" => cfd_smoke_tests,
-  "log-cache" => cfd_smoke_tests,
+  "log-cache" => log_cache_smoke_tests,
   "statsd-injector" => cfd_smoke_tests,
   "service-metrics" => ["service-metrics-smoke-tests"],
   "service-logs" => ["service-logs-smoke-tests"],
@@ -83,6 +85,9 @@ groups:
   - test-releases-can-be-exported
   - <%= release %>-promotion
   - <%= release %>-master-promotion
+  <% if release == "log-cache" %>
+  - lcats
+  <% end %>
 <% end %>
 
 <% standalone_releases.each do |release| %>
@@ -791,11 +796,9 @@ jobs:
   - bosh-lcats
   plan:
   - in_parallel:
-    <% bosh_releases.each do |release| %>
-    - get: <%= release %>-release
+    - get: log-cache-release
       trigger: true
       passed: ["cf-deploy"]
-    <% end %>
     - get: deployments-loggregator
     - get: loggregator-ci
     - get: log-cache-ci
@@ -864,7 +867,11 @@ jobs:
       <% bosh_releases.each do |release| %>
       - get: <%= release %>-release
         trigger: true
+      <% if release == "log-cache" %>
         passed: ["cats", "cfar-lats", "lcats"]
+      <% else %>
+        passed: ["cats", "cfar-lats"]
+      <% end %>
       <% end %>
     - in_parallel:
       <% bosh_releases.each do |release| %>
