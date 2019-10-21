@@ -25,8 +25,8 @@ releases = [
 groups:
 - name: all
   jobs:
-  - bumper-check
   <% releases.sort_by { |release| release.name }.each do |release| %>
+  - <%= release.name %>-bumper-check
   - <%= release.name %>-cut-patch
   - <%= release.name %>-cut-minor
   - <%= release.name %>-cut-major
@@ -34,15 +34,16 @@ groups:
   - <%= release.name %>-merge-to-develop
   <% end %>
 
-  <% releases.sort_by { |release| release.name }.each do |release| %>
+<% releases.sort_by { |release| release.name }.each do |release| %>
 - name: <%= release.name %>
   jobs:
+  - <%= release.name %>-bumper-check
   - <%= release.name %>-cut-patch
   - <%= release.name %>-cut-minor
   - <%= release.name %>-cut-major
   - <%= release.name %>-create-final-release
   - <%= release.name %>-merge-to-develop
-  <% end %>
+<% end %>
 
 resources:
 - name: loggregator-ci
@@ -101,46 +102,24 @@ resources:
     tag: latest
 
 jobs:
-- name: bumper-check
+<% releases.each do |release| %>
+- name: <%= release.name %>-bumper-check
   serial: true
   plan:
   - in_parallel:
     - get: loggregator-ci
     - get: cf-deployment-concourse-tasks-image
-    <% releases.each do |release| %>
-    - get: <%= release.name %>-release
-      resource: <%= release.name %>-release-master
+    - get: <%= release.name %>-release-master
       trigger: true
     - get: <%= release.name %>-github-release-published
-    <% end %>
-  - task: move-releases
-    image: cf-deployment-concourse-tasks-image
-    config:
-      platform: linux
-      inputs:
-      <% releases.each do |release| %>
-      - name: <%= release.name %>-release
-        path: input-releases/<%= release.name %>-release
-      - name: <%= release.name %>-github-release-published
-        path: input-github-releases/<%= release.name %>-release
-      <% end %>
-      outputs:
-      - name: releases
-      - name: published-releases
-      run:
-        path: /bin/bash
-        args:
-        - "-c"
-        - |
-          set -e
-          cp -a input-releases/* releases
-          cp -a input-github-releases/* published-releases
   - task: diff-master-last-release
+    input_mapping:
+      release: <%= release.name %>-release-master
+      published-release: <%= release.name %>-github-release-published
     file: loggregator-ci/tasks/bumper-check/task.yml
     params:
       SSH_KEY: {{loggregator-key}}
 
-<% releases.each do |release| %>
 - name: <%= release.name %>-cut-patch
   plan:
   - put: <%= release.name %>-version

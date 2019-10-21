@@ -7,8 +7,8 @@ image_resource:
 
 inputs:
 - name: loggregator-ci
-- name: releases
-- name: published-releases
+- name: release
+- name: published-release
 
 outputs:
 - name: slack

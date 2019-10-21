@@ -9,14 +9,9 @@ mkdir -p ~/.ssh
 echo -e "Host github.com\n\tStrictHostKeyChecking no\n" >> ~/.ssh/config
 ssh-add <(echo "$SSH_KEY")
 
-pushd releases
-  for rel in $(ls) ; do
-    echo "checking $rel"
+published_tag=$(cat ${ci_root}/published-release/tag)
 
-    published_tag=$(cat ${ci_root}/published-releases/${rel}/tag)
-    pushd ${rel} > /dev/null
-      git fetch --tags
-      bumper --commit-range ${published_tag}..HEAD --verbose
-    popd
-  done
+pushd release
+  git fetch --tags
+  bumper --commit-range ${published_tag}..HEAD --verbose
 popd
