@@ -738,6 +738,11 @@ jobs:
     - get: bbl-state
       resource: deployments-loggregator
     - get: cf-deployment-concourse-tasks-image
+    <% bosh_releases.each do |release| %>
+    - get: <%= release %>-release
+      trigger: true
+      passed: ["cf-deploy"]
+    <% end %>
   - task: check-syslog-agent-to-log-cache
     file: loggregator-ci/tasks/check-metrics/task.yml
     params:
