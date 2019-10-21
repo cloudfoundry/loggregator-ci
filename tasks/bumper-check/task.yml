@@ -10,9 +10,6 @@ inputs:
 - name: release
 - name: published-release
 
-outputs:
-- name: slack
-
 run:
   path: loggregator-ci/tasks/bumper-check/task
 
