@@ -39,6 +39,7 @@ groups:
   - cats
   - lcats
   - metrics-smoke-test
+  - syslog-smoke-test
   - test-releases-can-be-exported
   - test-metrics-agent
   - upload-releases-to-dev-envs
@@ -508,6 +509,7 @@ jobs:
   - bosh-export-releases
   - bosh-metrics-agent
   - bosh-metrics-test
+  - bosh-syslog-test
   plan:
   - in_parallel:
     - get: loggregator-ci
@@ -725,7 +727,18 @@ jobs:
         log-cache-blackbox
         log-cache-nozzle
         statsd_injector
-  - task: check-syslog-agent
+
+- name: syslog-smoke-test
+  serial: true
+  serial_groups:
+  - bosh-syslog-test
+  plan:
+  - in_parallel:
+    - get: loggregator-ci
+    - get: bbl-state
+      resource: deployments-loggregator
+    - get: cf-deployment-concourse-tasks-image
+  - task: check-syslog-agent-to-log-cache
     file: loggregator-ci/tasks/check-metrics/task.yml
     params:
       CF_API: https://api.((acceptance_system_domain))

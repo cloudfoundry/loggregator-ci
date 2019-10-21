@@ -87,8 +87,10 @@ function check_for_metrics_from_all_instances() {
     printf '\nMissing metrics for the following instances:\n'
     printf '\t%s\n' "${missing_instances[@]}"
   else
-    echo 'Found metrics for all instances'
+    echo 'Found metrics for all instances from ${METRIC_SOURCE}'
   fi
+
+  echo ${prom_scraper_metrics}
 
   return ${exit_code}
 }

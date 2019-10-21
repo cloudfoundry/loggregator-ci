@@ -10,6 +10,7 @@ inputs:
 - name: loggregator-ci
 - name: bbl-state
 - name: releases
+  optional: true
 
 run:
   path: loggregator-ci/tasks/check-metrics/task
