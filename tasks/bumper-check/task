@@ -13,5 +13,10 @@ published_tag=$(cat ${ci_root}/published-release/tag)
 
 pushd release
   git fetch --tags
+
+  echo "############### BUMPER ###############"
   bumper --commit-range ${published_tag}..HEAD --verbose
+
+  echo "############### JOBS DIFF ###############"
+  git diff ${published_tag}..HEAD -- jobs
 popd

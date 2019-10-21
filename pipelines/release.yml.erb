@@ -122,14 +122,20 @@ jobs:
 
 - name: <%= release.name %>-cut-patch
   plan:
+  - get: <%= release.name %>-release-master
+    passed: [<%= release.name %>-bumper-check]
   - put: <%= release.name %>-version
     params: {bump: patch}
 - name: <%= release.name %>-cut-minor
   plan:
+  - get: <%= release.name %>-release-master
+    passed: [<%= release.name %>-bumper-check]
   - put: <%= release.name %>-version
     params: {bump: minor}
 - name: <%= release.name %>-cut-major
   plan:
+  - get: <%= release.name %>-release-master
+    passed: [<%= release.name %>-bumper-check]
   - put: <%= release.name %>-version
     params: {bump: major}
 
@@ -138,6 +144,7 @@ jobs:
   plan:
   - in_parallel:
     - get: <%= release.name %>-release-master
+      passed: [<%= release.name %>-bumper-check]
     - get: loggregator-ci
     - get: <%= release.name %>-version
       trigger: true
