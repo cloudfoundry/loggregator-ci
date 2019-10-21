@@ -59,10 +59,10 @@ function check_for_expected_source_ids() {
   return ${exit_code}
 }
 
-function query_metric_store() {
+function query_metrics() {
   query=$1
   curl --silent -G \
-    https://metric-store.${DOMAIN}/api/v1/query \
+    ${METRIC_SOURCE}/api/v1/query \
     --data-urlencode 'query='"$query"'' \
     -H "Authorization: $(cf oauth-token)" | jq .data.result
 }
@@ -70,7 +70,7 @@ function query_metric_store() {
 function check_for_metrics_from_all_instances() {
   printf 'Checking for metrics from all instances\n\n'
   local exit_code=0
-  prom_scraper_metrics=$(query_metric_store 'sum(failed_scrapes_total{source_id="prom_scraper"}) by (index)')
+  prom_scraper_metrics=$(query_metrics 'sum(failed_scrapes_total{source_id="prom_scraper"}) by (index)')
   instances=$(bosh -d cf instances --column=Instance --json | jq -r .Tables[0].Rows[].instance)
 
   missing_instances=()
@@ -95,7 +95,7 @@ function check_for_metrics_from_all_instances() {
 
 function check_for_prom_scraper_failures() {
   printf 'Checking for prom scraper failures\n\n'
-  prom_scraper_failures=$(query_metric_store 'sum(rate(failed_scrapes_total{source_id="prom_scraper"}[3m])) by (scrape_target_source_id) > 10')
+  prom_scraper_failures=$(query_metrics 'sum(rate(failed_scrapes_total{source_id="prom_scraper"}[3m])) by (scrape_target_source_id) > 10')
 
   failures_length=$(jq '. | length' <<< ${prom_scraper_failures})
   if [[ "$failures_length" -gt 0 ]]; then
@@ -109,13 +109,16 @@ function check_for_prom_scraper_failures() {
 }
 
 exit_code=0
-check_for_expected_source_ids
-exit_code=$((exit_code+ $?))
+
+if [[ "$INSTANCE_CHECK_ONLY" == "false" ]]; then
+  check_for_expected_source_ids
+  exit_code=$((exit_code+ $?))
+
+  check_for_prom_scraper_failures
+  exit_code=$((exit_code+ $?))
+fi
 
 check_for_metrics_from_all_instances
-exit_code=$((exit_code+ $?))
-
-check_for_prom_scraper_failures
 exit_code=$((exit_code+ $?))
 
 exit ${exit_code}

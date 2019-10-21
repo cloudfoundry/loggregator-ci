@@ -562,9 +562,6 @@ jobs:
         windows1803-cell.yml
         use-latest-windows1803-stemcell.yml
 
-        windows2019-cell.yml
-        use-latest-windows2019-stemcell.yml
-
         experimental/add-syslog-agent-windows1803.yml
         system-metrics/system-metrics-agent-windows.yml
 
@@ -716,6 +713,7 @@ jobs:
       ORG: system
       SPACE: blackbox-testing
       BBL_STATE_DIR: ((acceptance_bbl_state_dir))
+      METRIC_SOURCE: https://metric-store.((acceptance_system_domain))
       STATIC_SOURCE_IDS: |
         metron
         traffic_controller
@@ -727,6 +725,17 @@ jobs:
         log-cache-blackbox
         log-cache-nozzle
         statsd_injector
+  - task: check-syslog-agent
+    file: loggregator-ci/tasks/check-metrics/task.yml
+    params:
+      CF_API: https://api.((acceptance_system_domain))
+      DOMAIN: ((acceptance_system_domain))
+      USERNAME: admin
+      ORG: system
+      SPACE: blackbox-testing
+      BBL_STATE_DIR: ((acceptance_bbl_state_dir))
+      METRIC_SOURCE: https://log-cache.((acceptance_system_domain))
+      INSTANCE_CHECK_ONLY: true
 
 - name: cats
   serial: true
