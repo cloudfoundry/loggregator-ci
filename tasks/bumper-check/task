@@ -19,7 +19,7 @@ pushd release > /dev/null
   bumper --commit-range ${published_tag}..HEAD --verbose 2> >(grep -v "Bump modules")
 
   bump_module_count=$(bumper --commit-range ${published_tag}..HEAD --verbose 2> >(grep "Bump modules") | wc -l)
-  printf '\n There are ${bump_module_count} commits\n\n\n'
+  echo "There are ${bump_module_count} commits"
 
   printf '\n\n\n############### JOBS DIFF ###############\n\n\n'
   git diff -w ${published_tag}..HEAD -- jobs
