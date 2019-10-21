@@ -15,8 +15,11 @@ published_tag=$(cat ${ci_root}/published-release/tag)
 pushd release > /dev/null
   git fetch --tags > /dev/null 2>&1
 
-  printf '\n\n\n############### BUMPER ###############\n\n\n'
-  bumper --commit-range ${published_tag}..HEAD --verbose
+  printf '\n\n\n############### BUMPER (no Bump modules) ###############\n\n\n'
+  bumper --commit-range ${published_tag}..HEAD --verbose 2> >(grep -v "Bump modules")
+
+  printf '\n\n\n############### BUMPER (only Bump modules) ###############\n\n\n'
+  bumper --commit-range ${published_tag}..HEAD --verbose 2> >(grep "Bump modules")
 
   printf '\n\n\n############### JOBS DIFF ###############\n\n\n'
   git diff ${published_tag}..HEAD -- jobs
