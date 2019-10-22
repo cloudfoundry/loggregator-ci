@@ -71,7 +71,7 @@ function check_for_metrics_from_all_instances() {
   printf 'Checking for metrics from all instances\n\n'
   local exit_code=0
   prom_scraper_metrics=$(query_metrics 'sum(failed_scrapes_total{source_id="prom_scraper"}) by (index)')
-  instances=$(bosh -d cf instances --column=Instance --json | jq -r .Tables[0].Rows[].instance)
+  instances=$(bosh -d cf vms --column=Instance --json | jq -r .Tables[0].Rows[].instance)
 
   missing_instances=()
 
