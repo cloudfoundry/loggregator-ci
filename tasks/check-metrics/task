@@ -70,14 +70,14 @@ function query_metrics() {
 function check_for_metrics_from_all_instances() {
   printf 'Checking for metrics from all instances\n\n'
   local exit_code=0
-  prom_scraper_metrics=$(query_metrics 'sum(failed_scrapes_total{source_id="prom_scraper"}) by (index)')
+  system_metrics_result=$(query_metrics 'sum(system_mem_percent{source_id="system_metrics_agent"}) by (index)')
   instances=$(bosh -d cf vms --column=Instance --json | jq -r .Tables[0].Rows[].instance)
 
   missing_instances=()
 
   set +e
   for instance in ${instances}; do
-    jq -e '.[] | select(.metric.index == "'${instance##*/}'")' <<< "$prom_scraper_metrics" > /dev/null
+    jq -e '.[] | select(.metric.index == "'${instance##*/}'")' <<< "$system_metrics_result" > /dev/null
     instance_found=$?
 
     if [[ ${instance_found} -ne 0 ]]  ; then
@@ -93,7 +93,7 @@ function check_for_metrics_from_all_instances() {
     printf '\t%s\n' "${missing_instances[@]}"
   else
     echo "Found metrics for all instances from ${METRIC_SOURCE}"
-    jq -r . <<< ${prom_scraper_metrics}
+    jq -r . <<< ${system_metrics_result}
   fi
 
   return ${exit_code}
