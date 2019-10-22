@@ -74,13 +74,19 @@ function check_for_metrics_from_all_instances() {
   instances=$(bosh -d cf instances --column=Instance --json | jq -r .Tables[0].Rows[].instance)
 
   missing_instances=()
-  for instance in "${instances}"; do
-    if ! jq -e '.[] | select(.metric.index == "'${instance##*/}'")' <<< "$prom_scraper_metrics" ; then
+
+  set +e
+  for instance in ${instances}; do
+    jq -e '.[] | select(.metric.index == "'${instance##*/}'")' /tmp/instances.json > /dev/null
+    instance_found=$?
+
+    if [[ ${instance_found} -ne 0 ]]  ; then
       missing_instances+=(${instance})
 
       exit_code=1
     fi
   done
+  set -e
 
   if [[ ${exit_code} -eq 1 ]]; then
     printf '\nMissing metrics for the following instances:\n'
