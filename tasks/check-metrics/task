@@ -77,7 +77,7 @@ function check_for_metrics_from_all_instances() {
 
   set +e
   for instance in ${instances}; do
-    jq -e '.[] | select(.metric.index == "'${instance##*/}'")' /tmp/instances.json > /dev/null
+    jq -e '.[] | select(.metric.index == "'${instance##*/}'")' <<< "$prom_scraper_metrics" > /dev/null
     instance_found=$?
 
     if [[ ${instance_found} -ne 0 ]]  ; then
