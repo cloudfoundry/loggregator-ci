@@ -75,8 +75,7 @@ function check_for_metrics_from_all_instances() {
 
   missing_instances=()
   for instance in "${instances}"; do
-    instance_found=$(jq '.[] | select(.metric.index == "'${instance##*/}'") | length' <<< "$prom_scraper_metrics")
-    if [[ "$instance_found" -eq 0 ]]; then
+    if jq -e '.[] | select(.metric.index == "'${instance##*/}'") | length' <<< "$prom_scraper_metrics" ; then
       missing_instances+=(${instance})
 
       exit_code=1
