@@ -93,9 +93,8 @@ function check_for_metrics_from_all_instances() {
     printf '\t%s\n' "${missing_instances[@]}"
   else
     echo "Found metrics for all instances from ${METRIC_SOURCE}"
+    jq -r . <<< ${prom_scraper_metrics}
   fi
-
-  jq -r . <<< ${prom_scraper_metrics}
 
   return ${exit_code}
 }
