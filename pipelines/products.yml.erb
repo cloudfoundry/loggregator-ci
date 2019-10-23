@@ -559,7 +559,7 @@ jobs:
         experimental/add-metric-store.yml
         denver/add-grafana.yml
         experimental/add-syslog-agent.yml
-        system-metrics/add-system-metrics.yml
+        experimental/add-system-metrics-agent.yml
 
         windows1803-cell.yml
         use-latest-windows1803-stemcell.yml
@@ -569,19 +569,18 @@ jobs:
         use-latest-windows2019-stemcell.yml
 
         experimental/add-syslog-agent-windows1803.yml
-        system-metrics/system-metrics-agent-windows.yml
+        experimental/add-system-metrics-agent-windows1803.yml
 
         loggregator/loggregator-add-metrics-certs.yml
         metrics-discovery/cf-add-metrics-discovery.yml
         metrics-discovery/cf-add-metrics-agent.yml
 
-        log-cache/remove-scheduler.yml
-        log-cache/log-cache-syslog-server.yml
+        experimental/use-logcache-syslog-ingress.yml
 
         loggregator-agent/cf-deployment-windows-addon.yml
         metrics-discovery/cf-add-metrics-agent-windows.yml
         metrics-discovery/cf-add-metrics-discovery-windows.yml
-        log-cache/log-cache-syslog-server-windows.yml
+        experimental/use-logcache-syslog-ingress-windows1803.yml
 
         denver/add-grafana.yml
         denver/loggregator-clients.yml
@@ -633,29 +632,29 @@ jobs:
       trigger: true
       passed: ["cf-deploy"]
     <% end %>
-  - task: export-releases
+  - task: export-releases-xenial
     file: concourse-tasks/release/export/task.yml
     params:
       BBL_STATE_DIR: ((acceptance_bbl_state_dir))
       RELEASE_NAMES: |
         <% (bosh_releases + standalone_releases).each do |release| %><%= release %>
         <% end %>
-  - task: show-releases
-    config:
-      platform: linux
-      image_resource:
-        type: docker-image
-        source:
-          repository: loggregator/base
-      inputs:
-      - name: exported-releases
-      run:
-        path: /bin/bash
-        args:
-        - "-c"
-        - |
-          set -exuo pipefail
-          ls exported-releases
+  - task: export-releases-windows1803
+    file: concourse-tasks/release/export/task.yml
+    params:
+      STEMCELL_OS: windows1803
+      BBL_STATE_DIR: ((acceptance_bbl_state_dir))
+      RELEASE_NAMES: |
+        <% (bosh_releases + standalone_releases).each do |release| %><%= release %>
+        <% end %>
+  - task: export-releases-windows2019
+    file: concourse-tasks/release/export/task.yml
+    params:
+      STEMCELL_OS: windows2019
+      BBL_STATE_DIR: ((acceptance_bbl_state_dir))
+      RELEASE_NAMES: |
+        <% (bosh_releases + standalone_releases).each do |release| %><%= release %>
+        <% end %>
 
 - name: test-metrics-agent
   serial: true
