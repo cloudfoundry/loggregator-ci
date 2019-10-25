@@ -3,8 +3,8 @@ set -eo pipefail
 
 function set_globals {
     pipeline=$1
-    TARGET="${TARGET:-loggr}"
-    FLY_URL="https://loggr.ci.cf-app.com"
+    TARGET="${TARGET:-loggregator}"
+    FLY_URL="https://loggregator.ci.cf-app.com"
 }
 
 function validate {
