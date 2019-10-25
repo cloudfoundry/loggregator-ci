@@ -128,7 +128,7 @@ resources:
   type: git
   source:
     uri: https://github.com/cloudfoundry/cf-deployment
-    tag_filter: v*
+    branch: loggr-windows2019
     private_key: ((loggregator-key))
 
 - name: cf-deployment-concourse-tasks
@@ -561,26 +561,28 @@ jobs:
         experimental/add-syslog-agent.yml
         experimental/add-system-metrics-agent.yml
 
-        windows1803-cell.yml
-        use-latest-windows1803-stemcell.yml
-
-        windows2019-cell.yml
-        use-online-windows2019fs.yml
-        use-latest-windows2019-stemcell.yml
-
-        experimental/add-syslog-agent-windows1803.yml
-        experimental/add-system-metrics-agent-windows1803.yml
-
         loggregator/loggregator-add-metrics-certs.yml
         metrics-discovery/cf-add-metrics-discovery.yml
         metrics-discovery/cf-add-metrics-agent.yml
 
         experimental/use-logcache-syslog-ingress.yml
 
+        windows1803-cell.yml
+        use-latest-windows1803-stemcell.yml
+        experimental/add-syslog-agent-windows1803.yml
+        experimental/add-system-metrics-agent-windows1803.yml
+        experimental/use-logcache-syslog-ingress-windows1803.yml
+
+        windows2019-cell.yml
+        use-online-windows2019fs.yml
+        use-latest-windows2019-stemcell.yml
+        experimental/add-syslog-agent-windows2019.yml
+        experimental/add-system-metrics-agent-windows2019.yml
+        experimental/use-logcache-syslog-ingress-windows2019.yml
+
         loggregator-agent/cf-deployment-windows-addon.yml
         metrics-discovery/cf-add-metrics-agent-windows.yml
         metrics-discovery/cf-add-metrics-discovery-windows.yml
-        experimental/use-logcache-syslog-ingress-windows1803.yml
 
         denver/add-grafana.yml
         denver/loggregator-clients.yml
@@ -620,6 +622,7 @@ jobs:
   plan:
   - in_parallel:
     - get: concourse-tasks
+    - get: cf-deployment-concourse-tasks-image
     - get: bbl-state
       resource: deployments-loggregator
     <% standalone_releases.each do |release| %>
@@ -632,29 +635,52 @@ jobs:
       trigger: true
       passed: ["cf-deploy"]
     <% end %>
-  - task: export-releases-xenial
-    file: concourse-tasks/release/export/task.yml
-    params:
-      BBL_STATE_DIR: ((acceptance_bbl_state_dir))
-      RELEASE_NAMES: |
-        <% (bosh_releases + standalone_releases).each do |release| %><%= release %>
-        <% end %>
-  - task: export-releases-windows1803
-    file: concourse-tasks/release/export/task.yml
-    params:
-      STEMCELL_OS: windows1803
-      BBL_STATE_DIR: ((acceptance_bbl_state_dir))
-      RELEASE_NAMES: |
-        <% (bosh_releases + standalone_releases).each do |release| %><%= release %>
-        <% end %>
-  - task: export-releases-windows2019
-    file: concourse-tasks/release/export/task.yml
-    params:
-      STEMCELL_OS: windows2019
-      BBL_STATE_DIR: ((acceptance_bbl_state_dir))
-      RELEASE_NAMES: |
-        <% (bosh_releases + standalone_releases).each do |release| %><%= release %>
-        <% end %>
+  - do:
+    - task: export-releases-xenial
+      file: concourse-tasks/release/export/task.yml
+      params:
+        BBL_STATE_DIR: ((acceptance_bbl_state_dir))
+        RELEASE_NAMES: |
+          <% (bosh_releases + standalone_releases).each do |release| %><%= release %>
+          <% end %>
+    - task: export-releases-windows1803
+      file: concourse-tasks/release/export/task.yml
+      params:
+        STEMCELL_OS: windows1803
+        BBL_STATE_DIR: ((acceptance_bbl_state_dir))
+        RELEASE_NAMES: |
+          <% run_windows_tests.keys.each do |release| %><%= release %>
+          <% end %>
+    - task: export-releases-windows2019
+      file: concourse-tasks/release/export/task.yml
+      params:
+        STEMCELL_OS: windows2019
+        BBL_STATE_DIR: ((acceptance_bbl_state_dir))
+        RELEASE_NAMES: |
+          <% run_windows_tests.keys.each do |release| %><%= release %>
+          <% end %>
+    ensure:
+      task: clean-up
+      image: cf-deployment-concourse-tasks-image
+      config:
+        platform: linux
+        inputs:
+        - name: bbl-state
+        params:
+          BBL_STATE_DIR: ((acceptance_bbl_state_dir))
+        run:
+          path: /bin/bash
+          args:
+          - "-c"
+          - |
+            set -e
+            pushd "bbl-state/${BBL_STATE_DIR}" > /dev/null
+              eval "$(bbl print-env)"
+            popd > /dev/null
+
+            for deployment in $(bosh deployments --column Name | grep compilation-) ; do
+              bosh delete-deployment -d "$deployment" -n
+            done
 
 - name: test-metrics-agent
   serial: true
