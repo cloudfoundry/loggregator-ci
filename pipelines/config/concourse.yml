@@ -1,0 +1,2 @@
+concourse_env_name: concourse
+concourse_bbl_state_dir: gcp/concourse
