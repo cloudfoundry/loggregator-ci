@@ -128,7 +128,7 @@ resources:
   type: git
   source:
     uri: https://github.com/cloudfoundry/cf-deployment
-    branch: loggr-windows2019
+    branch: master
     private_key: ((loggregator-key))
 
 - name: cf-deployment-concourse-tasks
@@ -561,7 +561,6 @@ jobs:
         experimental/add-syslog-agent.yml
         experimental/add-system-metrics-agent.yml
 
-        loggregator/loggregator-add-metrics-certs.yml
         metrics-discovery/cf-add-metrics-discovery.yml
         metrics-discovery/cf-add-metrics-agent.yml
 
