@@ -61,6 +61,7 @@ function build_github_release_info {
   release_name=$1
   version=$2
   commit_range=$3
+  github_release_dir=$4
 
   set +x
     BUMPER_RESULT=$( (bumper --commit-range ${commit_range} --verbose --no-color) 2>&1 | grep -v "Bump modules")
@@ -70,8 +71,8 @@ function build_github_release_info {
   tag_name="v$version"
 
   # write out github release files
-  echo "$release_name $version" > github-release/name
-  echo $tag_name > github-release/tag
-  printf '## BUMPER OUTPUT\n%s\n\n' "$BUMPER_RESULT" >> github-release/body
-  printf '## GIT DIFF jobs directory\n```diff\n%s\n```\n\n' "${GIT_DIFF_JOBS}" >> github-release/body
+  echo "$release_name $version" > ${github_release_dir}/name
+  echo $tag_name > ${github_release_dir}/tag
+  printf '## BUMPER OUTPUT\n%s\n\n' "$BUMPER_RESULT" >> ${github_release_dir}/body
+  printf '## GIT DIFF jobs directory\n```diff\n%s\n```\n\n' "${GIT_DIFF_JOBS}" >> ${github_release_dir}/body
 }

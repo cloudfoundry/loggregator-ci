@@ -4,6 +4,7 @@ set -exo pipefail
 source loggregator-ci/tasks/create-final-release/helpers.sh
 setup_github_ssh
 
+root_dir=$PWD
 expected_version=$(cat version/version)
 
 pushd master-repo
@@ -15,7 +16,7 @@ pushd master-repo
 
   old_tag=$(git describe --abbrev=0 --tags --match v* || git rev-list --max-parents=0 HEAD)
 
-  build_github_release_info "$RELEASE_NAME" "$NEW_VERSION" "${old_tag}..HEAD"
+  build_github_release_info "$RELEASE_NAME" "$NEW_VERSION" "${old_tag}..HEAD" "$root_dir/github-release"
 
   # this is needed to land commits on master since the commit for
   # master is checked out as a detatched head when the git

@@ -3,6 +3,8 @@ set -exo pipefail
 source loggregator-ci/tasks/create-final-release/helpers.sh
 setup_github_ssh
 
+root_dir=$PWD
+
 pushd release-repo
   git checkout $BACKPORT_BRANCH
   old_tag=$(git describe --abbrev=0 --tags --match 'v*' || true)
@@ -25,7 +27,7 @@ pushd release-repo
   NEW_VERSION=$(join_by . "${split_version[@]}")
   commit_range="${old_tag}..HEAD"
 
-  build_github_release_info "$RELEASE_NAME" "$NEW_VERSION" "${commit_range}"
+  build_github_release_info "$RELEASE_NAME" "$NEW_VERSION" "${commit_range}" "$root_dir/github-release"
   create_tagged_release "$NEW_VERSION"
 popd
 
