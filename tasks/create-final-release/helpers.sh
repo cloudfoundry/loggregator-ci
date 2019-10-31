@@ -57,6 +57,24 @@ function create_tagged_release {
   git tag "v$version" $final_release_sha
 }
 
+function get_go_version {
+  release_tarball=$1
+
+  tmp_dir=$(mktemp -d)
+  tar xf ${release_tarball} -C ${tmp_dir} 'packages/golang-1-*'
+  go_linux_version=$(tar -tf ${tmp_dir}/packages/golang-1-linux.tgz 'go*.tar.gz' | grep -o '[0-9]\+\.[0-9]\+\.[0-9]\+')
+
+  if [[ -f ${tmp_dir}/packages/golang-1-windows.tgz ]]; then
+    go_windows_version=$(tar -tf ${tmp_dir}/packages/golang-1-windows.tgz 'go*.zip' | grep -o '[0-9]\+\.[0-9]\+\.[0-9]\+')
+    if [[ "$go_windows_version" != "$go_linux_version" ]]; then
+      echo "Go windows version ($go_windows_version) is different than Go linux version ($go_linux_version)"
+      exit 1
+    fi
+  fi
+
+  echo "$go_linux_version"
+}
+
 function build_github_release_info {
   release_name=$1
   version=$2
@@ -73,6 +91,7 @@ function build_github_release_info {
   # write out github release files
   echo "$release_name $version" > ${github_release_dir}/name
   echo $tag_name > ${github_release_dir}/tag
+  printf '## GO Version: %s\n\n' "$(get_go_version ${github_release_dir}/release.tgz)" >> ${github_release_dir}/body
   printf '## BUMPER OUTPUT\n%s\n\n' "$BUMPER_RESULT" >> ${github_release_dir}/body
   printf '## GIT DIFF jobs directory\n```diff\n%s\n```\n\n' "${GIT_DIFF_JOBS}" >> ${github_release_dir}/body
 }
