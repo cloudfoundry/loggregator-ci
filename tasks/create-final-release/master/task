@@ -1,0 +1,29 @@
+#!/bin/bash
+set -exo pipefail
+
+source loggregator-ci/tasks/create-final-release/helpers.sh
+setup_github_ssh
+
+expected_version=$(cat version/version)
+
+pushd master-repo
+  NEW_VERSION=$(cat src/version)
+  if [[ "${NEW_VERSION}" != "${expected_version}" ]]; then
+    echo "Version in master-repo (${NEW_VERSION}) does not equal expected version from version resource (${expected_version})"
+    exit 1
+  fi
+
+  old_tag=$(git describe --abbrev=0 --tags --match v* || git rev-list --max-parents=0 HEAD)
+
+  build_github_release_info $PWD $RELEASE_NAME $NEW_VERSION "${old_tag}..HEAD"
+
+  # this is needed to land commits on master since the commit for
+  # master is checked out as a detatched head when the git
+  # resource clones it down
+  git checkout master
+
+  create_tagged_release $PWD $NEW_VERSION
+popd
+
+# copy repos into output
+cp -r master-repo repos

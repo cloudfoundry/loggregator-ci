@@ -6,11 +6,14 @@ platform: linux
 inputs:
   # - Required
   # - The repo from which the final release will be created
-- name: release-repo
+- name: master-repo
 
   # - Required
   # - The task repository
 - name: loggregator-ci
+
+  # - The version that is expected to be cut to compare with the version in the repo
+- name: version
 
 outputs:
   # - The artifacts used to create the github release
@@ -20,20 +23,24 @@ outputs:
 - name: repos
 
 run:
-  path: loggregator-ci/tasks/create-final-release-backport/task
+  path: loggregator-ci/tasks/create-final-release/master/task
 
 params:
-  # - Required
+  # - Optional
   # - The S3 access key for release blobstore
   S3_ACCESS_KEY:
 
-  # - Required
+  # - Optional
   # - The S3 secret key for release blobstore
   S3_SECRET_KEY:
 
-  # - Required
+  # - Optional
   # - The bucket name of the S3 release blobstore
   BLOBSTORE_BUCKET:
+
+  # - Optional
+  # - The json key of the gcs blobstore
+  JSON_KEY:
 
   # - Required
   # - The ssh key used to talk to github to pull latest branch version
@@ -42,7 +49,3 @@ params:
   # - Required
   # - Human readable name of the created release (e.g. Loggregator)
   RELEASE_NAME:
-
-  # - Required
-  # - Branch from which the final release will be created
-  BACKPORT_BRANCH:

@@ -141,7 +141,7 @@ jobs:
     - get: <%= release.name %>-version
       trigger: true
   - task: create-final-release
-    file: loggregator-ci/tasks/create-final-release/task.yml
+    file: loggregator-ci/tasks/create-final-release/master/task.yml
     input_mapping:
       master-repo: <%= release.name %>-release-master
       version: <%= release.name %>-version
@@ -152,7 +152,6 @@ jobs:
       JSON_KEY: {{gcp-service-account-key}}
       SSH_KEY: {{loggregator-key}}
       RELEASE_NAME: <%= release.release_name %>
-      MASTER_BRANCH: master
   - put: <%= release.name %>-release-master
     params:
       repository: repos/master-repo
