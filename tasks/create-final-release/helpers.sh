@@ -62,12 +62,10 @@ function build_github_release_info {
   version=$2
   commit_range=$3
 
-  pushd $release_dir
-    set +x
-      BUMPER_RESULT=$( (bumper --commit-range ${commit_range} --verbose --no-color) 2>&1 | grep -v "Bump modules")
-      GIT_DIFF_JOBS=$(git diff ${commit_range} -- jobs)
-    set -x
-  popd
+  set +x
+    BUMPER_RESULT=$( (bumper --commit-range ${commit_range} --verbose --no-color) 2>&1 | grep -v "Bump modules")
+    GIT_DIFF_JOBS=$(git diff ${commit_range} -- jobs)
+  set -x
 
   tag_name="v$version"
 
