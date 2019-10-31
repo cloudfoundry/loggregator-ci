@@ -15,14 +15,14 @@ pushd master-repo
 
   old_tag=$(git describe --abbrev=0 --tags --match v* || git rev-list --max-parents=0 HEAD)
 
-  build_github_release_info "$PWD" "$RELEASE_NAME" "$NEW_VERSION" "${old_tag}..HEAD"
+  build_github_release_info "$RELEASE_NAME" "$NEW_VERSION" "${old_tag}..HEAD"
 
   # this is needed to land commits on master since the commit for
   # master is checked out as a detatched head when the git
   # resource clones it down
   git checkout master
 
-  create_tagged_release "$PWD" "$NEW_VERSION"
+  create_tagged_release "$NEW_VERSION"
 popd
 
 # copy repos into output
