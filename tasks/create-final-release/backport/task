@@ -25,8 +25,8 @@ pushd release-repo
   NEW_VERSION=$(join_by . "${split_version[@]}")
   commit_range="${old_tag}..HEAD"
 
-  build_github_release_info $PWD $RELEASE_NAME $NEW_VERSION ${commit_range}
-  create_tagged_release $PWD $NEW_VERSION
+  build_github_release_info "$PWD" "$RELEASE_NAME" "$NEW_VERSION" "${commit_range}"
+  create_tagged_release "$PWD" "$NEW_VERSION"
 popd
 
 cp -r release-repo repos
