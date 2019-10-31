@@ -61,7 +61,7 @@ function get_go_version {
   release_tarball=$1
 
   tmp_dir=$(mktemp -d)
-  tar xf ${release_tarball} -C ${tmp_dir} 'packages/golang-1-*'
+  tar xf ${release_tarball} -C ${tmp_dir} --wildcards 'packages/golang-1-*'
   go_linux_version=$(tar -tf ${tmp_dir}/packages/golang-1-linux.tgz 'go*.tar.gz' | grep -o '[0-9]\+\.[0-9]\+\.[0-9]\+')
 
   if [[ -f ${tmp_dir}/packages/golang-1-windows.tgz ]]; then
