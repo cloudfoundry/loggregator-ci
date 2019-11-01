@@ -61,11 +61,11 @@ function get_go_version {
   release_tarball=$1
 
   tmp_dir=$(mktemp -d)
-  tar xf ${release_tarball} -C ${tmp_dir} --wildcards 'packages/golang-1-*'
-  go_linux_version=$(tar -tf ${tmp_dir}/packages/golang-1-linux.tgz --wildcards 'go*.tar.gz' | grep -o '[0-9]\+\.[0-9]\+\.[0-9]\+')
+  tar xf ${release_tarball} -C ${tmp_dir} --wildcards 'packages/golang-*'
+  go_linux_version=$(tar -tf ${tmp_dir}/packages/golang-*-linux.tgz --wildcards '*go*.tar.gz' | grep -o '[0-9]\+\.[0-9]\+\.[0-9]\+')
 
-  if [[ -f ${tmp_dir}/packages/golang-1-windows.tgz ]]; then
-    go_windows_version=$(tar -tf ${tmp_dir}/packages/golang-1-windows.tgz 'go*.zip' | grep -o '[0-9]\+\.[0-9]\+\.[0-9]\+')
+  if [[ -f ${tmp_dir}/packages/golang-*-windows.tgz ]]; then
+    go_windows_version=$(tar -tf ${tmp_dir}/packages/golang-*-windows.tgz '*go*.zip' | grep -o '[0-9]\+\.[0-9]\+\.[0-9]\+')
     if [[ "$go_windows_version" != "$go_linux_version" ]]; then
       echo "Go windows version ($go_windows_version) is different than Go linux version ($go_linux_version)"
       exit 1
