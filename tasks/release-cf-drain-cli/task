@@ -2,8 +2,8 @@
 set -ex
 
 # establish version/tag strings
-version="{\"Major\":$VERSION_MAJOR,\"Minor\":$VERSION_MINOR,\"Build\":$VERSION_BUILD}"
-semver="v$VERSION_MAJOR.$VERSION_MINOR.$VERSION_BUILD"
+version="{\"Major\":$VERSION_MAJOR,\"Minor\":$VERSION_MINOR,\"Build\":$VERSION_PATCH}"
+semver="v$VERSION_MAJOR.$VERSION_MINOR.$VERSION_PATCH"
 
 # write out github release files
 echo "CF Drain CLI $semver" > github-release/name
@@ -12,7 +12,6 @@ echo "TBD" > github-release/body
 
 # setup go path
 cfdrain=$PWD/cf-drain-cli
-tools=$PWD/loggregator-tools
 mkdir -p go
 pushd go
   export GOPATH=$PWD
@@ -20,10 +19,6 @@ pushd go
   go get -d code.cloudfoundry.org/cf-drain-cli/...
   rm -rf src/code.cloudfoundry.org/cf-drain-cli
   cp -r $cfdrain src/code.cloudfoundry.org/cf-drain-cli
-
-  go get -d code.cloudfoundry.org/loggregator-tools/log-cache-forwarders/cmd/syslog/...
-  rm -rf src/code.cloudfoundry.org/loggregator-tools
-  cp -r $tools src/code.cloudfoundry.org/loggregator-tools
 popd
 
 # build binaries
@@ -39,12 +34,6 @@ popd
 pushd $GOPATH/src/code.cloudfoundry.org/cf-drain-cli/cmd/space_drain
   space_drain_version="$(git rev-parse HEAD)"
   GOOS=linux go build -ldflags "-X main.version=$space_drain_version" -o $output/space_drain
-popd
-
-# build the syslog forwarder app
-pushd $GOPATH/src/code.cloudfoundry.org/cf-drain-cli
-  ./scripts/build-forwarder.sh
-  mv ./forwarder.zip $output/forwarder.zip
 popd
 
 pushd $cfdrain
