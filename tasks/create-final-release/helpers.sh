@@ -91,7 +91,7 @@ function build_github_release_info {
   # write out github release files
   echo "$release_name $version" > ${github_release_dir}/name
   echo $tag_name > ${github_release_dir}/tag
-  printf '## GO Version: %s\n\n' "$(get_go_version ${github_release_dir}/release.tgz)" >> ${github_release_dir}/body
+  printf '**GO Version**: `%s`\n\n' "$(get_go_version ${github_release_dir}/release.tgz)" >> ${github_release_dir}/body
   printf '## BUMPER OUTPUT\n%s\n\n' "$BUMPER_RESULT" >> ${github_release_dir}/body
   printf '## GIT DIFF jobs directory\n```diff\n%s\n```\n\n' "${GIT_DIFF_JOBS}" >> ${github_release_dir}/body
 }

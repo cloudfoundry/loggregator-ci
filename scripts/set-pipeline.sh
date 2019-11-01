@@ -29,7 +29,6 @@ function set_pipeline {
         -c "$pipeline_file" \
         -l <(lpass show 'Shared-Loggregator (Pivotal Only)/pipeline-secrets.yml' --notes) \
         -l <(lpass show 'Shared-CF- Log Cache (Pivotal ONLY)/release-credentials.yml' --notes) \
-        -l pipelines/config/concourse.yml \
         -l pipelines/config/acceptance-environment.yml \
         -l pipelines/config/development-environment.yml
 }
