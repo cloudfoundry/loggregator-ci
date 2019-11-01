@@ -27,6 +27,11 @@ pushd release-repo
   NEW_VERSION=$(join_by . "${split_version[@]}")
   commit_range="${old_tag}..HEAD"
 
+  if no_commits "${commit_range}"; then
+    echo "There are no commits... aborting"
+    exit 1
+  fi
+
   create_tagged_release "$NEW_VERSION"
   build_github_release_info "$RELEASE_NAME" "$NEW_VERSION" "${commit_range}" "$root_dir/github-release"
 popd

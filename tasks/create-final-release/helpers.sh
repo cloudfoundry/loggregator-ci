@@ -95,3 +95,13 @@ function build_github_release_info {
   printf '## BUMPER OUTPUT\n%s\n\n' "$BUMPER_RESULT" >> ${github_release_dir}/body
   printf '## GIT DIFF jobs directory\n```diff\n%s\n```\n\n' "${GIT_DIFF_JOBS}" >> ${github_release_dir}/body
 }
+
+function no_commits {
+  commit_range=$1
+
+  if [[ $(git log --oneline ${commit_range} | wc -l) -eq 0 ]]; then
+    return 0
+  fi
+
+  return 1
+}
