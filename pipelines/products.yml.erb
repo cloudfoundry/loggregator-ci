@@ -1,5 +1,5 @@
 <%
-bosh_releases = %w(loggregator loggregator-agent statsd-injector log-cache metrics-discovery system-metrics)
+bosh_releases = %w(loggregator loggregator-agent statsd-injector log-cache metrics-discovery system-metrics system-metrics-scraper)
 standalone_releases = %w(service-metrics service-logs)
 dev_envs = %w(kiwi banana papaya)
 
@@ -15,6 +15,7 @@ smoke_tests = {
   "service-logs" => ["service-logs-smoke-tests"],
   "metrics-discovery" => cfd_smoke_tests,
   "system-metrics" => cfd_smoke_tests,
+  "system-metrics-scraper" => cfd_smoke_tests,
 }
 
 run_windows_tests = {
@@ -559,7 +560,8 @@ jobs:
         experimental/add-metric-store.yml
         denver/add-grafana.yml
         experimental/add-syslog-agent.yml
-        experimental/add-system-metrics-agent.yml
+        system-metrics/add-system-metrics-agent.yml
+        system-metrics-scraper/add-system-metrics-scraper.yml
 
         metrics-discovery/cf-add-metrics-discovery.yml
         metrics-discovery/cf-add-metrics-agent.yml

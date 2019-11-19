@@ -16,6 +16,7 @@ inputs:
 - name: log-cache-release
 - name: metrics-discovery-release
 - name: system-metrics-release
+- name: system-metrics-scraper-release
 
 outputs:
 - name: ops-files
