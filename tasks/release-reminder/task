@@ -33,6 +33,8 @@ pushd releases
       elif [[ ${published_release_timestamp} -lt ${two_weeks_ago_timestamp} ]]; then
         too_long_ago+=(${rel})
       fi
+
+      echo "${rel}: $commit_count commits (${published_tag}..HEAD)"
     popd
   done
 popd
