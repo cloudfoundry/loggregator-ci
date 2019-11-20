@@ -78,6 +78,8 @@ resources:
     branch: master
     clean_tags: true
     private_key: {{cf-loggregator-oauth-bot-key}}
+    paths:
+    - src/version
 
 - name: <%= release.name %>-github-release-drafts
   type: github-release
@@ -137,9 +139,9 @@ jobs:
   plan:
   - in_parallel:
     - get: <%= release.name %>-release-master
+      trigger: true
     - get: loggregator-ci
     - get: <%= release.name %>-version
-      trigger: true
   - task: create-final-release
     file: loggregator-ci/tasks/create-final-release/master/task.yml
     input_mapping:
