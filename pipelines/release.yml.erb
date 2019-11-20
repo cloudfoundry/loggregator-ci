@@ -138,6 +138,7 @@ jobs:
   serial: true
   plan:
   - in_parallel:
+    # release-master only gets new versions if the src/version file is changed
     - get: <%= release.name %>-release-master
       trigger: true
     - get: loggregator-ci
