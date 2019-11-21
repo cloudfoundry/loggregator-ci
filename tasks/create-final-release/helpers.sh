@@ -108,11 +108,12 @@ function build_github_release_info {
 function only_auto_bumpable_commits {
   commit_range=$1
 
-  auto_bumpable_commits=""
-  for commit in $AUTO_BUMPABLE_COMMITS ; do
-    auto_bumpable_commits+="$commit|"
-  done
-  auto_bumpable_commits=${auto_bumpable_commits::-1}
+  set +x
+    while read -r commit ; do
+      auto_bumpable_commits+="$commit|"
+    done  <<< "$AUTO_BUMPABLE_COMMITS"
+    auto_bumpable_commits=${auto_bumpable_commits::-1}
+  set -x
 
   if [[ $(git log --oneline ${commit_range} | grep -c -v -E -- "$auto_bumpable_commits") -eq 0 ]]; then
     return 0
