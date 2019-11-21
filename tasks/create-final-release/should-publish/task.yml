@@ -12,7 +12,7 @@ inputs:
 - name: publish
 
   # Whether or not the release should be published
-- name: github-release-input
+- name: input-github-release
 
 outputs:
 - name: github-release
