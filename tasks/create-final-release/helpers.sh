@@ -93,7 +93,7 @@ function build_github_release_info {
   echo $tag_name > ${github_release_dir}/tag
   printf '**Changelog**\n'
   if only_auto_bumpable_commits "${commit_range}"; then
-    printf '- Bump modules\n'
+    echo '- Bump modules'
   else
     printf '## BUMPER OUTPUT\n%s\n\n' "$BUMPER_RESULT" >> ${github_release_dir}/body
   fi
