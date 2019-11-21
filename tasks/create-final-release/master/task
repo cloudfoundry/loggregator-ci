@@ -28,6 +28,10 @@ pushd master-repo
 
   create_tagged_release "$NEW_VERSION"
   build_github_release_info "$RELEASE_NAME" "$NEW_VERSION" "${old_tag}..HEAD" "$root_dir/github-release"
+
+  if only_auto_bumpable_commits "${old_tag}..HEAD"; then
+    touch publish/true
+  fi
 popd
 
 # copy repos into output

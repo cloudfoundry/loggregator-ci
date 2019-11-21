@@ -22,6 +22,9 @@ outputs:
   # - The modified repos that need to be pushed back to github
 - name: repos
 
+  # - Whether or not the release should be automatically published
+- name: publish
+
 run:
   path: loggregator-ci/tasks/create-final-release/master/task
 
@@ -49,3 +52,6 @@ params:
   # - Required
   # - Human readable name of the created release (e.g. Loggregator)
   RELEASE_NAME:
+
+  # - List of commits that don't require human written changelog entries
+  AUTO_BUMPABLE_COMMITS:

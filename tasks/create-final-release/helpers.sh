@@ -91,9 +91,34 @@ function build_github_release_info {
   # write out github release files
   echo "$release_name $version" > ${github_release_dir}/name
   echo $tag_name > ${github_release_dir}/tag
+  printf '**Changelog**\n'
+  if only_auto_bumpable_commits "${commit_range}"; then
+    printf '- Bump modules\n'
+  else
+    printf '## BUMPER OUTPUT\n%s\n\n' "$BUMPER_RESULT" >> ${github_release_dir}/body
+  fi
+
+  if [[ ! -z "$GIT_DIFF_JOBS" ]]; then
+    printf '## GIT DIFF jobs directory\n```diff\n%s\n```\n\n' "${GIT_DIFF_JOBS}" >> ${github_release_dir}/body
+  fi
+
   printf '**GO Version**: `%s`\n\n' "$(get_go_version ${github_release_dir}/release.tgz)" >> ${github_release_dir}/body
-  printf '## BUMPER OUTPUT\n%s\n\n' "$BUMPER_RESULT" >> ${github_release_dir}/body
-  printf '## GIT DIFF jobs directory\n```diff\n%s\n```\n\n' "${GIT_DIFF_JOBS}" >> ${github_release_dir}/body
+}
+
+function only_auto_bumpable_commits {
+  commit_range=$1
+
+  auto_bumpable_commits=""
+  for commit in $AUTO_BUMPABLE_COMMITS ; do
+    auto_bumpable_commits+="$commit|"
+  done
+  auto_bumpable_commits=${auto_bumpable_commits::-1}
+
+  if [[ $(git log --oneline ${commit_range} | grep -c -v -E -- "$auto_bumpable_commits") -eq 0 ]]; then
+    return 0
+  fi
+
+  return 1
 }
 
 function no_commits {

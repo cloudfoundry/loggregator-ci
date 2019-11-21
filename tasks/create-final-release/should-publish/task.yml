@@ -1,0 +1,17 @@
+image_resource:
+  type: docker-image
+  source:
+    repository: loggregator/base
+platform: linux
+inputs:
+  # - Required
+  # - The task repository
+- name: loggregator-ci
+
+  # Whether or not the release should be published
+- name: publish
+
+run:
+  path: loggregator-ci/tasks/create-final-release/should-publish/task
+
+
