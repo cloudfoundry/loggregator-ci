@@ -192,6 +192,10 @@ jobs:
         'Merge final release artifacts'
         'Create final release'
         'bump to'
+  - put: <%= release.name %>-release-master
+    params:
+      repository: repos/master-repo
+      rebase: false
   - try:
       task: should-publish
       file: loggregator-ci/tasks/create-final-release/should-publish/task.yml
@@ -211,10 +215,6 @@ jobs:
           body: github-release/body
           globs:
             - github-release/*.tgz
-  - put: <%= release.name %>-release-master
-    params:
-      repository: repos/master-repo
-      rebase: false
 
 - name: <%= release.name %>-merge-to-develop
   serial: true
