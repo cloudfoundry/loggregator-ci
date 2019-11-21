@@ -102,7 +102,7 @@ function build_github_release_info {
     printf '## GIT DIFF jobs directory\n```diff\n%s\n```\n\n' "${GIT_DIFF_JOBS}" >> ${github_release_dir}/body
   fi
 
-  printf '**GO Version**: `%s`\n\n' "$(get_go_version ${github_release_dir}/release.tgz)" >> ${github_release_dir}/body
+  printf '\n**GO Version**: `%s`\n\n' "$(get_go_version ${github_release_dir}/release.tgz)" >> ${github_release_dir}/body
 }
 
 function only_auto_bumpable_commits {

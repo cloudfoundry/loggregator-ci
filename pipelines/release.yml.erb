@@ -155,17 +155,35 @@ jobs:
       JSON_KEY: {{gcp-service-account-key}}
       SSH_KEY: {{loggregator-key}}
       RELEASE_NAME: <%= release.release_name %>
+      AUTO_BUMPABLE_COMMITS: |
+        'Bump modules'
+        'bump golang release'
+        'Merge final release artifacts'
+        'Create final release'
+        'bump to'
+  - try:
+      task: should-publish
+      file: loggregator-ci/tasks/create-final-release/should-publish/task.yml
+      on_success:
+        put: <%= release.name %>-github-release-published
+        params:
+          name: github-release/name
+          tag: github-release/tag
+          body: github-release/body
+          globs:
+          - github-release/*.tgz
+      on_failure:
+        put: <%= release.name %>-github-release-drafts
+        params:
+          name: github-release/name
+          tag: github-release/tag
+          body: github-release/body
+          globs:
+            - github-release/*.tgz
   - put: <%= release.name %>-release-master
     params:
       repository: repos/master-repo
       rebase: false
-  - put: <%= release.name %>-github-release-drafts
-    params:
-      name: github-release/name
-      tag: github-release/tag
-      body: github-release/body
-      globs:
-      - github-release/*.tgz
 
 - name: <%= release.name %>-merge-to-develop
   serial: true
