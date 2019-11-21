@@ -1,4 +1,6 @@
 #!/bin/bash
 set -exo pipefail
 
+cp -a input-github-release/* github-release
+
 [ -f publish/true ]

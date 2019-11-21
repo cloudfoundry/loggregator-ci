@@ -91,9 +91,9 @@ function build_github_release_info {
   # write out github release files
   echo "$release_name $version" > ${github_release_dir}/name
   echo $tag_name > ${github_release_dir}/tag
-  printf '**Changelog**\n'
+  printf '**Changelog**\n' >> ${github_release_dir}/body
   if only_auto_bumpable_commits "${commit_range}"; then
-    echo '- Bump modules'
+    echo '- Bump modules'  >> ${github_release_dir}/body
   else
     printf '## BUMPER OUTPUT\n%s\n\n' "$BUMPER_RESULT" >> ${github_release_dir}/body
   fi

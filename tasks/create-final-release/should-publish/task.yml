@@ -11,6 +11,12 @@ inputs:
   # Whether or not the release should be published
 - name: publish
 
+  # Whether or not the release should be published
+- name: github-release-input
+
+outputs:
+- name: github-release
+
 run:
   path: loggregator-ci/tasks/create-final-release/should-publish/task
 
