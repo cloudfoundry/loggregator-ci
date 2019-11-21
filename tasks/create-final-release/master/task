@@ -30,7 +30,7 @@ pushd master-repo
   build_github_release_info "$RELEASE_NAME" "$NEW_VERSION" "${old_tag}..HEAD" "$root_dir/github-release"
 
   if only_auto_bumpable_commits "${old_tag}..HEAD"; then
-    touch publish/true
+    touch "${root_dir}/publish/true"
   fi
 popd
 
