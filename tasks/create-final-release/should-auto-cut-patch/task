@@ -1,0 +1,14 @@
+#!/bin/bash
+set -e
+source loggregator-ci/tasks/create-final-release/helpers.sh
+setup_github_ssh
+
+ci_root=$PWD
+
+published_tag=$(cat ${ci_root}/published-release/tag)
+
+pushd release > /dev/null
+  git fetch --tags > /dev/null 2>&1
+
+  only_auto_bumpable_commits "${published_tag}..HEAD"
+popd > /dev/null
