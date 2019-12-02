@@ -1,20 +1,21 @@
 <%
 class Release
-  attr_reader :name, :backport_branches, :s3_bucket
-  def initialize(name, backport_branches, s3_bucket)
+  attr_reader :name, :backport_branches, :s3_bucket, :include_windows
+  def initialize(name, backport_branches, s3_bucket, include_windows)
     @name = name
     @s3_bucket = s3_bucket
     @backport_branches = backport_branches
+    @include_windows = include_windows
   end
 end
 
 releases = [
-  Release.new("cf-syslog-drain", %w(v8.2.x v10.2.x), "cf-syslog-drain-release-blobs"),
-  Release.new("leadership-election", %w(v1.4.x), "leadership-election-release-blobs"),
-  Release.new("log-cache", %w(v2.1.x), "log-cache-release-blobs"),
-  Release.new("loggregator", %w(v103.x v105.5.x v105.6.x), "loggregator-release-blobs"),
-  Release.new("loggregator-agent", %w(v2.3.x v3.16.x v3.21.x), "loggregator-agent-release-blobs"),
-  Release.new("service-metrics", %w(v1.12.x), "oss-service-metrics-release-blobs"),
+  Release.new("cf-syslog-drain", %w(v8.2.x v10.2.x), "cf-syslog-drain-release-blobs", false),
+  Release.new("leadership-election", %w(v1.4.x), "leadership-election-release-blobs", false),
+  Release.new("log-cache", %w(v2.1.x), "log-cache-release-blobs", false),
+  Release.new("loggregator", %w(v103.x v105.5.x v105.6.x), "loggregator-release-blobs", false),
+  Release.new("loggregator-agent", %w(v2.3.x v3.16.x v3.21.x), "loggregator-agent-release-blobs", true),
+  Release.new("service-metrics", %w(v1.12.x), "oss-service-metrics-release-blobs", false),
 ]
 %>
 
@@ -24,6 +25,7 @@ groups:
 <% releases.sort_by { |release| release.name }.each do |release| %>
 <% release.backport_branches.each do |backport_branch| %>
   - <%= release.name %>-create-backport-<%= backport_branch %>
+  - <%= release.name %>-<%= backport_branch %>-bump-golang
 <% end %>
 <% end %>
 
@@ -32,6 +34,7 @@ groups:
   jobs:
 <% release.backport_branches.each do |backport_branch| %>
   - <%= release.name %>-create-backport-<%= backport_branch %>
+  - <%= release.name %>-<%= backport_branch %>-bump-golang
 <% end %>
 <% end %>
 
@@ -60,6 +63,20 @@ resources:
     access_token: {{access-token}}
     drafts: true
 <% end %>
+
+- name: concourse-tasks
+  type: git
+  source:
+    branch: master
+    uri: https://github.com/pivotal-cf/concourse-tasks
+
+- name: golang-release
+  type: git
+  source:
+    uri: git@github.com:bosh-packages/golang-release
+    branch: master
+    tag_filter: v*
+    private_key: ((cf-loggregator-oauth-bot-key))
 
 jobs:
 <% releases.each do |release| %>
@@ -92,5 +109,38 @@ jobs:
       body: github-release/body
       globs:
       - github-release/*.tgz
+- name: <%= release.name %>-<%= backport_branch %>-bump-golang
+  serial: true
+  plan:
+    - in_parallel:
+      - get: loggregator-ci
+      - get: concourse-tasks
+      - get: golang-release
+        trigger: true
+      - get: <%= release.name %>-release-backport-<%= backport_branch %>
+        trigger: false
+    - task: bump-<%= release.name %>-release
+      file: concourse-tasks/go/bump-vendored-golang/task.yml
+      input_mapping:
+        release: <%= release.name %>-release-backport-<%= backport_branch %>
+      output_mapping:
+        output-repo: updated-<%= release.name %>-release
+      params:
+        BLOBSTORE_ACCESS_KEY_ID: {{s3-access-key-id}}
+        BLOBSTORE_SECRET_ACCESS_KEY: {{s3-secret-access-key}}
+        GCS_JSON_KEY: {{gcp-service-account-key}}
+        GIT_USER_EMAIL: cf-loggregator@pivotal.io
+        GIT_USER_NAME: Loggregator CI
+        GOLANG_DIR: golang-release
+        RELEASE_DIR: release
+      <% if release.include_windows %>
+        GOLANG_OS_S: |
+          linux
+          windows
+      <% end %>
+    - put: <%= release.name %>-release-backport-<%= backport_branch %>
+      params:
+        repository: updated-<%= release.name %>-release
+        rebase: false
 <% end %>
 <% end %>
