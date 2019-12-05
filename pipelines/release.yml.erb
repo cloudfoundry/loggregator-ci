@@ -82,7 +82,7 @@ resources:
     disable_ci_skip: true
     clean_tags: true
 
-- name: <%= release.name %>-release-master
+- name: <%= release.name %>-release-master-version-trigger
   type: git
   source:
     uri: git@github.com:cloudfoundry/<%= release.name %>-release
@@ -91,6 +91,14 @@ resources:
     private_key: {{cf-loggregator-oauth-bot-key}}
     paths:
     - src/version
+
+- name: <%= release.name %>-release-master
+  type: git
+  source:
+    uri: git@github.com:cloudfoundry/<%= release.name %>-release
+    branch: master
+    clean_tags: true
+    private_key: {{cf-loggregator-oauth-bot-key}}
 
 - name: <%= release.name %>-github-release-drafts
   type: github-release
@@ -171,14 +179,14 @@ jobs:
   plan:
   - in_parallel:
     # release-master only gets new versions if the src/version file is changed
-    - get: <%= release.name %>-release-master
+    - get: <%= release.name %>-release-master-version-trigger
       trigger: true
     - get: loggregator-ci
     - get: <%= release.name %>-version
   - task: create-final-release
     file: loggregator-ci/tasks/create-final-release/master/task.yml
     input_mapping:
-      master-repo: <%= release.name %>-release-master
+      master-repo: <%= release.name %>-release-master-version-trigger
       version: <%= release.name %>-version
     params:
       S3_ACCESS_KEY: {{s3-access-key-id}}
@@ -222,7 +230,7 @@ jobs:
   plan:
   - in_parallel:
     - get: <%= release.name %>-release
-    - get: <%= release.name %>-release-master
+    - get: <%= release.name %>-release-master-version-trigger
       passed: [ <%= release.name %>-create-final-release ]
     - get: loggregator-ci
     - get: <%= release.name %>-github-release-published
@@ -230,7 +238,7 @@ jobs:
   - task: merge-back-to-develop
     file: loggregator-ci/tasks/merge-to-develop/task.yml
     input_mapping:
-      master-repo: <%= release.name %>-release-master
+      master-repo: <%= release.name %>-release-master-version-trigger
       develop-repo: <%= release.name %>-release
     params:
       SSH_KEY: {{loggregator-key}}
