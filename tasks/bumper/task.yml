@@ -29,3 +29,7 @@ params:
   # - Submodules for bumper to follow bumps of.
   # - Relative to dest.
   FOLLOW_BUMPS_OF:
+
+  # - Optional
+  # - tracker API token to use
+  TRACKER_API_TOKEN:
