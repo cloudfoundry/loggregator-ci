@@ -1,6 +1,10 @@
 #!/bin/bash
 set -eux
 
+set +eux
+export TRACKER_API_TOKEN=${TRACKER_API_TOKEN}
+set -eux
+
 workspace=$(pwd)
 
 bump_sha=""
