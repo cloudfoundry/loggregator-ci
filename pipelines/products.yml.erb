@@ -279,6 +279,7 @@ jobs:
     params:
       SOURCE_BRANCH: develop
       DEST_BRANCH: master
+      TRACKER_API_TOKEN: ((tracker-api-token))
   - put: <%= cli %>-cli-master
     params:
       repository: merged-dest
@@ -361,6 +362,7 @@ jobs:
     params:
       SOURCE_BRANCH: release-elect
       DEST_BRANCH: master
+      TRACKER_API_TOKEN: ((tracker-api-token))
   - put: <%= release %>-release-master
     params:
       repository: merged-dest
