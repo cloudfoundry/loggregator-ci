@@ -78,6 +78,12 @@ resources:
     tag_filter: v*
     private_key: ((cf-loggregator-oauth-bot-key))
 
+- name: cf-deployment-concourse-tasks-image
+  type: docker-image
+  source:
+    repository: relintdockerhubpushbot/cf-deployment-concourse-tasks
+    tag: latest
+
 jobs:
 <% releases.each do |release| %>
 <% release.backport_branches.each do |backport_branch| %>
@@ -87,9 +93,36 @@ jobs:
   - get: <%= release.name %>-release-backport-<%= backport_branch %>
     trigger: false
   - get: loggregator-ci
-  - task: create-backport
+  - get: cf-deployment-concourse-tasks-image
+  - task: sync-package-specs
+    image: cf-deployment-concourse-tasks-image
     input_mapping:
       release-repo: <%= release.name %>-release-backport-<%= backport_branch %>
+    config:
+      platform: linux
+      inputs:
+      - name: release-repo
+      outputs:
+      - name: synced-release-repo
+      run:
+        path: /bin/bash
+        args:
+        - "-c"
+        - |
+          set -e
+          pushd release-repo
+          if [[ -f scripts/sync-package-specs ]]
+            ./scripts/sync-package-specs
+            git add packages/*/spec
+            git commit -m "sync package specs"
+          fi
+          popd
+
+          cp -a release-repo/ synced-release-repo
+
+  - task: create-backport
+    input_mapping:
+      release-repo: synced-release-repo
     file: loggregator-ci/tasks/create-final-release/backport/task.yml
     params:
       S3_ACCESS_KEY: {{s3-access-key-id}}
@@ -109,6 +142,7 @@ jobs:
       body: github-release/body
       globs:
       - github-release/*.tgz
+
 - name: <%= release.name %>-<%= backport_branch %>-bump-golang
   serial: true
   plan:
