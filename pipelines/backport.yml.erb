@@ -110,15 +110,22 @@ jobs:
         - "-c"
         - |
           set -e
+
           pushd release-repo
-          if [[ -f scripts/sync-package-specs ]]
+          git config user.email "cf-loggregator@pivotal.io"
+          git config user.name "Loggregator CI"
+          if [[ -f scripts/sync-package-specs ]]; then
+            source .envrc
             ./scripts/sync-package-specs
             git add packages/*/spec
-            git commit -m "sync package specs"
+
+            if [ ! "$(git status --porcelain)" = "" ]; then
+                git commit -m "sync package specs"
+            fi
           fi
           popd
 
-          cp -a release-repo/ synced-release-repo
+          cp -a release-repo/. synced-release-repo
 
   - task: create-backport
     input_mapping:
