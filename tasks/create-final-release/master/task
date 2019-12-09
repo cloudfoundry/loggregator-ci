@@ -5,15 +5,9 @@ source loggregator-ci/tasks/create-final-release/helpers.sh
 setup_github_ssh
 
 root_dir=$PWD
-expected_version=$(cat version/version)
 
 pushd master-repo
   NEW_VERSION=$(cat src/version)
-  if [[ "${NEW_VERSION}" != "${expected_version}" ]]; then
-    echo "Version in master-repo (${NEW_VERSION}) does not equal expected version from version resource (${expected_version})"
-    exit 1
-  fi
-
   old_tag=$(git describe --abbrev=0 --tags --match v* || git rev-list --max-parents=0 HEAD)
 
   if no_commits "${old_tag}..HEAD"; then

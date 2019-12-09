@@ -12,9 +12,6 @@ inputs:
   # - The task repository
 - name: loggregator-ci
 
-  # - The version that is expected to be cut to compare with the version in the repo
-- name: version
-
 outputs:
   # - The artifacts used to create the github release
 - name: github-release
