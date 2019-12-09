@@ -110,7 +110,10 @@ function only_auto_bumpable_commits {
 
   set +x
     while read -r commit ; do
-      auto_bumpable_commits+="$commit|"
+      commit=${commit//\'/}
+      if [[ $commit = *[![:space:]]* ]]; then
+        auto_bumpable_commits+="${commit}|"
+      fi
     done  <<< "$AUTO_BUMPABLE_COMMITS"
     auto_bumpable_commits=${auto_bumpable_commits::-1}
   set -x
