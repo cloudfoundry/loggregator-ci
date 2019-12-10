@@ -220,9 +220,41 @@ jobs:
     - get: <%= release.name %>-release
     - get: <%= release.name %>-release-master
       passed: [ <%= release.name %>-create-final-release ]
+      trigger: true
     - get: loggregator-ci
     - get: <%= release.name %>-github-release-published
       trigger: true
+  - task: wait-for-releases-to-match
+    input_mapping:
+      master-repo: <%= release.name %>-release-master
+      published-release: <%= release.name %>-github-release-published
+    config:
+      image_resource:
+        type: docker-image
+        source:
+          repository: loggregator/base
+      platform: linux
+      inputs:
+        - name: master-repo
+        - name: published-release
+      run:
+        path: /bin/bash
+        args:
+          - "-c"
+          - |
+            set -e
+
+            pushd master-repo > /dev/null
+              master_sha=$(git rev-parse HEAD)
+            popd
+
+            published_sha=$(cat published-release/commit_sha)
+
+            if [[ ${master_sha} != ${published_sha} ]]; then
+              echo "Published release sha doesn't match master repo sha"
+              echo "This job will retrigger once published release or master repo resource is updated"
+              exit 1
+            fi
   - task: merge-back-to-develop
     file: loggregator-ci/tasks/merge-to-develop/task.yml
     input_mapping:
