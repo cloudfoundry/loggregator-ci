@@ -30,7 +30,6 @@ groups:
   - <%= release.name %>-bumper-check
   - <%= release.name %>-create-final-release
   - <%= release.name %>-merge-to-develop
-  - auto-<%= release.name %>-cut-patch-if-trivial-commits
   <% end %>
 
 <% releases.sort_by { |release| release.name }.each do |release| %>
@@ -42,7 +41,6 @@ groups:
   - <%= release.name %>-cut-major
   - <%= release.name %>-create-final-release
   - <%= release.name %>-merge-to-develop
-  - auto-<%= release.name %>-cut-patch-if-trivial-commits
 <% end %>
 
 resources:
@@ -51,14 +49,6 @@ resources:
   source:
     uri: git@github.com:cloudfoundry/loggregator-ci.git
     private_key: {{loggregator-key}}
-
-- name: weekly
-  type: time
-  source:
-    days: [Monday]
-    start: 8:00 AM
-    stop: 9:00 AM
-    location: America/Denver
 
 <% releases.each do |release| %>
 - name: <%= release.name %>-version
@@ -130,27 +120,6 @@ jobs:
     file: loggregator-ci/tasks/bumper-check/task.yml
     params:
       SSH_KEY: {{loggregator-key}}
-
-- name: auto-<%= release.name %>-cut-patch-if-trivial-commits
-  plan:
-  - in_parallel:
-    - get: <%= release.name %>-release-master
-      passed: [<%= release.name %>-bumper-check]
-    - get: <%= release.name %>-github-release-published
-    - get: loggregator-ci
-    - get: weekly
-      trigger: true
-  - try:
-    task: should-auto-cut-patch
-    input_mapping:
-      release: <%= release.name %>-release-master
-      published-release: <%= release.name %>-github-release-published
-    params:
-      SSH_KEY: {{loggregator-key}}
-    file: loggregator-ci/tasks/create-final-release/should-auto-cut-patch/task.yml
-    on_success:
-      put: <%= release.name %>-version
-      params: {bump: patch}
 
 - name: <%= release.name %>-cut-patch
   plan:
