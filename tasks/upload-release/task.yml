@@ -35,3 +35,8 @@ params:
   # - Optional
   # - Create a dev release before uploading
   CREATE_RELEASE: true
+
+  # - Optional
+  # - bosh args to pass when uploading releases
+  # - example: --fix
+  BOSH_UPLOAD_ARGS:
