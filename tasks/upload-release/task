@@ -10,15 +10,15 @@ popd
 pushd bosh-release-dir
   if [ "$CREATE_RELEASE" == "true" ]; then
     if [ "$FORCE" == "true" ]; then
-      bosh create-release --force ${$BOSH_UPLOAD_ARGS}
+      bosh create-release --force ${BOSH_UPLOAD_ARGS}
     else
-      bosh create-release ${$BOSH_UPLOAD_ARGS}
+      bosh create-release ${BOSH_UPLOAD_ARGS}
     fi
   fi
 
   if [ "$NO_REBASE" == "true" -o "$CREATE_RELEASE" == "false" ]; then
-    bosh upload-release ${$BOSH_UPLOAD_ARGS}
+    bosh upload-release ${BOSH_UPLOAD_ARGS}
   else
-    bosh upload-release --rebase ${$BOSH_UPLOAD_ARGS}
+    bosh upload-release --rebase ${BOSH_UPLOAD_ARGS}
   fi
 popd
