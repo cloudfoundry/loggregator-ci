@@ -10,7 +10,7 @@ popd
 pushd bosh-release-dir
   if [ "$CREATE_RELEASE" == "true" ]; then
     if [ "$FORCE" == "true" ]; then
-      bosh create-release --force 
+      bosh create-release --force
     else
       bosh create-release
     fi

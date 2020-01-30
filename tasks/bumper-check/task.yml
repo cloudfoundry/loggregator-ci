@@ -16,3 +16,6 @@ run:
 params:
   MASTER_BRANCH: master
   SSH_KEY:
+  # - Optional
+  # - tracker API token to use
+  TRACKER_API_TOKEN:
