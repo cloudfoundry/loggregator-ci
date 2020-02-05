@@ -120,6 +120,7 @@ jobs:
     file: loggregator-ci/tasks/bumper-check/task.yml
     params:
       SSH_KEY: {{loggregator-key}}
+      TRACKER_API_TOKEN: {{tracker-api-token}}
 
 - name: <%= release.name %>-cut-patch
   plan:
@@ -139,7 +140,6 @@ jobs:
   plan:
   - in_parallel:
     - get: <%= release.name %>-release-master-version
-      trigger: true
     - get: loggregator-ci
   - task: create-final-release
     file: loggregator-ci/tasks/create-final-release/master/task.yml
