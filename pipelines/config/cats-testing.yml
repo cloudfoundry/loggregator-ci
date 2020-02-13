@@ -1,0 +1,3 @@
+cats_env_name: <env_name>
+cats_bbl_state_dir: gcp/<env_name>
+cats_system_domain: <env_name>.loggr.cf-app.com
