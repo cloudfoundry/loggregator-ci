@@ -809,24 +809,6 @@ jobs:
     params:
       BBL_STATE_DIR: ((acceptance_bbl_state_dir))
       SYSTEM_DOMAIN: ((acceptance_system_domain))
-  - task: enable_diego_docker
-    config:
-      platform: linux
-      image_resource:
-        type: docker-image
-        source:
-          repository: loggregator/base
-      inputs:
-      - name: loggregator-ci
-      run:
-        path: /bin/bash
-        args:
-        - "-c"
-        - |
-          set -e
-          source loggregator-ci/scripts/environment-targeting/target-cf.sh && target-cf
-
-          cf enable-feature-flag diego_docker
   - task: run-cats
     file: cf-deployment-concourse-tasks/run-cats/task.yml
     input_mapping:
