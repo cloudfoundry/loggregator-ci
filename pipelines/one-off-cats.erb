@@ -1,46 +1,9 @@
-<%
-bosh_releases = %w(loggregator loggregator-agent statsd-injector log-cache metrics-discovery system-metrics system-metrics-scraper)
-
-clis = {
-  "log-stream" => "github.com/cloudfoundry/log-stream-cli",
-  "cf-drain" => "code.cloudfoundry.org/cf-drain-cli",
-}
-%>
-
 groups:
 - name: one-off-cats-testing
   jobs:
-  - cf-deploy
   - cats
 
 resources:
-<% bosh_releases.each do |release| %>
-- name: <%= release %>-release
-  type: git
-  source:
-    uri: git@github.com:cloudfoundry/<%= release %>-release.git
-    branch: develop
-    private_key: ((cf-loggregator-oauth-bot-key))
-    ignore_paths:
-      - .final_builds
-      - releases
-<% end %>
-
-<% clis.each_key do |cli| %>
-- name: <%= cli %>-cli
-  type: git
-  source:
-    uri: https://github.com/cloudfoundry/<%= cli %>-cli
-    branch: develop
-<% end %>
-
-- name: cf-deployment
-  type: git
-  source:
-    uri: https://github.com/cloudfoundry/cf-deployment
-    branch: master
-    private_key: ((loggregator-key))
-
 - name: deployments-loggregator
   type: git
   source:
@@ -52,13 +15,6 @@ resources:
   type: git
   source:
     uri: git@github.com:cloudfoundry/loggregator-ci
-    branch: master
-    private_key: ((cf-loggregator-oauth-bot-key))
-
-- name: denver-deployments
-  type: git
-  source:
-    uri: git@github.com:pivotal-cf/denver-deployments.git
     branch: master
     private_key: ((cf-loggregator-oauth-bot-key))
 
@@ -75,102 +31,6 @@ resources:
     uri: https://github.com/cloudfoundry/cf-acceptance-tests.git
 
 jobs:
-- name: cf-deploy
-  serial: true
-  plan:
-  - in_parallel:
-    - get: loggregator-ci
-    - get: denver-deployments
-    - get: bbl-state
-      resource: deployments-loggregator
-    - get: cf-deployment
-    - get: cf-deployment-concourse-tasks
-    <% bosh_releases.each do |release| %>
-    - get: <%= release %>-release
-    <% end %>
-    <% clis.each_key do |cli| %>
-    - get: <%= cli %>-cli
-    <% end %>
-  - in_parallel:
-    <% bosh_releases.each do |release| %>
-    - task: upload-<%= release %>-release
-      file: loggregator-ci/tasks/upload-release/task.yml
-      input_mapping:
-        bosh-release-dir: <%= release %>-release
-      params:
-        BBL_STATE_DIR: ((cats_bbl_state_dir))
-    <% end %>
-  - task: copy-ops-files
-    file: loggregator-ci/tasks/prepare-cf-ops/task.yml
-    params:
-      BBL_STATE_DIR: ((cats_bbl_state_dir))
-  - task: cf-deploy
-    file: cf-deployment-concourse-tasks/bosh-deploy/task.yml
-    input_mapping:
-      vars-files: bbl-state
-    params:
-      BBL_STATE_DIR: ((cats_bbl_state_dir))
-      SYSTEM_DOMAIN: ((cats_system_domain))
-      OPS_FILES: |
-        scale-to-one-az.yml
-        use-compiled-releases.yml
-        experimental/use-compiled-releases-windows.yml
-        use-provided-router-certs.yml
-        experimental/fast-deploy-with-downtime-and-danger.yml
-
-        experimental/add-metric-store.yml
-        denver/add-grafana.yml
-        experimental/add-syslog-agent.yml
-        system-metrics/add-system-metrics-agent.yml
-        system-metrics-scraper/add-system-metrics-scraper.yml
-
-        experimental/use-logcache-syslog-ingress.yml
-
-        windows1803-cell.yml
-        use-latest-windows1803-stemcell.yml
-        experimental/add-syslog-agent-windows1803.yml
-        experimental/add-system-metrics-agent-windows1803.yml
-        experimental/use-logcache-syslog-ingress-windows1803.yml
-
-        windows2019-cell.yml
-        use-online-windows2019fs.yml
-        use-latest-windows2019-stemcell.yml
-        experimental/add-syslog-agent-windows2019.yml
-        experimental/add-system-metrics-agent-windows2019.yml
-        experimental/use-logcache-syslog-ingress-windows2019.yml
-
-        loggregator-agent/cf-deployment-windows-addon.yml
-
-        denver/add-grafana.yml
-        denver/loggregator-clients.yml
-        denver/log-cache-acceptance.yml
-        denver/loggregator-acceptance.yml
-      VARS_FILES: ""
-  - task: enable-feature-flags
-    file: cf-deployment-concourse-tasks/set-feature-flags/task.yml
-    attempts: 3
-    params:
-      SYSTEM_DOMAIN: ((cats_system_domain))
-      BBL_STATE_DIR: ((cats_bbl_state_dir))
-      ENABLED_FEATURE_FLAGS: diego_docker
-  - task: cleanup
-    file: cf-deployment-concourse-tasks/bosh-cleanup/task.yml
-    params:
-      BBL_STATE_DIR: ((cats_bbl_state_dir))
-  - task: create-blackbox-space
-    file: loggregator-ci/tasks/create-org-and-space/task.yml
-    params:
-      BBL_STATE_DIR: ((cats_bbl_state_dir))
-      ORG: system
-      SPACE: blackbox-testing
-      SYSTEM_DOMAIN: ((cats_system_domain))
-  - task: create-accumulators-space
-    file: loggregator-ci/tasks/create-org-and-space/task.yml
-    params:
-      BBL_STATE_DIR: ((cats_bbl_state_dir))
-      ORG: system
-      SPACE: accumulators
-      SYSTEM_DOMAIN: ((cats_system_domain))
 - name: cats
   serial: true
   plan:
@@ -179,11 +39,6 @@ jobs:
     - get: cf-deployment-concourse-tasks
     - get: deployments-loggregator
     - get: cf-acceptance-tests
-    <% bosh_releases.each do |release| %>
-    - get: <%= release %>-release
-      passed: ["cf-deploy"]
-      trigger: true
-    <% end %>
   - task: generate-config
     file: loggregator-ci/tasks/generate-cats-config/task.yml
     input_mapping:
@@ -191,26 +46,15 @@ jobs:
     params:
       BBL_STATE_DIR: ((cats_bbl_state_dir))
       SYSTEM_DOMAIN: ((cats_system_domain))
-  - task: enable_diego_docker
-    config:
-    platform: linux
-    image_resource:
-      type: docker-image
-      source:
-        repository: loggregator/base
-    inputs:
-    - name: loggregator-ci
+  - task: enable-feature-flags
+    file: cf-deployment-concourse-tasks/set-feature-flags/task.yml
+    attempts: 3
+    input_mapping:
+      bbl-state: deployments-loggregator
     params:
-      run:
-      path: bash
-      args:
-      - "-c"
-      - |
-      #!/bin/bash
-      set -e
-      source loggregator-ci/scripts/environment-targeting/target-cf.sh && target-cf
-
-      cf enable-feature-flag diego_docker
+      SYSTEM_DOMAIN: ((cats_system_domain))
+      BBL_STATE_DIR: ((cats_bbl_state_dir))
+      ENABLED_FEATURE_FLAGS: diego_docker
   - task: run-cats
     file: cf-deployment-concourse-tasks/run-cats/task.yml
     input_mapping:
