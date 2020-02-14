@@ -30,7 +30,8 @@ function set_pipeline {
         -l <(lpass show 'Shared-Loggregator (Pivotal Only)/pipeline-secrets.yml' --notes) \
         -l <(lpass show 'Shared-CF- Log Cache (Pivotal ONLY)/release-credentials.yml' --notes) \
         -l pipelines/config/acceptance-environment.yml \
-        -l pipelines/config/development-environment.yml
+        -l pipelines/config/development-environment.yml \
+        -l pipelines/config/cats-testing.yml
 }
 
 function sync_fly {
