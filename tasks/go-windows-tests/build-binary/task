@@ -13,7 +13,7 @@ export GO111MODULE=on
 
 pushd release/src
   # do not bump pinned dependencies
-  retry 3 go get -u -m $(awk '/require/{y=1;next}y' go.mod | grep -v ')' | grep -v pinned | grep -v replace | awk '{print $1}')
+  retry 3 go get -u -d $(awk '/require/{y=1;next}y' go.mod | grep -v ')' | grep -v pinned | grep -v replace | awk '{print $1}')
   retry 3 go mod tidy
 
   export GOPROXY=off
