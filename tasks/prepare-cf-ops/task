@@ -8,6 +8,7 @@ mkdir -p \
   ops-files/loggregator-agent \
   ops-files/metrics-discovery \
   ops-files/log-cache \
+  ops-files/nats \
   ops-files/system-metrics \
   ops-files/system-metrics-scraper
 
@@ -20,5 +21,6 @@ cp loggregator-release/manifests/operations/*.yml ops-files/loggregator
 cp loggregator-agent-release/manifests/operations/*.yml ops-files/loggregator-agent
 cp metrics-discovery-release/manifests/operations/*.yml ops-files/metrics-discovery
 cp log-cache-release/manifests/operations/*.yml ops-files/log-cache
+cp nats-release/example-manifests/ops-files/*.yml ops-files/nats
 cp system-metrics-release/manifests/operations/*.yml ops-files/system-metrics
 cp system-metrics-scraper-release/manifests/operations/*.yml ops-files/system-metrics-scraper

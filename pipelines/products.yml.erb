@@ -196,6 +196,13 @@ resources:
   source:
     uri: https://github.com/cloudfoundry/noisy-neighbor-nozzle
 
+- name: nats-release
+  type: git
+  source:
+    uri: git@github.com:cloudfoundry/nats-release.git
+    branch: master
+    private_key: ((cf-loggregator-oauth-bot-key))
+
 <% (bosh_releases + standalone_releases).each do |release| %>
 - name: <%= release %>-release-elect
   type: git
@@ -532,6 +539,7 @@ jobs:
       passed:
       - <%= cli %>-cli-tests
     <% end %>
+    - get: nats-release
   - in_parallel:
     <% bosh_releases.each do |release| %>
     - task: upload-<%= release %>-release
@@ -558,6 +566,9 @@ jobs:
         experimental/use-compiled-releases-windows.yml
         use-provided-router-certs.yml
         experimental/fast-deploy-with-downtime-and-danger.yml
+
+        nats/tls.yml
+        nats/enable_nats_tls_for_cf.yml
 
         experimental/add-metric-store.yml
         denver/add-grafana.yml

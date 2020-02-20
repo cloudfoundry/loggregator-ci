@@ -15,6 +15,7 @@ inputs:
 - name: loggregator-ci
 - name: log-cache-release
 - name: metrics-discovery-release
+- name: nats-release
 - name: system-metrics-release
 - name: system-metrics-scraper-release
 
