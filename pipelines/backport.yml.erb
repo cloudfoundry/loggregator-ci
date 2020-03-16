@@ -15,7 +15,7 @@ releases = [
   Release.new("leadership-election", %w(v1.4.x), "leadership-election-release-blobs", false),
   Release.new("log-cache", %w(v2.1.x), "log-cache-release-blobs", false),
   Release.new("loggregator", %w(v103.x v105.5.x v105.6.x), "loggregator-release-blobs", false),
-  Release.new("loggregator-agent", %w(v2.3.x v3.16.x v3.21.x), "loggregator-agent-release-blobs", true),
+  Release.new("loggregator-agent", %w(v2.3.x v3.16.x v3.21.x v5.2.x), "loggregator-agent-release-blobs", true),
   Release.new("service-metrics", %w(v1.12.x), "oss-service-metrics-release-blobs", false),
 ]
 %>
@@ -27,6 +27,7 @@ groups:
 <% release.backport_branches.each do |backport_branch| %>
   - <%= release.name %>-create-backport-<%= backport_branch %>
   - <%= release.name %>-<%= backport_branch %>-bump-golang
+  - update-p-runtime-with-<%= release.name %>-<%= backport_branch %>
 <% end %>
 <% end %>
 
@@ -36,10 +37,26 @@ groups:
 <% release.backport_branches.each do |backport_branch| %>
   - <%= release.name %>-create-backport-<%= backport_branch %>
   - <%= release.name %>-<%= backport_branch %>-bump-golang
+  - update-p-runtime-with-<%= release.name %>-<%= backport_branch %>
 <% end %>
 <% end %>
 
 resources:
+- name: releng-kiln-concourse-tasks
+  type: git
+  source:
+    uri: git@github.com:pivotal/releng-kiln-concourse-tasks.git
+    private_key: ((loggregator-pivotal-ci-key))
+
+- name: p-runtime
+  type: git
+  source:
+    uri: git@github.com:pivotal-cf/p-runtime.git
+    branch: master
+    private_key: ((loggregator-pivotal-ci-key))
+    paths:
+      - Kilnfile
+
 - name: loggregator-ci
   type: git
   source:
@@ -54,6 +71,15 @@ resources:
     branch: <%= backport_branch %>
     uri: git@github.com:cloudfoundry/<%= release.name %>-release
     private_key: {{cf-loggregator-oauth-bot-key}}
+
+- name: <%= release.name %>-<%= backport_branch %>-github-release-to-publish
+  type: github-release
+  source:
+    user: cloudfoundry
+    repository: <%= release.name %>-release
+    access_token: {{access-token}}
+    tag_filter: <%= backport_branch.gsub(".", "\\.").gsub("x", "\\d+") %>
+    globs: release\.tgz
 <% end %>
 
 - name: <%= release.name %>-github-release-drafts
@@ -150,6 +176,22 @@ jobs:
       body: github-release/body
       globs:
       - github-release/*.tgz
+
+- name: update-p-runtime-with-<%= release.name %>-<%= backport_branch %>
+  serial: true
+  plan:
+  - in_parallel:
+    - get: <%= release.name %>-<%= backport_branch %>-github-release-to-publish
+    - get: releng-kiln-concourse-tasks
+    - get: p-runtime
+      params: { submodules: none }
+  - task: upload-release
+    file: releng-kiln-concourse-tasks/tasks/upload-release/task.yml
+    input_mapping:
+      release-tarball-directory: <%= release.name %>-<%= backport_branch %>-github-release-to-publish
+    params:
+      AWS_ACCESS_KEY_ID: ((aws_access_key_id))
+      AWS_SECRET_ACCESS_KEY: ((aws_secret_access_key))
 
 - name: <%= release.name %>-<%= backport_branch %>-bump-golang
   serial: true
