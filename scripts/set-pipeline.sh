@@ -20,13 +20,12 @@ function set_pipeline {
 
     if [[ ${pipeline_file} = *.erb ]]; then
       erb ${pipeline_file} > /dev/null # this way if the erb fails the script bails
-      pipeline_file=<(erb ${pipeline_file})
     fi
 
     echo setting pipeline for "$pipeline_name"
 
     fly -t ${TARGET} set-pipeline -p "$pipeline_name" \
-        -c "$pipeline_file" \
+        -c <(erb ${pipeline_file}) \
         -l <(lpass show 'Shared-Loggregator (Pivotal Only)/pipeline-secrets.yml' --notes) \
         -l <(lpass show 'Shared-CF- Log Cache (Pivotal ONLY)/release-credentials.yml' --notes) \
         -l <(lpass show 'Shared-Pivotal Common/pas-releng-fetch-releases' --notes) \
