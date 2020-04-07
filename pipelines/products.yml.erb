@@ -1,6 +1,6 @@
 <%
 bosh_releases = %w(loggregator loggregator-agent statsd-injector log-cache metrics-discovery system-metrics system-metrics-scraper)
-standalone_releases = %w(service-metrics service-logs)
+standalone_releases = %w(service-metrics)
 dev_envs = %w(banana papaya)
 
 cfd_smoke_tests = %w(cats cfar-lats test-metrics-agent)
@@ -12,7 +12,6 @@ smoke_tests = {
   "log-cache" => log_cache_smoke_tests,
   "statsd-injector" => cfd_smoke_tests,
   "service-metrics" => ["service-metrics-smoke-tests"],
-  "service-logs" => ["service-logs-smoke-tests"],
   "metrics-discovery" => cfd_smoke_tests,
   "system-metrics" => cfd_smoke_tests,
   "system-metrics-scraper" => cfd_smoke_tests,
@@ -374,71 +373,6 @@ jobs:
     params:
       repository: merged-dest
 <% end %>
-
-###############################################################################
-# SERVICE LOGS
-###############################################################################
-- name: service-logs-deploy
-  serial: true
-  plan:
-  - in_parallel:
-    - get: 24h
-      trigger: true
-    - get: cf-deployment-concourse-tasks
-    - get: service-logs-release
-      passed: [service-logs-tests-with-bumped-modules]
-      trigger: true
-    - get: bbl-state
-      resource: deployments-loggregator
-      passed: [cf-deploy]
-    - get: loggregator-ci
-  - task: upload-service-logs-release
-    file: loggregator-ci/tasks/upload-release/task.yml
-    input_mapping:
-      bosh-release-dir: service-logs-release
-    params:
-      BBL_STATE_DIR: ((acceptance_bbl_state_dir))
-  - task: prepare-ops-files
-    file: loggregator-ci/tasks/prepare-service-logs-ops/task.yml
-    params:
-      ENV_NAME: ((acceptance_env_name))
-      BBL_STATE_DIR: ((acceptance_bbl_state_dir))
-  - task: deploy-standalone
-    file: cf-deployment-concourse-tasks/bosh-deploy/task.yml
-    input_mapping:
-      vars-store: bbl-state
-      ops-files: ops-files
-      vars-files: bbl-state
-      cf-deployment: service-logs-release
-    params:
-      SYSTEM_DOMAIN: ((acceptance_system_domain))
-      BBL_STATE_DIR: ((acceptance_bbl_state_dir))
-      DEPLOYMENT_NAME: test-service-logs
-      MANIFEST_FILE: manifests/test-service-logs.yml
-      OPS_FILES: |
-        on-the-fly.yml
-
-- name: service-logs-smoke-tests
-  serial: true
-  plan:
-  - in_parallel:
-    - get: 24h
-      trigger: true
-    - get: cf-deployment-concourse-tasks
-    - get: service-logs-release
-      passed: [service-logs-deploy]
-      trigger: true
-    - get: bbl-state
-      resource: deployments-loggregator
-    - get: loggregator-ci
-  - task: test-service-logs
-    file: loggregator-ci/tasks/service-logs-smoke-test/task.yml
-    params:
-      BBL_STATE_DIR: ((acceptance_bbl_state_dir))
-      CF_API: https://api.((acceptance_system_domain))
-      USERNAME: admin
-      ORG: system
-      SPACE: blackbox-testing
 
 ###############################################################################
 # SERVICE METRICS INJECTOR
