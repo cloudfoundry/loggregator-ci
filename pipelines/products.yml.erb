@@ -1,7 +1,7 @@
 <%
 bosh_releases = %w(loggregator loggregator-agent statsd-injector log-cache metrics-discovery system-metrics system-metrics-scraper)
 standalone_releases = %w(service-metrics)
-dev_envs = %w(banana papaya)
+dev_envs = %w(papaya)
 
 cfd_smoke_tests = %w(cats cfar-lats test-metrics-agent)
 log_cache_smoke_tests = %w(cats cfar-lats lcats test-metrics-agent)
@@ -514,22 +514,12 @@ jobs:
 
         experimental/use-logcache-syslog-ingress.yml
 
-        windows1803-cell.yml
-        use-latest-windows1803-stemcell.yml
-        experimental/add-syslog-agent-windows1803.yml
-        experimental/add-system-metrics-agent-windows1803.yml
-        experimental/use-logcache-syslog-ingress-windows1803.yml
-
         windows2019-cell.yml
         use-online-windows2019fs.yml
         use-latest-windows2019-stemcell.yml
         experimental/add-syslog-agent-windows2019.yml
         experimental/add-system-metrics-agent-windows2019.yml
         experimental/use-logcache-syslog-ingress-windows2019.yml
-
-        loggregator-agent/cf-deployment-windows-addon.yml
-        metrics-discovery/cf-add-metrics-agent-windows.yml
-        metrics-discovery/cf-add-metrics-discovery-windows.yml
 
         denver/add-grafana.yml
         denver/loggregator-clients.yml
@@ -589,14 +579,6 @@ jobs:
         BBL_STATE_DIR: ((acceptance_bbl_state_dir))
         RELEASE_NAMES: |
           <% (bosh_releases + standalone_releases).each do |release| %><%= release %>
-          <% end %>
-    - task: export-releases-windows1803
-      file: concourse-tasks/release/export/task.yml
-      params:
-        STEMCELL_OS: windows1803
-        BBL_STATE_DIR: ((acceptance_bbl_state_dir))
-        RELEASE_NAMES: |
-          <% run_windows_tests.keys.each do |release| %><%= release %>
           <% end %>
     - task: export-releases-windows2019
       file: concourse-tasks/release/export/task.yml
