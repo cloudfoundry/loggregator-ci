@@ -14,11 +14,7 @@ mkdir -p \
 
 cp cf-deployment/operations/*.yml ops-files/
 
-#TMP HACK, update syslog tls addresses to include metrics
-find ops-files -type f -print0 | xargs -0 sed -i'' -e 's|syslog-tls://doppler.service.cf.internal:6067|syslog-tls://doppler.service.cf.internal:6068?include-metrics-deprecated=true|g'
-
 cp denver-deployments/bosh-cf-deployment/operations/default/use-provided-router-certs.yml ops-files/
-
 cp denver-deployments/bosh-cf-deployment/operations/loggregator/*.yml ops-files/denver/
 cp cf-deployment/operations/experimental/*.yml ops-files/experimental/
 cp loggregator-release/manifests/operations/*.yml ops-files/loggregator
@@ -28,3 +24,6 @@ cp log-cache-release/manifests/operations/*.yml ops-files/log-cache
 cp nats-release/example-manifests/ops-files/*.yml ops-files/nats
 cp system-metrics-release/manifests/operations/*.yml ops-files/system-metrics
 cp system-metrics-scraper-release/manifests/operations/*.yml ops-files/system-metrics-scraper
+
+#TMP HACK, update syslog tls addresses to include metrics
+find ops-files -type f -print0 | xargs -0 sed -i'' -e 's|syslog-tls://doppler.service.cf.internal:6067|syslog-tls://doppler.service.cf.internal:6068?include-metrics-deprecated=true|g'
