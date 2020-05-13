@@ -89,6 +89,10 @@ groups:
   <% if release == "log-cache" %>
   - lcats
   <% end %>
+  <% if release == "metrics-discovery" %>
+  - test-metrics-agent
+  - metrics-smoke-test
+  <% end %>
 <% end %>
 
 <% standalone_releases.each do |release| %>
