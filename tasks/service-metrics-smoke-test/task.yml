@@ -25,3 +25,9 @@ params:
 
   # Required - source ID that is used in service metrics deployment
   SOURCE_ID:
+
+  # Required - Organization in CF
+  ORG:
+
+  # Required - Space in CF
+  SPACE:
