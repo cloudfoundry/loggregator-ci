@@ -57,4 +57,13 @@ cat <<EOT >> ops-files/on-the-fly.yml
 - type: replace
   path: /releases/name=bpm/version
   value: ${bpm_version}
+- type: replace
+  path: /variables/name=log_cache_syslog_tls?/options/ca
+  value: /bosh-banana/cf/loggregator_ca
+- type: replace
+  path: /variables/name=forwarder-agent-metrics?/options/ca
+  value: /bosh-banana/cf/metric_scraper_ca
+- type: replace
+  path: /variables/name=syslog-agent-metrics?/options/ca
+  value: /bosh-banana/cf/metric_scraper_ca
 EOT
