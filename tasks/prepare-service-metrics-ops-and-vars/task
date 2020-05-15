@@ -58,14 +58,14 @@ cat <<EOT >> ops-files/on-the-fly.yml
   path: /releases/name=bpm/version
   value: ${bpm_version}
 - type: replace
-  path: /variables/name=log_cache_syslog_tls?/
+  path: /variables/name=log_cache_syslog_tls?
   value:
-  options:
-    ca: /bosh-${ENV_NAME}/cf/loggregator_ca
-    common_name: q-s3.doppler.default.cf.bosh
-    extended_key_usage:
-    - server_auth
-  type: certificate
+    options:
+      ca: /bosh-${ENV_NAME}/cf/loggregator_ca
+      common_name: q-s3.doppler.default.cf.bosh
+      extended_key_usage:
+      - server_auth
+    type: certificate
 - type: replace
   path: /variables/name=forwarder-agent-metrics?/options/ca
   value: /bosh-${ENV_NAME}/cf/metric_scraper_ca
