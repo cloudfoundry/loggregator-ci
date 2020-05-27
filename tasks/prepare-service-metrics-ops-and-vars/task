@@ -60,6 +60,7 @@ cat <<EOT >> ops-files/on-the-fly.yml
 - type: replace
   path: /variables/name=log_cache_syslog_tls?
   value:
+    name: log_cache_syslog_tls
     options:
       ca: /bosh-${ENV_NAME}/cf/loggregator_ca
       common_name: q-s3.doppler.default.cf.bosh
