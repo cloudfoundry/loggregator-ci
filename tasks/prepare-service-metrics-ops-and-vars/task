@@ -30,6 +30,9 @@ cat <<EOT >> ops-files/on-the-fly.yml
 - type: replace
   path: /variables/name=loggregator_agent/options/ca
   value: /bosh-${ENV_NAME}/cf/loggregator_ca
+- type: replace
+  path: /variables/name=log_cache_syslog_tls/options/ca
+  value: /bosh-${ENV_NAME}/cf/loggregator_ca
 - type: remove
   path: /variables/name=metric_scraper_ca
 - type: replace
@@ -45,32 +48,16 @@ cat <<EOT >> ops-files/on-the-fly.yml
   path: /variables/name=loggregator-agent-metrics/options/ca
   value: /bosh-${ENV_NAME}/cf/metric_scraper_ca
 - type: replace
+  path: /variables/name=syslog-agent-metrics/options/ca
+  value: /bosh-${ENV_NAME}/cf/metric_scraper_ca
+- type: replace
+  path: /variables/name=forwarder-agent-metrics/options/ca
+  value: /bosh-${ENV_NAME}/cf/metric_scraper_ca
+- type: replace
   path: /variables/name=loggregator_agent/options/alternative_names
   value:
   - metron
   - agent
   - localhost
   - 127.0.0.1
-- type: replace
-  path: /stemcells/os=ubuntu-xenial/version
-  value: ${stemcell_version}
-- type: replace
-  path: /releases/name=bpm/version
-  value: ${bpm_version}
-- type: replace
-  path: /variables/name=log_cache_syslog_tls?
-  value:
-    name: log_cache_syslog_tls
-    options:
-      ca: /bosh-${ENV_NAME}/cf/loggregator_ca
-      common_name: q-s3.doppler.default.cf.bosh
-      extended_key_usage:
-      - server_auth
-    type: certificate
-- type: replace
-  path: /variables/name=forwarder-agent-metrics?/options/ca
-  value: /bosh-${ENV_NAME}/cf/metric_scraper_ca
-- type: replace
-  path: /variables/name=syslog-agent-metrics?/options/ca
-  value: /bosh-${ENV_NAME}/cf/metric_scraper_ca
 EOT
