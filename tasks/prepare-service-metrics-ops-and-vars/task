@@ -22,8 +22,12 @@ cat <<EOT >> ops-files/on-the-fly.yml
 - type: replace
   path: /instance_groups/name=service-metrics/jobs/name=service-metrics/properties/service_metrics/source_id?
   value: dummy-source-id
+
 - type: remove
   path: /variables/name=loggregator_ca
+- type: remove
+  path: /variables/name=metric_scraper_ca
+
 - type: replace
   path: /variables/name=service-metrics/options/ca
   value: /bosh-${ENV_NAME}/cf/loggregator_ca
@@ -31,10 +35,7 @@ cat <<EOT >> ops-files/on-the-fly.yml
   path: /variables/name=loggregator_agent/options/ca
   value: /bosh-${ENV_NAME}/cf/loggregator_ca
 - type: replace
-  path: /variables/name=log_cache_syslog_tls/options/ca
   value: /bosh-${ENV_NAME}/cf/loggregator_ca
-- type: remove
-  path: /variables/name=metric_scraper_ca
 - type: replace
   path: /variables/name=service-metrics-metrics/options/ca
   value: /bosh-${ENV_NAME}/cf/metric_scraper_ca
@@ -53,11 +54,8 @@ cat <<EOT >> ops-files/on-the-fly.yml
 - type: replace
   path: /variables/name=forwarder-agent-metrics/options/ca
   value: /bosh-${ENV_NAME}/cf/metric_scraper_ca
+
 - type: replace
-  path: /variables/name=loggregator_agent/options/alternative_names
-  value:
-  - metron
-  - agent
-  - localhost
-  - 127.0.0.1
+  path: /instance_groups/name=service-metrics/jobs/name=loggr-syslog-agent/properties/drain_ca_cert
+  value: /bosh-${ENV_NAME}/cf/loggregator_ca
 EOT
