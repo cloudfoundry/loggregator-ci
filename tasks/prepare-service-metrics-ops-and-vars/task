@@ -35,8 +35,6 @@ cat <<EOT >> ops-files/on-the-fly.yml
   path: /variables/name=loggregator_agent/options/ca
   value: /bosh-${ENV_NAME}/cf/loggregator_ca
 - type: replace
-  value: /bosh-${ENV_NAME}/cf/loggregator_ca
-- type: replace
   path: /variables/name=service-metrics-metrics/options/ca
   value: /bosh-${ENV_NAME}/cf/metric_scraper_ca
 - type: replace
