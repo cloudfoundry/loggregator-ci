@@ -55,5 +55,5 @@ cat <<EOT >> ops-files/on-the-fly.yml
 
 - type: replace
   path: /instance_groups/name=service-metrics/jobs/name=loggr-syslog-agent/properties/drain_ca_cert
-  value: /bosh-${ENV_NAME}/cf/loggregator_ca
+  value: ((/bosh-${ENV_NAME}/cf/loggregator_ca.ca))
 EOT
