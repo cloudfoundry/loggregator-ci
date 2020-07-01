@@ -1,7 +1,6 @@
 #!/bin/bash
 set -ex
 
-source $(cd $(dirname ${BASH_SOURCE})/../../../scripts/helpers && pwd)/retry.sh
 ci_root=$PWD
 function munge {
   echo $1 | tr '/' '_'
@@ -13,12 +12,6 @@ export GO111MODULE=on
 
 pushd release/src
   # do not bump pinned dependencies
-  retry 3 go get -u -d $(awk '/require/{y=1;next}y' go.mod | grep -v ')' | grep -v pinned | grep -v replace | awk '{print $1}')
-  retry 3 go mod tidy
-
-  export GOPROXY=off
-  go mod vendor
-
   pushd cmd
     for pkg in $(go list ./... | grep -vE ${IGNORE_PACKAGE_REGEX}); do
       go test -mod=vendor -c -o $ci_root/test-binaries/$(munge $pkg)_test.exe $pkg &
