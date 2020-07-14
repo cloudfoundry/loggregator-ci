@@ -20,7 +20,7 @@
     "include_ssh": false,
     "include_sso": false,
     "include_tasks": false,
-    "include_v3": true,
+    "include_v3": false,
     "include_zipkin": false,
     "include_capi_experimental": false,
     "include_credhub": false,
