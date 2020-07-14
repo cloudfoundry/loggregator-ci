@@ -1,0 +1,262 @@
+---
+resource_types:
+- name: pcf-pool
+  source:
+    repository: cftoolsmiths/toolsmiths-envs-resource
+  type: docker-image
+
+resources:
+- name: 5m
+  type: time
+  source:
+    interval: 5m
+
+- name: 24h
+  type: time
+  source:
+    interval: 24h
+
+- name: cf-acceptance-tests
+  type: git
+  source:
+    branch: master
+    uri: https://github.com/cloudfoundry/cf-acceptance-tests.git
+
+- name: cf-deployment-concourse-tasks
+  type: git
+  source:
+    uri: https://github.com/cloudfoundry/cf-deployment-concourse-tasks
+    tag_filter: v*
+
+- name: loggregator-ci
+  type: git
+  source:
+    uri: git@github.com:cloudfoundry/loggregator-ci
+    branch: master
+    private_key: ((cf-loggregator-oauth-bot-key))
+
+- name: loggregator-agent-release-elect
+  type: git
+  source:
+    uri: git@github.com:cloudfoundry/loggregator-agent-release.git
+    branch: release-elect
+    private_key: ((cf-loggregator-oauth-bot-key))
+    ignore_paths:
+      - .final_builds
+      - releases
+
+- name: loggregator-agent-release
+  type: git
+  source:
+    uri: git@github.com:cloudfoundry/loggregator-agent-release.git
+    branch: develop
+    private_key: ((cf-loggregator-oauth-bot-key))
+    ignore_paths:
+      - .final_builds
+      - releases
+
+- name: loggregator-agent-release-master
+  type: git
+  source:
+    uri: git@github.com:cloudfoundry/loggregator-agent-release.git
+    branch: master
+    private_key: ((cf-loggregator-oauth-bot-key))
+    disable_ci_skip: true
+
+- name: cf-deployment
+  type: git
+  source:
+    uri: git@github.com:cloudfoundry/cf-deployment.git
+    branch: master
+    private_key: ((cf-loggregator-oauth-bot-key))
+
+- name: cf-env
+  type: pcf-pool
+  source:
+    api_token: ((toolsmith-api-key))
+    hostname: environments.toolsmiths.cf-app.com
+    pool_name: cf-deployment
+  tags:
+  - cf-denver-shared-vsphere
+
+jobs:
+- name: loggregator-agent-tests
+  public: true
+  serial: true
+  plan:
+  - in_parallel:
+    - get: loggregator-ci
+    - get: 24h
+      trigger: true
+    - get: loggregator-agent-release
+      trigger: true
+  - in_parallel:
+    - task: run-tests
+      file: loggregator-ci/tasks/go-test/task.yml
+      input_mapping:
+        source-repo: loggregator-agent-release
+
+    - do:
+      - task: build-windows-test-binary
+        file: loggregator-ci/tasks/go-windows-tests/build-binary/task.yml
+        input_mapping:
+          release: loggregator-agent-release
+
+        params:
+          IGNORE_PACKAGE_REGEX: metric-scraper\|syslog-binding-cache\|udp-forwarder
+
+      # TODO: How do we even do windows tests?
+      # - task: run-windows-tests
+      #   file: loggregator-ci/tasks/go-windows-tests/run-tests/task.yml
+
+  - task: commit
+    file: loggregator-ci/tasks/commit/task.yml
+    input_mapping:
+      release-repo: tested-source
+    output_mapping:
+      committed-repo: committed-loggregator-agent-release
+    params:
+      COMMIT_MESSAGE: "Bump modules"
+  - put: loggregator-agent-release
+    params:
+      repository: committed-loggregator-agent-release
+      rebase: true
+
+- name: claim-cf-env
+  plan:
+  - get: loggregator-agent-release
+    passed: ["loggregator-agent-tests"]
+    trigger: true
+  - put: cf-env
+    tags:
+    - cf-denver-shared-vsphere
+    params:
+      action: claim
+
+- name: cf-deploy
+  serial: true
+  plan:
+  - get: cf-env
+    passed:
+    - claim-cf-env
+    tags:
+    - cf-denver-shared-vsphere
+  - get: loggregator-agent-release
+    trigger: true
+    passed:
+    - claim-cf-env
+  - get: cf-deployment
+  - get: cf-deployment-concourse-tasks
+  - task: make-loggregator-agent-manifest
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source:
+          repository: relintdockerhubpushbot/cf-deployment-concourse-tasks
+          tag: latest
+      inputs:
+      - name: cf-env
+      outputs:
+      - name: loggregator-agent-manifest
+      run:
+        path: /bin/bash
+        args:
+        - -c
+        - |
+          set -eo pipefail
+          eval "$(bbl print-env --metadata-file cf-env/metadata)"
+          bosh -d cf manifest > loggregator-agent-manifest/manifest.yml
+
+  - task: deploy-loggregator-agent
+    file: cf-deployment-concourse-tasks/bosh-deploy-with-created-release/task.yml
+    input_mapping:
+      cf-deployment: loggregator-agent-manifest
+      toolsmiths-env: cf-env
+      release: loggregator-agent-release
+      ops-files: cf-deployment
+      vars-files: cf-deployment
+    params:
+      MANIFEST_FILE: manifest.yml
+
+- name: cats
+  serial: true
+  serial_groups:
+  - bosh-cf-cats
+  plan:
+  - get: cf-env
+    passed:
+    - cf-deploy
+    tags:
+    - cf-denver-shared-vsphere
+  - get: cf-deployment-concourse-tasks
+  - get: cf-acceptance-tests
+  - get: loggregator-ci
+  - get: loggregator-agent-release
+    trigger: true
+    passed: ["cf-deploy"]
+  - task: generate-config
+    file: cf-deployment-concourse-tasks/update-integration-configs/task.yml
+    input_mapping:
+      toolsmiths-env: cf-env
+      integration-configs: loggregator-ci
+    params:
+      CATS_INTEGRATION_CONFIG_FILE: cats-config.json
+  - task: run-cats
+    file: cf-deployment-concourse-tasks/run-cats/task.yml
+    input_mapping:
+      integration-config: updated-integration-configs
+    params:
+      CONFIG_FILE_PATH: cats-config.json
+
+- name: unclaim-cf-env
+  plan:
+  - get: cf-env
+    passed: ["cats"]
+    trigger: true
+    tags:
+      - cf-denver-shared-vsphere
+  - put: cf-env
+    tags:
+      - cf-denver-shared-vsphere
+    params:
+      env_file: cf-env/metadata
+      action: unclaim
+
+- name: loggregator-agent-promotion
+  serial: true
+  plan:
+  - in_parallel:
+    - get: develop
+      resource: loggregator-agent-release
+      trigger: true
+      passed: ["cats"]
+    - get: loggregator-agent-release-elect
+  - put: loggregator-agent-release-elect
+    params:
+      repository: develop
+
+- name: loggregator-agent-master-promotion
+  serial: true
+  plan:
+  - in_parallel:
+    - get: 5m
+      trigger: true
+    - get: loggregator-agent-release-elect
+      passed: ["loggregator-agent-promotion"]
+      trigger: true
+    - get: loggregator-agent-release-master
+    - get: loggregator-ci
+  - task: bumper
+    file: loggregator-ci/tasks/bumper/task.yml
+    input_mapping:
+      source: loggregator-agent-release-elect
+      dest: loggregator-agent-release-master
+    params:
+      SOURCE_BRANCH: release-elect
+      DEST_BRANCH: master
+      TRACKER_API_TOKEN: ((tracker-api-token))
+  - put: loggregator-agent-release-master
+    params:
+      repository: merged-dest
+
