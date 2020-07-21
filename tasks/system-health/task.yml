@@ -1,0 +1,15 @@
+---
+platform: linux
+
+image_resource:
+  type: docker-image
+  souce:
+    repository: relintdockerhubpushbot/cf-deployment-concourse-tasks
+    tag: latest
+
+inputs:
+- name: loggregator-ci
+- name: toolsmiths-env
+
+run:
+  path: loggregator-ci/tasks/system-health/task

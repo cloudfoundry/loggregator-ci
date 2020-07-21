@@ -1,0 +1,51 @@
+#!/bin/bash
+set -exu
+
+eval "$(bbl print-env --metadata-file toolsmiths-env/metadata)"
+
+# Doppler ingress <= 500/sec?
+cf install-plugin -f -r CF-Community "log-cache"
+echo "Testing platform ingress rate of dopplers"
+ingress_rate=$(cf query 'sum(rate(ingress{source_id="doppler"}[5m]))' | jq .data.result[0].value[1] -r)
+echo $ingress_rate
+if (( $(echo "${ingress_rate} > 500" | bc -l) )); then
+    exit 1
+fi
+# All cpus < 75%
+echo "Testing platform cpu percentages"
+bosh -d cf vms --vitals | \
+    sed 's/%//g' | \
+    awk '
+    # user, system, and idle cpu < 75%
+    $23 + $24 + $25 < 75 {
+        printf"%s\t%s\n", "SUCCESS", $1;
+    }
+    # user, system, and idle cpu >= 75%
+    $23 + $24 + $25 >= 75 {
+        printf "%s\t%s\n", "FAIL", $1;
+    }
+' > cpu-measure
+
+cat cpu-measure
+if cat cpu-measure | grep FAIL; then
+    exit 1
+fi
+# All memory < 75 %
+echo "Testing platform mem consumption"
+bosh -d cf vms --vitals | \
+    sed 's/%//g' | \
+    awk '
+    # memory percent < 75%
+    $26 < 75 {
+        printf"%s\t%s\n", "SUCCESS", $1;
+    }
+    # memory percent >= 75%
+    $26 >= 75 {
+        printf "%s\t%s\n", "FAIL", $1;
+    }
+' > mem-measure
+cat mem-measure
+if cat mem-measure | grep FAIL; then
+    exit 1
+fi
+
