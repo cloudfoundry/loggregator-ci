@@ -1,14 +1,26 @@
 #!/bin/bash
 set -exu
 
-eval "$(bbl print-env --metadata-file toolsmiths-env/metadata)"
+fcomp() {
+    awk -v n1="$1" -v n2="$2" 'BEGIN {if (n1+0<n2+0) exit 0; exit 1}'
+}
+
+source cf-deployment-concourse-tasks/shared-functions
+setup_bosh_env_vars
+
+set +x
+echo "Authenticating as CF admin"
+cf api --skip-ssl-validation "api.${SYSTEM_DOMAIN}"
+cf auth admin $(get_password_from_credhub cf_admin_password)
+set -x
 
 # Doppler ingress <= 500/sec?
 cf install-plugin -f -r CF-Community "log-cache"
 echo "Testing platform ingress rate of dopplers"
 ingress_rate=$(cf query 'sum(rate(ingress{source_id="doppler"}[5m]))' | jq .data.result[0].value[1] -r)
 echo $ingress_rate
-if (( $(echo "${ingress_rate} > 500" | bc -l) )); then
+
+if [ $(awk 'BEGIN {print ('$ingress_rate' >= 500)}') -eq 1 ]; then
     exit 1
 fi
 # All cpus < 75%

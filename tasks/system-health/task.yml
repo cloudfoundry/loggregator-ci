@@ -8,6 +8,7 @@ image_resource:
     tag: latest
 
 inputs:
+- name: cf-deployment-concourse-tasks
 - name: loggregator-ci
 - name: toolsmiths-env
 
