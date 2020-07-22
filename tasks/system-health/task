@@ -23,17 +23,17 @@ echo $ingress_rate
 if [ $(awk 'BEGIN {print ('$ingress_rate' >= 500)}') -eq 1 ]; then
     exit 1
 fi
-# All cpus < 75%
+# All cpus < 85%
 echo "Testing platform cpu percentages"
 bosh -d cf vms --vitals | \
     sed 's/%//g' | \
     awk '
-    # user, system, and idle cpu < 75%
-    $23 + $24 + $25 < 75 {
+    # user, system, and idle cpu < 85%
+    $23 + $24 + $25 < 85 {
         printf"%s\t%s\n", "SUCCESS", $1;
     }
-    # user, system, and idle cpu >= 75%
-    $23 + $24 + $25 >= 75 {
+    # user, system, and idle cpu >= 85%
+    $23 + $24 + $25 >= 85 {
         printf "%s\t%s\n", "FAIL", $1;
     }
 ' > cpu-measure
@@ -42,17 +42,17 @@ cat cpu-measure
 if cat cpu-measure | grep FAIL; then
     exit 1
 fi
-# All memory < 75 %
+# All memory < 80 %
 echo "Testing platform mem consumption"
 bosh -d cf vms --vitals | \
     sed 's/%//g' | \
     awk '
-    # memory percent < 75%
-    $26 < 75 {
+    # memory percent < 80%
+    $26 < 80 {
         printf"%s\t%s\n", "SUCCESS", $1;
     }
-    # memory percent >= 75%
-    $26 >= 75 {
+    # memory percent >= 80%
+    $26 >= 80 {
         printf "%s\t%s\n", "FAIL", $1;
     }
 ' > mem-measure
@@ -61,3 +61,40 @@ if cat mem-measure | grep FAIL; then
     exit 1
 fi
 
+# All system disk < 80 %
+echo "Testing platform system disk consumption"
+bosh -d cf vms --vitals | \
+    sed 's/%//g' | \
+    awk '
+    # system disk percent < 80%
+    $32 < 80 {
+        printf"%s\t%s\n", "SUCCESS", $1;
+    }
+    # system disk percent >= 80%
+    $32 >= 80 {
+        printf "%s\t%s\n", "FAIL", $1;
+    }
+' > sys-disk-measure
+cat sys-disk-measure
+if cat sys-disk-measure | grep FAIL; then
+    exit 1
+fi
+
+# All ephemerial disk < 80 %
+echo "Testing platform ephemeral disk consumption"
+bosh -d cf vms --vitals | \
+    sed 's/%//g' | \
+    awk '
+    # ephemeral disk percent < 80%
+    $34 < 80 {
+        printf"%s\t%s\n", "SUCCESS", $1;
+    }
+    # ephemeral disk percent >= 80%
+    $34 >= 80 {
+        printf "%s\t%s\n", "FAIL", $1;
+    }
+' > eph-disk-measure
+cat eph-disk-measure
+if cat eph-disk-measure | grep FAIL; then
+    exit 1
+fi
