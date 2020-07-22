@@ -179,7 +179,7 @@ jobs:
     params:
       MANIFEST_FILE: manifest.yml
 
-- name: cats
+- name: system-health
   serial: true
   serial_groups:
   - bosh-cf-cats
@@ -190,11 +190,33 @@ jobs:
     tags:
     - cf-denver-shared-vsphere
   - get: cf-deployment-concourse-tasks
+  - get: loggregator-ci
+  - get: loggregator-agent-release
+    trigger: true
+    passed:
+    - cf-deploy
+  - task: ensure-system-health
+    file: loggregator-ci/tasks/system-health/task.yml
+    input_mapping:
+      toolsmiths-env: cf-env
+
+- name: cats
+  serial: true
+  serial_groups:
+  - bosh-cf-cats
+  plan:
+  - get: cf-env
+    passed:
+    - system-health
+    tags:
+    - cf-denver-shared-vsphere
+  - get: cf-deployment-concourse-tasks
   - get: cf-acceptance-tests
   - get: loggregator-ci
   - get: loggregator-agent-release
     trigger: true
-    passed: ["cf-deploy"]
+    passed:
+    - system-health
   - task: generate-config
     file: cf-deployment-concourse-tasks/update-integration-configs/task.yml
     input_mapping:
@@ -230,7 +252,8 @@ jobs:
     - get: develop
       resource: loggregator-agent-release
       trigger: true
-      passed: ["cats"]
+      passed:
+      - cats
     - get: loggregator-agent-release-elect
   - put: loggregator-agent-release-elect
     params:
