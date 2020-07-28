@@ -5,6 +5,11 @@ resource_types:
     repository: cftoolsmiths/toolsmiths-envs-resource
   type: docker-image
 
+- name: slack-notification
+  type: docker-image
+  source:
+    repository: cfcommunity/slack-notification-resource
+
 resources:
 - name: 5m
   type: time
@@ -78,6 +83,11 @@ resources:
     pool_name: cf-deployment
   tags:
   - cf-denver-shared-vsphere
+
+- name: log-egrets-channel
+  type: slack-notification
+  source:
+    url: ((slack-url))
 
 jobs:
 - name: loggregator-agent-tests
@@ -199,6 +209,10 @@ jobs:
     file: loggregator-ci/tasks/system-health/task.yml
     input_mapping:
       toolsmiths-env: cf-env
+    on_failure:
+      put: log-egrets-channel
+      params:
+        text: "system health sad"
 
 - name: cats
   serial: true
