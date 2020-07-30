@@ -1,5 +1,5 @@
 <%
-bosh_releases = %w(loggregator statsd-injector log-cache metrics-discovery system-metrics system-metrics-scraper)
+bosh_releases = %w(statsd-injector log-cache metrics-discovery system-metrics system-metrics-scraper)
 standalone_releases = %w(service-metrics)
 dev_envs = %w(papaya)
 
@@ -7,7 +7,6 @@ cfd_smoke_tests = %w(cats cfar-lats test-metrics-agent)
 log_cache_smoke_tests = %w(cats cfar-lats lcats test-metrics-agent)
 
 smoke_tests = {
-  "loggregator" => cfd_smoke_tests,
   "log-cache" => log_cache_smoke_tests,
   "statsd-injector" => cfd_smoke_tests,
   "service-metrics" => ["service-metrics-smoke-tests"],
