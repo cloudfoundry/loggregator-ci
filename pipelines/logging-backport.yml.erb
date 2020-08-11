@@ -1,0 +1,227 @@
+<%
+class Release
+  attr_reader :name, :backport_branches, :s3_bucket, :include_windows
+  def initialize(name, backport_branches, s3_bucket, include_windows)
+    @name = name
+    @s3_bucket = s3_bucket
+    @backport_branches = backport_branches
+    @include_windows = include_windows
+  end
+end
+
+releases = [
+  Release.new("cf-syslog-drain", %w(v10.2.x), "cf-syslog-drain-release-blobs", false),
+  Release.new("log-cache", %w(v2.1.x v2.6.x), "log-cache-release-blobs", false),
+  Release.new("loggregator", %w(v105.6.x v106.2.x), "loggregator-release-blobs", false),
+  Release.new("loggregator-agent", %w(v3.21.x v5.2.x v5.3.x), "loggregator-agent-release-blobs", true),
+]
+%>
+
+groups:
+- name: all
+  jobs:
+<% releases.sort_by { |release| release.name }.each do |release| %>
+<% release.backport_branches.each do |backport_branch| %>
+  - <%= release.name %>-create-backport-<%= backport_branch %>
+  - <%= release.name %>-<%= backport_branch %>-bump-golang
+  - update-p-runtime-with-<%= release.name %>-<%= backport_branch %>
+<% end %>
+<% end %>
+
+<% releases.sort_by { |release| release.name }.each do |release| %>
+- name: <%= release.name %>
+  jobs:
+<% release.backport_branches.each do |backport_branch| %>
+  - <%= release.name %>-create-backport-<%= backport_branch %>
+  - <%= release.name %>-<%= backport_branch %>-bump-golang
+  - update-p-runtime-with-<%= release.name %>-<%= backport_branch %>
+<% end %>
+<% end %>
+
+resources:
+- name: releng-kiln-concourse-tasks
+  type: git
+  source:
+    uri: git@github.com:pivotal/releng-kiln-concourse-tasks.git
+    private_key: ((loggregator-pivotal-ci-key))
+
+- name: p-runtime
+  type: git
+  source:
+    uri: git@github.com:pivotal-cf/p-runtime.git
+    branch: master
+    private_key: ((loggregator-pivotal-ci-key))
+    paths:
+      - Kilnfile
+
+- name: loggregator-ci
+  type: git
+  source:
+    uri: git@github.com:cloudfoundry/loggregator-ci.git
+    private_key: {{loggregator-key}}
+
+<% releases.each do |release| %>
+<% release.backport_branches.each do |backport_branch| %>
+- name: <%= release.name %>-release-backport-<%= backport_branch %>
+  type: git
+  source:
+    branch: <%= backport_branch %>
+    uri: git@github.com:cloudfoundry/<%= release.name %>-release
+    private_key: {{cf-loggregator-oauth-bot-key}}
+
+- name: <%= release.name %>-<%= backport_branch %>-github-release-to-publish
+  type: github-release
+  source:
+    user: cloudfoundry
+    repository: <%= release.name %>-release
+    access_token: {{access-token}}
+    tag_filter: <%= backport_branch.gsub(".", "\\.").gsub("x", "\\d+") %>
+    globs: release\.tgz
+<% end %>
+
+- name: <%= release.name %>-github-release-drafts
+  type: github-release
+  source:
+    user: cloudfoundry
+    repository: <%= release.name %>-release
+    access_token: {{access-token}}
+    drafts: true
+<% end %>
+
+- name: concourse-tasks
+  type: git
+  source:
+    branch: master
+    uri: https://github.com/pivotal-cf/concourse-tasks
+
+- name: golang-release
+  type: git
+  source:
+    uri: git@github.com:bosh-packages/golang-release
+    branch: master
+    tag_filter: v*
+    private_key: ((cf-loggregator-oauth-bot-key))
+
+- name: cf-deployment-concourse-tasks-image
+  type: docker-image
+  source:
+    repository: relintdockerhubpushbot/cf-deployment-concourse-tasks
+    tag: latest
+
+jobs:
+<% releases.each do |release| %>
+<% release.backport_branches.each do |backport_branch| %>
+- name: <%= release.name %>-create-backport-<%= backport_branch %>
+  serial: true
+  plan:
+  - get: <%= release.name %>-release-backport-<%= backport_branch %>
+    trigger: false
+  - get: loggregator-ci
+  - get: cf-deployment-concourse-tasks-image
+  - task: sync-package-specs
+    image: cf-deployment-concourse-tasks-image
+    input_mapping:
+      release-repo: <%= release.name %>-release-backport-<%= backport_branch %>
+    config:
+      platform: linux
+      inputs:
+      - name: release-repo
+      outputs:
+      - name: synced-release-repo
+      run:
+        path: /bin/bash
+        args:
+        - "-c"
+        - |
+          set -e
+
+          pushd release-repo
+          git config user.email "cf-loggregator@pivotal.io"
+          git config user.name "Loggregator CI"
+          if [[ -f scripts/sync-package-specs ]]; then
+            source .envrc
+            ./scripts/sync-package-specs
+            git add packages/*/spec
+
+            if [ ! "$(git status --porcelain)" = "" ]; then
+                git commit -m "sync package specs"
+            fi
+          fi
+          popd
+
+          cp -a release-repo/. synced-release-repo
+
+  - task: create-backport
+    input_mapping:
+      release-repo: synced-release-repo
+    file: loggregator-ci/tasks/create-final-release/backport/task.yml
+    params:
+      S3_ACCESS_KEY: {{s3-access-key-id}}
+      S3_SECRET_KEY: {{s3-secret-access-key}}
+      JSON_KEY: {{gcp-service-account-key}}
+      SSH_KEY: {{loggregator-key}}
+      BLOBSTORE_BUCKET: <%= release.s3_bucket %>
+      BRANCH_NAME: <%= backport_branch %>
+  - put: <%= release.name %>-release-backport-<%= backport_branch %>
+    params:
+      repository: repos/release-repo
+      rebase: false
+  - put: <%= release.name %>-github-release-drafts
+    params:
+      name: github-release/name
+      tag: github-release/tag
+      body: github-release/body
+      globs:
+      - github-release/*.tgz
+
+- name: update-p-runtime-with-<%= release.name %>-<%= backport_branch %>
+  serial: true
+  plan:
+  - in_parallel:
+    - get: <%= release.name %>-<%= backport_branch %>-github-release-to-publish
+    - get: releng-kiln-concourse-tasks
+    - get: p-runtime
+      params: { submodules: none }
+  - task: upload-release
+    file: releng-kiln-concourse-tasks/tasks/upload-release/task.yml
+    input_mapping:
+      release-tarball-directory: <%= release.name %>-<%= backport_branch %>-github-release-to-publish
+    params:
+      AWS_ACCESS_KEY_ID: ((aws_access_key_id))
+      AWS_SECRET_ACCESS_KEY: ((aws_secret_access_key))
+
+- name: <%= release.name %>-<%= backport_branch %>-bump-golang
+  serial: true
+  plan:
+    - in_parallel:
+      - get: loggregator-ci
+      - get: concourse-tasks
+      - get: golang-release
+        trigger: true
+      - get: <%= release.name %>-release-backport-<%= backport_branch %>
+        trigger: false
+    - task: bump-<%= release.name %>-release
+      file: concourse-tasks/go/bump-vendored-golang/task.yml
+      input_mapping:
+        release: <%= release.name %>-release-backport-<%= backport_branch %>
+      output_mapping:
+        output-repo: updated-<%= release.name %>-release
+      params:
+        BLOBSTORE_ACCESS_KEY_ID: {{s3-access-key-id}}
+        BLOBSTORE_SECRET_ACCESS_KEY: {{s3-secret-access-key}}
+        GCS_JSON_KEY: {{gcp-service-account-key}}
+        GIT_USER_EMAIL: cf-loggregator@pivotal.io
+        GIT_USER_NAME: Loggregator CI
+        GOLANG_DIR: golang-release
+        RELEASE_DIR: release
+      <% if release.include_windows %>
+        GOLANG_OS_S: |
+          linux
+          windows
+      <% end %>
+    - put: <%= release.name %>-release-backport-<%= backport_branch %>
+      params:
+        repository: updated-<%= release.name %>-release
+        rebase: false
+<% end %>
+<% end %>
