@@ -1,0 +1,234 @@
+<%
+class Release
+  attr_reader :name, :include_windows, :s3_bucket, :release_name
+  def initialize(name, include_windows, s3_bucket, release_name)
+    @name = name
+    @include_windows = include_windows
+    @s3_bucket = s3_bucket
+    @release_name = release_name
+  end
+end
+
+releases = [
+  Release.new("loggregator", false, "loggregator-release-blobs", "Loggregator"),
+  Release.new("loggregator-agent", true, "loggregator-agent-release-blobs", "Loggregator Agent"),
+  Release.new("log-cache", false, "log-cache-release-blobs", "Log Cache"),
+  Release.new("cf-syslog-drain", false, "cf-syslog-drain-release-blobs", "CF Syslog Drain"),
+]
+%>
+
+groups:
+- name: all
+  jobs:
+  <% releases.sort_by { |release| release.name }.each do |release| %>
+  - <%= release.name %>-bumper-check
+  - <%= release.name %>-create-final-release
+  - <%= release.name %>-merge-to-develop
+  <% end %>
+
+<% releases.sort_by { |release| release.name }.each do |release| %>
+- name: <%= release.name %>
+  jobs:
+  - <%= release.name %>-bumper-check
+  - <%= release.name %>-cut-patch
+  - <%= release.name %>-cut-minor
+  - <%= release.name %>-cut-major
+  - <%= release.name %>-create-final-release
+  - <%= release.name %>-merge-to-develop
+<% end %>
+
+resources:
+- name: loggregator-ci
+  type: git
+  source:
+    uri: git@github.com:cloudfoundry/loggregator-ci.git
+    private_key: {{loggregator-key}}
+
+<% releases.each do |release| %>
+- name: <%= release.name %>-version
+  type: semver
+  source:
+    driver: git
+    uri: git@github.com:cloudfoundry/<%= release.name %>-release.git
+    branch: master
+    file: src/version
+    private_key: {{cf-loggregator-oauth-bot-key}}
+
+- name: <%= release.name %>-release
+  type: git
+  source:
+    uri: git@github.com:cloudfoundry/<%= release.name %>-release
+    branch: develop
+    private_key: {{cf-loggregator-oauth-bot-key}}
+    disable_ci_skip: true
+    clean_tags: true
+
+- name: <%= release.name %>-release-master
+  type: git
+  source:
+    uri: git@github.com:cloudfoundry/<%= release.name %>-release
+    branch: master
+    clean_tags: true
+    private_key: {{cf-loggregator-oauth-bot-key}}
+
+- name: <%= release.name %>-release-master-version
+  type: git
+  source:
+    uri: git@github.com:cloudfoundry/<%= release.name %>-release
+    branch: master
+    clean_tags: true
+    private_key: {{cf-loggregator-oauth-bot-key}}
+    paths:
+    - src/version
+
+- name: <%= release.name %>-github-release-drafts
+  type: github-release
+  source:
+    user: cloudfoundry
+    repository: <%= release.name %>-release
+    access_token: {{access-token}}
+    drafts: true
+
+- name: <%= release.name %>-github-release-published
+  type: github-release
+  source:
+    user: cloudfoundry
+    repository: <%= release.name %>-release
+    access_token: {{access-token}}
+<% end %>
+
+jobs:
+<% releases.each do |release| %>
+- name: <%= release.name %>-bumper-check
+  serial: true
+  plan:
+  - in_parallel:
+    - get: loggregator-ci
+    - get: <%= release.name %>-release-master
+      trigger: true
+    - get: <%= release.name %>-github-release-published
+  - task: diff-master-last-release
+    input_mapping:
+      release: <%= release.name %>-release-master
+      published-release: <%= release.name %>-github-release-published
+    file: loggregator-ci/tasks/bumper-check/task.yml
+    params:
+      SSH_KEY: {{loggregator-key}}
+      TRACKER_API_TOKEN: {{tracker-api-token}}
+
+- name: <%= release.name %>-cut-patch
+  plan:
+  - put: <%= release.name %>-version
+    params: {bump: patch}
+- name: <%= release.name %>-cut-minor
+  plan:
+  - put: <%= release.name %>-version
+    params: {bump: minor}
+- name: <%= release.name %>-cut-major
+  plan:
+  - put: <%= release.name %>-version
+    params: {bump: major}
+
+- name: <%= release.name %>-create-final-release
+  serial: true
+  plan:
+  - in_parallel:
+    - get: <%= release.name %>-release-master-version
+    - get: loggregator-ci
+  - task: create-final-release
+    file: loggregator-ci/tasks/create-final-release/master/task.yml
+    input_mapping:
+      master-repo: <%= release.name %>-release-master-version
+    params:
+      S3_ACCESS_KEY: {{s3-access-key-id}}
+      S3_SECRET_KEY: {{s3-secret-access-key}}
+      BLOBSTORE_BUCKET: <%= release.s3_bucket %>
+      JSON_KEY: {{gcp-service-account-key}}
+      SSH_KEY: {{loggregator-key}}
+      RELEASE_NAME: <%= release.release_name %>
+      AUTO_BUMPABLE_COMMITS: |
+        'Bump modules'
+        'bump golang release'
+        'Merge final release artifacts'
+        'Create final release'
+        'bump to'
+  - put: <%= release.name %>-release-master
+    params:
+      repository: repos/master-repo
+      rebase: false
+  - try:
+      task: should-publish
+      file: loggregator-ci/tasks/create-final-release/should-publish/task.yml
+      on_success:
+        put: <%= release.name %>-github-release-published
+        params:
+          name: github-release/name
+          tag: github-release/tag
+          body: github-release/body
+          globs:
+          - github-release/*.tgz
+      on_failure:
+        put: <%= release.name %>-github-release-drafts
+        params:
+          name: github-release/name
+          tag: github-release/tag
+          body: github-release/body
+          globs:
+            - github-release/*.tgz
+
+- name: <%= release.name %>-merge-to-develop
+  serial: true
+  plan:
+  - in_parallel:
+    - get: <%= release.name %>-release
+    - get: <%= release.name %>-release-master
+      passed: [ <%= release.name %>-create-final-release ]
+      trigger: true
+    - get: loggregator-ci
+    - get: <%= release.name %>-github-release-published
+      trigger: true
+  - task: wait-for-releases-to-match
+    input_mapping:
+      master-repo: <%= release.name %>-release-master
+      published-release: <%= release.name %>-github-release-published
+    config:
+      image_resource:
+        type: docker-image
+        source:
+          repository: loggregator/base
+      platform: linux
+      inputs:
+        - name: master-repo
+        - name: published-release
+      run:
+        path: /bin/bash
+        args:
+          - "-c"
+          - |
+            set -e
+
+            pushd master-repo > /dev/null
+              master_sha=$(git rev-parse HEAD)
+            popd
+
+            published_sha=$(cat published-release/commit_sha)
+
+            if [[ ${master_sha} != ${published_sha} ]]; then
+              echo "Published release sha doesn't match master repo sha"
+              echo "This job will retrigger once published release or master repo resource is updated"
+              exit 1
+            fi
+  - task: merge-back-to-develop
+    file: loggregator-ci/tasks/merge-to-develop/task.yml
+    input_mapping:
+      master-repo: <%= release.name %>-release-master
+      develop-repo: <%= release.name %>-release
+    params:
+      SSH_KEY: {{loggregator-key}}
+      MASTER_BRANCH: master
+      DEVELOP_BRANCH: develop
+  - put: <%= release.name %>-release
+    params:
+      repository: repos/develop-repo
+      rebase: false
+<% end %>
