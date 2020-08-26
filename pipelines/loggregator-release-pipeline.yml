@@ -60,11 +60,11 @@ resources:
       - .final_builds
       - releases
 
-- name: loggregator-release-master
+- name: loggregator-release-main
   type: git
   source:
     uri: git@github.com:cloudfoundry/loggregator-release.git
-    branch: master
+    branch: main
     private_key: ((cf-loggregator-oauth-bot-key))
     disable_ci_skip: true
 
@@ -259,7 +259,7 @@ jobs:
     params:
       repository: develop
 
-- name: loggregator-master-promotion
+- name: loggregator-main-promotion
   serial: true
   plan:
   - in_parallel:
@@ -268,18 +268,18 @@ jobs:
     - get: loggregator-release-elect
       passed: ["loggregator-promotion"]
       trigger: true
-    - get: loggregator-release-master
+    - get: loggregator-release-main
     - get: loggregator-ci
   - task: bumper
     file: loggregator-ci/tasks/bumper/task.yml
     input_mapping:
       source: loggregator-release-elect
-      dest: loggregator-release-master
+      dest: loggregator-release-main
     params:
       SOURCE_BRANCH: release-elect
-      DEST_BRANCH: master
+      DEST_BRANCH: main
       TRACKER_API_TOKEN: ((tracker-api-token))
-  - put: loggregator-release-master
+  - put: loggregator-release-main
     params:
       repository: merged-dest
 

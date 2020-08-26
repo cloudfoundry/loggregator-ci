@@ -60,11 +60,11 @@ resources:
       - .final_builds
       - releases
 
-- name: log-cache-release-master
+- name: log-cache-release-main
   type: git
   source:
     uri: git@github.com:cloudfoundry/log-cache-release.git
-    branch: master
+    branch: main
     private_key: ((cf-loggregator-oauth-bot-key))
     disable_ci_skip: true
 
@@ -603,7 +603,7 @@ jobs:
     params:
       repository: develop
 
-- name: log-cache-master-promotion
+- name: log-cache-main-promotion
   serial: true
   plan:
   - in_parallel:
@@ -612,18 +612,18 @@ jobs:
     - get: log-cache-release-elect
       passed: ["log-cache-promotion"]
       trigger: true
-    - get: log-cache-release-master
+    - get: log-cache-release-main
     - get: loggregator-ci
   - task: bumper
     file: loggregator-ci/tasks/bumper/task.yml
     input_mapping:
       source: log-cache-release-elect
-      dest: log-cache-release-master
+      dest: log-cache-release-main
     params:
       SOURCE_BRANCH: release-elect
-      DEST_BRANCH: master
+      DEST_BRANCH: main
       TRACKER_API_TOKEN: ((tracker-api-token))
-  - put: log-cache-release-master
+  - put: log-cache-release-main
     params:
       repository: merged-dest
 

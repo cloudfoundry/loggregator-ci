@@ -13,10 +13,10 @@ releases = [
   Release.new("loggregator", false, "loggregator-release-blobs", "Loggregator"),
   Release.new("loggregator-agent", true, "loggregator-agent-release-blobs", "Loggregator Agent"),
   Release.new("log-cache", false, "log-cache-release-blobs", "Log Cache"),
-  Release.new("cf-syslog-drain", false, "cf-syslog-drain-release-blobs", "CF Syslog Drain"),
 ]
 %>
 
+  <%# Release.new("cf-syslog-drain", false, "cf-syslog-drain-release-blobs", "CF Syslog Drain"), %>
 groups:
 - name: all
   jobs:
@@ -50,7 +50,7 @@ resources:
   source:
     driver: git
     uri: git@github.com:cloudfoundry/<%= release.name %>-release.git
-    branch: master
+    branch: main
     file: src/version
     private_key: {{cf-loggregator-oauth-bot-key}}
 
@@ -63,19 +63,19 @@ resources:
     disable_ci_skip: true
     clean_tags: true
 
-- name: <%= release.name %>-release-master
+- name: <%= release.name %>-release-main
   type: git
   source:
     uri: git@github.com:cloudfoundry/<%= release.name %>-release
-    branch: master
+    branch: main
     clean_tags: true
     private_key: {{cf-loggregator-oauth-bot-key}}
 
-- name: <%= release.name %>-release-master-version
+- name: <%= release.name %>-release-main-version
   type: git
   source:
     uri: git@github.com:cloudfoundry/<%= release.name %>-release
-    branch: master
+    branch: main
     clean_tags: true
     private_key: {{cf-loggregator-oauth-bot-key}}
     paths:
@@ -104,12 +104,12 @@ jobs:
   plan:
   - in_parallel:
     - get: loggregator-ci
-    - get: <%= release.name %>-release-master
+    - get: <%= release.name %>-release-main
       trigger: true
     - get: <%= release.name %>-github-release-published
-  - task: diff-master-last-release
+  - task: diff-main-last-release
     input_mapping:
-      release: <%= release.name %>-release-master
+      release: <%= release.name %>-release-main
       published-release: <%= release.name %>-github-release-published
     file: loggregator-ci/tasks/bumper-check/task.yml
     params:
@@ -133,12 +133,12 @@ jobs:
   serial: true
   plan:
   - in_parallel:
-    - get: <%= release.name %>-release-master-version
+    - get: <%= release.name %>-release-main-version
     - get: loggregator-ci
   - task: create-final-release
     file: loggregator-ci/tasks/create-final-release/master/task.yml
     input_mapping:
-      master-repo: <%= release.name %>-release-master-version
+      master-repo: <%= release.name %>-release-main-version
     params:
       S3_ACCESS_KEY: {{s3-access-key-id}}
       S3_SECRET_KEY: {{s3-secret-access-key}}
@@ -152,9 +152,9 @@ jobs:
         'Merge final release artifacts'
         'Create final release'
         'bump to'
-  - put: <%= release.name %>-release-master
+  - put: <%= release.name %>-release-main
     params:
-      repository: repos/master-repo
+      repository: repos/main-repo
       rebase: false
   - try:
       task: should-publish
@@ -181,7 +181,7 @@ jobs:
   plan:
   - in_parallel:
     - get: <%= release.name %>-release
-    - get: <%= release.name %>-release-master
+    - get: <%= release.name %>-release-main
       passed: [ <%= release.name %>-create-final-release ]
       trigger: true
     - get: loggregator-ci
@@ -221,11 +221,11 @@ jobs:
   - task: merge-back-to-develop
     file: loggregator-ci/tasks/merge-to-develop/task.yml
     input_mapping:
-      master-repo: <%= release.name %>-release-master
+      master-repo: <%= release.name %>-release-main
       develop-repo: <%= release.name %>-release
     params:
       SSH_KEY: {{loggregator-key}}
-      MASTER_BRANCH: master
+      MASTER_BRANCH: main
       DEVELOP_BRANCH: develop
   - put: <%= release.name %>-release
     params:
