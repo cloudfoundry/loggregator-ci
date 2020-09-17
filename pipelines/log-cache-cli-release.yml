@@ -60,10 +60,9 @@ jobs:
             IFS="." read -r -a version_parts <<< $semver
 
             # Update version
-            new_semver="$((version_parts[0]+1)).${version_parts[1]}.${version_parts[2]}"
-            IFS="." read -r -a version_parts <<< $new_semver
-
-            version="{\"Major\":$((version_parts[0])),\"Minor\":${version_parts[1]},\"Build\":${version_parts[2]}}"
+            new_major=$((version_parts[0]+1))
+            new_semver="$new_major.0.0"
+            version="{\"Major\":$new_major,\"Minor\":0,\"Build\":0}"
 
             # write out github release files
             echo "Log Cache CLI $new_semver" > github-release/name
