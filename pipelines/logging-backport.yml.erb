@@ -197,7 +197,6 @@ jobs:
       - get: loggregator-ci
       - get: concourse-tasks
       - get: golang-release
-        trigger: true
       - get: <%= release.name %>-release-backport-<%= backport_branch %>
         trigger: false
     - task: bump-<%= release.name %>-release
