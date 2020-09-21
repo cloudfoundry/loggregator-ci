@@ -108,7 +108,6 @@ resources:
 jobs:
 - name: log-cache-tests
   public: true
-  serial: true
   plan:
   - in_parallel:
     - get: loggregator-ci
@@ -146,7 +145,6 @@ jobs:
       action: claim
 
 - name: cf-deploy
-  serial: true
   plan:
   - get: cf-env
     passed:
@@ -220,9 +218,6 @@ jobs:
       OPS_FILES: lcats.yml
 
 - name: system-health
-  serial: true
-  serial_groups:
-  - bosh-cf-cats
   plan:
   - get: cf-env
     passed:
@@ -245,9 +240,6 @@ jobs:
         text: "system health sad"
 
 - name: cats
-  serial: true
-  serial_groups:
-  - bosh-cf-cats
   plan:
   - get: cf-env
     passed:
@@ -370,7 +362,6 @@ jobs:
       action: claim
 
 - name: cf-deploy-syslog
-  serial: true
   plan:
   - get: cf-env-syslog
     passed:
@@ -449,9 +440,6 @@ jobs:
         use-logcache-syslog-ingress.yml
 
 - name: system-health-syslog
-  serial: true
-  serial_groups:
-  - bosh-cf-cats
   plan:
   - get: cf-env-syslog
     passed:
@@ -474,9 +462,6 @@ jobs:
         text: "system health sad"
 
 - name: cats-syslog
-  serial: true
-  serial_groups:
-  - bosh-cf-cats
   plan:
   - get: cf-env-syslog
     passed:
