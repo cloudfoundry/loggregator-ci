@@ -8,7 +8,7 @@ image_resource:
 
 inputs:
 - name: loggregator-ci
-- name: bbl-state
+- name: cfd-env
 - name: releases
   optional: true
 
@@ -16,12 +16,9 @@ run:
   path: loggregator-ci/tasks/check-metrics/task
 
 params:
-  CF_API:
-  DOMAIN:
   USERNAME:
   ORG:
   SPACE:
-  BBL_STATE_DIR:
 
   # only runs checks for data from all instances
   INSTANCE_CHECK_ONLY: false

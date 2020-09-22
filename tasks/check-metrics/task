@@ -2,9 +2,10 @@
 set -eo pipefail
 source loggregator-ci/scripts/environment-targeting/target-cf.sh
 target-cf
-pushd "bbl-state/${BBL_STATE_DIR}" > /dev/null
-  eval "$(bbl print-env)"
-popd > /dev/null
+
+eval "$(bbl print-env --metadata-file toolsmiths-env/metadata)"
+export DOMAIN="$(cat toolsmiths-env/name).cf-app.com"
+export CF_API="https://api.${SYSTEM_DOMAIN}"
 
 function contains() {
   if [[ $1 =~ (^|[[:space:]])$2($|[[:space:]]) ]]; then

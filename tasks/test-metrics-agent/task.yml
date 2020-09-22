@@ -7,10 +7,9 @@ image_resource:
 
 inputs:
 - name: loggregator-ci
-- name: bbl-state
+- name: cfd-env
 
 params:
-  BBL_STATE_DIR:
   METRICS_AGENT_PORT:
 
 run:
