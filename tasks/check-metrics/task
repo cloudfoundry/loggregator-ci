@@ -7,7 +7,7 @@ export DOMAIN="$(cat cf-env/name).cf-app.com"
 export CF_API="https://api.${DOMAIN}"
 export METRIC_SOURCE="https://metric-store.${DOMAIN}"
 
-target-cf
+SKIP_CERT_VERIFY=true target-cf
 
 function contains() {
   if [[ $1 =~ (^|[[:space:]])$2($|[[:space:]]) ]]; then
