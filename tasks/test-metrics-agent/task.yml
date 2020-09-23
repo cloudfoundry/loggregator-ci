@@ -7,7 +7,7 @@ image_resource:
 
 inputs:
 - name: loggregator-ci
-- name: cfd-env
+- name: cf-env
 
 params:
   METRICS_AGENT_PORT:

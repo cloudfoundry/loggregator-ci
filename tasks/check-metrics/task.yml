@@ -8,7 +8,7 @@ image_resource:
 
 inputs:
 - name: loggregator-ci
-- name: cfd-env
+- name: cf-env
 - name: releases
   optional: true
 
