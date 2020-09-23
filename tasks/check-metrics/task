@@ -2,8 +2,8 @@
 set -eo pipefail
 source loggregator-ci/scripts/environment-targeting/target-cf.sh
 
-eval "$(bbl print-env --metadata-file cf-env/metadata)"
-export DOMAIN="$(cat cf-env/name).cf-app.com"
+eval "$(bbl print-env --metadata-file bbl-state/metadata)"
+export DOMAIN="$(cat bbl-state/name).cf-app.com"
 export CF_API="https://api.${DOMAIN}"
 export METRIC_SOURCE="https://metric-store.${DOMAIN}"
 

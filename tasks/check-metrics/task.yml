@@ -8,7 +8,7 @@ image_resource:
 
 inputs:
 - name: loggregator-ci
-- name: cf-env
+- name: bbl-state
 - name: releases
   optional: true
 

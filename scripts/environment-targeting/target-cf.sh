@@ -12,8 +12,8 @@ function credhub-get() (
   if [[ -n "${key_name}" ]]; then
     key=".${key_name}"
   fi
-  credhub_find_reulsts=$(credhub find -j -n ${var_name})
-  echo ${credhub_find_reulsts} | jq -r .credentials[].name | xargs credhub get -j -n | jq -r ".value${key}"
+  credhub_find_results=$(credhub find -j -n ${var_name})
+  echo ${credhub_find_results} | jq -r .credentials[].name | xargs credhub get -j -n | jq -r ".value${key}"
 )
 
 function cf-password-from-credhub() (
@@ -32,22 +32,23 @@ function create-org-space-and-target() {
 function target-cf() (
   set -e
 
-  cf_flags=""
+  skip_ssl=""
   if [[ "$SKIP_CERT_VERIFY" == "true" ]]; then
-    cf_flags="${cf_flags} --skip-ssl-validation"
+    skip_ssl="--skip-ssl-validation"
   fi
 
-  cf api "$CF_API" ${cf_flags}
+  cf api "$CF_API" ${skip_ssl}
 
+  client_credentials=""
   if [[ -n ${USE_CLIENT_AUTH} && "$USE_CLIENT_AUTH" == "true" ]]; then
-    cf_flags="${cf_flags} --client-credentials"
+    client_credentials="--client-credentials"
   fi
 
   if [[ -d "bbl-state" ]]; then
     PASSWORD=$(cf-password-from-credhub)
   fi
 
-  cf auth "$USERNAME" "$PASSWORD" ${cf_flags}
+  cf auth "$USERNAME" "$PASSWORD" ${client_credentials}
 
   if [[ -n ${ORG} && -n ${SPACE} ]]; then
     create-org-space-and-target
