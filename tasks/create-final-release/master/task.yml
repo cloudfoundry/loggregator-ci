@@ -6,7 +6,7 @@ platform: linux
 inputs:
   # - Required
   # - The repo from which the final release will be created
-- name: master-repo
+- name: main-repo
 
   # - Required
   # - The task repository
@@ -23,7 +23,7 @@ outputs:
 - name: publish
 
 run:
-  path: loggregator-ci/tasks/create-final-release/master/task
+  path: loggregator-ci/tasks/create-final-release/main/task
 
 params:
   # - Optional
