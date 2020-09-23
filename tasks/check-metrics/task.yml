@@ -23,9 +23,6 @@ params:
   # only runs checks for data from all instances
   INSTANCE_CHECK_ONLY: false
 
-  # prometheus API to query for metrics
-  METRIC_SOURCE:
-
   # source IDs that will always be checked regardless of job names
   STATIC_SOURCE_IDS:
 

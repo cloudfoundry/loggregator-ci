@@ -5,7 +5,8 @@ target-cf
 
 eval "$(bbl print-env --metadata-file toolsmiths-env/metadata)"
 export DOMAIN="$(cat toolsmiths-env/name).cf-app.com"
-export CF_API="https://api.${SYSTEM_DOMAIN}"
+export CF_API="https://api.${DOMAIN}"
+export METRIC_SOURCE="https://metric-store.${DOMAIN}"
 
 function contains() {
   if [[ $1 =~ (^|[[:space:]])$2($|[[:space:]]) ]]; then

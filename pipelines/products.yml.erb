@@ -670,7 +670,6 @@ jobs:
       ORG: system
       SPACE: blackbox-testing
       BBL_STATE_DIR: ((acceptance_bbl_state_dir))
-      METRIC_SOURCE: https://metric-store.((acceptance_system_domain))
       STATIC_SOURCE_IDS: |
         metron
         traffic_controller
@@ -707,7 +706,6 @@ jobs:
       ORG: system
       SPACE: blackbox-testing
       BBL_STATE_DIR: ((acceptance_bbl_state_dir))
-      METRIC_SOURCE: https://log-cache.((acceptance_system_domain))
       INSTANCE_CHECK_ONLY: true
 
 - name: cats
