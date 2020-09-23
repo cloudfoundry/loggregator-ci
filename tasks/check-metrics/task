@@ -1,12 +1,13 @@
 #!/usr/bin/env bash
 set -eo pipefail
 source loggregator-ci/scripts/environment-targeting/target-cf.sh
-target-cf
 
 eval "$(bbl print-env --metadata-file cf-env/metadata)"
 export DOMAIN="$(cat cf-env/name).cf-app.com"
 export CF_API="https://api.${DOMAIN}"
 export METRIC_SOURCE="https://metric-store.${DOMAIN}"
+
+target-cf
 
 function contains() {
   if [[ $1 =~ (^|[[:space:]])$2($|[[:space:]]) ]]; then
