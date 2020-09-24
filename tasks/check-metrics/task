@@ -21,7 +21,7 @@ function check_for_expected_source_ids() {
   printf 'Checking for expected source IDs\n\n'
   local exit_code=0
 
-  log_meta_output=$(curl --silent log-cache.${DOMAIN}/api/v1/meta -H "Authorization: $(cf oauth-token)")
+  log_meta_output=$(curl --silent -k https://log-cache.${DOMAIN}/api/v1/meta -H "Authorization: $(cf oauth-token)")
 
   expected_source_ids=${STATIC_SOURCE_IDS}
   for j in releases/**/jobs/*; do
@@ -64,7 +64,7 @@ function check_for_expected_source_ids() {
 
 function query_metrics() {
   query=$1
-  curl --silent -G \
+  curl --silent -k -G \
     ${METRIC_SOURCE}/api/v1/query \
     --data-urlencode 'query='"$query"'' \
     -H "Authorization: $(cf oauth-token)" | jq .data.result
