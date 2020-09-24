@@ -5,7 +5,7 @@ source loggregator-ci/scripts/environment-targeting/target-cf.sh
 eval "$(bbl print-env --metadata-file bbl-state/metadata)"
 export DOMAIN="$(cat bbl-state/name).cf-app.com"
 export CF_API="https://api.${DOMAIN}"
-export METRIC_SOURCE="https://metric-store.${DOMAIN}"
+export METRIC_SOURCE="https://log-cache.${DOMAIN}"
 
 SKIP_CERT_VERIFY=true target-cf
 
