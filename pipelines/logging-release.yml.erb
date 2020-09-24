@@ -136,9 +136,9 @@ jobs:
     - get: <%= release.name %>-release-main-version
     - get: loggregator-ci
   - task: create-final-release
-    file: loggregator-ci/tasks/create-final-release/master/task.yml
+    file: loggregator-ci/tasks/create-final-release/main/task.yml
     input_mapping:
-      master-repo: <%= release.name %>-release-main-version
+      main-repo: <%= release.name %>-release-main-version
     params:
       S3_ACCESS_KEY: {{s3-access-key-id}}
       S3_SECRET_KEY: {{s3-secret-access-key}}
@@ -189,7 +189,7 @@ jobs:
       trigger: true
   - task: wait-for-releases-to-match
     input_mapping:
-      master-repo: <%= release.name %>-release-master
+      main-repo: <%= release.name %>-release-main
       published-release: <%= release.name %>-github-release-published
     config:
       image_resource:
@@ -198,7 +198,7 @@ jobs:
           repository: loggregator/base
       platform: linux
       inputs:
-        - name: master-repo
+        - name: main-repo
         - name: published-release
       run:
         path: /bin/bash
@@ -207,15 +207,15 @@ jobs:
           - |
             set -e
 
-            pushd master-repo > /dev/null
-              master_sha=$(git rev-parse HEAD)
+            pushd main-repo > /dev/null
+              main_sha=$(git rev-parse HEAD)
             popd
 
             published_sha=$(cat published-release/commit_sha)
 
-            if [[ ${master_sha} != ${published_sha} ]]; then
-              echo "Published release sha doesn't match master repo sha"
-              echo "This job will retrigger once published release or master repo resource is updated"
+            if [[ ${main_sha} != ${published_sha} ]]; then
+              echo "Published release sha doesn't match main repo sha"
+              echo "This job will retrigger once published release or main repo resource is updated"
               exit 1
             fi
   - task: merge-back-to-develop
