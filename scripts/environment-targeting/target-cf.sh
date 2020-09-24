@@ -4,9 +4,7 @@ function credhub-get() (
   var_name=$1
   key_name=${2:-""}
 
-  pushd "bbl-state/${BBL_STATE_DIR}" > /dev/null
-    eval "$(bbl print-env)"
-  popd > /dev/null
+  eval "$(bbl print-env --metadata-file bbl-state/metadata)"
 
   key=""
   if [[ -n "${key_name}" ]]; then

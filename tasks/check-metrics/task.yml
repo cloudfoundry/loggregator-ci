@@ -27,4 +27,4 @@ params:
   STATIC_SOURCE_IDS:
 
   # jobs that will be omitted when checking for source ids
-  JOB_BLACKLIST:
+  JOB_DENYLIST:

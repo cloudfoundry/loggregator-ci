@@ -26,7 +26,7 @@ function check_for_expected_source_ids() {
   expected_source_ids=${STATIC_SOURCE_IDS}
   for j in releases/**/jobs/*; do
     job_name=$(basename $j)
-    if ! contains "${JOB_BLACKLIST}" ${job_name} && [[ $j != *"windows"* ]] && [[ $j != *"fake"* ]]; then
+    if ! contains "${JOB_DENYLIST}" ${job_name} && [[ $j != *"windows"* ]] && [[ $j != *"fake"* ]]; then
       expected_source_ids+=(${job_name})
     fi
   done
