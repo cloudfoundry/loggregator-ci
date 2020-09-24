@@ -53,7 +53,7 @@ function check_for_expected_source_ids() {
   printf '\t%s\n' "${found_source_ids[@]}"
 
   if [[ ${exit_code} -eq 1 ]]; then
-    echo ${log_meta_output} | jq .
+    printf ${log_meta_output} | jq .
 
     printf '\nNo metrics were found for the following source ids:\n'
     printf '\t%s\n' "${missing_source_ids[@]}"
@@ -95,7 +95,7 @@ function check_for_metrics_from_all_instances() {
     printf '\nMissing metrics for the following instances:\n'
     printf '\t%s\n' "${missing_instances[@]}"
   else
-    echo "Found metrics for all instances from ${METRIC_SOURCE}"
+    printf "Found metrics for all instances from ${METRIC_SOURCE}"
     jq -r . <<< ${system_metrics_result}
   fi
 
@@ -109,12 +109,12 @@ function check_for_prom_scraper_failures() {
   failures_length=$(jq '. | length' <<< ${prom_scraper_failures})
   if [[ "$failures_length" -gt 0 ]]; then
     printf '\nProm Scraper is failing to scrape the following\n'
-    echo ${prom_scraper_failures}
+    printf ${prom_scraper_failures}
 
     return 1
   fi
 
-  echo 'No prom scraper failures'
+  printf 'No prom scraper failures'
 }
 
 exit_code=0
