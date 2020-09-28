@@ -42,7 +42,7 @@ function target-cf() (
     client_credentials="--client-credentials"
   fi
 
-  if [[ -d "bbl-state" ]]; then
+  if [[ -d "bbl-state" ]] || [[ -d "cf-env" ]]; then
     PASSWORD=$(cf-password-from-credhub)
   fi
 
