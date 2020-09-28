@@ -10,6 +10,9 @@ bosh -d cf ssh doppler/0 -c \
   > metrics_results
 
 exit_status=0
+
+#TODO: Add check for particular metrics from some of our components
+
 if ! grep http_seconds_count metrics_results; then
   echo 'no http_seconds histogram metrics received'
   exit_status=1
