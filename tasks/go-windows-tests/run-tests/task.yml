@@ -24,3 +24,5 @@ run:
           throw "test failed"
         }
       }
+
+      Write-Output "tests passed"
