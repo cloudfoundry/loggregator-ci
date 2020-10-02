@@ -4,33 +4,79 @@ set -euo pipefail
 eval "$(bbl print-env --metadata-file cf-env/metadata)"
 
 router_ip=$(bosh -d cf --column Instance --column IPs vms | grep '^router' | head -n 1 | awk '{print $2}')
+windows_cell_ip=$(bosh -d cf --column Instance --column IPs vms | grep '^windows' | head -n 1 | awk '{print $2}')
 
 bosh -d cf ssh doppler/0 -c \
   "curl https://${router_ip}:${METRICS_AGENT_PORT}/metrics -k --cert /var/vcap/jobs/metrics-agent/config/certs/scrape.crt --key /var/vcap/jobs/metrics-agent/config/certs/scrape.key --cacert /var/vcap/jobs/metrics-agent/config/certs/scrape_ca.crt" \
-  > metrics_results
+  > converted_metrics_results
+
+bosh -d cf ssh doppler/0 -c \
+  "curl https://${router_ip}:${METRICS_AGENT_PORT}/metrics?id=prom_scraper -k --cert /var/vcap/jobs/metrics-agent/config/certs/scrape.crt --key /var/vcap/jobs/metrics-agent/config/certs/scrape.key --cacert /var/vcap/jobs/metrics-agent/config/certs/scrape_ca.crt" \
+  > prom_metrics_results
+
+bosh -d cf ssh windows2019-cell/0 -c \
+  "curl https://${windows_cell_ip}:${METRICS_AGENT_PORT}/metrics -k --cert /var/vcap/jobs/metrics-agent/config/certs/scrape.crt --key /var/vcap/jobs/metrics-agent/config/certs/scrape.key --cacert /var/vcap/jobs/metrics-agent/config/certs/scrape_ca.crt" \
+  > converted_metrics_results_windows
+
+bosh -d cf ssh windows2019-cell/0 -c \
+  "curl https://${windows_cell_ip}:${METRICS_AGENT_PORT}/metrics?id=prom_scraper -k --cert /var/vcap/jobs/metrics-agent/config/certs/scrape.crt --key /var/vcap/jobs/metrics-agent/config/certs/scrape.key --cacert /var/vcap/jobs/metrics-agent/config/certs/scrape_ca.crt" \
+  > prom_metrics_results_windows
 
 exit_status=0
 
-#TODO: Add check for particular metrics from some of our components
+converted_metrics=(buffered_messages) # This is a gorouter metric
+linux_metrics=(failed_scrapes_total forwarder_agent metrics-agent metrics_discovery_registrar metron syslog_agent udp_forwarder)
+windows_metrics=() # TODO: fill out windows metrics
 
-if ! grep http_seconds_count metrics_results; then
-  echo 'no http_seconds histogram metrics received'
-  exit_status=1
-fi
+function check_metric() {
+   local metric=$1
+   local file=$2
 
-if ! grep '# TYPE .* gauge' metrics_results; then
-  echo 'no gauge metrics received'
-  exit_status=1
-fi
+    if ! grep $metric $file; then
+        echo "no ${metric} metric received"
+        exit_status=1
+}
 
-if ! grep '# TYPE .* counter' metrics_results; then
-  echo 'no counter metrics received'
-  exit_status=1
-fi
+echo "Checking for converted Loggregator envelope metrics in Linux and Windows"
+for metric in ${converted_metrics[@]}; do
+    echo "Looking for $metric metric"
+    check_metric metric converted_metrics_results
+    check_metric metric converted_metrics_results_windows
+done
+
+
+echo "Checking for logging/metrics components emitting Prometheus metrics in Linux and Windows"
+for metric in ${linux_metrics[@]}; do
+    echo "Looking for $metric metric"
+    check_metric metric prom_metrics_results
+    check_metric metric prom_metrics_results_windows
+done
+
+
+
+echo "Checking for metric types received"
+
+echo "Looking for histogram metrics"
+check_metric http_seconds_count converted_metrics_results
+check_metric http_seconds_count converted_metrics_results_windows
+
+echo "Looking for gauge metrics"
+check_metric '# TYPE .* gauge' converted_metrics_results
+check_metric '# TYPE .* gauge' converted_metrics_results_windows
+
+echo "Looking for counter metrics"
+check_metric '# TYPE .* counter' converted_metrics_results
+check_metric '# TYPE .* counter' converted_metrics_results_windows
+
 
 if [[ ${exit_status} -ne 0 ]]; then
-  echo '**** Metrics Results ****'
-  cat metrics_results
+  echo '**** Metrics Results ****\n'
+  echo 'converted loggregator env metrics\n'
+  cat converted_metrics_results
+
+  echo "******************************\n"
+  echo 'Prometheus metrics\n'
+  cat prom_metrics_resulgs
 fi
 
 exit $exit_status
