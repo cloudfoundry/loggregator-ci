@@ -37,12 +37,12 @@ function check_metric() {
         exit_status=1
     fi
 }
-echo "**************************************************************************************************************\n"
+
 echo "Checking for converted Loggregator envelope metrics in Linux and Windows"
 for metric in ${converted_metrics[@]}; do
     echo "Looking for $metric metric"
-    check_metric metric converted_metrics_results
-    check_metric metric converted_metrics_results_windows
+    check_metric $metric converted_metrics_results
+    check_metric $metric converted_metrics_results_windows
 done
 
 
@@ -50,13 +50,12 @@ echo "**************************************************************************
 echo "Checking for logging/metrics components emitting Prometheus metrics in Linux and Windows"
 for metric in ${linux_metrics[@]}; do
     echo "Looking for $metric metric"
-    check_metric metric prom_metrics_results
-    check_metric metric prom_metrics_results_windows
+    check_metric $metric prom_metrics_results
+    check_metric $metric prom_metrics_results_windows
 done
 
 
 
-echo "**************************************************************************************************************\n"
 echo "Checking for metric types received"
 
 echo "Looking for histogram metrics"
@@ -64,22 +63,20 @@ check_metric http_seconds_count converted_metrics_results
 check_metric http_seconds_count converted_metrics_results_windows
 
 echo "Looking for gauge metrics"
-check_metric '# TYPE .* gauge' converted_metrics_results
-check_metric '# TYPE .* gauge' converted_metrics_results_windows
+check_metric "# TYPE .* gauge" converted_metrics_results
+check_metric "# TYPE .* gauge" converted_metrics_results_windows
 
 echo "Looking for counter metrics"
-check_metric '# TYPE .* counter' converted_metrics_results
-check_metric '# TYPE .* counter' converted_metrics_results_windows
+check_metric "# TYPE .* counter" converted_metrics_results
+check_metric "# TYPE .* counter" converted_metrics_results_windows
 
 
 if [[ ${exit_status} -ne 0 ]]; then
-echo "**************************************************************************************************************\n"
-  echo '**** Metrics Results ****\n'
-  echo 'converted loggregator env metrics\n'
+  echo "***************************************  Metrics Results  **************************************************\n"
+  echo "*********************************** Converted Env Metrics **************************************************\n"
   cat converted_metrics_results
 
-echo "**************************************************************************************************************\n"
-  echo 'Prometheus metrics\n'
+  echo "*********************************  Prometheus Metrics Results  *********************************************\n"
   cat prom_metrics_results
 fi
 
