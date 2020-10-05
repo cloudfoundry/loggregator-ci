@@ -114,7 +114,7 @@ function check_for_prom_scraper_failures() {
     return 1
   fi
 
-  printf 'No prom scraper failures'
+  printf 'No prom scraper failures\n'
 }
 
 exit_code=0

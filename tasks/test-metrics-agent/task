@@ -35,6 +35,7 @@ function check_metric() {
     if ! grep $metric $file; then
         echo "no ${metric} metric received"
         exit_status=1
+    fi
 }
 
 echo "Checking for converted Loggregator envelope metrics in Linux and Windows"
