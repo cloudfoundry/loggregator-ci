@@ -34,7 +34,7 @@ function check_metric() {
 
     grep $metric $file > /dev/null
     if [ $? -ne 0 ]; then
-        printf "no $metric metric received in $file\n\n"
+        echo "no $metric metric received in $file"
         exit_status=1
     fi
 }
@@ -44,6 +44,7 @@ for metric in ${converted_metrics[@]}; do
     printf "Looking for $metric metric\n"
     check_metric $metric converted_metrics_results
     check_metric $metric converted_metrics_results_windows
+    printf "\n"
 done
 
 
@@ -52,19 +53,25 @@ for metric in ${linux_metrics[@]}; do
     printf "Looking for $metric metric\n"
     check_metric $metric prom_metrics_results
     check_metric $metric prom_metrics_results_windows
+    printf "\n"
 done
+
+sleep 2
 
 if [[ ${exit_status} -ne 0 ]]; then
   echo "***************************************  Metrics Results  **************************************************"
-  echo "*********************************** Converted Env Metrics **************************************************"
+  echo "*********************************** Converted Loggregator Env Metrics **************************************"
   cat converted_metrics_results
-  printf "\n\n"
-  echo "******************************** Converted Env Metrics Windows *********************************************"
-  cat converted_metrics_results_windows
 
   printf "\n\n"
   echo "*********************************  Prometheus Metrics Results  *********************************************"
   cat prom_metrics_results
+
+
+  printf "\n\n"
+  echo "******************************** Converted Loggregator Env Metrics Windows *********************************"
+  cat converted_metrics_results_windows
+
   printf "\n\n"
   echo "******************************  Prometheus Metrics Results Windows *****************************************"
   cat prom_metrics_results_windows
