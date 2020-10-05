@@ -34,12 +34,12 @@ function check_metric() {
 
     grep $metric $file > /dev/null
     if [ $? -ne 0 ]; then
-        printf "no $metric metric received in $file\n"
+        printf "no `$metric` metric received in $file\n\n"
         exit_status=1
     fi
 }
 
-echo "Checking for converted Loggregator envelope metrics in Linux and Windows"
+printf "\n\nChecking for converted Loggregator envelope metrics in Linux and Windows"
 for metric in ${converted_metrics[@]}; do
     printf "Looking for $metric metric\n"
     check_metric $metric converted_metrics_results
@@ -47,7 +47,7 @@ for metric in ${converted_metrics[@]}; do
 done
 
 
-echo "Checking for logging/metrics components emitting Prometheus metrics in Linux and Windows"
+printf "\n\nChecking for logging/metrics components emitting Prometheus metrics in Linux and Windows"
 for metric in ${linux_metrics[@]}; do
     printf "Looking for $metric metric\n"
     check_metric $metric prom_metrics_results
