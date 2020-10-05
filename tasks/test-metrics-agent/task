@@ -29,11 +29,12 @@ linux_metrics=(failed_scrapes_total forwarder_agent metrics-agent metrics_discov
 windows_metrics=() # TODO: fill out windows metrics
 
 function check_metric() {
-   local metric=$1
-   local file=$2
+    local metric=$1
+    local file=$2
 
-    if ! grep $metric $file > /dev/null; then
-        echo "======================== no $metric metric received in $file ===========================================\n"
+    grep $metric $file > /dev/null
+    if [ $? -ne 0 ]; then
+        echo "no $metric metric received in $file"
         exit_status=1
     fi
 }
@@ -46,7 +47,6 @@ for metric in ${converted_metrics[@]}; do
 done
 
 
-echo "**************************************************************************************************************\n"
 echo "Checking for logging/metrics components emitting Prometheus metrics in Linux and Windows"
 for metric in ${linux_metrics[@]}; do
     echo "Looking for $metric metric"
@@ -54,29 +54,13 @@ for metric in ${linux_metrics[@]}; do
     check_metric $metric prom_metrics_results_windows
 done
 
-
-
-echo "Checking for metric types received"
-
-echo "Looking for histogram metrics"
-check_metric http_seconds_count converted_metrics_results
-check_metric http_seconds_count converted_metrics_results_windows
-
-echo "Looking for gauge metrics"
-check_metric "# TYPE .* gauge" converted_metrics_results
-check_metric "# TYPE .* gauge" converted_metrics_results_windows
-
-echo "Looking for counter metrics"
-check_metric "# TYPE .* counter" converted_metrics_results
-check_metric "# TYPE .* counter" converted_metrics_results_windows
-
-
 if [[ ${exit_status} -ne 0 ]]; then
-  echo "***************************************  Metrics Results  **************************************************\n"
-  echo "*********************************** Converted Env Metrics **************************************************\n"
+  echo "***************************************  Metrics Results  **************************************************"
+  echo "*********************************** Converted Env Metrics **************************************************"
   cat converted_metrics_results
 
-  echo "*********************************  Prometheus Metrics Results  *********************************************\n"
+  printf "\n\n"
+  echo "*********************************  Prometheus Metrics Results  *********************************************"
   cat prom_metrics_results
 fi
 
