@@ -47,7 +47,7 @@ for metric in ${converted_metrics[@]}; do
 done
 
 
-printf "Checking for logging/metrics components emitting Prometheus metrics in Linux and Windows"
+echo "Checking for logging/metrics components emitting Prometheus metrics in Linux and Windows"
 for metric in ${linux_metrics[@]}; do
     printf "Looking for $metric metric\n"
     check_metric $metric prom_metrics_results
