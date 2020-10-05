@@ -34,12 +34,12 @@ function check_metric() {
 
     grep $metric $file > /dev/null
     if [ $? -ne 0 ]; then
-        printf "no `$metric` metric received in $file\n\n"
+        printf "no $metric metric received in $file\n\n"
         exit_status=1
     fi
 }
 
-printf "\n\nChecking for converted Loggregator envelope metrics in Linux and Windows"
+echo "Checking for converted Loggregator envelope metrics in Linux and Windows"
 for metric in ${converted_metrics[@]}; do
     printf "Looking for $metric metric\n"
     check_metric $metric converted_metrics_results
@@ -47,7 +47,7 @@ for metric in ${converted_metrics[@]}; do
 done
 
 
-printf "\n\nChecking for logging/metrics components emitting Prometheus metrics in Linux and Windows"
+printf "Checking for logging/metrics components emitting Prometheus metrics in Linux and Windows"
 for metric in ${linux_metrics[@]}; do
     printf "Looking for $metric metric\n"
     check_metric $metric prom_metrics_results
@@ -58,10 +58,16 @@ if [[ ${exit_status} -ne 0 ]]; then
   echo "***************************************  Metrics Results  **************************************************"
   echo "*********************************** Converted Env Metrics **************************************************"
   cat converted_metrics_results
+  printf "\n\n"
+  echo "******************************** Converted Env Metrics Windows *********************************************"
+  cat converted_metrics_results_windows
 
   printf "\n\n"
   echo "*********************************  Prometheus Metrics Results  *********************************************"
   cat prom_metrics_results
+  printf "\n\n"
+  echo "******************************  Prometheus Metrics Results Windows *****************************************"
+  cat prom_metrics_results_windows
 fi
 
 exit $exit_status
