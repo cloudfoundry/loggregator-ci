@@ -14,13 +14,16 @@ bosh -d cf ssh doppler/0 -c \
   "curl https://${router_ip}:${METRICS_AGENT_PORT}/metrics?id=prom_scraper -k --cert /var/vcap/jobs/metrics-agent/config/certs/scrape.crt --key /var/vcap/jobs/metrics-agent/config/certs/scrape.key --cacert /var/vcap/jobs/metrics-agent/config/certs/scrape_ca.crt" \
   > prom_metrics_results
 
-bosh -d cf ssh windows2019-cell/0 -c \
-  "curl https://${windows_cell_ip}:${METRICS_AGENT_PORT}/metrics -k --cert /var/vcap/jobs/metrics-agent/config/certs/scrape.crt --key /var/vcap/jobs/metrics-agent/config/certs/scrape.key --cacert /var/vcap/jobs/metrics-agent/config/certs/scrape_ca.crt" \
-  > converted_metrics_results_windows
+# TODO: Figure out how to curl metrics endpoints in Windows
+# Powershell/Commandline
 
-bosh -d cf ssh windows2019-cell/0 -c \
-  "curl https://${windows_cell_ip}:${METRICS_AGENT_PORT}/metrics?id=prom_scraper -k --cert /var/vcap/jobs/metrics-agent/config/certs/scrape.crt --key /var/vcap/jobs/metrics-agent/config/certs/scrape.key --cacert /var/vcap/jobs/metrics-agent/config/certs/scrape_ca.crt" \
-  > prom_metrics_results_windows
+# bosh -d cf ssh windows2019-cell/0 -c \
+#   "curl https://${windows_cell_ip}:${METRICS_AGENT_PORT}/metrics -k --cert /var/vcap/jobs/metrics-agent/config/certs/scrape.crt --key /var/vcap/jobs/metrics-agent/config/certs/scrape.key --cacert /var/vcap/jobs/metrics-agent/config/certs/scrape_ca.crt" \
+#   > converted_metrics_results_windows
+
+# bosh -d cf ssh windows2019-cell/0 -c \
+#   "curl https://${windows_cell_ip}:${METRICS_AGENT_PORT}/metrics?id=prom_scraper -k --cert /var/vcap/jobs/metrics-agent/config/certs/scrape.crt --key /var/vcap/jobs/metrics-agent/config/certs/scrape.key --cacert /var/vcap/jobs/metrics-agent/config/certs/scrape_ca.crt" \
+#   > prom_metrics_results_windows
 
 exit_status=0
 
@@ -43,7 +46,7 @@ echo "Checking for converted Loggregator envelope metrics in Linux and Windows"
 for metric in ${converted_metrics[@]}; do
     printf "Looking for $metric metric\n"
     check_metric $metric converted_metrics_results
-    check_metric $metric converted_metrics_results_windows
+    # check_metric $metric converted_metrics_results_windows
     printf "\n"
 done
 
@@ -52,11 +55,9 @@ echo "Checking for logging/metrics components emitting Prometheus metrics in Lin
 for metric in ${linux_metrics[@]}; do
     printf "Looking for $metric metric\n"
     check_metric $metric prom_metrics_results
-    check_metric $metric prom_metrics_results_windows
+    # check_metric $metric prom_metrics_results_windows
     printf "\n"
 done
-
-sleep 2
 
 if [[ ${exit_status} -ne 0 ]]; then
   echo "***************************************  Metrics Results  **************************************************"
@@ -68,13 +69,13 @@ if [[ ${exit_status} -ne 0 ]]; then
   cat prom_metrics_results
 
 
-  printf "\n\n"
-  echo "******************************** Converted Loggregator Env Metrics Windows *********************************"
-  cat converted_metrics_results_windows
+  # printf "\n\n"
+  # echo "******************************** Converted Loggregator Env Metrics Windows *********************************"
+  # cat converted_metrics_results_windows
 
-  printf "\n\n"
-  echo "******************************  Prometheus Metrics Results Windows *****************************************"
-  cat prom_metrics_results_windows
+  # printf "\n\n"
+  # echo "******************************  Prometheus Metrics Results Windows *****************************************"
+  # cat prom_metrics_results_windows
 fi
 
 exit $exit_status
