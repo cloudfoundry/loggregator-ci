@@ -78,11 +78,6 @@ jobs:
               GOOS=darwin go build -mod=vendor -ldflags "-X main.version=$version" -o $WORKSPACE/github-release/builds/log-cache-cf-plugin-darwin
               GOOS=windows go build -mod=vendor -ldflags "-X main.version=$version" -o $WORKSPACE/github-release/builds/log-cache-cf-plugin-windows
             popd
-            pushd "log-cache-cli/cmd/lc"
-              GOOS=linux go build -mod=vendor -ldflags "-X main.version=$version" -o $WORKSPACE/github-release/builds/log-cache-linux
-              GOOS=darwin go build -mod=vendor -ldflags "-X main.version=$version" -o $WORKSPACE/github-release/builds/log-cache-darwin
-              GOOS=windows go build -mod=vendor -ldflags "-X main.version=$version" -o $WORKSPACE/github-release/builds/log-cache-windows
-            popd
   - put: log-cache-cli
     params:
       repository: output-repo
