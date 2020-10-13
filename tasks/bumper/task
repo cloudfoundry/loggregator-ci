@@ -16,6 +16,7 @@ popd
 
 if [ -z $bump_sha ]; then
     echo "There are no commits to bump!"
+    echo "If you expect to see your commit merged, check to see if the corresponding story was accepted."
     cp -R dest/. merged-dest
 
     exit 0
