@@ -30,6 +30,8 @@ exit_status=0
 converted_metrics=(buffered_messages) # This is a gorouter metric
 linux_metrics=(failed_scrapes_total forwarder_agent metrics-agent metrics_discovery_registrar metron syslog_agent udp_forwarder)
 windows_metrics=() # TODO: fill out windows metrics
+missing_metrics=()
+found_metrics=()
 
 function check_metric() {
     local metric=$1
@@ -37,29 +39,30 @@ function check_metric() {
 
     grep $metric $file > /dev/null
     if [ $? -ne 0 ]; then
-        echo "no $metric metric received in $file"
+        missing_metrics+=($metric)
         exit_status=1
+    else
+        found_metrics+=($metric)
     fi
 }
 
-echo "Checking for converted Loggregator envelope metrics in Linux and Windows"
+echo "Checking for converted Loggregator envelope metrics in Linux"
 for metric in ${converted_metrics[@]}; do
-    printf "Looking for $metric metric\n"
     check_metric $metric converted_metrics_results
     # check_metric $metric converted_metrics_results_windows
-    printf "\n"
 done
 
 
-echo "Checking for logging/metrics components emitting Prometheus metrics in Linux and Windows"
+echo "Checking for logging/metrics components emitting Prometheus metrics in Linux"
 for metric in ${linux_metrics[@]}; do
-    printf "Looking for $metric metric\n"
     check_metric $metric prom_metrics_results
     # check_metric $metric prom_metrics_results_windows
-    printf "\n"
 done
 
 if [[ ${exit_status} -ne 0 ]]; then
+  printf '\nMissing the following metrics:\n'
+  printf '\t%s\n' "${missing_metrics[@]}"
+
   echo "***************************************  Metrics Results  **************************************************"
   echo "*********************************** Converted Loggregator Env Metrics **************************************"
   cat converted_metrics_results
@@ -76,6 +79,9 @@ if [[ ${exit_status} -ne 0 ]]; then
   # printf "\n\n"
   # echo "******************************  Prometheus Metrics Results Windows *****************************************"
   # cat prom_metrics_results_windows
+else
+    printf '\nFound the following metrics:\n'
+    printf '\t%s\n' "${found_metrics[@]}"
 fi
 
 exit $exit_status
