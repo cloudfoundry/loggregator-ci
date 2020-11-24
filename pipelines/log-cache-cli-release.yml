@@ -2,6 +2,7 @@ groups:
   - name: all
     jobs:
     - create-major
+    - create-patch
 
 resources:
 - name: log-cache-cli-github-release-in
@@ -63,6 +64,73 @@ jobs:
             new_major=$((version_parts[0]+1))
             new_semver="$new_major.0.0"
             version="{\"Major\":$new_major,\"Minor\":0,\"Build\":0}"
+
+            # write out github release files
+            echo "Log Cache CLI $new_semver" > github-release/name
+            echo "v$new_semver" > github-release/tag
+            echo "TBD" > github-release/body
+            cp -R log-cache-cli/. output-repo
+
+            export WORKSPACE="$PWD"
+
+            mkdir github-release/builds
+            pushd "log-cache-cli/cmd/cf-lc-plugin"
+              GOOS=linux go build -mod=vendor -ldflags "-X main.version=$version" -o $WORKSPACE/github-release/builds/log-cache-cf-plugin-linux
+              GOOS=darwin go build -mod=vendor -ldflags "-X main.version=$version" -o $WORKSPACE/github-release/builds/log-cache-cf-plugin-darwin
+              GOOS=windows go build -mod=vendor -ldflags "-X main.version=$version" -o $WORKSPACE/github-release/builds/log-cache-cf-plugin-windows
+            popd
+  - put: log-cache-cli
+    params:
+      repository: output-repo
+      rebase: false
+      tag: github-release/tag
+  - put: log-cache-cli-github-release-out
+    params:
+      name: github-release/name
+      tag: github-release/tag
+      body: github-release/body
+      globs:
+      - github-release/builds/*
+
+- name: create-patch
+  serial: true
+  plan:
+  - in_parallel:
+    - get: log-cache-cli
+    - get: log-cache-cli-github-release-in
+  - task: create-binaries
+    config:
+      image_resource:
+        type: docker-image
+        source:
+          repository: loggregator/base
+      platform: linux
+      inputs:
+      - name: log-cache-cli
+      - name: log-cache-cli-github-release-in
+      outputs:
+      - name: output-repo
+      - name: github-release
+      run:
+        path: bash
+        args:
+          - -c
+          - |
+            #!/bin/bash
+            set -ex
+
+            # establish version/tag strings
+            semver="$(cat log-cache-cli-github-release-in/version | cut -d "v" -f 2)"
+            IFS="." read -r -a version_parts <<< $semver
+
+            # Update version
+            old_major=$((version_parts[0]))
+            old_minor=$((version_parts[1]))
+            old_patch=$((version_parts[2]))
+
+            new_patch=$((old_patch+1))
+            new_semver="$old_major.$old_minor.$new_patch"
+            version="{\"Major\":$old_major,\"Minor\":$old_minor,\"Build\":$new_patch}"
 
             # write out github release files
             echo "Log Cache CLI $new_semver" > github-release/name
