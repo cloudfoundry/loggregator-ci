@@ -72,7 +72,7 @@ resources:
   type: git
   source:
     uri: git@github.com:cloudfoundry/cf-deployment.git
-    branch: master
+    branch: main
     private_key: ((cf-loggregator-oauth-bot-key))
 
 - name: log-cache-acceptance-tests-release
