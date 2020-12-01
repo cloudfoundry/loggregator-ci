@@ -4,7 +4,7 @@ set -eo pipefail
 function set_globals {
     pipeline=$1
     TARGET="${TARGET:-denver}"
-    FLY_URL="https://concourse.denver.com"
+    FLY_URL="https://concourse.cf-denver.com/"
 }
 
 function validate {
@@ -36,7 +36,7 @@ function set_pipeline {
 
 function sync_fly {
     if ! fly -t ${TARGET} status; then
-      fly -t ${TARGET} login -b -c ${FLY_URL}
+      fly -t ${TARGET} login -n loggregator -b -c ${FLY_URL}
     fi
     fly -t ${TARGET} sync
 }
