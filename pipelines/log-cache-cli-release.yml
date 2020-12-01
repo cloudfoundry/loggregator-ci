@@ -55,6 +55,7 @@ jobs:
           - |
             #!/bin/bash
             set -ex
+            go version
 
             # establish version/tag strings
             semver="$(cat log-cache-cli-github-release-in/version | cut -d "v" -f 2)"
@@ -118,6 +119,7 @@ jobs:
           - |
             #!/bin/bash
             set -ex
+            go version
 
             # establish version/tag strings
             semver="$(cat log-cache-cli-github-release-in/version | cut -d "v" -f 2)"
