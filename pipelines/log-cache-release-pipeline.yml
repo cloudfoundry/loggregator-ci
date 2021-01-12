@@ -89,7 +89,7 @@ resources:
     hostname: environments.toolsmiths.cf-app.com
     pool_name: cf-deployment
   tags:
-  - cf-denver-shared-vsphere
+  - vsphere-nimbus
 
 - name: cf-env-syslog
   type: pcf-pool
@@ -98,7 +98,7 @@ resources:
     hostname: environments.toolsmiths.cf-app.com
     pool_name: cf-deployment
   tags:
-  - cf-denver-shared-vsphere
+  - vsphere-nimbus
 
 - name: log-egrets-channel
   type: slack-notification
@@ -140,7 +140,7 @@ jobs:
     trigger: true
   - put: cf-env
     tags:
-    - cf-denver-shared-vsphere
+    - vsphere-nimbus
     params:
       action: claim
 
@@ -150,7 +150,7 @@ jobs:
     passed:
     - claim-cf-env
     tags:
-    - cf-denver-shared-vsphere
+    - vsphere-nimbus
   - get: log-cache-release
     trigger: true
     passed:
@@ -223,7 +223,7 @@ jobs:
     passed:
     - cf-deploy
     tags:
-    - cf-denver-shared-vsphere
+    - vsphere-nimbus
   - get: cf-deployment-concourse-tasks
   - get: loggregator-ci
   - get: log-cache-release
@@ -245,7 +245,7 @@ jobs:
     passed:
     - system-health
     tags:
-    - cf-denver-shared-vsphere
+    - vsphere-nimbus
   - get: cf-deployment-concourse-tasks
   - get: cf-acceptance-tests
   - get: loggregator-ci
@@ -273,7 +273,7 @@ jobs:
     passed: ["system-health"]
     trigger: true
     tags:
-      - cf-denver-shared-vsphere
+      - vsphere-nimbus
   - in_parallel:
     - get: log-cache-release
       trigger: true
@@ -341,10 +341,10 @@ jobs:
     passed: ["cats", "lcats"]
     trigger: true
     tags:
-      - cf-denver-shared-vsphere
+      - vsphere-nimbus
   - put: cf-env
     tags:
-      - cf-denver-shared-vsphere
+      - vsphere-nimbus
     params:
       env_file: cf-env/metadata
       action: unclaim
@@ -357,7 +357,7 @@ jobs:
     trigger: true
   - put: cf-env-syslog
     tags:
-    - cf-denver-shared-vsphere
+    - vsphere-nimbus
     params:
       action: claim
 
@@ -367,7 +367,7 @@ jobs:
     passed:
     - claim-cf-env-syslog
     tags:
-    - cf-denver-shared-vsphere
+    - vsphere-nimbus
   - get: log-cache-release
     trigger: true
     passed:
@@ -445,7 +445,7 @@ jobs:
     passed:
     - cf-deploy-syslog
     tags:
-    - cf-denver-shared-vsphere
+    - vsphere-nimbus
   - get: cf-deployment-concourse-tasks
   - get: loggregator-ci
   - get: log-cache-release
@@ -467,7 +467,7 @@ jobs:
     passed:
     - system-health-syslog
     tags:
-    - cf-denver-shared-vsphere
+    - vsphere-nimbus
   - get: cf-deployment-concourse-tasks
   - get: cf-acceptance-tests
   - get: loggregator-ci
@@ -495,7 +495,7 @@ jobs:
     passed: ["system-health-syslog"]
     trigger: true
     tags:
-      - cf-denver-shared-vsphere
+      - vsphere-nimbus
   - in_parallel:
     - get: log-cache-release
       trigger: true
@@ -563,10 +563,10 @@ jobs:
     passed: ["cats-syslog", "lcats-syslog"]
     trigger: true
     tags:
-      - cf-denver-shared-vsphere
+      - vsphere-nimbus
   - put: cf-env-syslog
     tags:
-      - cf-denver-shared-vsphere
+      - vsphere-nimbus
     params:
       env_file: cf-env-syslog/metadata
       action: unclaim

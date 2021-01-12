@@ -82,7 +82,7 @@ resources:
     hostname: environments.toolsmiths.cf-app.com
     pool_name: cf-deployment
   tags:
-  - cf-denver-shared-vsphere
+  - vsphere-nimbus
 
 - name: log-egrets-channel
   type: slack-notification
@@ -139,7 +139,7 @@ jobs:
     trigger: true
   - put: cf-env
     tags:
-    - cf-denver-shared-vsphere
+    - vsphere-nimbus
     params:
       action: claim
 
@@ -150,7 +150,7 @@ jobs:
     passed:
     - claim-cf-env
     tags:
-    - cf-denver-shared-vsphere
+    - vsphere-nimbus
   - get: loggregator-agent-release
     trigger: true
     passed:
@@ -198,7 +198,7 @@ jobs:
     passed:
     - cf-deploy
     tags:
-    - cf-denver-shared-vsphere
+    - vsphere-nimbus
   - get: cf-deployment-concourse-tasks
   - get: loggregator-ci
   - get: loggregator-agent-release
@@ -223,7 +223,7 @@ jobs:
     passed:
     - system-health
     tags:
-    - cf-denver-shared-vsphere
+    - vsphere-nimbus
   - get: cf-deployment-concourse-tasks
   - get: cf-acceptance-tests
   - get: loggregator-ci
@@ -251,10 +251,10 @@ jobs:
     passed: ["cats"]
     trigger: true
     tags:
-      - cf-denver-shared-vsphere
+      - vsphere-nimbus
   - put: cf-env
     tags:
-      - cf-denver-shared-vsphere
+      - vsphere-nimbus
     params:
       env_file: cf-env/metadata
       action: unclaim
