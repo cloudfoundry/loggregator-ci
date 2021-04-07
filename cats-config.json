@@ -27,6 +27,6 @@
     "include_isolation_segments": false,
     "include_routing_isolation_segments": false,
     "include_private_docker_registry": false,
-    "isolation_segment_name": "persistent_isolation_segment"
+    "isolation_segment_name": "persistent_isolation_segment",
+    "timeout_scale": 2
 }
-
