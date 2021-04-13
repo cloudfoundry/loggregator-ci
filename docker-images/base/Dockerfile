@@ -47,6 +47,6 @@ RUN curl -OL https://github.com/cloudfoundry-incubator/credhub-cli/releases/down
   chmod +x /usr/local/bin/credhub && \
   rm credhub-linux-${credhub_cli_version}.tgz
 
-RUN go get gopkg.in/mikefarah/yq.v3 && cp /go/bin/yq.v3 /go/bin/yq
+RUN go get github.com/mikefarah/yq/v3
 
 RUN go get github.com/loggregator/bumper/cmd/bumper
